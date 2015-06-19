@@ -8,10 +8,12 @@ namespace Nevermore
     public class RelationalJsonContractResolver : DefaultContractResolver
     {
         readonly RelationalMappings mappings;
+        readonly IMasterKeyEncryption masterKey;
 
-        public RelationalJsonContractResolver(RelationalMappings mappings)
+        public RelationalJsonContractResolver(RelationalMappings mappings, IMasterKeyEncryption masterKey)
         {
             this.mappings = mappings;
+            this.masterKey = masterKey;
         }
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
@@ -44,10 +46,10 @@ namespace Nevermore
             }
 
             // Encrypted properties are encrypted
-            //if (member.GetCustomAttributes(typeof(EncryptedAttribute), true).Any())
-            //{
-            //    property.Converter = property.MemberConverter = new EncryptedValueConverter(masterKey);
-            //}
+            if (member.GetCustomAttributes(typeof(EncryptedAttribute), true).Any())
+            {
+                property.Converter = property.MemberConverter = new EncryptedValueConverter(masterKey);
+            }
 
             return property;
         }

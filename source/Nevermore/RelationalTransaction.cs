@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -14,17 +15,24 @@ namespace Nevermore
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         readonly JsonSerializerSettings jsonSerializerSettings;
         readonly RelationalMappings mappings;
+        readonly IKeyAllocator keyAllocator;
         readonly SqlConnection connection;
         readonly SqlTransaction transaction;
+        // TODO: Remove all this
+        readonly List<string> commands = new List<string>();
+        readonly object sync = new object();
+        static readonly ConcurrentDictionary<RelationalTransaction, bool> CurrentTransactions = new ConcurrentDictionary<RelationalTransaction, bool>();
         
-        public RelationalTransaction(string connectionString, IsolationLevel isolationLevel, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings)
+        public RelationalTransaction(string connectionString, IsolationLevel isolationLevel, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings, IKeyAllocator keyAllocator)
         {
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.mappings = mappings;
+            this.keyAllocator = keyAllocator;
 
             connection = new SqlConnection(connectionString);
             connection.Open();
             transaction = connection.BeginTransaction(isolationLevel);
+            CurrentTransactions.TryAdd(this, true);
         }
 
         public T Load<T>(string id) where T : class
@@ -59,7 +67,7 @@ namespace Nevermore
                 .Parameter("ids", allIds)
                 .Stream().ToArray();
 
-            var items = allIds.Zip(results, Tuple.Create);
+            var items = allIds.Zip<string, T, Tuple<string, T>>(results, Tuple.Create);
             foreach (var pair in items) 
                 if (pair.Item2 == null) throw new ResourceNotFoundException(pair.Item1);
             return results;
@@ -82,30 +90,31 @@ namespace Nevermore
 
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId) where TDocument : class
         {
-            const string idReplacementString = "##id##";
+            var key = keyAllocator.NextId(mappings.Get(instance.GetType()).TableName);
+
             var mapping = mappings.Get(instance.GetType());
+            var generatedId = mapping.IdPrefix + "-" + key;
 
             var statement = InsertStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
-                "INSERT INTO dbo.[{0}] ({1}) values ({2}); UPDATE dbo.[{0}] SET Id = '{4}-' + (CAST([K] as VARCHAR(10))) WHERE [K] = SCOPE_IDENTITY() and Id = '{3}'; SELECT Id FROM dbo.[{0}] WHERE [K] = SCOPE_IDENTITY()",
+                "INSERT INTO dbo.[{0}] ({1}) values ({2})",
                 tableName ?? mapping.TableName,
                 string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Concat(new[] { "Id", "Json" })),
-                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Concat(new[] { "@Id", "@Json" })),
-                idReplacementString,
-                mapping.IdPrefix
+                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Concat(new[] { "@Id", "@Json" }))
                 ));
+
+            var id = string.IsNullOrEmpty(customAssignedId) ? generatedId : customAssignedId;
 
             var parameters = InstanceToParameters(instance, mapping);
             if (parameters["Id"] == null || string.IsNullOrWhiteSpace((string)parameters["Id"]))
             {
-                parameters["Id"] = string.IsNullOrEmpty(customAssignedId) ? idReplacementString : customAssignedId;
+                parameters["Id"] = id;
             }
 
             using (var command = CreateCommand(statement, parameters))
             {
                 try
                 {
-                    var id = command.ExecuteScalar();
-
+                    command.ExecuteNonQuery();
                     mapping.IdColumn.ReaderWriter.Write(instance, id);
                 }
                 catch (SqlException ex)
@@ -212,7 +221,16 @@ namespace Nevermore
                     if (jsonIndex >= 0)
                     {
                         var json = reader[jsonIndex].ToString();
-                        instance = JsonConvert.DeserializeObject<T>(json, jsonSerializerSettings);
+
+                        var deserialized = JsonConvert.DeserializeObject(json, mapping.Type, jsonSerializerSettings);
+
+                        // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
+                        // If the deserialized object is not the desired type, then we are querying for a specific sub-type
+                        // and this record is a different sub-type, and should be excluded from the result-set. 
+                        if (deserialized is T)
+                            instance = (T) deserialized;
+                        else
+                            continue;
                     }
                     else
                     {
@@ -268,7 +286,8 @@ namespace Nevermore
         {
             var result = new CommandParameters();
             result["Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
-            result["Json"] = JsonConvert.SerializeObject(instance, jsonSerializerSettings);
+            result["Json"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
+
             foreach (var c in mapping.IndexedColumns)
             {
                 var value = c.ReaderWriter.Read(instance);
@@ -337,6 +356,10 @@ namespace Nevermore
             {
                 args.ContributeTo(command);                
             }
+            lock (sync)
+            {
+                commands.Add(command.CommandText);                
+            }
             return command;
         }
 
@@ -349,10 +372,35 @@ namespace Nevermore
         {
             transaction.Dispose();
             connection.Dispose();
+            bool whoCares;
+            CurrentTransactions.TryRemove(this, out whoCares);
         }
 
         Exception WrapException(SqlCommand command, Exception ex)
         {
+            var sqlEx = ex as SqlException;
+            if (sqlEx != null && sqlEx.Number == 1205)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine(ex.Message);
+                builder.AppendLine("Current transactions: ");
+                var id = 0;
+                foreach (var item in CurrentTransactions)
+                {
+                    builder.AppendLine("  Transaction " + id);
+                    lock (item.Key.sync)
+                    {
+                        foreach (var line in item.Key.commands)
+                        {
+                            builder.AppendLine("    " + line);
+                        }                        
+                    }
+                    id++;
+                }
+
+                throw new Exception(builder.ToString());
+            }
+
             return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText + Environment.NewLine + " with parameters: " + string.Join(", ", command.Parameters.OfType<SqlParameter>().Select(p => "@" + p.ParameterName + " = '" + p.Value + "'")), ex);
         }
 

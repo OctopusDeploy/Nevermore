@@ -34,7 +34,7 @@ namespace Nevermore
 
             if (property.PropertyType == typeof(string) && property.Name.EndsWith("Id"))
             {
-                DbType = DbType.AnsiString;
+                DbType = DbType.String;
                 if (maxLength == 0)
                 {
                     MaxLength = 50;           
@@ -44,15 +44,15 @@ namespace Nevermore
             if (property.PropertyType.IsEnum)
             {
                 MaxLength = 50;
-                DbType = DbType.AnsiString;
+                DbType = DbType.String;
             }
 
-            //if (property.PropertyType == typeof(ReferenceCollection))
-            //{
-            //    DbType = DbType.String;
-            //    MaxLength = int.MaxValue;
-            //    ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
-            //}
+            if (property.PropertyType == typeof(ReferenceCollection))
+            {
+                DbType = DbType.String;
+                MaxLength = int.MaxValue;
+                ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
+            }
         }
 
         public ColumnMapping Nullable()
@@ -85,7 +85,7 @@ namespace Nevermore
         {
             get
             {
-                if (maxLength == 0 && (dbType == DbType.String || dbType == DbType.AnsiString))
+                if (maxLength == 0 && (dbType == DbType.String))
                 {
                     MaxLength = 100;
                 }

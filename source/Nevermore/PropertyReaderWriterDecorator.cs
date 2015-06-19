@@ -1,4 +1,4 @@
-﻿namespace Nevermore
+namespace Nevermore
 {
     public class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>
     {

@@ -28,11 +28,20 @@ namespace Nevermore
 
         public DocumentMap Get(Type type)
         {
-            DocumentMap mapping;
-            if (!mappings.TryGetValue(type, out mapping))
+            DocumentMap mapping = null;
+
+            // Walk up the inheritance chain until we find a mapping
+            var currentType = type;
+            while (currentType != null && !mappings.TryGetValue(currentType, out mapping))
+            {
+                currentType = currentType.BaseType;
+            } 
+
+            if (mapping == null)
             {
                 throw new KeyNotFoundException(string.Format("A mapping for the type '{0}' has not been defined", type.Name));
             }
+
             return mapping;
         }
     }

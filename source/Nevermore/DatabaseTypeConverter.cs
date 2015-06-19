@@ -57,10 +57,10 @@ namespace Nevermore
                 return DbType.String;
             }
 
-            //if (propertyType == typeof(ReferenceCollection))
-            //{
-            //    return DbType.String;
-            //}
+            if (propertyType == typeof(ReferenceCollection))
+            {
+                return DbType.String;
+            }
 
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))

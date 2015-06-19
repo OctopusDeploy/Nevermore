@@ -11,7 +11,7 @@ namespace Nevermore
         readonly CommandParameters parameters = new CommandParameters();
         readonly StringBuilder whereClauses = new StringBuilder();
         string viewOrTableName;
-        string orderBy = "K";
+        string orderBy = "Id";
         string tableHint;
         string storedProcedureName;
 
