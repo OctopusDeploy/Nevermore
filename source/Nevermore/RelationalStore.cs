@@ -23,11 +23,11 @@ namespace Nevermore
             IContractResolver contractResolver,
             IEnumerable<JsonConverter> converters,
             JsonSerializerSettings jsonSettings = null,
-            KeyAllocator keyAllocator = null)
+            int? keyAllocationBlockSize = null)
         {
             this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
             this.mappings = mappings;
-            this.keyAllocator = keyAllocator ?? new KeyAllocator(this, 20);
+            keyAllocator = new KeyAllocator(this, keyAllocationBlockSize ?? 20);
 
             jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
             jsonSettings.Converters.Add(new StringEnumConverter());
