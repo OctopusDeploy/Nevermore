@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Nevermore.IntegrationTests
 {
@@ -62,7 +64,7 @@ namespace Nevermore.IntegrationTests
         static void InitializeStore()
         {
             Mappings = RelationalStoreFactory.CreateMappings();
-            Store = StorageEngine.RelationalStore;
+            Store = new RelationalStore(TestDatabaseConnectionString, TestDatabaseName, Mappings, new DefaultContractResolver(), new List<JsonConverter>());
         }
 
         static void InstallSchema()

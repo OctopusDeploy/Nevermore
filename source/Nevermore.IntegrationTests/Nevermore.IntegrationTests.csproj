@@ -69,6 +69,8 @@
     <Compile Include="KeyAllocatorFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RelationalStoreFactory.cs" />
+    <Compile Include="RelationalStoreFixture.cs" />
+    <Compile Include="SchemaGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
