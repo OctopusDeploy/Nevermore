@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore.IntegrationTests
 {

@@ -65,8 +65,10 @@
     <Compile Include="DatabaseMigrator.cs" />
     <Compile Include="FixtureWithRelationalStore.cs" />
     <Compile Include="IntegrationTestDatabase.cs" />
+    <Compile Include="IRelationalStoreFactory.cs" />
     <Compile Include="KeyAllocatorFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RelationalStoreFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

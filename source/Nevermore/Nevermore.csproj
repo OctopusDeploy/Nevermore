@@ -69,7 +69,6 @@
     <Compile Include="IPropertyReaderWriter.cs" />
     <Compile Include="IQueryBuilder.cs" />
     <Compile Include="IRelationalStore.cs" />
-    <Compile Include="IRelationalStoreFactory.cs" />
     <Compile Include="IRelationalTransaction.cs" />
     <Compile Include="IStoreInitializer.cs" />
     <Compile Include="KeyAllocator.cs" />
@@ -80,7 +79,6 @@
     <Compile Include="ReferencingDocument.cs" />
     <Compile Include="RelationalMappings.cs" />
     <Compile Include="RelationalStore.cs" />
-    <Compile Include="RelationalStoreFactory.cs" />
     <Compile Include="RelationalTransaction.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="StoreInitializer.cs" />
