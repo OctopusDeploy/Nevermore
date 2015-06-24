@@ -101,7 +101,7 @@ namespace Nevermore.IntegrationTests
 
         static void AssertNext(KeyAllocator allocator, string collection, int expected)
         {
-            Assert.Equal(allocator.NextId(collection), expected);
+            Assert.Equal(expected, allocator.NextId(collection));
         }
     }
 }

@@ -2,19 +2,19 @@ using System;
 
 namespace Nevermore.IntegrationTests
 {
-    public abstract class FixtureWithRelationalStore : IDisposable
+    public class FixtureWithRelationalStore : IDisposable
     {
-        protected IRelationalStore Store
+        public IRelationalStore Store
         {
             get { return IntegrationTestDatabase.Store; }
         }
 
-        protected RelationalMappings Mappings
+        public RelationalMappings Mappings
         {
             get { return IntegrationTestDatabase.Mappings; }
         }
 
-        protected FixtureWithRelationalStore()
+        public FixtureWithRelationalStore()
         {
             IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
@@ -24,7 +24,6 @@ namespace Nevermore.IntegrationTests
 
         void IDisposable.Dispose()
         {
-            
         }
         
         public int CountOf<T>() where T : class
