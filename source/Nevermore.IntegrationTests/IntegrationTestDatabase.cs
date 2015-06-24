@@ -23,7 +23,7 @@ namespace Nevermore.IntegrationTests
             };
             TestDatabaseConnectionString = builder.ToString();
 
-            StorageEngine = new RelationalStoreFactory(TestDatabaseConnectionString, TestDatabaseName, GetMappings());
+            StorageEngine = new RelationalStoreFactory(TestDatabaseConnectionString, TestDatabaseName);
 
             DropDatabase();
             CreateDatabase();
@@ -61,6 +61,7 @@ namespace Nevermore.IntegrationTests
 
         static void InitializeStore()
         {
+            Mappings = RelationalStoreFactory.CreateMappings();
             Store = StorageEngine.RelationalStore;
         }
 
