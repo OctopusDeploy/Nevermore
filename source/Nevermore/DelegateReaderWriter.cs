@@ -19,13 +19,13 @@ namespace Nevermore
 
         public object Read(object target)
         {
-            return reader((TTarget) target);
+            return reader((TTarget)target);
         }
 
         public void Write(object target, object value)
         {
             if (writer != null)
-                writer((TTarget) target, (TProperty) value);
+                writer((TTarget)target, (TProperty)value);
         }
     }
 }

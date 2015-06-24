@@ -5,6 +5,12 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore", "Nevermore\Nevermore.csproj", "{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Tests", "Nevermore.Tests\Nevermore.Tests.csproj", "{10E71E20-EBBD-4F03-87E8-5958B7E7B996}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.IntegrationTests", "Nevermore.IntegrationTests\Nevermore.IntegrationTests.csproj", "{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +21,20 @@ Global
 		{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10E71E20-EBBD-4F03-87E8-5958B7E7B996}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10E71E20-EBBD-4F03-87E8-5958B7E7B996}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10E71E20-EBBD-4F03-87E8-5958B7E7B996}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10E71E20-EBBD-4F03-87E8-5958B7E7B996}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{10E71E20-EBBD-4F03-87E8-5958B7E7B996} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
+		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 	EndGlobalSection
 EndGlobal

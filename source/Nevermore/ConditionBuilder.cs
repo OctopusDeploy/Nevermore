@@ -8,13 +8,13 @@ namespace Nevermore
     /// </summary>
     public class ConditionBuilder
     {
+        const string AndString = " AND ";
+        const string OrString = " OR ";
         readonly StringBuilder buffer = new StringBuilder(128);
         uint groupOperators;
         uint groupUsage;
         int count;
         int lastGoodClose;
-        const string AndString = " AND ";
-        const string OrString = " OR ";
 
         public void PushAnd()
         {
@@ -111,19 +111,19 @@ namespace Nevermore
             {
                 if (value)
                 {
-                    if (stack % 2 != 0) return;
+                    if (stack%2 != 0) return;
                     stack++;
                 }
                 else
                 {
-                    if (stack % 2 != 1) return;
+                    if (stack%2 != 1) return;
                     stack--;
                 }
             }
 
             public static bool Peek(ref uint stack)
             {
-                return stack % 2 == 1;
+                return stack%2 == 1;
             }
         }
     }

@@ -8,7 +8,7 @@ namespace Nevermore
     {
         readonly IRelationalStore store;
         readonly int blockSize;
-        readonly ConcurrentDictionary<string, Allocation> allocations = new ConcurrentDictionary<string, Allocation>(StringComparer.OrdinalIgnoreCase); 
+        readonly ConcurrentDictionary<string, Allocation> allocations = new ConcurrentDictionary<string, Allocation>(StringComparer.OrdinalIgnoreCase);
 
         public KeyAllocator(IRelationalStore store, int blockSize)
         {
@@ -32,10 +32,10 @@ namespace Nevermore
             readonly IRelationalStore store;
             readonly string collectionName;
             readonly int blockSize;
+            readonly object sync = new object();
             volatile int blockStart;
             volatile int blockNext;
             volatile int blockFinish;
-            readonly object sync = new object();
 
             public Allocation(IRelationalStore store, string collectionName, int blockSize)
             {
@@ -102,6 +102,5 @@ namespace Nevermore
                 return string.Format("{0} to {1} (next: {2})", blockStart, blockNext, blockFinish);
             }
         }
-
     }
 }

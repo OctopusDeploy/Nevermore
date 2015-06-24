@@ -1,3 +1,5 @@
+using System;
+
 namespace Nevermore
 {
     public interface IPropertyReaderWriter<TCast>

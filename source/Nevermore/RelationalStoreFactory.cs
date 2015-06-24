@@ -1,53 +1,55 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Nevermore
 {
     public class RelationalStoreFactory : IRelationalStoreFactory
     {
         readonly string connectionString;
-        readonly IMasterKeyEncryption masterKey;
+        private readonly string applicationName;
+        private readonly IEnumerable<DocumentMap> mappers;
+        private readonly JsonSerializerSettings jsonSettings;
+        private readonly IContractResolver contractResolver;
+        private readonly IEnumerable<JsonConverter> converters;
+        private readonly KeyAllocator keyAllocator;
         readonly Lazy<RelationalStore> relationalStore;
 
-        public RelationalStoreFactory(string connectionString, IMasterKeyEncryption masterKey)
+        public RelationalStoreFactory(string connectionString, string applicationName, IEnumerable<DocumentMap> mappers,
+            IContractResolver contractResolver = null, JsonSerializerSettings jsonSettings = null, IEnumerable<JsonConverter> converters = null, KeyAllocator keyAllocator = null)
         {
             this.connectionString = connectionString;
-            this.masterKey = masterKey;
+            this.applicationName = applicationName;
+            this.mappers = mappers;
+            this.jsonSettings = jsonSettings;
+            this.contractResolver = contractResolver ?? new DefaultContractResolver();
+            this.converters = converters ?? new List<JsonConverter>();
+            this.keyAllocator = keyAllocator;
 
             relationalStore = new Lazy<RelationalStore>(InitializeRelationalStore);
         }
 
-        public static RelationalMappings CreateMappings()
+        public RelationalStore RelationalStore
+        {
+            get { return relationalStore.Value; }
+        }
+
+        public static RelationalMappings CreateMappings(IEnumerable<DocumentMap> mappers)
         {
             var mappings = new RelationalMappings();
 
-            var mappers = (
-                from type in typeof(DeploymentEnvironment).Assembly.GetTypes()
-                where typeof(DocumentMap).IsAssignableFrom(type)
-                where type.IsClass && !type.IsAbstract && !type.ContainsGenericParameters
-                select Activator.CreateInstance(type) as DocumentMap).ToList();
-            
             mappings.Install(mappers);
-            
-            mappings.Install(new DocumentMap[]
-            {
-                new ConfigurationMapping<UpgradeAvailability>(),
-                new ConfigurationMapping<License>(),
-                new ConfigurationMapping<BuiltInRepositoryConfiguration>(),
-                new ConfigurationMapping<ActivityLogStorageConfiguration>(),
-                new ConfigurationMapping<SmtpConfiguration>(),
-                new ConfigurationMapping<MaintenanceConfiguration>(),
-                new ConfigurationMapping<ArtifactStorageConfiguration>()
-            });
 
             return mappings;
         }
 
         RelationalStore InitializeRelationalStore()
         {
-            return new RelationalStore(connectionString, CreateMappings(), masterKey);
+            return new RelationalStore(connectionString, applicationName, CreateMappings(mappers), contractResolver, converters, jsonSettings, keyAllocator);
         }
-
-        public RelationalStore RelationalStore { get { return relationalStore.Value; } }
     }
 }

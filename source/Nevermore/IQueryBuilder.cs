@@ -9,10 +9,9 @@ namespace Nevermore
         IQueryBuilder<TRecord> OrderBy(string orderByClause);
         IQueryBuilder<TRecord> Parameter(string name, object value);
         IQueryBuilder<TRecord> LikeParameter(string name, object value);
-        IQueryBuilder<TRecord> View(string viewName); 
+        IQueryBuilder<TRecord> View(string viewName);
         IQueryBuilder<TRecord> Table(string tableName);
-        IQueryBuilder<TRecord> Hint(string tableHint); 
-
+        IQueryBuilder<TRecord> Hint(string tableHint);
         int Count();
         TRecord First();
         List<TRecord> ToList(int skip, int take);

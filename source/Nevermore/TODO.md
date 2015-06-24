@@ -1,5 +1,2 @@
-﻿EncryptedValueConverter
-
-ReferenceCollectionReaderWriter
+﻿ReferenceCollectionReaderWriter
 SemanticVersionReaderWriter
-Application name

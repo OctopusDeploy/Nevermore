@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -18,11 +17,7 @@ namespace Nevermore
         readonly IKeyAllocator keyAllocator;
         readonly SqlConnection connection;
         readonly SqlTransaction transaction;
-        // TODO: Remove all this
-        readonly List<string> commands = new List<string>();
-        readonly object sync = new object();
-        static readonly ConcurrentDictionary<RelationalTransaction, bool> CurrentTransactions = new ConcurrentDictionary<RelationalTransaction, bool>();
-        
+
         public RelationalTransaction(string connectionString, IsolationLevel isolationLevel, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings, IKeyAllocator keyAllocator)
         {
             this.jsonSerializerSettings = jsonSerializerSettings;
@@ -32,7 +27,6 @@ namespace Nevermore
             connection = new SqlConnection(connectionString);
             connection.Open();
             transaction = connection.BeginTransaction(isolationLevel);
-            CurrentTransactions.TryAdd(this, true);
         }
 
         public T Load<T>(string id) where T : class
@@ -68,7 +62,7 @@ namespace Nevermore
                 .Stream().ToArray();
 
             var items = allIds.Zip<string, T, Tuple<string, T>>(results, Tuple.Create);
-            foreach (var pair in items) 
+            foreach (var pair in items)
                 if (pair.Item2 == null) throw new ResourceNotFoundException(pair.Item1);
             return results;
         }
@@ -90,19 +84,15 @@ namespace Nevermore
 
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId) where TDocument : class
         {
-            var key = keyAllocator.NextId(mappings.Get(instance.GetType()).TableName);
-
             var mapping = mappings.Get(instance.GetType());
-            var generatedId = mapping.IdPrefix + "-" + key;
-
             var statement = InsertStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "INSERT INTO dbo.[{0}] ({1}) values ({2})",
                 tableName ?? mapping.TableName,
-                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Concat(new[] { "Id", "Json" })),
-                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Concat(new[] { "@Id", "@Json" }))
+                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Concat(new[] {"Id", "Json"})),
+                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Concat(new[] {"@Id", "@Json"}))
                 ));
 
-            var id = string.IsNullOrEmpty(customAssignedId) ? generatedId : customAssignedId;
+            var id = string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId;
 
             var parameters = InstanceToParameters(instance, mapping);
             if (parameters["Id"] == null || string.IsNullOrWhiteSpace((string)parameters["Id"]))
@@ -133,6 +123,19 @@ namespace Nevermore
             }
         }
 
+        public string AllocateId(Type documentType)
+        {
+            var mapping = mappings.Get(documentType);
+            return AllocateId(mapping);
+        }
+
+        string AllocateId(DocumentMap mapping)
+        {
+            var key = keyAllocator.NextId(mapping.TableName);
+            var generatedId = mapping.IdPrefix + "-" + key;
+            return generatedId;
+        }
+
         public void Update<TDocument>(TDocument instance) where TDocument : class
         {
             var mapping = mappings.Get(instance.GetType());
@@ -140,7 +143,7 @@ namespace Nevermore
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] SET {1} Json = @Json WHERE Id = @Id",
                 mapping.TableName,
-                mapping.IndexedColumns.Count > 0 ? string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName)) + ", ": ""));
+                mapping.IndexedColumns.Count > 0 ? string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName)) + ", " : ""));
 
             using (var command = CreateCommand(statement, InstanceToParameters(instance, mapping)))
             {
@@ -161,7 +164,7 @@ namespace Nevermore
 
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
-            using (var command = CreateCommand(statement, new CommandParameters { { "Id", mapping.IdColumn.ReaderWriter.Read(instance) } }))
+            using (var command = CreateCommand(statement, new CommandParameters {{"Id", mapping.IdColumn.ReaderWriter.Read(instance)}}))
             {
                 try
                 {
@@ -176,7 +179,7 @@ namespace Nevermore
 
         public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args)
         {
-            var mapping = mappings.Get(typeof(T));
+            var mapping = mappings.Get(typeof (T));
 
             using (var command = CreateCommand(query, args))
             {
@@ -197,7 +200,7 @@ namespace Nevermore
             {
                 try
                 {
-                    return Stream<T>(command, projectionMapper);
+                    return Stream(command, projectionMapper);
                 }
                 catch (SqlException ex)
                 {
@@ -228,7 +231,7 @@ namespace Nevermore
                         // If the deserialized object is not the desired type, then we are querying for a specific sub-type
                         // and this record is a different sub-type, and should be excluded from the result-set. 
                         if (deserialized is T)
-                            instance = (T) deserialized;
+                            instance = (T)deserialized;
                         else
                             continue;
                     }
@@ -275,11 +278,11 @@ namespace Nevermore
                     yield return projectionMapper(mapper);
                 }
             }
-        } 
+        }
 
         public IQueryBuilder<T> Query<T>() where T : class
         {
-            return new QueryBuilder<T>(this, mappings.Get(typeof(T)).TableName);
+            return new QueryBuilder<T>(this, mappings.Get(typeof (T)).TableName);
         }
 
         CommandParameters InstanceToParameters(object instance, DocumentMap mapping)
@@ -293,7 +296,7 @@ namespace Nevermore
                 var value = c.ReaderWriter.Read(instance);
                 if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
                 {
-                    var attemptedLength = ((string) value).Length;
+                    var attemptedLength = ((string)value).Length;
                     if (attemptedLength > c.MaxLength)
                     {
                         throw new StringTooLongException(string.Format("An attempt was made to store {0} characters in the {1}.{2} column, which only allows {3} characters.", attemptedLength, mapping.TableName, c.ColumnName, c.MaxLength));
@@ -312,7 +315,7 @@ namespace Nevermore
                 try
                 {
                     var result = command.ExecuteScalar();
-                    return (T)AmazingConverter.Convert(result, typeof(T));
+                    return (T)AmazingConverter.Convert(result, typeof (T));
                 }
                 catch (SqlException ex)
                 {
@@ -354,11 +357,7 @@ namespace Nevermore
             var command = new SqlCommand(statement, connection, transaction);
             if (args != null)
             {
-                args.ContributeTo(command);                
-            }
-            lock (sync)
-            {
-                commands.Add(command.CommandText);                
+                args.ContributeTo(command);
             }
             return command;
         }
@@ -372,36 +371,11 @@ namespace Nevermore
         {
             transaction.Dispose();
             connection.Dispose();
-            bool whoCares;
-            CurrentTransactions.TryRemove(this, out whoCares);
         }
 
-        Exception WrapException(SqlCommand command, Exception ex)
+        static Exception WrapException(SqlCommand command, Exception ex)
         {
-            var sqlEx = ex as SqlException;
-            if (sqlEx != null && sqlEx.Number == 1205)
-            {
-                var builder = new StringBuilder();
-                builder.AppendLine(ex.Message);
-                builder.AppendLine("Current transactions: ");
-                var id = 0;
-                foreach (var item in CurrentTransactions)
-                {
-                    builder.AppendLine("  Transaction " + id);
-                    lock (item.Key.sync)
-                    {
-                        foreach (var line in item.Key.commands)
-                        {
-                            builder.AppendLine("    " + line);
-                        }                        
-                    }
-                    id++;
-                }
-
-                throw new Exception(builder.ToString());
-            }
-
-            return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText + Environment.NewLine + " with parameters: " + string.Join(", ", command.Parameters.OfType<SqlParameter>().Select(p => "@" + p.ParameterName + " = '" + p.Value + "'")), ex);
+            return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText, ex);
         }
 
         class ProjectionMapper : IProjectionMapper
@@ -419,7 +393,7 @@ namespace Nevermore
 
             public TResult Map<TResult>(string prefix)
             {
-                var mapping = mappings.Get(typeof(TResult));
+                var mapping = mappings.Get(typeof (TResult));
                 var json = reader[GetColumnName(prefix, "JSON")].ToString();
 
                 var instance = JsonConvert.DeserializeObject<TResult>(json, jsonSerializerSettings);

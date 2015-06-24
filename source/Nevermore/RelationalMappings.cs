@@ -35,7 +35,7 @@ namespace Nevermore
             while (currentType != null && !mappings.TryGetValue(currentType, out mapping))
             {
                 currentType = currentType.BaseType;
-            } 
+            }
 
             if (mapping == null)
             {

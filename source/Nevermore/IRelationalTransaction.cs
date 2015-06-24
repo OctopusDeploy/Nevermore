@@ -7,7 +7,8 @@ namespace Nevermore
     public interface IRelationalTransaction : IDisposable
     {
         /// <summary>
-        /// Executes a query that returns a scalar value (e.g., an INSERT or UPDATE query that returns the number of rows, or a SELECT query that returns a count).
+        /// Executes a query that returns a scalar value (e.g., an INSERT or UPDATE query that returns the number of rows, or a
+        /// SELECT query that returns a count).
         /// </summary>
         /// <typeparam name="TResult">The scalar value type to return.</typeparam>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
@@ -19,7 +20,10 @@ namespace Nevermore
         /// Executes a query that returns a data reader, and allows you to manually read the fields.
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT DISTINCT ProjectId FROM Release...</c></param>
-        /// <param name="readerCallback">A callback that will be invoked with the SQL data reader. The reader will be disposed after the callback returns.</param>
+        /// <param name="readerCallback">
+        /// A callback that will be invoked with the SQL data reader. The reader will be disposed
+        /// after the callback returns.
+        /// </param>
         void ExecuteReader(string query, Action<IDataReader> readerCallback);
 
         /// <summary>
@@ -27,7 +31,10 @@ namespace Nevermore
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT DISTINCT ProjectId FROM Release...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
-        /// <param name="readerCallback">A callback that will be invoked with the SQL data reader. The reader will be disposed after the callback returns.</param>
+        /// <param name="readerCallback">
+        /// A callback that will be invoked with the SQL data reader. The reader will be disposed
+        /// after the callback returns.
+        /// </param>
         void ExecuteReader(string query, CommandParameters args, Action<IDataReader> readerCallback);
 
         /// <summary>
@@ -57,7 +64,8 @@ namespace Nevermore
         TDocument Load<TDocument>(string id) where TDocument : class;
 
         /// <summary>
-        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is, the results may contain less items than the number of ID's queried for).
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
@@ -65,7 +73,7 @@ namespace Nevermore
         TDocument[] Load<TDocument>(IEnumerable<string> ids) where TDocument : class;
 
         /// <summary>
-        /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException"/>.
+        /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
@@ -73,7 +81,8 @@ namespace Nevermore
         TDocument LoadRequired<TDocument>(string id) where TDocument : class;
 
         /// <summary>
-        /// Loads a set of documents by their ID's. If any of the documents are not found, a <see cref="ResourceNotFoundException"/> will be thrown.
+        /// Loads a set of documents by their ID's. If any of the documents are not found, a
+        /// <see cref="ResourceNotFoundException" /> will be thrown.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
@@ -81,14 +90,17 @@ namespace Nevermore
         TDocument[] LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class;
 
         /// <summary>
-        /// Immediately inserts a new item into the default table for the document type. The item will have an automatically assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as <see cref="M:Insert"/> returns.
+        /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
+        /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
+        /// <see cref="M:Insert" /> returns.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
         void Insert<TDocument>(TDocument instance) where TDocument : class;
 
         /// <summary>
-        /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as <see cref="M:Insert"/> returns.
+        /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
+        /// value will be visible in the <code>Id</code> property of the object as soon as <see cref="M:Insert" /> returns.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="tableName">The name of the table to insert the document into.</param>
@@ -96,7 +108,8 @@ namespace Nevermore
         void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class;
 
         /// <summary>
-        /// Immediately inserts a new item into the default table for the document type. Uses a specific ID rather than automatically generating one.
+        /// Immediately inserts a new item into the default table for the document type. Uses a specific ID rather than
+        /// automatically generating one.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
@@ -130,5 +143,7 @@ namespace Nevermore
         /// Commits the current pending transaction.
         /// </summary>
         void Commit();
+
+        string AllocateId(Type documentType);
     }
 }

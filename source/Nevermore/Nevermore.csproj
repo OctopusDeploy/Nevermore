@@ -30,8 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="DbUp">
+      <HintPath>..\packages\dbup.3.2.1\lib\NET35\DbUp.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,9 +53,18 @@
     <Compile Include="ConfigurationMapping.cs" />
     <Compile Include="DatabaseTypeConverter.cs" />
     <Compile Include="DelegateReaderWriter.cs" />
+    <Compile Include="DeletionAction.cs" />
+    <Compile Include="DeletionContext.cs" />
     <Compile Include="DocumentMap.cs" />
-    <Compile Include="EncryptedValueConverter.cs" />
+    <Compile Include="ExceptionExtensions.cs" />
+    <Compile Include="IDatabaseMigrator.cs" />
+    <Compile Include="IDeleteCommand.cs" />
+    <Compile Include="IDocument.cs" />
+    <Compile Include="IDocumentUsageFinder.cs" />
+    <Compile Include="IId.cs" />
+    <Compile Include="IInitializeRelationalStore.cs" />
     <Compile Include="IKeyAllocator.cs" />
+    <Compile Include="INamed.cs" />
     <Compile Include="IProjectionMapper.cs" />
     <Compile Include="IPropertyReaderWriter.cs" />
     <Compile Include="IQueryBuilder.cs" />
@@ -64,21 +77,24 @@
     <Compile Include="PropertyReaderFactory.cs" />
     <Compile Include="PropertyReaderWriterDecorator.cs" />
     <Compile Include="QueryBuilder.cs" />
-    <Compile Include="ReferenceCollectionReaderWriter.cs" />
-    <Compile Include="RelationalJsonContractResolver.cs" />
+    <Compile Include="ReferencingDocument.cs" />
     <Compile Include="RelationalMappings.cs" />
     <Compile Include="RelationalStore.cs" />
     <Compile Include="RelationalStoreFactory.cs" />
     <Compile Include="RelationalTransaction.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
-    <Compile Include="SemanticVersionReaderWriter.cs" />
+    <Compile Include="StoreInitializer.cs" />
     <Compile Include="StringTooLongException.cs" />
     <Compile Include="UniqueConstraintViolationException.cs" />
     <Compile Include="UniqueRule.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
     <None Include="TODO.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="UpgradeScripts\Script0001 - Initial schema.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

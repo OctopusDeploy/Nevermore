@@ -10,7 +10,7 @@ namespace Nevermore
     {
         protected DocumentMap()
         {
-            InitializeDefault(typeof(TDocument));
+            InitializeDefault(typeof (TDocument));
         }
 
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
@@ -58,14 +58,14 @@ namespace Nevermore
 
         protected UniqueRule Unique(string constraintName, string columnName, string errorMessage)
         {
-            var unique = new UniqueRule(constraintName, columnName) { Message = errorMessage };
+            var unique = new UniqueRule(constraintName, columnName) {Message = errorMessage};
             UniqueConstraints.Add(unique);
             return unique;
         }
 
         protected UniqueRule Unique(string constraintName, string[] columnNames, string errorMessage)
         {
-            var unique = new UniqueRule(constraintName, columnNames) { Message = errorMessage };
+            var unique = new UniqueRule(constraintName, columnNames) {Message = errorMessage};
             UniqueConstraints.Add(unique);
             return unique;
         }

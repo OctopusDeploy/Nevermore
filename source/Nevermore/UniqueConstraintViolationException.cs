@@ -7,7 +7,6 @@ namespace Nevermore
         public UniqueConstraintViolationException(string message)
             : base(message)
         {
-
         }
     }
 }

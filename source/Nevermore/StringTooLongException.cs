@@ -6,7 +6,6 @@ namespace Nevermore
     {
         public StringTooLongException(string message) : base(message)
         {
-            
         }
     }
 }

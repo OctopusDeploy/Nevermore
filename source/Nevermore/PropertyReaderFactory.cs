@@ -17,7 +17,7 @@ namespace Nevermore
                 result = Readers[key] as IPropertyReaderWriter<TCast>;
             }
 
-            if (result != null) 
+            if (result != null)
                 return result;
 
             var propertyInfo = objectType.GetProperty(propertyName);
@@ -25,12 +25,12 @@ namespace Nevermore
             {
                 if (!typeof (TCast).IsAssignableFrom(propertyInfo.PropertyType))
                 {
-                    throw new InvalidOperationException(string.Format("Property type '{0}' for property '{1}.{2}' cannot be converted to type '{3}", propertyInfo.PropertyType, propertyInfo.DeclaringType == null ? "??" : propertyInfo.DeclaringType.Name, propertyInfo.Name, typeof(TCast).Name));
+                    throw new InvalidOperationException(string.Format("Property type '{0}' for property '{1}.{2}' cannot be converted to type '{3}", propertyInfo.PropertyType, propertyInfo.DeclaringType == null ? "??" : propertyInfo.DeclaringType.Name, propertyInfo.Name, typeof (TCast).Name));
                 }
 
-                var delegateReaderType = typeof(Func<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
-                var delegateWriterType = typeof(Action<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
-                var readerType = typeof(DelegatePropertyReaderWriter<,,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType, typeof(TCast));
+                var delegateReaderType = typeof (Func<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
+                var delegateWriterType = typeof (Action<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
+                var readerType = typeof (DelegatePropertyReaderWriter<,,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType, typeof (TCast));
                 var propertyGetterMethodInfo = propertyInfo.GetGetMethod();
                 if (propertyGetterMethodInfo == null)
                 {
@@ -52,12 +52,12 @@ namespace Nevermore
             else
             {
                 var fieldInfo = objectType.GetField(propertyName, BindingFlags.Instance | BindingFlags.NonPublic);
-                if (fieldInfo == null) 
+                if (fieldInfo == null)
                     throw new InvalidOperationException(string.Format("The type '{0}' does not define a property or field named '{1}'", objectType.FullName, propertyName));
 
-                if (!typeof(TCast).IsAssignableFrom(fieldInfo.FieldType))
+                if (!typeof (TCast).IsAssignableFrom(fieldInfo.FieldType))
                 {
-                    throw new InvalidOperationException(string.Format("Field type '{0}' for field '{1}.{2}' cannot be converted to type '{3}", fieldInfo.FieldType, fieldInfo.DeclaringType == null ? "??" : fieldInfo.DeclaringType.Name, fieldInfo.Name, typeof(TCast).Name));
+                    throw new InvalidOperationException(string.Format("Field type '{0}' for field '{1}.{2}' cannot be converted to type '{3}", fieldInfo.FieldType, fieldInfo.DeclaringType == null ? "??" : fieldInfo.DeclaringType.Name, fieldInfo.Name, typeof (TCast).Name));
                 }
 
                 result = new FieldReaderWriter<TCast>(fieldInfo);
@@ -86,7 +86,7 @@ namespace Nevermore
 
             public void Write(object target, TCast value)
             {
-                TReturn returnble = (TReturn)AmazingConverter.Convert(value, typeof(TReturn));
+                var returnble = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
                 writer((TInput)target, returnble);
             }
         }

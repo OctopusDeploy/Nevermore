@@ -1,9 +1,12 @@
+using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Reflection;
 using System.Runtime.Serialization.Formatters;
+using DbUp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Nevermore
 {
@@ -14,19 +17,46 @@ namespace Nevermore
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         readonly KeyAllocator keyAllocator;
 
-        public RelationalStore(string connectionString, RelationalMappings mappings, IMasterKeyEncryption masterKey)
+        public RelationalStore(string connectionString,
+            string applicationName,
+            RelationalMappings mappings,
+            IContractResolver contractResolver,
+            IEnumerable<JsonConverter> converters,
+            JsonSerializerSettings jsonSettings = null,
+            KeyAllocator keyAllocator = null)
         {
+            this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
             this.mappings = mappings;
-            this.connectionString = SetConnectionStringOptions(connectionString);
-            keyAllocator = new KeyAllocator(this, 20);
+            this.keyAllocator = keyAllocator ?? new KeyAllocator(this, 20);
 
-            jsonSettings.ContractResolver = new RelationalJsonContractResolver(mappings, masterKey);
+            jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
             jsonSettings.Converters.Add(new StringEnumConverter());
             jsonSettings.Converters.Add(new VersionConverter());
-            jsonSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-            jsonSettings.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
-            jsonSettings.TypeNameHandling = TypeNameHandling.Auto;
-            jsonSettings.TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple;
+            foreach (var converter in converters)
+            {
+                jsonSettings.Converters.Add(converter);
+            }
+
+            RunMigrations();
+        }
+
+        private void RunMigrations()
+        {
+            var upgrader =
+                DeployChanges.To
+                    .SqlDatabase(ConnectionString)
+                    .WithScriptsAndCodeEmbeddedInAssembly(typeof (RelationalStore).Assembly)
+                    .LogScriptOutput()
+                    .WithVariable("databaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)
+                    .Build();
+
+            var result = upgrader.PerformUpgrade();
+
+            if (!result.Successful)
+            {
+                throw new Exception("Database migration failed: " + result.Error.GetErrorSummary(), result.Error);
+            }
+
         }
 
         public string ConnectionString
@@ -49,13 +79,27 @@ namespace Nevermore
             return new RelationalTransaction(connectionString, isolationLevel, jsonSettings, mappings, keyAllocator);
         }
 
-        static string SetConnectionStringOptions(string connectionString)
+        static JsonSerializerSettings SetJsonSerializerSettings(IContractResolver contractResolver)
         {
-            var builder = new SqlConnectionStringBuilder(connectionString);
-            builder.MultipleActiveResultSets = true;
-            builder.Enlist = false;
-            builder.Pooling = true;
-            builder.ApplicationName = "Octopus " + Assembly.GetExecutingAssembly().GetFileVersion();
+            return new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind,
+                TypeNameHandling = TypeNameHandling.Auto,
+                TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple
+            };
+        }
+
+        static string SetConnectionStringOptions(string connectionString, string applicationName)
+        {
+            var builder = new SqlConnectionStringBuilder(connectionString)
+            {
+                MultipleActiveResultSets = true,
+                Enlist = false,
+                Pooling = true,
+                ApplicationName = applicationName
+            };
             return builder.ToString();
         }
     }

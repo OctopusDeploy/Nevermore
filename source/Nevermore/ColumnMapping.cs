@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
 
@@ -6,6 +7,14 @@ namespace Nevermore
 {
     public class ColumnMapping
     {
+        public const int DefaultMaxStringLength = 200;
+        public const int DefaultMaxIdLength = 50;
+        public const int DefaultMaxEnumLength = 50;
+        // Thumbprints today are 40 (SHA-1), 128 this allows room for alternative hash algorithms
+        public const int DefaultMaxThumbprintLength = 128;
+        // Theoretical maximum Uri is ~2048 but Nuget feed Uris will be shorter
+        public const int DefaultMaxUriLength = 512;
+
         DbType? dbType;
         int maxLength;
 
@@ -15,7 +24,7 @@ namespace Nevermore
                 throw new ArgumentNullException("columnName");
             if (readerWriter == null)
                 throw new ArgumentNullException("readerWriter");
-            
+
             this.dbType = dbType;
             ColumnName = columnName;
             ReaderWriter = readerWriter;
@@ -37,34 +46,15 @@ namespace Nevermore
                 DbType = DbType.String;
                 if (maxLength == 0)
                 {
-                    MaxLength = 50;           
+                    MaxLength = DefaultMaxIdLength;
                 }
             }
 
             if (property.PropertyType.IsEnum)
             {
-                MaxLength = 50;
+                MaxLength = DefaultMaxEnumLength;
                 DbType = DbType.String;
             }
-
-            if (property.PropertyType == typeof(ReferenceCollection))
-            {
-                DbType = DbType.String;
-                MaxLength = int.MaxValue;
-                ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
-            }
-        }
-
-        public ColumnMapping Nullable()
-        {
-            IsNullable = true;
-            return this;
-        }
-
-        public ColumnMapping WithMaxLength(int max)
-        {
-            maxLength = max;
-            return this;
         }
 
         public bool IsNullable { get; set; }
@@ -87,7 +77,7 @@ namespace Nevermore
             {
                 if (maxLength == 0 && (dbType == DbType.String))
                 {
-                    MaxLength = 100;
+                    MaxLength = DefaultMaxStringLength;
                 }
                 return maxLength;
             }
@@ -96,5 +86,17 @@ namespace Nevermore
 
         public PropertyInfo Property { get; private set; }
         public IPropertyReaderWriter<object> ReaderWriter { get; set; }
+
+        public ColumnMapping Nullable()
+        {
+            IsNullable = true;
+            return this;
+        }
+
+        public ColumnMapping WithMaxLength(int max)
+        {
+            maxLength = max;
+            return this;
+        }
     }
 }

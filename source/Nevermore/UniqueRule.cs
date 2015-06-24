@@ -1,3 +1,5 @@
+using System;
+
 namespace Nevermore
 {
     public class UniqueRule
@@ -9,7 +11,6 @@ namespace Nevermore
         }
 
         public string Message { get; set; }
-
         public string ConstraintName { get; set; }
         public string[] Columns { get; set; }
     }
