@@ -10,12 +10,12 @@ namespace Nevermore.IntegrationTests
         readonly string connectionString;
         private readonly string applicationName;
         private readonly JsonSerializerSettings jsonSettings;
-        private readonly int? blockSize;
+        private readonly int blockSize;
         private readonly IContractResolver contractResolver;
         private readonly IEnumerable<JsonConverter> converters;
         readonly Lazy<RelationalStore> relationalStore;
 
-        public RelationalStoreFactory(string connectionString, string applicationName, IContractResolver contractResolver = null, JsonSerializerSettings jsonSettings = null, IEnumerable<JsonConverter> converters = null, int? blockSize = null)
+        public RelationalStoreFactory(string connectionString, string applicationName, IContractResolver contractResolver = null, JsonSerializerSettings jsonSettings = null, IEnumerable<JsonConverter> converters = null, int blockSize = 20)
         {
             this.connectionString = connectionString;
             this.applicationName = applicationName;
@@ -44,7 +44,7 @@ namespace Nevermore.IntegrationTests
 
         RelationalStore InitializeRelationalStore()
         {
-            return new RelationalStore(connectionString, applicationName, CreateMappings(), contractResolver, converters, jsonSettings, blockSize);
+            return new RelationalStore(connectionString, applicationName, CreateMappings(), contractResolver, converters, blockSize, jsonSettings);
         }
     }
 }

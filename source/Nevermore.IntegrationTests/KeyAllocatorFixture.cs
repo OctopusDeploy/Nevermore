@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Threading;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
     public class KeyAllocatorFixture : FixtureWithRelationalStore
     {
-        [Fact]
+        [Test]
         public void ShouldAllocateKeysInChunks()
         {
             var allocatorA = new KeyAllocator(Store, 10);
@@ -49,7 +49,7 @@ namespace Nevermore.IntegrationTests
             AssertNext(allocatorB, "Todos", 30);
         }
 
-        [Fact]
+        [Test]
         public void ShouldAllocateForDifferentCollections()
         {
             var allocator = new KeyAllocator(Store, 10);
@@ -65,7 +65,7 @@ namespace Nevermore.IntegrationTests
             AssertNext(allocator, "Todos", 5);
         }
 
-        [Fact]
+        [Test]
         public void ShouldAllocateInParallel()
         {
             var projectIds = new List<int>();
@@ -93,15 +93,15 @@ namespace Nevermore.IntegrationTests
             foreach (var thread in threads)
                 thread.Join();
 
-            Assert.Equal(projectIds.Count, 4000);
-            Assert.Equal(environmentIds.Count, 4000);
-            Assert.Equal(projectIds.GroupBy(g => g).Count(g => g.Count() > 1), 0); // "Duplicate project IDs generated"
-            Assert.Equal(environmentIds.GroupBy(g => g).Count(g => g.Count() > 1), 0); // "Duplicate environment IDs generated"
+            Assert.That(projectIds.Count, Is.EqualTo(4000));
+            Assert.That(environmentIds.Count, Is.EqualTo(4000));
+            Assert.That(projectIds.GroupBy(g => g).Count(g => g.Count() > 1), Is.EqualTo(0), "Duplicate project IDs generated");
+            Assert.That(environmentIds.GroupBy(g => g).Count(g => g.Count() > 1), Is.EqualTo(0), "Duplicate environment IDs generated");
         }
 
         static void AssertNext(KeyAllocator allocator, string collection, int expected)
         {
-            Assert.Equal(expected, allocator.NextId(collection));
+            Assert.That(allocator.NextId(collection), Is.EqualTo(expected));
         }
     }
 }

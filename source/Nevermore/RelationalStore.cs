@@ -15,7 +15,30 @@ namespace Nevermore
         readonly RelationalMappings mappings;
         readonly string connectionString;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
-        readonly KeyAllocator keyAllocator;
+        readonly IKeyAllocator keyAllocator;
+
+        public RelationalStore(string connectionString,
+            string applicationName,
+            RelationalMappings mappings,
+            IContractResolver contractResolver,
+            IEnumerable<JsonConverter> converters,
+            int blockSize,
+            JsonSerializerSettings jsonSettings = null)
+        {
+            this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
+            this.mappings = mappings;
+            keyAllocator = new KeyAllocator(this, blockSize);
+
+            jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
+            jsonSettings.Converters.Add(new StringEnumConverter());
+            jsonSettings.Converters.Add(new VersionConverter());
+            foreach (var converter in converters)
+            {
+                jsonSettings.Converters.Add(converter);
+            }
+
+            RunMigrations();
+        }
 
         public RelationalStore(string connectionString,
             string applicationName,
@@ -23,11 +46,11 @@ namespace Nevermore
             IContractResolver contractResolver,
             IEnumerable<JsonConverter> converters,
             JsonSerializerSettings jsonSettings = null,
-            int? keyAllocationBlockSize = null)
+            IKeyAllocator keyAllocator = null)
         {
             this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
             this.mappings = mappings;
-            keyAllocator = new KeyAllocator(this, keyAllocationBlockSize ?? 20);
+            this.keyAllocator = keyAllocator ?? new KeyAllocator(this, 20);
 
             jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
             jsonSettings.Converters.Add(new StringEnumConverter());

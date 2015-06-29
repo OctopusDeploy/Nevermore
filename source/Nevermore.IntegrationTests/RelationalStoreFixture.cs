@@ -3,24 +3,30 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
-    public class RelationalTestsFixture : FixtureWithRelationalStore
+    public class RelationalStoreFixture : FixtureWithRelationalStore
     {
-        public RelationalTestsFixture()
+        private string schema;
+        public override void FixtureSetUp()
         {
+            base.FixtureSetUp();
+
+            var output = new StringBuilder();
+            SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
+            schema = output.ToString();
+
             var mappings = new DocumentMap[]
             {
                 new CustomerMap(),
                 new ProductMap(),
-                new LineItemMap(),
+                new LineItemMap()
             };
 
             Mappings.Install(mappings);
 
-            var output = new StringBuilder();
             using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
             {
                 output.Clear();
@@ -33,28 +39,9 @@ namespace Nevermore.IntegrationTests
                 transaction.Commit();
             }
         }
-    }
 
-    public class RelationalStoreFixture : IClassFixture<RelationalTestsFixture>, IDisposable
-    {
-        private readonly RelationalTestsFixture Fixture;
-        private readonly IRelationalStore Store;
 
-        public RelationalStoreFixture(RelationalTestsFixture fixture)
-        {
-            Fixture = fixture;
-            Store = fixture.Store;
-        }
-
-        void IDisposable.Dispose()
-        {
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.Store.Reset();
-        }
-
-        [Fact]
+        [Test]
         public void ShouldGenerateIdsUnlessExplicitlyAssigned()
         {
             // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
@@ -67,15 +54,15 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, "Customers-Chazza");
 
-                Assert.StartsWith("Customers-", customer1.Id);
-                Assert.StartsWith("Customers-", customer2.Id);
-                Assert.Equal("Customers-Chazza", customer3.Id);
+                Assert.That(customer1.Id, Is.StringStarting("Customers-"));
+                Assert.That(customer2.Id, Is.StringStarting("Customers-"));
+                Assert.That(customer3.Id, Is.EqualTo("Customers-Chazza"));
 
                 transaction.Commit();
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldPersistReferenceCollectionsToAllowLikeSearches()
         {
             using (var transaction = Store.BeginTransaction())
@@ -96,14 +83,14 @@ namespace Nevermore.IntegrationTests
                     .Where("[Roles] LIKE @role")
                     .LikeParameter("role", "web-server")
                     .ToList();
-                Assert.Equal(2, customers.Count);
+                Assert.That(customers.Count, Is.EqualTo(2));
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldMultiSelect()
         {
-            Fixture.InTransaction(transaction =>
+            InTransaction(transaction =>
             {
                 transaction.Insert(new Product { Name = "Talking Elmo", Price = 100 }, "product-1");
                 transaction.Insert(new Product { Name = "Lego set", Price = 200 }, "product-2");
@@ -121,14 +108,14 @@ namespace Nevermore.IntegrationTests
                     Product = map.Map<Product>("prod")
                 }).ToList();
 
-                Assert.Equal(3, lines.Count);
-                Assert.True(lines[0].LineItem.Name == "Line 1" && lines[0].Product.Name == "Talking Elmo" && lines[0].Product.Price == 100);
-                Assert.True(lines[1].LineItem.Name == "Line 2" && lines[1].Product.Name == "Talking Elmo" && lines[1].Product.Price == 100);
-                Assert.True(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200);
+                Assert.That(lines.Count, Is.EqualTo(3));
+                Assert.That(lines[0].LineItem.Name == "Line 1" && lines[0].Product.Name == "Talking Elmo" && lines[0].Product.Price == 100);
+                Assert.That(lines[1].LineItem.Name == "Line 2" && lines[1].Product.Name == "Talking Elmo" && lines[1].Product.Price == 100);
+                Assert.That(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200);
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldShowNiceErrorIfFieldsAreTooLong()
         {
             // SQL normally thows "String or binary data would be truncated. The statement has been terminated."
@@ -136,11 +123,11 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var ex = Assert.Throws<StringTooLongException>(() => transaction.Insert(new Customer { FirstName = new string('A', 21), LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } }));
-                Assert.Equal("An attempt was made to store 21 characters in the Customer.FirstName column, which only allows 20 characters.", ex.Message);
+                Assert.That(ex.Message, Is.EqualTo("An attempt was made to store 21 characters in the Customer.FirstName column, which only allows 20 characters."));
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldShowFriendlyUniqueConstraintErrors()
         {
             using (var transaction = Store.BeginTransaction())
@@ -153,7 +140,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 var ex = Assert.Throws<UniqueConstraintViolationException>(() => transaction.Insert(customer3));
 
-                Assert.Equal("Customers must have a unique name", ex.Message);
+                Assert.That(ex.Message, Is.EqualTo("Customers must have a unique name"));
             }
         }
 
