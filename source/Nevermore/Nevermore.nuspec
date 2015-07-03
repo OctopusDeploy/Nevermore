@@ -15,6 +15,6 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\**\*.*" target="lib" exclude="*.vshost*;**\*.xml" />
+    <file src="bin\**\*.*" target="lib" exclude="*.vshost*;**\*.xml;**\*.tmp" />
   </files>
 </package>
