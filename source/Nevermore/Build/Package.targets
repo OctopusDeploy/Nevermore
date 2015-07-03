@@ -1,0 +1,19 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Hook into the AfterBuild activity -->
+  <PropertyGroup>
+    <BuildDependsOn>
+      $(BuildDependsOn);
+      CreatePackage
+    </BuildDependsOn>
+
+    <NuGetExePath>$(ProjectDir)..\.nuget\NuGet.exe</NuGetExePath>
+    <NevermorePackageVersion Condition="'$(NevermorePackageVersion)' == ''">1.0.$([System.DateTime]::Now.ToString(yyyyMMdd)).$([System.DateTime]::Now.ToString(HHmmss))</NevermorePackageVersion>
+  </PropertyGroup>
+
+  <Target Name="CreatePackage">
+    <Message Text="NuGet path: $(NuGetExePath)" Importance="high" />
+
+    <MakeDir Directories="$(ProjectDir)..\..\artifacts"/>
+    <Exec Command='"$(NuGetExePath)" pack "$(ProjectDir)Nevermore.nuspec" -BasePath "$(ProjectDir.TrimEnd("\"))" -Version $(NevermorePackageVersion) -NoPackageAnalysis -NonInteractive -OutputDirectory "$(ProjectDir)..\..\artifacts"' />
+  </Target>
+</Project>
