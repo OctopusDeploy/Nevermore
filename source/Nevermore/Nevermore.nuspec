@@ -14,4 +14,7 @@
       <dependency id="dbup" version="(3.2.0,)"/>
     </dependencies>
   </metadata>
+  <files>
+    <file src="bin\**\*.*" target="lib" exclude="*.vshost*;**\*.xml" />
+  </files>
 </package>
