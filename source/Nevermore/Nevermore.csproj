@@ -71,13 +71,17 @@
     <Compile Include="IInitializeRelationalStore.cs" />
     <Compile Include="IKeyAllocator.cs" />
     <Compile Include="INamed.cs" />
+    <Compile Include="IOrderedQueryBuilder.cs" />
     <Compile Include="IProjectionMapper.cs" />
     <Compile Include="IPropertyReaderWriter.cs" />
     <Compile Include="IQueryBuilder.cs" />
+    <Compile Include="IQueryGenerator.cs" />
     <Compile Include="IRelationalStore.cs" />
     <Compile Include="IRelationalTransaction.cs" />
     <Compile Include="IStoreInitializer.cs" />
     <Compile Include="KeyAllocator.cs" />
+    <Compile Include="SqlQueryGenerator.cs" />
+    <Compile Include="WhereParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyReaderFactory.cs" />
     <Compile Include="PropertyReaderWriterDecorator.cs" />
