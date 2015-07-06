@@ -22,6 +22,7 @@ namespace Nevermore
 
         int Count();
         TRecord First();
+        IEnumerable<TRecord> Take(int take);
         List<TRecord> ToList(int skip, int take);
         List<TRecord> ToList(int skip, int take, out int totalResults);
         List<TRecord> ToList();

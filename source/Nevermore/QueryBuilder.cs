@@ -37,6 +37,9 @@ namespace Nevermore
                 case SqlOperand.Equal:
                     queryGenerator.WhereEquals(fieldName, value);
                     break;
+                case SqlOperand.NotEqual:
+                    queryGenerator.WhereNotEquals(fieldName, value);
+                    break;
                 case SqlOperand.GreaterThan:
                     queryGenerator.WhereGreaterThan(fieldName, value);
                     break;
@@ -154,6 +157,11 @@ namespace Nevermore
         public TRecord First()
         {
             return transaction.ExecuteReader<TRecord>(queryGenerator.TopQuery(), queryGenerator.QueryParameters).FirstOrDefault();
+        }
+
+        public IEnumerable<TRecord> Take(int take)
+        {
+            return transaction.ExecuteReader<TRecord>(queryGenerator.TopQuery(take), queryGenerator.QueryParameters);
         }
 
         public List<TRecord> ToList(int skip, int take)

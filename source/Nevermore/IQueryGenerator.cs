@@ -26,6 +26,7 @@ namespace Nevermore
         void WhereBetween(string fieldName, object startValue, object endValue);
         void WhereBetweenOrEqual(string fieldName, object startValue, object endValue);
         void WhereEquals(string fieldName, object value);
+        void WhereNotEquals(string fieldName, object value);
         void WhereIn(string fieldName, object values);
         void WhereStartsWith(string fieldName, object value);
         void WhereEndsWith(string fieldName, object value);

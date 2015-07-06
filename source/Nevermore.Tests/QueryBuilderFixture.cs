@@ -131,6 +131,47 @@ namespace Nevermore.Tests
         }
 
         [Test]
+        public void ShouldGetCorrectSqlQueryForWhereNotEquals()
+        {
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] <> @title)";
+
+            var transaction = Substitute.For<IRelationalTransaction>();
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+                .Returns(1);
+
+            var result = new QueryBuilder<TodoItem>(transaction, "TodoItem")
+                .Where("[Title] <> @title")
+                .Parameter("title", "nevermore")
+                .Count();
+
+            transaction.Received(1).ExecuteScalar<int>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+
+            Assert.That(result, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ShouldGetCorrectSqlQueryForWhereNotEqualsExtension()
+        {
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] <> @title)";
+
+            var transaction = Substitute.For<IRelationalTransaction>();
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+                .Returns(1);
+
+            var result = new QueryBuilder<TodoItem>(transaction, "TodoItem")
+                .Where("Title", SqlOperand.NotEqual, "nevermore")
+                .Count();
+
+            transaction.Received(1).ExecuteScalar<int>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+
+            Assert.That(result, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThan()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] > @completed)";

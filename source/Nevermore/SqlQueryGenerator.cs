@@ -137,6 +137,16 @@ namespace Nevermore
             });
         }
 
+        public void WhereNotEquals(string fieldName, object value)
+        {
+            AddWhere(new WhereParameter
+            {
+                FieldName = fieldName,
+                Operand = SqlOperand.NotEqual,
+                Value = value
+            });
+        }
+
         public void WhereIn(string fieldName, object values)
         {
             AddWhere(new WhereParameter
@@ -351,6 +361,8 @@ namespace Nevermore
                     return "LIKE";
                 case SqlOperand.Equal:
                     return "=";
+                case SqlOperand.NotEqual:
+                    return "<>";
                 case SqlOperand.GreaterThan:
                     return ">";
                 case SqlOperand.GreaterThanOrEqual:
@@ -385,6 +397,7 @@ namespace Nevermore
         GreaterThanOrEqual,
         LessThan,
         LessThanOrEqual,
+        NotEqual,
         Contains,
         ContainsAny,
         ContainsAll
