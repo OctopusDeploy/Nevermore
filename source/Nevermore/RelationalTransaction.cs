@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using Newtonsoft.Json;
 
@@ -301,6 +302,10 @@ namespace Nevermore
                     {
                         throw new StringTooLongException(string.Format("An attempt was made to store {0} characters in the {1}.{2} column, which only allows {3} characters.", attemptedLength, mapping.TableName, c.ColumnName, c.MaxLength));
                     }
+                }
+                else if (value != null && value != DBNull.Value && value is DateTime && value.Equals(DateTime.MinValue))
+                {
+                    //value = SqlDateTime.MinValue.Value;
                 }
 
                 result[c.ColumnName] = value;

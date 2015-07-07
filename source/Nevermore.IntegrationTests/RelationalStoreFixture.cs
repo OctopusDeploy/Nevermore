@@ -97,12 +97,12 @@ namespace Nevermore.IntegrationTests
 
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 1", Quantity = 10 });
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 2", Quantity = 10 });
-                transaction.Insert(new LineItem { ProductId = "product-2", Name = "Line 3", Quantity = 20 });
+                transaction.Insert(new LineItem { PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20 });
             });
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.ProductId as line_productid, line.Json as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.json as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameters(), map => new
+                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.Json as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.json as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameters(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")
@@ -184,6 +184,7 @@ namespace Nevermore.IntegrationTests
     {
         public string Id { get; private set; }
         public string Name { get; set; }
+        public DateTime PurchaseDate { get; set; }
         public string ProductId { get; set; }
         public int Quantity { get; set; }
     }
@@ -194,6 +195,7 @@ namespace Nevermore.IntegrationTests
         {
             Column(m => m.Name);
             Column(m => m.ProductId);
+            Column(m => m.PurchaseDate);
         }
     }
 
