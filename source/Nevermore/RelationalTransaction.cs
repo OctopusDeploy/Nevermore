@@ -305,7 +305,7 @@ namespace Nevermore
                 }
                 else if (value != null && value != DBNull.Value && value is DateTime && value.Equals(DateTime.MinValue))
                 {
-                    //value = SqlDateTime.MinValue.Value;
+                    value = SqlDateTime.MinValue.Value;
                 }
 
                 result[c.ColumnName] = value;
