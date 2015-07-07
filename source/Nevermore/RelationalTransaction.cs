@@ -93,11 +93,10 @@ namespace Nevermore
                 string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Concat(new[] {"@Id", "@Json"}))
                 ));
 
-            var id = string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId;
-
             var parameters = InstanceToParameters(instance, mapping);
             if (parameters["Id"] == null || string.IsNullOrWhiteSpace((string)parameters["Id"]))
             {
+                var id = string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId;
                 parameters["Id"] = id;
             }
 
@@ -106,7 +105,7 @@ namespace Nevermore
                 try
                 {
                     command.ExecuteNonQuery();
-                    mapping.IdColumn.ReaderWriter.Write(instance, id);
+                    mapping.IdColumn.ReaderWriter.Write(instance, parameters["Id"]);
                 }
                 catch (SqlException ex)
                 {

@@ -47,14 +47,14 @@ namespace Nevermore.IntegrationTests
             // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };
+                var customer1 = new Customer { Id = "Customers-Alice", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };
                 var customer2 = new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 12, 13 }, Nickname = "B-man", Roles = { "web-server", "app-server" } };
                 var customer3 = new Customer { FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] { 12, 13 }, Nickname = "Chazza", Roles = { "web-server", "app-server" } };
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, "Customers-Chazza");
 
-                Assert.That(customer1.Id, Is.StringStarting("Customers-"));
+                Assert.That(customer1.Id, Is.EqualTo("Customers-Alice"));
                 Assert.That(customer2.Id, Is.StringStarting("Customers-"));
                 Assert.That(customer3.Id, Is.EqualTo("Customers-Chazza"));
 
@@ -153,7 +153,7 @@ namespace Nevermore.IntegrationTests
             Roles = new HashSet<string>();
         }
 
-        public string Id { get; private set; }
+        public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public HashSet<string> Roles { get; private set; }
