@@ -89,6 +89,30 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void ShouldPersistCollectionsToAllowInSearches()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer1 = new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };
+                var customer2 = new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 12, 13 }, Nickname = "B-man", Roles = { "db-server", "app-server" } };
+                var customer3 = new Customer { FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] { 12, 13 }, Nickname = "Chazza", Roles = { "web-server", "app-server" } };
+                transaction.Insert(customer1);
+                transaction.Insert(customer2);
+                transaction.Insert(customer3);
+                transaction.Commit();
+            }
+
+            // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customers = transaction.Query<Customer>()
+                    .Where("LastName", SqlOperand.In, new [] {"Apple", "Banana"})
+                    .ToList();
+                Assert.That(customers.Count, Is.EqualTo(2));
+            }
+        }
+
+        [Test]
         public void ShouldMultiSelect()
         {
             using(var transaction = Store.BeginTransaction())

@@ -297,20 +297,23 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereIn()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN (@nevermore, @octofront))";
 
             var transaction = Substitute.For<IRelationalTransaction>();
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
             var result = new QueryBuilder<TodoItem>(transaction, "TodoItem")
-                .Where("[Title] IN @title")
-                .Parameter("title", "(nevermore, octofront)")
+                .Where("[Title] IN (@nevermore, @octofront)")
+                .Parameter("nevermore", "nevermore")
+                .Parameter("octofront", "octofront")
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "(nevermore, octofront)"));
+                Arg.Is<CommandParameters>(cp => 
+                    cp["nevermore"].ToString() == "nevermore" 
+                    && cp["octofront"].ToString() == "octofront"));
 
             Assert.That(result, Is.EqualTo(1));
         }
@@ -318,7 +321,7 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN (@nevermore, @octofront))";
 
             var transaction = Substitute.For<IRelationalTransaction>();
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
@@ -330,7 +333,9 @@ namespace Nevermore.Tests
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "(nevermore, octofront)"));
+                Arg.Is<CommandParameters>(cp => 
+                    cp["nevermore"].ToString() == "nevermore" 
+                    && cp["octofront"].ToString() == "octofront"));
 
             Assert.That(result, Is.EqualTo(1));
         }

@@ -105,6 +105,22 @@ namespace Nevermore
 
             AddParameter(whereParams.ParameterName, whereParams.Value);
         }
+        public void AddWhereIn(WhereParameter whereParams)
+        {
+            var values = (string[])whereParams.Value;
+            var inClause = string.Join(", ", values.Select(v => "@" + v));
+
+            OpenSubClause();
+            AppendField(whereParams.FieldName);
+            AppendOperand(whereParams.Operand);
+            AppendInParameter(inClause);
+            CloseSubClause();
+
+            foreach (string value in values)
+            {
+                AddParameter(value, value);
+            }
+        }
 
         public void AddWhere(WhereParameter whereParams, object startValue, object endValue)
         {
@@ -149,7 +165,7 @@ namespace Nevermore
 
         public void WhereIn(string fieldName, object values)
         {
-            AddWhere(new WhereParameter
+            AddWhereIn(new WhereParameter
             {
                 FieldName = fieldName,
                 Operand = SqlOperand.In,
@@ -316,6 +332,13 @@ namespace Nevermore
         void AppendParameter(string fieldName)
         {
             queryText.Append(Parameter(fieldName));
+        }
+
+        void AppendInParameter(string inClause)
+        {
+            queryText.Append("(");
+            queryText.Append(inClause);
+            queryText.Append(")");
         }
 
         string Parameter(string fieldName)
