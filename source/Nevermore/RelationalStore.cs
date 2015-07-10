@@ -12,6 +12,7 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
+        private readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
         readonly string connectionString;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
@@ -19,20 +20,22 @@ namespace Nevermore
 
         public RelationalStore(string connectionString,
             string applicationName,
+            ISqlCommandFactory sqlCommandFactory,
             RelationalMappings mappings,
-            IContractResolver contractResolver,
-            IEnumerable<JsonConverter> converters,
-            int blockSize,
+            IContractResolver contractResolver = null,
+            IEnumerable<JsonConverter> converters = null,
+            int blockSize = 20,
             JsonSerializerSettings jsonSettings = null)
         {
             this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
+            this.sqlCommandFactory = sqlCommandFactory;
             this.mappings = mappings;
             keyAllocator = new KeyAllocator(this, blockSize);
 
             jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
             jsonSettings.Converters.Add(new StringEnumConverter());
             jsonSettings.Converters.Add(new VersionConverter());
-            foreach (var converter in converters)
+            foreach (var converter in (converters ?? new List<JsonConverter>()))
             {
                 jsonSettings.Converters.Add(converter);
             }
@@ -42,15 +45,17 @@ namespace Nevermore
 
         public RelationalStore(string connectionString,
             string applicationName,
+            ISqlCommandFactory sqlCommandFactory,
             RelationalMappings mappings,
             IContractResolver contractResolver,
             IEnumerable<JsonConverter> converters,
-            JsonSerializerSettings jsonSettings = null,
-            IKeyAllocator keyAllocator = null)
+            JsonSerializerSettings jsonSettings,
+            IKeyAllocator keyAllocator)
         {
             this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
+            this.sqlCommandFactory = sqlCommandFactory;
             this.mappings = mappings;
-            this.keyAllocator = keyAllocator ?? new KeyAllocator(this, 20);
+            this.keyAllocator = keyAllocator;
 
             jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
             jsonSettings.Converters.Add(new StringEnumConverter());
@@ -99,7 +104,7 @@ namespace Nevermore
 
         public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel)
         {
-            return new RelationalTransaction(connectionString, isolationLevel, jsonSettings, mappings, keyAllocator);
+            return new RelationalTransaction(connectionString, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator);
         }
 
         static JsonSerializerSettings SetJsonSerializerSettings(IContractResolver contractResolver)

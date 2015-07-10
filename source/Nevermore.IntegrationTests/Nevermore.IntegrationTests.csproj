@@ -54,6 +54,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chaos\ChaosSqlCommand.cs" />
+    <Compile Include="Chaos\ChaosSqlCommandFactory.cs" />
     <Compile Include="DatabaseMigrator.cs" />
     <Compile Include="FixtureWithRelationalStore.cs" />
     <Compile Include="IntegrationTestDatabase.cs" />
@@ -74,6 +76,7 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

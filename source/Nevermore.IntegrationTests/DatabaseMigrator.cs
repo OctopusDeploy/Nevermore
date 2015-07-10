@@ -11,7 +11,7 @@ namespace Nevermore.IntegrationTests
 
         public DatabaseMigrator(IUpgradeLog log = null)
         {
-            _log = log ?? new TraceUpgradeLog();
+            _log = log ?? new ConsoleUpgradeLog();
         }
 
         public void Migrate(IRelationalStore store)

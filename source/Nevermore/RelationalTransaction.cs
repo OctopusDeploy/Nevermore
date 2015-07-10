@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Linq;
+using Nevermore.Transient;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -13,20 +14,22 @@ namespace Nevermore
     {
         static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly ISqlCommandFactory sqlCommandFactory;
         readonly JsonSerializerSettings jsonSerializerSettings;
         readonly RelationalMappings mappings;
         readonly IKeyAllocator keyAllocator;
         readonly SqlConnection connection;
         readonly SqlTransaction transaction;
 
-        public RelationalTransaction(string connectionString, IsolationLevel isolationLevel, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings, IKeyAllocator keyAllocator)
+        public RelationalTransaction(string connectionString, IsolationLevel isolationLevel, ISqlCommandFactory sqlCommandFactory, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings, IKeyAllocator keyAllocator)
         {
+            this.sqlCommandFactory = sqlCommandFactory;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.mappings = mappings;
             this.keyAllocator = keyAllocator;
 
             connection = new SqlConnection(connectionString);
-            connection.Open();
+            connection.OpenWithRetry();
             transaction = connection.BeginTransaction(isolationLevel);
         }
 
@@ -100,11 +103,11 @@ namespace Nevermore
                 parameters["Id"] = id;
             }
 
-            using (var command = CreateCommand(statement, parameters))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters))
             {
                 try
                 {
-                    command.ExecuteNonQuery();
+                    command.ExecuteNonQueryWithRetry();
                     mapping.IdColumn.ReaderWriter.Write(instance, parameters["Id"]);
                 }
                 catch (SqlException ex)
@@ -145,11 +148,11 @@ namespace Nevermore
                 mapping.TableName,
                 mapping.IndexedColumns.Count > 0 ? string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName)) + ", " : ""));
 
-            using (var command = CreateCommand(statement, InstanceToParameters(instance, mapping)))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping)))
             {
                 try
                 {
-                    command.ExecuteNonQuery();
+                    command.ExecuteNonQueryWithRetry();
                 }
                 catch (SqlException ex)
                 {
@@ -164,11 +167,11 @@ namespace Nevermore
 
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
-            using (var command = CreateCommand(statement, new CommandParameters {{"Id", mapping.IdColumn.ReaderWriter.Read(instance)}}))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", mapping.IdColumn.ReaderWriter.Read(instance) } }))
             {
                 try
                 {
-                    command.ExecuteNonQuery();
+                    command.ExecuteNonQueryWithRetry();
                 }
                 catch (SqlException ex)
                 {
@@ -181,7 +184,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(typeof (T));
 
-            using (var command = CreateCommand(query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 try
                 {
@@ -196,7 +199,7 @@ namespace Nevermore
 
         public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameters args, Func<IProjectionMapper, T> projectionMapper)
         {
-            using (var command = CreateCommand(query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 try
                 {
@@ -209,9 +212,9 @@ namespace Nevermore
             }
         }
 
-        IEnumerable<T> Stream<T>(SqlCommand command, DocumentMap mapping)
+        IEnumerable<T> Stream<T>(IDbCommand command, DocumentMap mapping)
         {
-            using (var reader = command.ExecuteReader())
+            using (var reader = command.ExecuteReaderWithRetry())
             {
                 var idIndex = GetOrdinal(reader, "Id");
                 var jsonIndex = GetOrdinal(reader, "Json");
@@ -258,7 +261,7 @@ namespace Nevermore
             }
         }
 
-        static int GetOrdinal(SqlDataReader dr, string columnName)
+        static int GetOrdinal(IDataReader dr, string columnName)
         {
             for (var i = 0; i < dr.FieldCount; i++)
             {
@@ -268,9 +271,9 @@ namespace Nevermore
             return -1;
         }
 
-        IEnumerable<T> Stream<T>(SqlCommand command, Func<IProjectionMapper, T> projectionMapper)
+        IEnumerable<T> Stream<T>(IDbCommand command, Func<IProjectionMapper, T> projectionMapper)
         {
-            using (var reader = command.ExecuteReader())
+            using (var reader = command.ExecuteReaderWithRetry())
             {
                 var mapper = new ProjectionMapper(reader, jsonSerializerSettings, mappings);
                 while (reader.Read())
@@ -314,11 +317,11 @@ namespace Nevermore
 
         public T ExecuteScalar<T>(string query, CommandParameters args)
         {
-            using (var command = CreateCommand(query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 try
                 {
-                    var result = command.ExecuteScalar();
+                    var result = command.ExecuteScalarWithRetry();
                     return (T)AmazingConverter.Convert(result, typeof (T));
                 }
                 catch (SqlException ex)
@@ -340,11 +343,11 @@ namespace Nevermore
 
         public void ExecuteReader(string query, CommandParameters args, Action<IDataReader> readerCallback)
         {
-            using (var command = CreateCommand(query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 try
                 {
-                    using (var result = command.ExecuteReader())
+                    using (var result = command.ExecuteReaderWithRetry())
                     {
                         readerCallback(result);
                     }
@@ -354,16 +357,6 @@ namespace Nevermore
                     throw WrapException(command, ex);
                 }
             }
-        }
-
-        SqlCommand CreateCommand(string statement, CommandParameters args)
-        {
-            var command = new SqlCommand(statement, connection, transaction);
-            if (args != null)
-            {
-                args.ContributeTo(command);
-            }
-            return command;
         }
 
         public void Commit()
@@ -377,18 +370,18 @@ namespace Nevermore
             connection.Dispose();
         }
 
-        static Exception WrapException(SqlCommand command, Exception ex)
+        static Exception WrapException(IDbCommand command, Exception ex)
         {
             return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText, ex);
         }
 
         class ProjectionMapper : IProjectionMapper
         {
-            readonly SqlDataReader reader;
+            readonly IDataReader reader;
             readonly JsonSerializerSettings jsonSerializerSettings;
             readonly RelationalMappings mappings;
 
-            public ProjectionMapper(SqlDataReader reader, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings)
+            public ProjectionMapper(IDataReader reader, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings)
             {
                 this.mappings = mappings;
                 this.reader = reader;
