@@ -10,6 +10,7 @@ namespace Nevermore.IntegrationTests
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
         private string schema;
+        
         public override void FixtureSetUp()
         {
             base.FixtureSetUp();
@@ -65,7 +66,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldPersistReferenceCollectionsToAllowLikeSearches()
         {
-            using (var transaction = Store.BeginTransaction())
+            using(var transaction = Store.BeginTransaction())
             {
                 var customer1 = new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };
                 var customer2 = new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 12, 13 }, Nickname = "B-man", Roles = { "db-server", "app-server" } };
@@ -90,7 +91,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldMultiSelect()
         {
-            InTransaction(transaction =>
+            using(var transaction = Store.BeginTransaction())
             {
                 transaction.Insert(new Product { Name = "Talking Elmo", Price = 100 }, "product-1");
                 transaction.Insert(new Product { Name = "Lego set", Price = 200 }, "product-2");
@@ -98,7 +99,9 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 1", Quantity = 10 });
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 2", Quantity = 10 });
                 transaction.Insert(new LineItem { PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20 });
-            });
+
+                transaction.Commit();
+            }
 
             using (var transaction = Store.BeginTransaction())
             {
@@ -130,7 +133,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldShowFriendlyUniqueConstraintErrors()
         {
-            using (var transaction = Store.BeginTransaction())
+            using(var transaction = Store.BeginTransaction())
             {
                 var customer1 = new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };
                 var customer2 = new Customer { FirstName = "Alice", LastName = "Appleby", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } };

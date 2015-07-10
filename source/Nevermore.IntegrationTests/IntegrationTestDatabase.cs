@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
+using Nevermore.IntegrationTests.Chaos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -12,10 +13,10 @@ namespace Nevermore.IntegrationTests
         static readonly string SqlInstance = ConfigurationManager.AppSettings["SqlServerInstance"] ?? "(local)\\SQLEXPRESS";
         static readonly string TestDatabaseName;
         static readonly string TestDatabaseConnectionString;
-        static readonly IRelationalStoreFactory StorageEngine;
 
         static IntegrationTestDatabase()
         {
+            TransientFaultHandling.InitializeRetryManager();
 
             TestDatabaseName = "Nevermore-IntegrationTests";
 
@@ -25,18 +26,11 @@ namespace Nevermore.IntegrationTests
             };
             TestDatabaseConnectionString = builder.ToString();
 
-            StorageEngine = new RelationalStoreFactory(TestDatabaseConnectionString, TestDatabaseName);
-
             DropDatabase();
             CreateDatabase();
 
             InitializeStore();
             InstallSchema();
-        }
-
-        static IEnumerable<DocumentMap> GetMappings()
-        {
-            return new List<DocumentMap>();
         }
 
         public static RelationalStore Store { get; set; }
@@ -64,7 +58,16 @@ namespace Nevermore.IntegrationTests
         static void InitializeStore()
         {
             Mappings = RelationalStoreFactory.CreateMappings();
-            Store = new RelationalStore(TestDatabaseConnectionString, TestDatabaseName, Mappings, new DefaultContractResolver(), new List<JsonConverter>());
+            Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
+        }
+
+        static RelationalStore BuildRelationalStore(string connectionString, double chaosFactor = 0.2D)
+        {
+            var sqlCommandFactory = chaosFactor > 0D
+                ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
+                : new SqlCommandFactory();
+            
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new DefaultContractResolver(), new List<JsonConverter>());
         }
 
         static void InstallSchema()

@@ -9,12 +9,14 @@ namespace Nevermore
 {
     public class CommandParameters : Dictionary<string, object>
     {
-        public CommandParameters() : base(StringComparer.OrdinalIgnoreCase)
+        public CommandParameters()
+            : base(StringComparer.OrdinalIgnoreCase)
         {
             CommandType = CommandType.Text;
         }
 
-        public CommandParameters(object args) : this()
+        public CommandParameters(object args)
+            : this()
         {
             AddFromParametersObject(args);
         }
@@ -36,7 +38,7 @@ namespace Nevermore
             }
         }
 
-        public virtual void ContributeTo(SqlCommand command)
+        public virtual void ContributeTo(IDbCommand command)
         {
             command.CommandType = CommandType;
             foreach (var pair in this)
@@ -45,7 +47,7 @@ namespace Nevermore
             }
         }
 
-        protected virtual void ContributeParameter(SqlCommand command, string name, object value)
+        protected virtual void ContributeParameter(IDbCommand command, string name, object value)
         {
             if (value == null)
             {

@@ -15,7 +15,6 @@ namespace Nevermore.IntegrationTests
             get { return IntegrationTestDatabase.Mappings; }
         }
 
-
         [TestFixtureSetUp]
         public virtual void FixtureSetUp()
         {
@@ -39,7 +38,7 @@ namespace Nevermore.IntegrationTests
         public virtual void FixtureTearDown()
         {
         }
-        
+
         public int CountOf<T>() where T : class
         {
             return InTransaction(s => s.Query<T>().Count());
@@ -55,18 +54,18 @@ namespace Nevermore.IntegrationTests
 
         public void InTransaction(Action<IRelationalTransaction> callback)
         {
-            var session = Store.BeginTransaction();
-            callback(session);
-            session.Commit();
-            session.Dispose();
+            var transaction = Store.BeginTransaction();
+            callback(transaction);
+            transaction.Commit();
+            transaction.Dispose();
         }
 
         public TReturn InTransaction<TReturn>(Func<IRelationalTransaction, TReturn> callback)
         {
-            var session = Store.BeginTransaction();
-            var result = callback(session);
-            session.Commit();
-            session.Dispose();
+            var transaction = Store.BeginTransaction();
+            var result = callback(transaction);
+            transaction.Commit();
+            transaction.Dispose();
             return result;
         }
     }

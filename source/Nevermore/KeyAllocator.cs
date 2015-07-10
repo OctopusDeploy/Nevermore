@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data;
+using Microsoft.WindowsAzure.Common.TransientFaultHandling;
+using Nevermore.Transient;
 
 namespace Nevermore
 {
@@ -49,13 +51,20 @@ namespace Nevermore
                 lock (sync)
                 {
                     if (blockNext == blockFinish)
-                        ExtendAllocation();
+                        GetRetryPolicy().ExecuteAction(ExtendAllocation);
 
                     var result = blockNext;
                     blockNext++;
 
                     return result;
                 }
+            }
+
+            RetryPolicy GetRetryPolicy()
+            {
+                return new RetryPolicy(new SqlDatabaseTransientErrorDetectionStrategy(),
+                    TransientFaultHandling.FastIncremental)
+                    .LoggingRetries("Extending key allocation");
             }
 
             void ExtendAllocation()
