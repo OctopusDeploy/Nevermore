@@ -32,12 +32,12 @@ namespace Nevermore
             this.mappings = mappings;
             keyAllocator = new KeyAllocator(this, blockSize);
 
-            jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
-            jsonSettings.Converters.Add(new StringEnumConverter());
-            jsonSettings.Converters.Add(new VersionConverter());
+            this.jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
+            this.jsonSettings.Converters.Add(new StringEnumConverter());
+            this.jsonSettings.Converters.Add(new VersionConverter());
             foreach (var converter in (converters ?? new List<JsonConverter>()))
             {
-                jsonSettings.Converters.Add(converter);
+                this.jsonSettings.Converters.Add(converter);
             }
 
             RunMigrations();
@@ -57,12 +57,12 @@ namespace Nevermore
             this.mappings = mappings;
             this.keyAllocator = keyAllocator;
 
-            jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
-            jsonSettings.Converters.Add(new StringEnumConverter());
-            jsonSettings.Converters.Add(new VersionConverter());
+            this.jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
+            this.jsonSettings.Converters.Add(new StringEnumConverter());
+            this.jsonSettings.Converters.Add(new VersionConverter());
             foreach (var converter in converters)
             {
-                jsonSettings.Converters.Add(converter);
+                this.jsonSettings.Converters.Add(converter);
             }
 
             RunMigrations();
