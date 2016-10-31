@@ -1,4 +1,4 @@
-﻿namespace Nevermore
+﻿namespace Nevermore.Contracts
 {
     public interface IId
     {

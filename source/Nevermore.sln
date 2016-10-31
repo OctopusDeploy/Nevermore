@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore", "Nevermore\Nevermore.csproj", "{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}"
 EndProject
@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{8FCDD3A3-1FF
 		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Contracts", "Nevermore.Contracts\Nevermore.Contracts.csproj", "{509F4D7F-FCEF-4207-B8A9-9209E69F8D29}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{509F4D7F-FCEF-4207-B8A9-9209E69F8D29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{509F4D7F-FCEF-4207-B8A9-9209E69F8D29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{509F4D7F-FCEF-4207-B8A9-9209E69F8D29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{509F4D7F-FCEF-4207-B8A9-9209E69F8D29}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

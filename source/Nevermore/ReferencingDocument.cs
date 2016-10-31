@@ -1,4 +1,5 @@
 ﻿using System;
+using Nevermore.Contracts;
 
 namespace Nevermore
 {

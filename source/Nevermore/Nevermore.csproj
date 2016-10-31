@@ -85,11 +85,8 @@
     <Compile Include="DelegateReaderWriter.cs" />
     <Compile Include="DocumentMap.cs" />
     <Compile Include="ExceptionExtensions.cs" />
-    <Compile Include="IDocument.cs" />
-    <Compile Include="IId.cs" />
     <Compile Include="IInitializeRelationalStore.cs" />
     <Compile Include="IKeyAllocator.cs" />
-    <Compile Include="INamed.cs" />
     <Compile Include="IOrderedQueryBuilder.cs" />
     <Compile Include="IProjectionMapper.cs" />
     <Compile Include="IPropertyReaderWriter.cs" />
@@ -136,6 +133,12 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="UpgradeScripts\Script0001 - Initial schema.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj">
+      <Project>{509f4d7f-fcef-4207-b8a9-9209e69f8d29}</Project>
+      <Name>Nevermore.Contracts</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
