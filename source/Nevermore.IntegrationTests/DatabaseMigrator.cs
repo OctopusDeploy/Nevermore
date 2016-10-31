@@ -5,7 +5,7 @@ using DbUp.Engine.Output;
 
 namespace Nevermore.IntegrationTests
 {
-    public class DatabaseMigrator : IDatabaseMigrator
+    public class DatabaseMigrator
     {
         private readonly IUpgradeLog _log;
 
