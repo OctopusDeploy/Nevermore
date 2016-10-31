@@ -2,22 +2,25 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
 using Microsoft.SqlServer.Server;
+using Nevermore.Joins;
 
 namespace Nevermore
 {
     public interface IQueryGenerator
     {
         CommandParameters QueryParameters { get; }
+        IList<IJoin> Joins { get; }
+        string ViewOrTableName { get; }
+
         string ToString();
 
         void UseTable(string tableName);
         void UseView(string viewName);
-        void UseStoredProcedure(string storedProcedureName);
         void UseHint(string hintClause);
         
         string CountQuery();
         string TopQuery(int top = 1);
-        string SelectQuery();
+        string SelectQuery(bool orderBy = true);
         string PaginateQuery(int skip, int take);
 
         void AddOrder(string fieldName, bool descending);
@@ -42,5 +45,6 @@ namespace Nevermore
         void AndAlso();
         void OrElse();
         void AddParameter(string fieldName, object value);
+        void AddJoin(IJoin join);
     }
 }

@@ -15,6 +15,12 @@ namespace Nevermore
             CommandType = CommandType.Text;
         }
 
+        public CommandParameters(CommandParameters from)
+            : base(from, StringComparer.OrdinalIgnoreCase)
+        {
+            CommandType = from.CommandType;
+        }
+
         public CommandParameters(object args)
             : this()
         {
@@ -38,16 +44,16 @@ namespace Nevermore
             }
         }
 
-        public virtual void ContributeTo(IDbCommand command)
+        public virtual void ContributeTo(IDbCommand command, DocumentMap mapping = null)
         {
             command.CommandType = CommandType;
             foreach (var pair in this)
             {
-                ContributeParameter(command, pair.Key, pair.Value);
+                ContributeParameter(command, pair.Key, pair.Value, mapping);
             }
         }
 
-        protected virtual void ContributeParameter(IDbCommand command, string name, object value)
+        protected virtual void ContributeParameter(IDbCommand command, string name, object value, DocumentMap mapping = null)
         {
             if (value == null)
             {
@@ -84,7 +90,29 @@ namespace Nevermore
             param.ParameterName = name;
             param.DbType = columnType;
             param.Value = value;
+
+            // To assist SQL's query plan caching, assign a parameter size for our 
+            // common id lookups where possible.
+            if (mapping != null
+                && mapping.IdColumn != null
+                && mapping.IdColumn.MaxLength > 0
+                && columnType == DbType.String
+                && string.Equals(name, "Id", StringComparison.OrdinalIgnoreCase))
+            {
+                param.Size = mapping.IdColumn.MaxLength;
+            }
+
             command.Parameters.Add(param);
+        }
+
+        public void AddRange(CommandParameters other)
+        {
+            foreach (var item in other)
+            {
+                if (ContainsKey(item.Key))
+                    throw new Exception($"The parameter {item.Key} already exists");
+                this[item.Key] = item.Value;
+            }
         }
     }
 }

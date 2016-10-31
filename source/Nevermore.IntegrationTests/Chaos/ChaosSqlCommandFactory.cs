@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Chaos
             this.chaosFactor = chaosFactor;
         }
 
-        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args)
+        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args, DocumentMap mapping = null)
         {
             return new ChaosSqlCommand(wrappedFactory.CreateCommand(connection, transaction, statement, args), chaosFactor);
         }

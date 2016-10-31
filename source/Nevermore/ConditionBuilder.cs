@@ -77,9 +77,13 @@ namespace Nevermore
                     BitStack.SetCurrent(ref groupUsage, true);
                 }
             }
-            else
+            else if (lastGoodClose > 0)
             {
                 buffer.Length = lastGoodClose;
+            } 
+            else
+            {
+                buffer.Length--;
             }
 
             BitStack.Pop(ref groupOperators);

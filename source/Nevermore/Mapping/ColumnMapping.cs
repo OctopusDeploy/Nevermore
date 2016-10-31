@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
 
@@ -7,8 +6,11 @@ namespace Nevermore
 {
     public class ColumnMapping
     {
+        public const int DefaultMaxLongStringLength = 2000;
         public const int DefaultMaxStringLength = 200;
-        public const int DefaultMaxIdLength = 50;
+        // Override in DocumentMap subclasses where necessary
+        public const int DefaultPrimaryKeyIdLength = 50;
+        public const int DefaultMaxForeignKeyIdLength = 50;
         public const int DefaultMaxEnumLength = 50;
         // Thumbprints today are 40 (SHA-1), 128 this allows room for alternative hash algorithms
         public const int DefaultMaxThumbprintLength = 128;
@@ -40,13 +42,20 @@ namespace Nevermore
             {
                 IsNullable = true;
             }
-
-            if (property.PropertyType == typeof(string) && property.Name.EndsWith("Id"))
+            
+            if (property.PropertyType == typeof(string))
             {
                 DbType = DbType.String;
                 if (maxLength == 0)
                 {
-                    MaxLength = DefaultMaxIdLength;
+                    if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase)) // Primary keys
+                    {
+                        MaxLength = DefaultPrimaryKeyIdLength;
+                    }
+                    else if (property.Name.EndsWith("Id")) // Foreign keys
+                    {
+                        MaxLength = DefaultMaxForeignKeyIdLength;
+                    }
                 }
             }
 
@@ -54,6 +63,13 @@ namespace Nevermore
             {
                 MaxLength = DefaultMaxEnumLength;
                 DbType = DbType.String;
+            }
+
+            if (property.PropertyType == typeof(ReferenceCollection))
+            {
+                DbType = DbType.String;
+                MaxLength = int.MaxValue;
+                ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
             }
         }
 

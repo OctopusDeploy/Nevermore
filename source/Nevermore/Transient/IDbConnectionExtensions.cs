@@ -1,5 +1,5 @@
+using System;
 using System.Data;
-using Microsoft.WindowsAzure.Common.TransientFaultHandling;
 
 namespace Nevermore.Transient
 {

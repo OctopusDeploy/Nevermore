@@ -1,5 +1,4 @@
 using System;
-using Microsoft.WindowsAzure.Common.TransientFaultHandling;
 
 namespace Nevermore.Transient
 {

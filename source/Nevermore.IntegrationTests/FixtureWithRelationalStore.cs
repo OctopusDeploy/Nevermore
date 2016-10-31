@@ -39,12 +39,12 @@ namespace Nevermore.IntegrationTests
         {
         }
 
-        public int CountOf<T>() where T : class
+        public int CountOf<T>() where T : class, IId
         {
             return InTransaction(s => s.Query<T>().Count());
         }
 
-        public void StoreAll<T>(params T[] items) where T : class
+        public void StoreAll<T>(params T[] items) where T : class, IId
         {
             InTransaction(s =>
             {

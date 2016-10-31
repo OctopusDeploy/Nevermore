@@ -6,7 +6,7 @@ namespace Nevermore
     {
         public static readonly int DefaultCommandTimeoutSeconds = 60;
 
-        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args)
+        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args, DocumentMap mapping = null)
         {
             var command = connection.CreateCommand();
 
@@ -18,7 +18,7 @@ namespace Nevermore
 
                 if (args != null)
                 {
-                    args.ContributeTo(command);
+                    args.ContributeTo(command, mapping);
                 }
                 return command;
             }

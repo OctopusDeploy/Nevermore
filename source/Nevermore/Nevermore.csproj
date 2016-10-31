@@ -36,9 +36,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DbUp">
-      <HintPath>..\packages\dbup.3.2.1\lib\NET35\DbUp.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Threading.Tasks">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
     </Reference>
@@ -47,12 +44,6 @@
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks.Extensions.Desktop">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.Extensions.Desktop.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Common">
-      <HintPath>..\packages\Microsoft.WindowsAzure.Common.1.4.1\lib\net45\Microsoft.WindowsAzure.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Common.NetFramework">
-      <HintPath>..\packages\Microsoft.WindowsAzure.Common.1.4.1\lib\net45\Microsoft.WindowsAzure.Common.NetFramework.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -76,55 +67,79 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AmazingConverter.cs" />
-    <Compile Include="ColumnMapping.cs" />
+    <Compile Include="Mapping\AmazingConverter.cs" />
+    <Compile Include="Mapping\ColumnMapping.cs" />
     <Compile Include="CommandParameters.cs" />
     <Compile Include="ConditionBuilder.cs" />
-    <Compile Include="ConfigurationMapping.cs" />
-    <Compile Include="DatabaseTypeConverter.cs" />
-    <Compile Include="DelegateReaderWriter.cs" />
-    <Compile Include="DocumentMap.cs" />
+    <Compile Include="Mapping\DatabaseTypeConverter.cs" />
+    <Compile Include="Mapping\DelegateReaderWriter.cs" />
+    <Compile Include="Diagnostics\LibLog.cs" />
+    <Compile Include="Diagnostics\TimedSection.cs" />
+    <Compile Include="Mapping\DocumentMap.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="IDocument.cs" />
     <Compile Include="IId.cs" />
     <Compile Include="IInitializeRelationalStore.cs" />
-    <Compile Include="IKeyAllocator.cs" />
+    <Compile Include="Mapping\IKeyAllocator.cs" />
     <Compile Include="INamed.cs" />
     <Compile Include="IOrderedQueryBuilder.cs" />
     <Compile Include="IProjectionMapper.cs" />
     <Compile Include="IPropertyReaderWriter.cs" />
     <Compile Include="IQueryBuilder.cs" />
     <Compile Include="IQueryGenerator.cs" />
+    <Compile Include="ReferenceCollection.cs" />
+    <Compile Include="Mapping\ReferenceCollectionReaderWriter.cs" />
+    <Compile Include="RelatedDocuments\EmptyRelatedDocumentStore.cs" />
+    <Compile Include="RelatedDocuments\IRelatedDocumentStore.cs" />
     <Compile Include="IRelationalStore.cs" />
     <Compile Include="IRelationalTransaction.cs" />
     <Compile Include="ISqlCommandFactory.cs" />
     <Compile Include="IStoreInitializer.cs" />
-    <Compile Include="KeyAllocator.cs" />
+    <Compile Include="Joins\IJoin.cs" />
+    <Compile Include="Joins\Join.cs" />
+    <Compile Include="Joins\JoinClause.cs" />
+    <Compile Include="Joins\JoinExtensions.cs" />
+    <Compile Include="Joins\TableAliasGenerator.cs" />
+    <Compile Include="Mapping\KeyAllocator.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
+    <Compile Include="RetriableOperation.cs" />
     <Compile Include="SqlCommandFactory.cs" />
     <Compile Include="SqlQueryGenerator.cs" />
     <Compile Include="TransientFaultHandling.cs" />
+    <Compile Include="Transient\ExponentialBackoff.cs" />
+    <Compile Include="Transient\FixedInterval.cs" />
     <Compile Include="Transient\IDbCommandExtensions.cs" />
     <Compile Include="Transient\IDbConnectionExtensions.cs" />
+    <Compile Include="Transient\Incremental.cs" />
+    <Compile Include="Transient\ITransientErrorDetectionStrategy.cs" />
+    <Compile Include="Transient\RetryingEventArgs.cs" />
+    <Compile Include="Transient\RetryLimitExceededException.cs" />
+    <Compile Include="Transient\RetryManager.cs" />
     <Compile Include="Transient\RetryManagerSqlExtensions.cs" />
+    <Compile Include="Transient\RetryPolicy.cs" />
     <Compile Include="Transient\RetryPolicyExtensions.cs" />
+    <Compile Include="Transient\RetryStrategy.cs" />
+    <Compile Include="Transient\ShouldRetry.cs" />
     <Compile Include="Transient\SqlDatabaseTransientErrorDetectionStrategy.cs" />
     <Compile Include="Transient\Throttling\ThrottledResourceType.cs" />
     <Compile Include="Transient\Throttling\ThrottlingCondition.cs" />
     <Compile Include="Transient\Throttling\ThrottlingMode.cs" />
     <Compile Include="Transient\Throttling\ThrottlingType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyReaderFactory.cs" />
-    <Compile Include="PropertyReaderWriterDecorator.cs" />
+    <Compile Include="Mapping\PropertyReaderFactory.cs" />
+    <Compile Include="Mapping\PropertyReaderWriterDecorator.cs" />
     <Compile Include="QueryBuilder.cs" />
     <Compile Include="ReferencingDocument.cs" />
-    <Compile Include="RelationalMappings.cs" />
+    <Compile Include="Mapping\RelationalMappings.cs" />
     <Compile Include="RelationalStore.cs" />
     <Compile Include="RelationalTransaction.cs" />
     <Compile Include="StoreInitializer.cs" />
     <Compile Include="StringTooLongException.cs" />
+    <Compile Include="Transient\TransientErrorCatchAllStrategy.cs" />
+    <Compile Include="Transient\TransientErrorIgnoreStrategy.cs" />
     <Compile Include="UniqueConstraintViolationException.cs" />
-    <Compile Include="UniqueRule.cs" />
+    <Compile Include="Mapping\UniqueRule.cs" />
+    <Compile Include="Util\Guard.cs" />
     <Compile Include="WhereParameter.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -132,11 +147,14 @@
     <None Include="app.config" />
     <None Include="Nevermore.nuspec" />
     <None Include="packages.config" />
-    <None Include="TODO.md" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="UpgradeScripts\Script0001 - Initial schema.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Transient\License.txt" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Import Project="Build\Package.targets" Condition="Exists('Build\Package.targets')" />

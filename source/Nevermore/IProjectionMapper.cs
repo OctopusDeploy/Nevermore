@@ -7,5 +7,6 @@ namespace Nevermore
     {
         TResult Map<TResult>(string prefix);
         void Read(Action<IDataReader> callback);
+        TColumn Read<TColumn>(Func<IDataReader, TColumn> callback);
     }
 }

@@ -1,25 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nevermore.Joins;
 
 namespace Nevermore
 {
     public class QueryBuilder<TRecord> : IOrderedQueryBuilder<TRecord> where TRecord : class
     {
         readonly IRelationalTransaction transaction;
-        readonly IQueryGenerator queryGenerator;
 
-        public QueryBuilder(IRelationalTransaction transaction, string viewOrTableName)
+        public QueryBuilder(IRelationalTransaction transaction, string viewOrTableName, ITableAliasGenerator tableAliasGenerator = null)
         {
             this.transaction = transaction;
-            queryGenerator = new SqlQueryGenerator(viewOrTableName);
+            QueryGenerator = new SqlQueryGenerator(viewOrTableName, tableAliasGenerator);
         }
+
+        public IQueryGenerator QueryGenerator { get; }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
         {
             if (!String.IsNullOrWhiteSpace(whereClause))
             {
-                queryGenerator.AddWhere(whereClause);
+                QueryGenerator.AddWhere(whereClause);
             }
             return this;
         }
@@ -29,32 +31,34 @@ namespace Nevermore
             switch (operand)
             {
                 case SqlOperand.Contains:
-                    queryGenerator.WhereContains(fieldName, value);
+                    QueryGenerator.WhereContains(fieldName, value);
                     break;
                 case SqlOperand.EndsWith:
-                    queryGenerator.WhereEndsWith(fieldName, value);
+                    QueryGenerator.WhereEndsWith(fieldName, value);
                     break;
                 case SqlOperand.Equal:
-                    queryGenerator.WhereEquals(fieldName, value);
+                    QueryGenerator.WhereEquals(fieldName, value);
                     break;
                 case SqlOperand.NotEqual:
-                    queryGenerator.WhereNotEquals(fieldName, value);
+                    QueryGenerator.WhereNotEquals(fieldName, value);
                     break;
                 case SqlOperand.GreaterThan:
-                    queryGenerator.WhereGreaterThan(fieldName, value);
+                    QueryGenerator.WhereGreaterThan(fieldName, value);
                     break;
                 case SqlOperand.GreaterThanOrEqual:
-                    queryGenerator.WhereGreaterThanOrEqual(fieldName, value);
+                    QueryGenerator.WhereGreaterThanOrEqual(fieldName, value);
                     break;
                 case SqlOperand.LessThan:
-                    queryGenerator.WhereLessThan(fieldName, value);
+                    QueryGenerator.WhereLessThan(fieldName, value);
                     break;
                 case SqlOperand.LessThanOrEqual:
-                    queryGenerator.WhereLessThanOrEqual(fieldName, value);
+                    QueryGenerator.WhereLessThanOrEqual(fieldName, value);
                     break;
                 case SqlOperand.StartsWith:
-                    queryGenerator.WhereStartsWith(fieldName, value);
+                    QueryGenerator.WhereStartsWith(fieldName, value);
                     break;
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
             }
 
             return this;
@@ -65,11 +69,13 @@ namespace Nevermore
             switch (operand)
             {
                 case SqlOperand.Between:
-                    queryGenerator.WhereBetween(fieldName, startValue, endValue);
+                    QueryGenerator.WhereBetween(fieldName, startValue, endValue);
                     break;
                 case SqlOperand.BetweenOrEqual:
-                    queryGenerator.WhereBetweenOrEqual(fieldName, startValue, endValue);
+                    QueryGenerator.WhereBetweenOrEqual(fieldName, startValue, endValue);
                     break;
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
             }
 
             return this;
@@ -80,67 +86,79 @@ namespace Nevermore
             switch (operand)
             {
                 case SqlOperand.In:
-                    queryGenerator.WhereIn(fieldName, values);
+                    QueryGenerator.WhereIn(fieldName, values);
                     break;
                 case SqlOperand.ContainsAll:
                     break;
                 case SqlOperand.ContainsAny:
                     break;
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with a list of values", nameof(operand));
             }
 
             return this;
         }
 
-        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        public IQueryBuilder<TRecord> Join(IJoin join)
         {
-            queryGenerator.AddParameter(name, value);
+            QueryGenerator.AddJoin(join);
             return this;
         }
+
+        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        {
+            QueryGenerator.AddParameter(name, value);
+            return this;
+        }
+
 
         public IQueryBuilder<TRecord> LikeParameter(string name, object value)
         {
-            queryGenerator.AddParameter(name, "%|" + (value ?? String.Empty).ToString().Replace("%", "[%]") + "|%");
+            QueryGenerator.AddParameter(name, "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
             return this;
         }
 
-        public IQueryBuilder<TRecord> Procedure(string storedProcName)
+        public IQueryBuilder<TRecord> LikePipedParameter(string name, object value)
         {
-            queryGenerator.UseStoredProcedure(storedProcName);
+            QueryGenerator.AddParameter(name, "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
             return this;
         }
+
 
         public IQueryBuilder<TRecord> View(string viewName)
         {
-            queryGenerator.UseView(viewName);
+            QueryGenerator.UseView(viewName);
             return this;
         }
 
         public IQueryBuilder<TRecord> Table(string tableName)
         {
-            queryGenerator.UseTable(tableName);
+            QueryGenerator.UseTable(tableName);
             return this;
         }
 
         public IQueryBuilder<TRecord> Hint(string tableHintClause)
         {
-            queryGenerator.UseHint(tableHintClause);
+            QueryGenerator.UseHint(tableHintClause);
             return this;
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)
         {
-            queryGenerator.AddOrder(fieldName, false);
+            QueryGenerator.AddOrder(fieldName, false);
             return this;
         }
+
 
         public IOrderedQueryBuilder<TRecord> ThenBy(string fieldName)
         {
             return OrderBy(fieldName);
         }
 
+
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
-            queryGenerator.AddOrder(fieldName, true);
+            QueryGenerator.AddOrder(fieldName, true);
             return this;
         }
 
@@ -151,22 +169,27 @@ namespace Nevermore
 
         public int Count()
         {
-            return transaction.ExecuteScalar<int>(queryGenerator.CountQuery(), queryGenerator.QueryParameters);
+            return transaction.ExecuteScalar<int>(QueryGenerator.CountQuery(), QueryGenerator.QueryParameters);
+        }
+
+        public bool Any()
+        {
+            return Count() != 0;
         }
 
         public TRecord First()
         {
-            return transaction.ExecuteReader<TRecord>(queryGenerator.TopQuery(), queryGenerator.QueryParameters).FirstOrDefault();
+            return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(), QueryGenerator.QueryParameters).FirstOrDefault();
         }
 
         public IEnumerable<TRecord> Take(int take)
         {
-            return transaction.ExecuteReader<TRecord>(queryGenerator.TopQuery(take), queryGenerator.QueryParameters);
+            return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(take), QueryGenerator.QueryParameters);
         }
 
         public List<TRecord> ToList(int skip, int take)
         {
-            return transaction.ExecuteReader<TRecord>(queryGenerator.PaginateQuery(skip, take), queryGenerator.QueryParameters)
+            return transaction.ExecuteReader<TRecord>(QueryGenerator.PaginateQuery(skip, take), QueryGenerator.QueryParameters)
                 .ToList();
         }
 
@@ -183,12 +206,25 @@ namespace Nevermore
 
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(queryGenerator.SelectQuery(), queryGenerator.QueryParameters);
+            return transaction.ExecuteReader<TRecord>(QueryGenerator.SelectQuery(), QueryGenerator.QueryParameters);
         }
 
         public IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector)
         {
             return Stream().ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+        }
+
+        public string DebugViewRawQuery()
+        {
+            return QueryGenerator.SelectQuery();
+        }
+
+    
+
+        public IQueryBuilder<TRecord> NoLock()
+        {
+            Hint("NOLOCK");
+            return this;
         }
     }
 }

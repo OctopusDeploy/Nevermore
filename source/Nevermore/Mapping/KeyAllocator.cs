@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data;
-using Microsoft.WindowsAzure.Common.TransientFaultHandling;
 using Nevermore.Transient;
 
 namespace Nevermore
@@ -75,13 +74,10 @@ namespace Nevermore
 
             void SetRange(int max)
             {
-                var first = max - blockSize;
+                var first = (max - blockSize) + 1;
                 blockStart = first;
                 blockNext = first;
-                blockFinish = max;
-
-                if (blockNext == 0)
-                    blockNext = 1;
+                blockFinish = max + 1;
             }
 
             int GetNextMaxValue()

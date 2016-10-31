@@ -2,36 +2,54 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Nevermore.Joins;
 
 namespace Nevermore
 {
     public class SqlQueryGenerator : IQueryGenerator
     {
         readonly StringBuilder queryText = new StringBuilder();
-        readonly CommandParameters queryParameters = new CommandParameters();
 
-        const string defaultOrderBy = "Id";
         string[] orderByFields = new string[0];
 
-        string viewOrTableName;
-        string storedProcedureName;
         string tableHint;
+        readonly ITableAliasGenerator tableAliasGenerator;
+        readonly CommandParameters queryParameters = new CommandParameters();
+        private bool defaultOrderBy = true;
 
-        public SqlQueryGenerator(string viewOrTableName)
+
+        public SqlQueryGenerator(string viewOrTableName, ITableAliasGenerator tableAliasGenerator = null)
         {
-            this.viewOrTableName = viewOrTableName;
+            this.tableAliasGenerator = tableAliasGenerator ?? new TableAliasGenerator();
+            this.ViewOrTableName = viewOrTableName;
         }
 
         public CommandParameters QueryParameters
         {
-            get { return queryParameters; }
+            get
+            {
+                var all = new CommandParameters(queryParameters);
+                foreach (var join in Joins)
+                    all.AddRange(join.RightQuery.QueryParameters);
+                return all;
+            }
         }
 
-        string GetOrderByClause()
+        public string ViewOrTableName { get; private set; }
+        public IList<IJoin> Joins { get; } = new List<IJoin>();
+
+        string GetOrderByClause(string tableAlias = null)
         {
-            return orderByFields.Any()
-                ? string.Join(", ", orderByFields)
-                : defaultOrderBy;
+            var fields = orderByFields;
+            if (fields.Length == 0 && defaultOrderBy)
+                fields = new[] {"[Id]"};
+
+            if (!string.IsNullOrEmpty(tableAlias))
+                fields = fields.Select(t => $"{tableAlias}.{t}").ToArray();
+
+            return fields.Any()
+                ? "ORDER BY " + string.Join(", ", fields)
+                : "";
         }
 
         string GetWhereClause()
@@ -43,23 +61,19 @@ namespace Nevermore
 
         public override string ToString()
         {
-            return (tableHint == null ? "" : tableHint + " ") + GetWhereClause() + " ORDER BY " + GetOrderByClause();
+            return GetWhereClause() + " " + GetOrderByClause();
         }
 
         public void UseTable(string tableName)
         {
-            viewOrTableName = tableName;
+            ViewOrTableName = tableName;
         }
 
         public void UseView(string viewName)
         {
-            viewOrTableName = viewName;
+            ViewOrTableName = viewName;
         }
 
-        public void UseStoredProcedure(string storedProcedureName)
-        {
-            this.storedProcedureName = storedProcedureName;
-        }
 
         public void UseHint(string hintClause)
         {
@@ -68,31 +82,44 @@ namespace Nevermore
 
         public string CountQuery()
         {
-            return "SELECT COUNT(*) FROM dbo.[" + viewOrTableName + "] " + tableHint + " " + GetWhereClause();
+            if (Joins.Any())
+                return GetClausesForJoinQuery("SELECT COUNT(*)", false);
+
+            return $"SELECT COUNT(*) " + GetClauses(false);
         }
+
 
         public string TopQuery(int top = 1)
         {
-            return "SELECT TOP " + top + " * FROM dbo.[" + viewOrTableName + "] " + ToString();
+            if (Joins.Any())
+                return GetClausesForJoinQuery($"SELECT TOP {top} {{0}}.*", true);
+
+            return $"SELECT TOP {top} * " + GetClauses(true);
         }
 
-        public string SelectQuery()
+        public string SelectQuery(bool orderBy = true)
         {
-            return "SELECT * FROM dbo.[" + viewOrTableName + "] " + ToString();
+            if (Joins.Any())
+                return GetClausesForJoinQuery("SELECT {0}.*", orderBy);
+
+            return $"SELECT * " + GetClauses(orderBy);
         }
+
 
         public string PaginateQuery(int skip, int take)
         {
             AddParameter("_minrow", skip + 1);
             AddParameter("_maxrow", take + skip);
-            return "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY " + GetOrderByClause() + ") as RowNum FROM dbo.[" + viewOrTableName + "] " + GetWhereClause() + ") RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow";
+            return "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY " + GetOrderByClause() + ") as RowNum FROM dbo.[" + ViewOrTableName + "] " + tableHint + " " + GetWhereClause() + ") RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow";
+
         }
 
         public void AddOrder(string fieldName, bool descending)
         {
             fieldName = "[" + fieldName + "]";
             fieldName = descending ? fieldName + " DESC" : fieldName;
-            orderByFields = orderByFields.Concat(new[] { fieldName }).ToArray();
+            if (!orderByFields.Contains(fieldName))
+                orderByFields = orderByFields.Concat(new[] { fieldName }).ToArray();
         }
 
         public void AddWhere(WhereParameter whereParams)
@@ -200,7 +227,7 @@ namespace Nevermore
                 FieldName = fieldName,
                 Operand = SqlOperand.Between
             },
-            startValue, 
+            startValue,
             endValue);
         }
 
@@ -309,6 +336,12 @@ namespace Nevermore
             queryParameters.Add(fieldName.ToLower(), value);
         }
 
+        public void AddJoin(IJoin join)
+        {
+            Joins.Add(join);
+        }
+
+
         void AppendField(string fieldName)
         {
             queryText.Append(Field(fieldName));
@@ -316,7 +349,7 @@ namespace Nevermore
 
         string Field(string fieldName)
         {
-            return string.Format("[{0}]", fieldName);
+            return $"[{fieldName}]";
         }
 
         void AppendOperand(SqlOperand operand)
@@ -326,7 +359,7 @@ namespace Nevermore
 
         string Operand(SqlOperand operand)
         {
-            return string.Format(" {0} ", GetQueryOperand(operand));
+            return $" {GetQueryOperand(operand)} ";
         }
 
         void AppendParameter(string fieldName)
@@ -343,22 +376,22 @@ namespace Nevermore
 
         string Parameter(string fieldName)
         {
-            return string.Format("@{0}", fieldName.ToLower());
+            return $"@{fieldName.ToLower()}";
         }
 
         string GetContainsValue(object value)
         {
-            return string.Format("%{0}%", value);
+            return $"%{value}%";
         }
 
         string GetStartsWithValue(object value)
         {
-            return string.Format("{0}%", value);
+            return $"{value}%";
         }
 
         string GetEndsWithValue(object value)
         {
-            return string.Format("%{0}", value);
+            return $"%{value}";
         }
 
         string GetInValue(object values)
@@ -405,6 +438,77 @@ namespace Nevermore
         {
             if (queryText.Length > 0)
                 AndAlso();
+        }
+
+        string GetClauses(bool orderBy)
+        {
+            var sb = new StringBuilder();
+
+            sb.Append("FROM dbo.[").Append(ViewOrTableName).Append("]");
+            if (!string.IsNullOrEmpty(tableHint))
+                sb.Append(" ").Append(tableHint);
+
+            var whereClause = GetWhereClause();
+            if (!string.IsNullOrEmpty(whereClause))
+                sb.Append(" ").Append(whereClause);
+
+            if (orderBy)
+            {
+                var orderByClause = GetOrderByClause();
+                if (!string.IsNullOrEmpty(orderByClause))
+                    sb.Append(" ").Append(orderByClause);
+            }
+            return sb.ToString();
+        }
+
+        string GetClausesForJoinQuery(string select, bool orderby)
+        {
+            var leftTableAlias = tableAliasGenerator.GenerateTableAlias(ViewOrTableName);
+            var sb = new StringBuilder();
+            sb.AppendFormat(select, leftTableAlias)
+                .AppendLine($" FROM (SELECT * {GetClauses(false)}) {leftTableAlias}");
+
+            foreach (var join in Joins)
+            {
+                var right = join.RightQuery;
+                var rightQuery = right.SelectQuery(false);
+                var rightTableAlias = tableAliasGenerator.GenerateTableAlias(right.ViewOrTableName);
+
+                var joinClauseString = JoinClauseString(leftTableAlias, rightTableAlias, join.JoinClauses);
+                var joinTypeString = JoinTypeString(join.JoinType);
+
+                sb.AppendLine($"{joinTypeString} ({rightQuery}) {rightTableAlias} {joinClauseString}");
+            }
+
+            if (orderby)
+            {
+                var orderByClause = GetOrderByClause(leftTableAlias);
+                if (!string.IsNullOrEmpty(orderByClause))
+                    sb.AppendLine(orderByClause);
+            }
+            return sb.ToString().Trim();
+        }
+
+        string JoinClauseString(string leftTableAlias, string rightTableAlias, ICollection<JoinClause> joinClauses)
+        {
+            if (!joinClauses.Any())
+                throw new InvalidOperationException("Can not create empty join clause");
+
+            var joinClauseStrings = joinClauses.Select(j => j.ToString(leftTableAlias, rightTableAlias)).ToArray();
+            var joinString = "ON " + string.Join(" AND ", joinClauseStrings);
+
+            return joinString;
+        }
+
+        string JoinTypeString(JoinType joinType)
+        {
+            switch (joinType)
+            {
+                case JoinType.InnerJoin:
+                    return "INNER JOIN";
+                default:
+                    throw new NotSupportedException($"Join {joinType} is not supported");
+            }
         }
     }
 

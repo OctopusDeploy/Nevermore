@@ -49,11 +49,19 @@ namespace Nevermore
         IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper);
 
         /// <summary>
+        /// Executes a delete query (bypasses the usual OctopusModelDeletionRules checks). Only use this if you are 100% certain you can 
+        /// delete from the given table without worrying about deletion rules.
+        /// </summary>
+        /// <param name="query">The SQL query to execute. Example: <c>DELETE FROM [Event]...</c></param>
+        /// <param name="args">Any arguments to pass to the query as command parameters.</param>
+        void ExecuteRawDeleteQuery(string query, CommandParameters args);
+
+        /// <summary>
         /// Creates a query that returns strongly typed documents.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <returns>A stream of resulting documents.</returns>
-        IQueryBuilder<TDocument> Query<TDocument>() where TDocument : class;
+        IQueryBuilder<TDocument> Query<TDocument>() where TDocument : class, IId;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -61,7 +69,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        TDocument Load<TDocument>(string id) where TDocument : class;
+        TDocument Load<TDocument>(string id) where TDocument : class, IId;
 
         /// <summary>
         /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -70,7 +78,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents.</returns>
-        TDocument[] Load<TDocument>(IEnumerable<string> ids) where TDocument : class;
+        TDocument[] Load<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -78,7 +86,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        TDocument LoadRequired<TDocument>(string id) where TDocument : class;
+        TDocument LoadRequired<TDocument>(string id) where TDocument : class, IId;
 
         /// <summary>
         /// Loads a set of documents by their ID's. If any of the documents are not found, a
@@ -87,7 +95,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents.</returns>
-        TDocument[] LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class;
+        TDocument[] LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
@@ -96,7 +104,7 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
-        void Insert<TDocument>(TDocument instance) where TDocument : class;
+        void Insert<TDocument>(TDocument instance) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
@@ -105,7 +113,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="tableName">The name of the table to insert the document into.</param>
         /// <param name="instance">The document instance to insert.</param>
-        void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class;
+        void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. Uses a specific ID rather than
@@ -114,7 +122,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="customAssignedId">The ID to assign to the document.</param>
-        void Insert<TDocument>(TDocument instance, string customAssignedId) where TDocument : class;
+        void Insert<TDocument>(TDocument instance, string customAssignedId) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. Uses a specific ID rather than automatically generating one.
@@ -123,14 +131,26 @@ namespace Nevermore
         /// <param name="tableName">The name of the table to insert the document into.</param>
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="customAssignedId">The ID to assign to the document.</param>
-        void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId) where TDocument : class;
+        /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
+        void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null) where TDocument : class, IId;
+
+        /// <summary>
+        /// Immediately inserts multiple items into a specific table.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
+        /// <param name="tableName">The name of the table to insert the document into.</param>
+        /// <param name="instances">The document instances to insert (will be formed into a multiple VALUES for a single SQL INSERT.</param>
+        /// <param name="includeDefaultModelColumns">Whether to include the Id and Json columns in the mapping (can disable for certain tables that do not use Json - like the EventRelatedDocument table etc).</param>
+        /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
+        void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances, bool includeDefaultModelColumns, string tableHint = null) where TDocument : class, IId;
 
         /// <summary>
         /// Updates an existing document in the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being updated.</typeparam>
         /// <param name="instance">The document to update.</param>
-        void Update<TDocument>(TDocument instance) where TDocument : class;
+        /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
+        void Update<TDocument>(TDocument instance, string tableHint = null) where TDocument : class, IId;
 
         /// <summary>
         /// Deletes an existing document from the database.

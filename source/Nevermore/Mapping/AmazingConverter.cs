@@ -1,16 +1,19 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
 namespace Nevermore
 {
+    /// <summary>
+    /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
+    /// anything.
+    /// </summary>
     public static class AmazingConverter
     {
         /// <summary>
-        /// If it can be converted, the <see cref="AmazingConverter"/> will figure out how. Given a source
+        /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
         /// object, tries its best to convert it to the target type.
         /// </summary>
         /// <param name="source">The source.</param>
@@ -34,7 +37,7 @@ namespace Nevermore
 
             // Enums!
             if (targetType.IsEnum && sourceType == typeof(string))
-                return Enum.Parse(targetType, (string)source, ignoreCase: true);
+                return Enum.Parse(targetType, (string)source, true);
 
             // Try type descriptors
             var targetConverter = TypeDescriptor.GetConverter(targetType);

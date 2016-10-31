@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Assent;
+using Nevermore.Joins;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -7,12 +9,241 @@ namespace Nevermore.Tests
     [TestFixture]
     public class QueryBuilderFixture
     {
+        readonly ITableAliasGenerator tableAliasGenerator = Substitute.For<ITableAliasGenerator>();
+        private IRelationalTransaction transaction;
+
+        [SetUp]
+        public void SetUp()
+        {
+            transaction = Substitute.For<IRelationalTransaction>();
+
+            var tableNumber = 0;
+            tableAliasGenerator.GenerateTableAlias(Arg.Any<string>()).Returns(delegate
+            {
+                tableNumber++;
+                return "t" + tableNumber;
+            });
+        }
+
+        [Test]
+        public void ShouldGenerateSelect()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5")
+                .OrderBy("Id")
+                .DebugViewRawQuery();
+
+            const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5) ORDER BY [Id]";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectNoOrder()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5")
+                .QueryGenerator
+                .SelectQuery(false);
+
+            const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectForQueryBuilder()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+             .Where("[Price] > 5")
+             .DebugViewRawQuery();
+
+            const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5) ORDER BY [Id]";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectForJoin()
+        {
+
+            var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5");
+            var rightQueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
+            var join = new Join(JoinType.InnerJoin, rightQueryBuilder.QueryGenerator)
+                .On("CustomerId", JoinOperand.Equal, "Id");
+
+            leftQueryBuilder.Join(join);
+
+            var actual = leftQueryBuilder.DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectForMultipleJoins()
+        {
+
+            var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator);
+            var join1QueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
+            var join2QueryBuilder = new QueryBuilder<IDocument>(transaction, "Accounts");
+
+            leftQueryBuilder.Join(
+                    new Join(JoinType.InnerJoin, join1QueryBuilder.QueryGenerator)
+                        .On("CustomerId", JoinOperand.Equal, "Id")
+                )
+                .Join(
+                    new Join(JoinType.InnerJoin, join2QueryBuilder.QueryGenerator)
+                        .On("AccountId", JoinOperand.Equal, "Id")
+                );
+
+            var actual = leftQueryBuilder.DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectForComplicatedSubqueryJoin()
+        {
+            var orders = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator);
+            var customers = new QueryBuilder<IDocument>(transaction, "Customers")
+                                            .Where("IsActive = 1")
+                                            .OrderBy("Id");
+
+            var accounts = new QueryBuilder<IDocument>(transaction, "Accounts").Hint("WITH (UPDLOCK)");
+
+
+            orders.Join(
+                    new Join(JoinType.InnerJoin, customers.QueryGenerator)
+                        .On("CustomerId", JoinOperand.Equal, "Id")
+                        .On("Owner", JoinOperand.Equal, "Owner")
+                )
+                .Join(
+                    new Join(JoinType.InnerJoin, accounts.QueryGenerator)
+                        .On("AccountId", JoinOperand.Equal, "Id")
+                );
+
+            var actual = orders.DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateCount()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5")
+                .NoLock()
+                .QueryGenerator
+                .CountQuery();
+
+            var expected = "SELECT COUNT(*) FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void ShouldGenerateCountForQueryBuilder()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .NoLock()
+                .Where("[Price] > 5")
+                .QueryGenerator
+                .CountQuery();
+
+            const string expected = "SELECT COUNT(*) FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void ShouldGenerateCountForJoin()
+        {
+            var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5");
+            var rightQueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
+            var join = new Join(JoinType.InnerJoin, rightQueryBuilder.QueryGenerator)
+                .On("CustomerId", JoinOperand.Equal, "Id");
+            leftQueryBuilder.Join(join);
+
+            var actual = leftQueryBuilder.QueryGenerator.CountQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateTop()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                                .Where("[Price] > 5")
+                                .OrderBy("Id")
+                                .NoLock()
+                                .QueryGenerator
+                                .TopQuery(100);
+
+            var expected = "SELECT TOP 100 * FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5) ORDER BY [Id]";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+
+        [Test]
+        public void ShouldGenerateTopForJoin()
+        {
+
+            var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5");
+            var rightQueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
+            var join = new Join(JoinType.InnerJoin, rightQueryBuilder.QueryGenerator)
+                .On("CustomerId", JoinOperand.Equal, "Id");
+            leftQueryBuilder.Join(join);
+
+            var actual = leftQueryBuilder.QueryGenerator.TopQuery(100);
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
+        {
+
+
+            // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
+            var environment = new
+            {
+                Id = "Environments-1"
+            };
+            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
+                .Where("[JSON] LIKE @jsonPatternSquareBracket")
+                .LikeParameter("jsonPatternSquareBracket", $"\"AutoDeployReleaseOverrides\":[{{\"EnvironmentId\":\"{environment.Id}\"")
+                .Where("[JSON] NOT LIKE @jsonPatternPercentage")
+                .LikeParameter("jsonPatternPercentage", $"SomeNonExistantField > 5%");
+
+            var actualParameter1 = queryBuilder.QueryGenerator.QueryParameters["jsonPatternSquareBracket"];
+            const string expectedParameter1 = "%\"AutoDeployReleaseOverrides\":[[]{\"EnvironmentId\":\"Environments-1\"%";
+            Assert.AreEqual(actualParameter1, expectedParameter1);
+
+            var actualParameter2 = queryBuilder.QueryGenerator.QueryParameters["jsonPatternPercentage"];
+            const string expectedParameter2 = "%SomeNonExistantField > 5[%]%";
+            Assert.AreEqual(actualParameter2, expectedParameter2);
+        }
+
+        [Test]
+        public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
+        {
+
+            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
+                .LikePipedParameter("Name", "Foo|Bar|Baz");
+
+            Assert.AreEqual("%|Foo|Bar|Baz|%", queryBuilder.QueryGenerator.QueryParameters["Name"]);
+        }
+
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThan()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] < @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(2);
 
@@ -31,9 +262,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] < @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(2);
 
@@ -51,9 +282,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqual()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] <= @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(10);
 
@@ -72,9 +303,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqualExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] <= @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(10);
 
@@ -92,9 +323,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereEquals()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] = @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -113,9 +344,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereEqualsExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] = @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -133,9 +364,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereNotEquals()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] <> @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -154,9 +385,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereNotEqualsExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] <> @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -174,9 +405,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThan()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] > @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(11);
 
@@ -195,9 +426,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] > @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(3);
 
@@ -215,9 +446,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqual()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] >= @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(21);
 
@@ -236,9 +467,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqualExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] >= @completed)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(21);
 
@@ -256,9 +487,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereContains()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] LIKE @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -277,9 +508,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereContainsExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] LIKE @title)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -297,9 +528,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereIn()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN (@nevermore, @octofront))";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -311,8 +542,8 @@ namespace Nevermore.Tests
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => 
-                    cp["nevermore"].ToString() == "nevermore" 
+                Arg.Is<CommandParameters>(cp =>
+                    cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
             Assert.That(result, Is.EqualTo(1));
@@ -321,20 +552,20 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem]  WHERE ([Title] IN (@nevermore, @octofront))";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
             var result = new QueryBuilder<TodoItem>(transaction, "TodoItem")
-                .Where("Title", SqlOperand.In, new [] {"nevermore", "octofront"})
+                .Where("Title", SqlOperand.In, new[] { "nevermore", "octofront" })
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => 
-                    cp["nevermore"].ToString() == "nevermore" 
+                Arg.Is<CommandParameters>(cp =>
+                    cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
             Assert.That(result, Is.EqualTo(1));
@@ -343,9 +574,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetween()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -357,8 +588,8 @@ namespace Nevermore.Tests
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => 
-                    int.Parse(cp["startvalue"].ToString()) == 5 && 
+                Arg.Is<CommandParameters>(cp =>
+                    int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
             Assert.That(result, Is.EqualTo(1));
@@ -367,9 +598,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -389,9 +620,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqual()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -413,9 +644,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqualExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos]  WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
 
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(1);
 
@@ -435,11 +666,11 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForOrderBy()
         {
-            const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem]  ORDER BY [Title]";
-            var todoItem = new TodoItem {Id = 1, Title = "Complete Nevermore", Completed = false};
-            var transaction = Substitute.For<IRelationalTransaction>();
+            const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title]";
+            var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
+
             transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
-                .Returns(new[] {todoItem});
+                .Returns(new[] { todoItem });
 
             var result = new QueryBuilder<TodoItem>(transaction, "TodoItem")
                 .OrderBy("Title")
@@ -456,9 +687,9 @@ namespace Nevermore.Tests
         [Test]
         public void ShouldGetCorrectSqlQueryForOrderByDescending()
         {
-            const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem]  ORDER BY [Title] DESC";
+            const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title] DESC";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
-            var transaction = Substitute.For<IRelationalTransaction>();
+
             transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
                 .Returns(new[] { todoItem });
 

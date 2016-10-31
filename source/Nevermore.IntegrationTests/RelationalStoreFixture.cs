@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using Nevermore.IntegrationTests.Model;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
@@ -171,74 +172,6 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-    }
-
-    public class Customer
-    {
-        public Customer()
-        {
-            Roles = new HashSet<string>();
-        }
-
-        public string Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public HashSet<string> Roles { get; private set; }
-        public string Nickname { get; set; }
-        public int[] LuckyNumbers { get; set; }
-        public string ApiKey { get; set; }
-        public string[] Passphrases { get; set; }
-    }
-
-    public class CustomerMap : DocumentMap<Customer>
-    {
-        public CustomerMap()
-        {
-            Column(m => m.FirstName).WithMaxLength(20);
-            Column(m => m.LastName);
-            Column(m => m.Roles, map =>
-            {
-                map.ReaderWriter = new HashSetReaderWriter(map.ReaderWriter);
-                map.DbType = DbType.String;
-                map.MaxLength = int.MaxValue;
-            });
-
-            Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
-        }
-    }
-
-    public class LineItem
-    {
-        public string Id { get; private set; }
-        public string Name { get; set; }
-        public DateTime PurchaseDate { get; set; }
-        public string ProductId { get; set; }
-        public int Quantity { get; set; }
-    }
-
-    public class LineItemMap : DocumentMap<LineItem>
-    {
-        public LineItemMap()
-        {
-            Column(m => m.Name);
-            Column(m => m.ProductId);
-            Column(m => m.PurchaseDate);
-        }
-    }
-
-    public class Product
-    {
-        public string Id { get; private set; }
-        public string Name { get; set; }
-        public decimal Price { get; set; }
-    }
-
-    public class ProductMap : DocumentMap<Product>
-    {
-        public ProductMap()
-        {
-            Column(m => m.Name);
-        }
     }
 
     public class HashSetReaderWriter : PropertyReaderWriterDecorator

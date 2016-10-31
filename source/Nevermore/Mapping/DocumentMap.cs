@@ -84,8 +84,12 @@ namespace Nevermore
         public bool IsProjection { get; protected set; }
         public Type Type { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
+        /// <summary>
+        /// Columns containing data that could be indexed (but are not necessarily indexed)
+        /// </summary>
         public List<ColumnMapping> IndexedColumns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
+        public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)
         {

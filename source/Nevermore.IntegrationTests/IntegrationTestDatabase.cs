@@ -57,7 +57,8 @@ namespace Nevermore.IntegrationTests
 
         static void InitializeStore()
         {
-            Mappings = RelationalStoreFactory.CreateMappings();
+            Mappings = new RelationalMappings();
+            Mappings.Install(new List<DocumentMap>());
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
 
@@ -67,7 +68,7 @@ namespace Nevermore.IntegrationTests
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
             
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new DefaultContractResolver(), new List<JsonConverter>());
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
         }
 
         static void InstallSchema()

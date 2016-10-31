@@ -56,13 +56,19 @@
   <ItemGroup>
     <Compile Include="Chaos\ChaosSqlCommand.cs" />
     <Compile Include="Chaos\ChaosSqlCommandFactory.cs" />
+    <Compile Include="Model\Customer.cs" />
+    <Compile Include="Model\CustomerMap.cs" />
     <Compile Include="DatabaseMigrator.cs" />
     <Compile Include="FixtureWithRelationalStore.cs" />
     <Compile Include="IntegrationTestDatabase.cs" />
-    <Compile Include="IRelationalStoreFactory.cs" />
     <Compile Include="KeyAllocatorFixture.cs" />
+    <Compile Include="Model\LineItem.cs" />
+    <Compile Include="Model\LineItemMap.cs" />
+    <Compile Include="Model\Order.cs" />
+    <Compile Include="Model\OrderMap.cs" />
+    <Compile Include="Model\Product.cs" />
+    <Compile Include="Model\ProductMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RelationalStoreFactory.cs" />
     <Compile Include="RelationalStoreFixture.cs" />
     <Compile Include="SchemaGenerator.cs" />
   </ItemGroup>

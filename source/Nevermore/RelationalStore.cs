@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Runtime.Serialization.Formatters;
-using DbUp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -12,123 +11,95 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
+        const int DefaultConnectTimeoutSeconds = 60 * 5; // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+
         private readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
-        readonly string connectionString;
+        readonly Lazy<string> connectionString;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
+        private readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
 
-        public RelationalStore(string connectionString,
+        public RelationalStore(
+            string connectionString,
             string applicationName,
             ISqlCommandFactory sqlCommandFactory,
             RelationalMappings mappings,
-            IContractResolver contractResolver = null,
-            IEnumerable<JsonConverter> converters = null,
-            int blockSize = 20,
-            JsonSerializerSettings jsonSettings = null)
-        {
-            this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
-            this.sqlCommandFactory = sqlCommandFactory;
-            this.mappings = mappings;
-            keyAllocator = new KeyAllocator(this, blockSize);
-
-            this.jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
-            this.jsonSettings.Converters.Add(new StringEnumConverter());
-            this.jsonSettings.Converters.Add(new VersionConverter());
-            foreach (var converter in (converters ?? new List<JsonConverter>()))
-            {
-                this.jsonSettings.Converters.Add(converter);
-            }
-
-            RunMigrations();
-        }
-
-        public RelationalStore(string connectionString,
-            string applicationName,
-            ISqlCommandFactory sqlCommandFactory,
-            RelationalMappings mappings,
-            IContractResolver contractResolver,
-            IEnumerable<JsonConverter> converters,
             JsonSerializerSettings jsonSettings,
-            IKeyAllocator keyAllocator)
+            IRelatedDocumentStore relatedDocumentStore,
+            int keyBlockSize = 20)
+            : this(
+                new Lazy<string>(() => connectionString),
+                applicationName,
+                sqlCommandFactory,
+                mappings,
+                jsonSettings,
+                relatedDocumentStore,
+                keyBlockSize
+            )
         {
-            this.connectionString = SetConnectionStringOptions(connectionString, applicationName);
+
+        }
+
+        /// <summary>
+        /// Creates a new Relational Store
+        /// </summary>
+        /// <param name="connectionString">Allows the connection string to be set after the store is built (but before it is used)</param>
+        /// <param name="applicationName">Name of the application in the SQL string</param>
+        /// <param name="sqlCommandFactory"></param>
+        /// <param name="mappings"></param>
+        /// <param name="jsonSettings"></param>
+        /// <param name="keyBlockSize"></param>
+        public RelationalStore(
+            Lazy<string> connectionString,
+            string applicationName,
+            ISqlCommandFactory sqlCommandFactory,
+            RelationalMappings mappings,
+            JsonSerializerSettings jsonSettings,
+            IRelatedDocumentStore relatedDocumentStore,
+            int keyBlockSize = 20)
+        {
+            this.connectionString = new Lazy<string>(
+                () => SetConnectionStringOptions(connectionString.Value, applicationName)
+            );
             this.sqlCommandFactory = sqlCommandFactory;
             this.mappings = mappings;
-            this.keyAllocator = keyAllocator;
+            keyAllocator = new KeyAllocator(this, keyBlockSize);
 
-            this.jsonSettings = jsonSettings ?? SetJsonSerializerSettings(contractResolver);
-            this.jsonSettings.Converters.Add(new StringEnumConverter());
-            this.jsonSettings.Converters.Add(new VersionConverter());
-            foreach (var converter in converters)
-            {
-                this.jsonSettings.Converters.Add(converter);
-            }
-
-            RunMigrations();
+            this.jsonSettings = jsonSettings;
+            this.relatedDocumentStore = relatedDocumentStore;
         }
 
-        private void RunMigrations()
-        {
-            var upgrader =
-                DeployChanges.To
-                    .SqlDatabase(ConnectionString)
-                    .WithScriptsAndCodeEmbeddedInAssembly(typeof (RelationalStore).Assembly)
-                    .LogScriptOutput()
-                    .WithVariable("databaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)
-                    .Build();
-
-            var result = upgrader.PerformUpgrade();
-
-            if (!result.Successful)
-            {
-                throw new Exception("Database migration failed: " + result.Error.GetErrorSummary(), result.Error);
-            }
-
-        }
-
-        public string ConnectionString
-        {
-            get { return connectionString; }
-        }
+        public string ConnectionString => connectionString.Value;
 
         public void Reset()
         {
             keyAllocator.Reset();
         }
 
-        public IRelationalTransaction BeginTransaction()
+        public IRelationalTransaction BeginTransaction(RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select)
         {
-            return BeginTransaction(IsolationLevel.ReadCommitted);
+            return BeginTransaction(IsolationLevel.ReadCommitted, retriableOperation);
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select)
         {
-            return new RelationalTransaction(connectionString, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator);
+            return new RelationalTransaction(ConnectionString, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore);
         }
-
-        static JsonSerializerSettings SetJsonSerializerSettings(IContractResolver contractResolver)
-        {
-            return new JsonSerializerSettings
-            {
-                ContractResolver = contractResolver,
-                DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind,
-                TypeNameHandling = TypeNameHandling.Auto,
-                TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple
-            };
-        }
-
+  
         static string SetConnectionStringOptions(string connectionString, string applicationName)
         {
-            var builder = new SqlConnectionStringBuilder(connectionString)
+            return new SqlConnectionStringBuilder(connectionString)
             {
                 MultipleActiveResultSets = true,
                 Enlist = false,
                 Pooling = true,
-                ApplicationName = applicationName
-            };
-            return builder.ToString();
+                ApplicationName = applicationName,
+                ConnectTimeout = DefaultConnectTimeoutSeconds,
+                ["ConnectRetryCount"] = 3,
+                ["ConnectRetryInterval"] = 10
+            }
+            .ToString();
         }
     }
 }

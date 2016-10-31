@@ -1,24 +1,23 @@
 using System;
 using System.Data;
-using Microsoft.WindowsAzure.Common.TransientFaultHandling;
 
 namespace Nevermore.Transient
 {
     // ReSharper disable once InconsistentNaming
     static class IDbCommandExtensions
     {
-        public static int ExecuteNonQueryWithRetry(this IDbCommand command, string operationName = "ExcecuteNonQuery")
+        public static int ExecuteNonQueryWithRetry(this IDbCommand command, string operationName = "ExecuteNonQuery")
         {
             var commandPolicy = RetryManager.Instance.GetDefaultSqlCommandRetryPolicy();
-            return command.ExecuteNonQueryWithRetry(commandPolicy);
+            return command.ExecuteNonQueryWithRetry(commandPolicy, operationName);
         }
 
-        public static int ExecuteNonQueryWithRetry(this IDbCommand command, RetryPolicy retryPolicy, string operationName = "ExcecuteNonQuery")
+        public static int ExecuteNonQueryWithRetry(this IDbCommand command, RetryPolicy retryPolicy, string operationName = "ExecuteNonQuery")
         {
-            return command.ExecuteNonQueryWithRetry(retryPolicy, RetryPolicy.NoRetry);
+            return command.ExecuteNonQueryWithRetry(retryPolicy, RetryPolicy.NoRetry, operationName);
         }
 
-        public static int ExecuteNonQueryWithRetry(this IDbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExcecuteNonQuery")
+        public static int ExecuteNonQueryWithRetry(this IDbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteNonQuery")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
