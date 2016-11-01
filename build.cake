@@ -69,13 +69,6 @@ Task("__Restore")
 Task("__UpdateAssemblyVersionInformation")
     .Does(() =>
 {
-	foreach(var file in GetFiles("./**/AssemblyInfo.cs"))
-		cleanups.Add(new AutoRestoreFile(file.FullPath));
-	
-    
-	GitVersion(new GitVersionSettings {
-        UpdateAssemblyInfo = true
-    });
 
     Information("AssemblyVersion -> {0}", gitVersionInfo.AssemblySemVer);
     Information("AssemblyFileVersion -> {0}", $"{gitVersionInfo.MajorMinorPatch}.0");
