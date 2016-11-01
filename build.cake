@@ -53,7 +53,8 @@ Task("__Default")
     .IsDependentOn("__UpdateAssemblyVersionInformation")
     .IsDependentOn("__Build")
     .IsDependentOn("__UpdateProjectJsonVersion")
-    .IsDependentOn("__Pack");
+    .IsDependentOn("__Pack")
+    .IsDependentOn("__Publish");
 
 Task("__Clean")
     .Does(() =>
@@ -69,6 +70,12 @@ Task("__Restore")
 Task("__UpdateAssemblyVersionInformation")
     .Does(() =>
 {
+	foreach(var file in GetFiles("./**/AssemblyInfo.cs"))
+		cleanups.Add(new AutoRestoreFile(file.FullPath));
+    
+	GitVersion(new GitVersionSettings {
+        UpdateAssemblyInfo = true
+    });
 
     Information("AssemblyVersion -> {0}", gitVersionInfo.AssemblySemVer);
     Information("AssemblyFileVersion -> {0}", $"{gitVersionInfo.MajorMinorPatch}.0");
@@ -126,6 +133,28 @@ Task("__Pack")
 		OutputDirectory = artifactsDir,
 		NoBuild = true
 	});
+});
+
+Task("__Publish")
+    .IsDependentOn("__Pack")
+    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
+    .Does(() =>
+{
+    
+	NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
+		ApiKey = EnvironmentVariable("MyGetApiKey")
+	});
+
+	/*
+    if (gitVersionInfo.PreReleaseTag == "")
+    {
+        NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+            Source = "https://www.nuget.org/api/v2/package",
+            ApiKey = EnvironmentVariable("NuGetApiKey")
+        });
+    }
+	*/
 });
 
 
