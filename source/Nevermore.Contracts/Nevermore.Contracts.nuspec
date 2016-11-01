@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Nevermore.Contracts</id>
+    <version>1.0.0.0</version>
+    <authors>Octopus Deploy</authors>
+    <projectUrl>https://github.com/OctopusDeploy/Nevermore</projectUrl>
+    <description>A JSON Document Store library for SQL Server</description>
+    <releaseNotes></releaseNotes>
+    <language>en-US</language>
+  </metadata>
+  <files>
+    <file src="bin\**\*.*" target="lib" exclude="*.vshost*;**\*.xml;**\*.tmp" />
+  </files>
+</package>
