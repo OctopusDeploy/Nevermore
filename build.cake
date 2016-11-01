@@ -146,7 +146,7 @@ Task("__Publish")
 		ApiKey = EnvironmentVariable("MyGetApiKey")
 	});
 
-	/*
+	
     if (gitVersionInfo.PreReleaseTag == "")
     {
         NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
@@ -154,7 +154,7 @@ Task("__Publish")
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
     }
-	*/
+	
 });
 
 
