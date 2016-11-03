@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using Nevermore.Transient;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class KeyAllocator : IKeyAllocator
     {

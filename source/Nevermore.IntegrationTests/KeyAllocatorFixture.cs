@@ -6,6 +6,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class RelationalMappings
     {

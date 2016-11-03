@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     /// <summary>
     /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely

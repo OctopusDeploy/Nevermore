@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Runtime.Serialization.Formatters;
+using Nevermore.Mapping;
+using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -49,7 +51,8 @@ namespace Nevermore
         /// <param name="sqlCommandFactory"></param>
         /// <param name="mappings"></param>
         /// <param name="jsonSettings"></param>
-        /// <param name="keyBlockSize"></param>
+        /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
+        /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
         public RelationalStore(
             Lazy<string> connectionString,
             string applicationName,

@@ -1,7 +1,7 @@
 
 using System.Linq;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class ReferenceCollectionReaderWriter : PropertyReaderWriterDecorator
     {

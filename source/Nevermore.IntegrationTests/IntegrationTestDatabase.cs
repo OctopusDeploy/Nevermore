@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
 using Nevermore.IntegrationTests.Chaos;
+using Nevermore.Mapping;
+using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 

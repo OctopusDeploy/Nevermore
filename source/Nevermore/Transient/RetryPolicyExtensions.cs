@@ -1,4 +1,3 @@
-
 using Nevermore.Diagnositcs;
 
 namespace Nevermore.Transient

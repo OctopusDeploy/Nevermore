@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests

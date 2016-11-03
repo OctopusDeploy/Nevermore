@@ -2,7 +2,7 @@
 using System.Data;
 using System.Reflection;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class ColumnMapping
     {

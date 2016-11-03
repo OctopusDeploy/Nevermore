@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Assent;
 using Nevermore.Joins;
 using NSubstitute;
 using NUnit.Framework;
 
-namespace Nevermore.Tests
+namespace Nevermore.Tests.QueryBuilderFixture
 {
     [TestFixture]
     public class QueryBuilderFixture

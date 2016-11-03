@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public abstract class DocumentMap<TDocument> : DocumentMap
     {

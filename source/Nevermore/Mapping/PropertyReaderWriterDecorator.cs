@@ -1,6 +1,4 @@
-using System;
-
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>
     {

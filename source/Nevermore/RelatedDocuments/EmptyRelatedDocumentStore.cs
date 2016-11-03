@@ -1,4 +1,4 @@
-﻿namespace Nevermore
+﻿namespace Nevermore.RelatedDocuments
 {
     public class EmptyRelatedDocumentStore : IRelatedDocumentStore
     {

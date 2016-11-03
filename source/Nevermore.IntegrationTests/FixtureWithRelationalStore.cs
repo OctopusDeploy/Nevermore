@@ -1,4 +1,5 @@
 using System;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests

@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using Nevermore.Mapping;
 
 namespace Nevermore
 {

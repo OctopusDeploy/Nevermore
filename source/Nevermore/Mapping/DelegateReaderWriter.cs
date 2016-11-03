@@ -1,6 +1,6 @@
 using System;
 
-namespace Nevermore
+namespace Nevermore.Mapping
 {
     public class DelegateReaderWriter<TTarget, TProperty> : IPropertyReaderWriter<object>
     {
