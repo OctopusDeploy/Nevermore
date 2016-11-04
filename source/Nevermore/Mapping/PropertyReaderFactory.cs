@@ -20,10 +20,10 @@ namespace Nevermore.Mapping
             if (result != null)
                 return result;
 
-            var propertyInfo = objectType.GetProperty(propertyName);
+            var propertyInfo = objectType.GetTypeInfo().GetProperty(propertyName);
             if (propertyInfo != null)
             {
-                if (!typeof (TCast).IsAssignableFrom(propertyInfo.PropertyType))
+                if (!typeof (TCast).GetTypeInfo().IsAssignableFrom(propertyInfo.PropertyType))
                 {
                     throw new InvalidOperationException(string.Format("Property type '{0}' for property '{1}.{2}' cannot be converted to type '{3}", propertyInfo.PropertyType, propertyInfo.DeclaringType == null ? "??" : propertyInfo.DeclaringType.Name, propertyInfo.Name, typeof (TCast).Name));
                 }
@@ -37,13 +37,13 @@ namespace Nevermore.Mapping
                     throw new ArgumentException(string.Format("The property '{0}' on type '{1}' does not contain a getter which could be accessed by the OctoDB binding infrastructure.", propertyName, propertyInfo.DeclaringType));
                 }
 
-                var propertyGetterDelegate = Delegate.CreateDelegate(delegateReaderType, propertyGetterMethodInfo);
+                var propertyGetterDelegate = propertyGetterMethodInfo.CreateDelegate(delegateReaderType);
 
                 var propertySetterMethodInfo = propertyInfo.GetSetMethod(true);
                 Delegate propertySetterDelegate = null;
                 if (propertySetterMethodInfo != null)
                 {
-                    propertySetterDelegate = Delegate.CreateDelegate(delegateWriterType, propertySetterMethodInfo);
+                    propertySetterDelegate = propertySetterMethodInfo.CreateDelegate(delegateWriterType);
                 }
 
                 result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
@@ -51,11 +51,11 @@ namespace Nevermore.Mapping
             }
             else
             {
-                var fieldInfo = objectType.GetField(propertyName, BindingFlags.Instance | BindingFlags.NonPublic);
+                var fieldInfo = objectType.GetTypeInfo().GetField(propertyName, BindingFlags.Instance | BindingFlags.NonPublic);
                 if (fieldInfo == null)
                     throw new InvalidOperationException(string.Format("The type '{0}' does not define a property or field named '{1}'", objectType.FullName, propertyName));
 
-                if (!typeof (TCast).IsAssignableFrom(fieldInfo.FieldType))
+                if (!typeof (TCast).GetTypeInfo().IsAssignableFrom(fieldInfo.FieldType))
                 {
                     throw new InvalidOperationException(string.Format("Field type '{0}' for field '{1}.{2}' cannot be converted to type '{3}", fieldInfo.FieldType, fieldInfo.DeclaringType == null ? "??" : fieldInfo.DeclaringType.Name, fieldInfo.Name, typeof (TCast).Name));
                 }

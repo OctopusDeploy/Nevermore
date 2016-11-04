@@ -234,10 +234,7 @@ namespace Nevermore.Transient
         /// <param name="delay">The delay that indicates how long the current thread will be suspended before the next iteration is invoked.</param>
         protected virtual void OnRetrying(int retryCount, Exception lastError, TimeSpan delay)
         {
-            if (Retrying != null)
-            {
-                Retrying.Invoke(this, new RetryingEventArgs(retryCount, delay, lastError));
-            }
+            Retrying?.Invoke(this, new RetryingEventArgs(retryCount, delay, lastError));
         }
     }
 }

@@ -7,23 +7,16 @@
     }
   },
   "frameworks": {
-    "net45": {
-      "frameworkAssemblies": {
-        "System.Core": "*",
-        "System.Net": "*",
-        "System.Net.Http": "*",
-        "System.Net.Http.WebRequest": "*",
-        "System.Xml.Linq": "*",
-        "System.Data.DataSetExtensions": "*",
-        "Microsoft.CSharp": "*",
-        "System.Data": "*",
-        "System.Xml": "*"
-      },
+    "netstandard1.5": {
       "dependencies": {
-        "Microsoft.Bcl": "1.1.9",
-        "Microsoft.Bcl.Async": "1.0.168",
-        "Microsoft.Bcl.Build": "1.0.14",
-        "Microsoft.Net.Http": "2.2.22"
+        "System.Runtime": "4.1.0",
+        "System.Runtime.Extensions": "4.1.0",
+        "System.Collections.Concurrent": "4.0.12",
+        "System.Data.Common": "4.1.0",
+        "System.Data.SqlClient": "4.1.0",
+        "System.ComponentModel.TypeConverter": "4.1.0",
+        "System.Reflection": "4.1.0",
+        "System.Threading.Thread": "4.0.0" 
       }
     }
   },
@@ -32,6 +25,7 @@
       "include": [
         "UpgradeScripts\\*.*"
       ]
-    }
+    },
+    "define": [ "LIBLOG_PORTABLE" ]
   }
 }

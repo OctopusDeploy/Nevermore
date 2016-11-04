@@ -241,7 +241,7 @@ namespace Nevermore
             lock (CurrentTransactions)
             {
                 if (commandTrace.Count == 100)
-                    log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", createdTime, new StackTrace(), string.Join("\r\n", commandTrace));
+                    log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", createdTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
 
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
@@ -436,7 +436,7 @@ namespace Nevermore
         {
             for (var i = 0; i < dr.FieldCount; i++)
             {
-                if (dr.GetName(i).Equals(columnName, StringComparison.InvariantCultureIgnoreCase))
+                if (dr.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return i;
             }
             return -1;

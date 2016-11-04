@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Reflection;
 using DbUp;
 using DbUp.Engine.Output;
 using Nevermore;
@@ -20,8 +21,8 @@ namespace Nevermore.IntegrationTests
             var upgrader =
                 DeployChanges.To
                     .SqlDatabase(store.ConnectionString)
-                    .WithScriptsAndCodeEmbeddedInAssembly(typeof(RelationalStore).Assembly)
-                    .WithScriptsAndCodeEmbeddedInAssembly(typeof(IntegrationTestDatabase).Assembly)
+                    .WithScriptsAndCodeEmbeddedInAssembly(typeof(RelationalStore).GetTypeInfo().Assembly)
+                    .WithScriptsAndCodeEmbeddedInAssembly(typeof(IntegrationTestDatabase).GetTypeInfo().Assembly)
                     .LogScriptOutput()
                     .WithVariable("databaseName", new SqlConnectionStringBuilder(store.ConnectionString).InitialCatalog)
                     .LogTo(_log)

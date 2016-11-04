@@ -21,10 +21,13 @@ namespace Nevermore.Mapping
         /// <returns></returns>
         public static object Convert(object source, Type targetType)
         {
+
+            var typeInfo = targetType.GetTypeInfo();
+
             if (source == null || source == DBNull.Value)
             {
                 // Returns the default(T) of the type
-                return targetType.IsValueType
+                return typeInfo.IsValueType
                     ? Activator.CreateInstance(targetType)
                     : null;
             }
@@ -32,11 +35,11 @@ namespace Nevermore.Mapping
             var sourceType = source.GetType();
 
             // Try casting
-            if (targetType.IsAssignableFrom(sourceType))
+            if (typeInfo.IsAssignableFrom(sourceType))
                 return source;
 
             // Enums!
-            if (targetType.IsEnum && sourceType == typeof(string))
+            if (typeInfo.IsEnum && sourceType == typeof(string))
                 return Enum.Parse(targetType, (string)source, true);
 
             // Try type descriptors
@@ -53,9 +56,9 @@ namespace Nevermore.Mapping
             }
 
             // Find an implicit assignment converter
-            var implicitAssignment = targetType.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Static)
+            var implicitAssignment = typeInfo.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Static)
                 .FirstOrDefault(x => x.Name == "op_Implicit" &&
-                    targetType.IsAssignableFrom(x.ReturnType));
+                    typeInfo.IsAssignableFrom(x.ReturnType));
 
             if (implicitAssignment != null)
             {

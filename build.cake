@@ -160,7 +160,7 @@ Task("__CopyToLocalPackages")
     .Does(() =>
 {
     CreateDirectory("../LocalPackages");
-    CopyFileToDirectory($"{artifactsDir}/*.{nugetVersion}*.nupkg", "../LocalPackages");
+    CopyFiles($"{artifactsDir}/*.{nugetVersion}*.nupkg", "../LocalPackages");
 });
 
 

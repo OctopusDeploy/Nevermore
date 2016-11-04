@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.SqlClient;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.Mapping;
@@ -12,7 +11,7 @@ namespace Nevermore.IntegrationTests
 {
     public static class IntegrationTestDatabase
     {
-        static readonly string SqlInstance = ConfigurationManager.AppSettings["SqlServerInstance"] ?? "(local)\\SQLEXPRESS";
+        static readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
         static readonly string TestDatabaseName;
         static readonly string TestDatabaseConnectionString;
 
@@ -27,7 +26,7 @@ namespace Nevermore.IntegrationTests
                 ApplicationName = TestDatabaseName
             };
             TestDatabaseConnectionString = builder.ToString();
-
+            
             DropDatabase();
             CreateDatabase();
 

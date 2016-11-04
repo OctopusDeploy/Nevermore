@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Nevermore.Mapping
 {
@@ -34,7 +35,7 @@ namespace Nevermore.Mapping
             var currentType = type;
             while (currentType != null && !mappings.TryGetValue(currentType, out mapping))
             {
-                currentType = currentType.BaseType;
+                currentType = currentType.GetTypeInfo().BaseType;
             }
 
             if (mapping == null)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using Nevermore.Mapping;
 
 namespace Nevermore
@@ -36,7 +37,7 @@ namespace Nevermore
                 return;
 
             var type = args.GetType();
-            foreach (var property in type.GetProperties())
+            foreach (var property in type.GetTypeInfo().GetProperties())
             {
                 var rw = PropertyReaderFactory.Create<object>(type, property.Name);
 

@@ -38,7 +38,7 @@ namespace Nevermore.Mapping
             ColumnName = Property.Name;
             ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
 
-            if (property.PropertyType.IsGenericType && typeof(Nullable<>).IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
+            if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
                 IsNullable = true;
             }
@@ -59,7 +59,7 @@ namespace Nevermore.Mapping
                 }
             }
 
-            if (property.PropertyType.IsEnum)
+            if (property.PropertyType.GetTypeInfo().IsEnum)
             {
                 MaxLength = DefaultMaxEnumLength;
                 DbType = DbType.String;

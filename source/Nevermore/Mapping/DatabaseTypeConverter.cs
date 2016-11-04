@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Reflection;
 
 namespace Nevermore.Mapping
 {
@@ -52,7 +53,7 @@ namespace Nevermore.Mapping
 
         public static DbType AsDbType(Type propertyType)
         {
-            if (propertyType.IsEnum)
+            if (propertyType.GetTypeInfo().IsEnum)
             {
                 return DbType.String;
             }

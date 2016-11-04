@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 
 namespace Nevermore.Transient.Throttling
 {
-    [Serializable]
     public class ThrottlingCondition
     {
         static readonly Regex SqlErrorCodeRegEx = new Regex("Code:\\s*(\\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);

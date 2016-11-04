@@ -97,7 +97,7 @@ namespace Nevermore.Mapping
             TableName = type.Name;
             IdPrefix = TableName + "s";
 
-            var properties = type.GetProperties();
+            var properties = type.GetTypeInfo().GetProperties();
 
             foreach (var property in properties)
             {

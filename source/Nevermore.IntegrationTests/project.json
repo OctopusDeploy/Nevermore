@@ -1,25 +1,23 @@
 {
   "version": "0.0.0-*",
   "dependencies": {
-    "dbup": "3.3.5",
     "Newtonsoft.Json": "9.0.1",
     "NUnit": "3.4.1",
     "dotnet-test-nunit": "3.4.0-beta-3",
     "Nevermore": {
       "target": "project"
-    }
+    },
+    "dbup-sqlserver": "4.0.0-beta0002"
   },
   "testRunner": "nunit",
   "frameworks": {
-    "net452": {
-      "frameworkAssemblies": {
-        "System.Configuration": "*",
-        "System.Core": "*",
-        "System.Xml.Linq": "*",
-        "System.Data.DataSetExtensions": "*",
-        "Microsoft.CSharp": "*",
-        "System.Data": "*",
-        "System.Xml": "*"
+    "netcoreapp1.0": {
+      "imports": "dotnet",
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
       }
     }
   }
