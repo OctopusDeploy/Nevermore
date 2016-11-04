@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
 using NUnit.Framework;

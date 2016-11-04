@@ -1,4 +1,5 @@
 using System;
+using Nevermore.Contracts;
 using Nevermore.Mapping;
 using NUnit.Framework;
 
@@ -16,7 +17,7 @@ namespace Nevermore.IntegrationTests
             get { return IntegrationTestDatabase.Mappings; }
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void FixtureSetUp()
         {
         }
@@ -35,7 +36,7 @@ namespace Nevermore.IntegrationTests
         {
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public virtual void FixtureTearDown()
         {
         }

@@ -1,8 +1,13 @@
-﻿CREATE TABLE KeyAllocation
-(
-	CollectionName nvarchar(50) constraint PK_KeyAllocation_CollectionName primary key,
-	Allocated int not null
-)
+﻿IF NOT EXISTS (SELECT NULL FROM sys.tables WHERE name = 'KeyAllocation')
+	CREATE TABLE KeyAllocation
+	(
+		CollectionName nvarchar(50) constraint PK_KeyAllocation_CollectionName primary key,
+		Allocated int not null
+	)
+GO
+
+IF EXISTS (SELECT NULL FROM sys.procedures WHERE name = 'GetNextKeyBlock')
+	DROP PROCEDURE GetNextKeyBlock 
 GO
 
 CREATE PROCEDURE GetNextKeyBlock 

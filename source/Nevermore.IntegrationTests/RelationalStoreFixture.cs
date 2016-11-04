@@ -58,7 +58,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer3, "Customers-Chazza");
 
                 Assert.That(customer1.Id, Is.EqualTo("Customers-Alice"));
-                Assert.That(customer2.Id, Is.StringStarting("Customers-"));
+                Assert.That(customer2.Id, Does.StartWith("Customers-"));
                 Assert.That(customer3.Id, Is.EqualTo("Customers-Chazza"));
 
                 transaction.Commit();

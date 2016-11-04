@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {

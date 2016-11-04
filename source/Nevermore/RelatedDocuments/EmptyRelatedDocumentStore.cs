@@ -1,4 +1,6 @@
-﻿namespace Nevermore.RelatedDocuments
+﻿using Nevermore.Contracts;
+
+namespace Nevermore.RelatedDocuments
 {
     public class EmptyRelatedDocumentStore : IRelatedDocumentStore
     {

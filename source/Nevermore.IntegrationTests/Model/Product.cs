@@ -1,3 +1,5 @@
+using Nevermore.Contracts;
+
 namespace Nevermore.IntegrationTests.Model
 {
     public class Product : IDocument

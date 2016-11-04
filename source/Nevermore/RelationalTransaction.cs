@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Nevermore;
 using Nevermore.Transient;
 using System.Text;
+using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;

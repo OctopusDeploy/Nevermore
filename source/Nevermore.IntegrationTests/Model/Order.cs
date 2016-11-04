@@ -1,4 +1,6 @@
-﻿namespace Nevermore.IntegrationTests.Model
+﻿using Nevermore.Contracts;
+
+namespace Nevermore.IntegrationTests.Model
 {
 
     public class Order : IDocument

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assent;
+using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
 using NUnit.Framework;
