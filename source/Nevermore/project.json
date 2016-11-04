@@ -16,7 +16,20 @@
         "System.Data.SqlClient": "4.1.0",
         "System.ComponentModel.TypeConverter": "4.1.0",
         "System.Reflection": "4.1.0",
-        "System.Threading.Thread": "4.0.0" 
+        "System.Threading.Thread": "4.0.0"
+      }
+    },
+    "net451": {
+      "frameworkAssemblies": {
+        "System.Core": "*",
+        "System.Net": "*",
+        "System.Net.Http": "*",
+        "System.Net.Http.WebRequest": "*",
+        "System.Xml.Linq": "*",
+        "System.Data.DataSetExtensions": "*",
+        "Microsoft.CSharp": "*",
+        "System.Data": "*",
+        "System.Xml": "*"
       }
     }
   },

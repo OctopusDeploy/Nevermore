@@ -98,8 +98,8 @@ namespace Nevermore
                 Pooling = true,
                 ApplicationName = applicationName,
                 ConnectTimeout = DefaultConnectTimeoutSeconds,
-                ConnectRetryCount = 3,
-                ConnectRetryInterval = 10
+                ["ConnectRetryCount"] = 3,
+                ["ConnectRetryInterval"] = 10,
             }
             .ToString();
         }

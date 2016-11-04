@@ -19,6 +19,16 @@
           "version": "1.0.0"
         }
       }
+    },
+    "net451": {
+      "frameworkAssemblies": {
+        "System.Core": "*",
+        "System.Xml.Linq": "*",
+        "System.Data.DataSetExtensions": "*",
+        "Microsoft.CSharp": "*",
+        "System.Data": "*",
+        "System.Xml": "*"
+      }
     }
   }
 }
