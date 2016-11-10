@@ -188,6 +188,20 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Test]
+        public void ShouldGeneratePaginate()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5")
+                .OrderBy("Foo")
+                .QueryGenerator
+                .PaginateQuery(10,20);
+
+            const string expected = "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY [Foo]) as RowNum FROM dbo.[Orders]  WHERE ([Price] > 5)) RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
         public void ShouldGenerateTop()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
