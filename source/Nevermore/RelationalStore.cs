@@ -31,7 +31,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20)
             : this(
-                new Lazy<string>(() => connectionString),
+                () => connectionString,
                 applicationName,
                 sqlCommandFactory,
                 mappings,
@@ -54,7 +54,7 @@ namespace Nevermore
         /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
         /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
         public RelationalStore(
-            Lazy<string> connectionString,
+            Func<string> connectionString,
             string applicationName,
             ISqlCommandFactory sqlCommandFactory,
             RelationalMappings mappings,
@@ -63,7 +63,7 @@ namespace Nevermore
             int keyBlockSize = 20)
         {
             this.connectionString = new Lazy<string>(
-                () => SetConnectionStringOptions(connectionString.Value, applicationName)
+                () => SetConnectionStringOptions(connectionString(), applicationName)
             );
             this.sqlCommandFactory = sqlCommandFactory;
             this.mappings = mappings;
