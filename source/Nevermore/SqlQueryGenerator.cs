@@ -114,6 +114,25 @@ namespace Nevermore
 
         }
 
+        public static string PaginateQuery(string innerSql, int skip, int take, CommandParameters parameters,
+            string tableName, string orderBy, string innerColumnSelector = "[Id]")
+        {
+            parameters.Add("_minrow", skip + 1);
+            parameters.Add("_maxrow", take + skip);
+            return $@"SELECT *
+FROM dbo.[{tableName}]
+WHERE {innerColumnSelector} IN
+(
+ SELECT {innerColumnSelector}
+ FROM 
+ (
+  SELECT RESULT.{innerColumnSelector}, Row_Number() over (ORDER BY {orderBy}) as RowNum
+  FROM ({innerSql}) RESULT
+ ) RS 
+ WHERE RowNum >= @_minrow And RowNum <= @_maxrow
+)";
+        }
+
         public string DeleteQuery()
         {
             if (Joins.Any())
