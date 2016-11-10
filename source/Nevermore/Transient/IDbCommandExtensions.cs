@@ -48,22 +48,31 @@ namespace Nevermore.Transient
 
         public static IDataReader ExecuteReaderWithRetry(this IDbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteReader")
         {
-            GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
-            return effectiveCommandRetryPolicy.ExecuteAction(() =>
+            try
             {
-                var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
-                try
+                GuardConnectionIsNotNull(command);
+                var effectiveCommandRetryPolicy =
+                    (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+                return effectiveCommandRetryPolicy.ExecuteAction(() =>
                 {
-                    return command.ExecuteReader();
-                }
-                catch (Exception)
-                {
-                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
-                        command.Connection.Close();
-                    throw;
-                }
-            });
+                    var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                    try
+                    {
+                        return command.ExecuteReader();
+                    }
+                    catch (Exception)
+                    {
+                        if (weOwnTheConnectionLifetime && command.Connection != null &&
+                            command.Connection.State == ConnectionState.Open)
+                            command.Connection.Close();
+                        throw;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Exception occured while executing a reader for `{command.CommandText}`", ex);
+            }
         }
 
         public static IDataReader ExecuteReaderWithRetry(this IDbCommand command, CommandBehavior behavior, string operationName = "ExecuteReader")
