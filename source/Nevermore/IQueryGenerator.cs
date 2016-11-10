@@ -21,6 +21,7 @@ namespace Nevermore
         string TopQuery(int top = 1);
         string SelectQuery(bool orderBy = true);
         string PaginateQuery(int skip, int take);
+        string DeleteQuery();
 
         void AddOrder(string fieldName, bool descending);
         void AddWhere(WhereParameter whereParams);

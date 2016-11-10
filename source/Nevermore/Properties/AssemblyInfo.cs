@@ -13,4 +13,5 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: InternalsVisibleTo("Nevermode.Tests")]
+[assembly: InternalsVisibleTo("Nevermore.Tests")]
+[assembly: InternalsVisibleTo("Nevermore.IntegrationTests")]

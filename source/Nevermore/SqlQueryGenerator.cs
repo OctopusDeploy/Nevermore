@@ -114,6 +114,13 @@ namespace Nevermore
 
         }
 
+        public string DeleteQuery()
+        {
+            if (Joins.Any())
+                throw new NotSupportedException("Joins are not supported in delete operations");
+            return "DELETE " + GetClauses(false);
+        }
+
         public void AddOrder(string fieldName, bool descending)
         {
             fieldName = "[" + fieldName + "]";

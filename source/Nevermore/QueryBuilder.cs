@@ -204,6 +204,11 @@ namespace Nevermore
             return Stream().ToList();
         }
 
+        public void Delete()
+        {
+           transaction.ExecuteRawDeleteQuery(QueryGenerator.DeleteQuery(), QueryGenerator.QueryParameters);
+        }
+
         public IEnumerable<TRecord> Stream()
         {
             return transaction.ExecuteReader<TRecord>(QueryGenerator.SelectQuery(), QueryGenerator.QueryParameters);

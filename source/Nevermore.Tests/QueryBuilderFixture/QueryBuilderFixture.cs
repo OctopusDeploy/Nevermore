@@ -143,6 +143,21 @@ namespace Nevermore.Tests.QueryBuilderFixture
             Assert.AreEqual(expected, actual);
         }
 
+
+        [Test]
+        public void ShouldGenerateDelete()
+        {
+            var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5")
+                .NoLock()
+                .QueryGenerator
+                .DeleteQuery();
+
+            var expected = "DELETE FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
+
+            Assert.AreEqual(expected, actual);
+        }
+
         [Test]
         public void ShouldGenerateCountForQueryBuilder()
         {

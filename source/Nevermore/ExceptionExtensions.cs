@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nevermore
 {
-    public static class ExceptionExtensions
+    internal static class ExceptionExtensions
     {
         public static Exception UnpackFromContainers(this Exception error)
         {
