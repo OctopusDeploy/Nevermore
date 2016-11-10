@@ -13,12 +13,12 @@ namespace Nevermore
         static readonly string FastIncrementalStrategyName = "fast incremental";
 
 
-        internal static readonly Incremental FastIncremental = new Incremental(name: FastIncrementalStrategyName, retryCount: 10,
+        public static readonly Incremental FastIncremental = new Incremental(name: FastIncrementalStrategyName, retryCount: 10,
             initialInterval: TimeSpan.FromSeconds(1),
             increment: TimeSpan.FromSeconds(1),
             firstFastRetry: true);
 
-        internal static readonly ExponentialBackoff DefaultExponentialBackoff = new ExponentialBackoff(name: DefaultExponentialStrategyName, retryCount: 4,
+        public static readonly ExponentialBackoff DefaultExponentialBackoff = new ExponentialBackoff(name: DefaultExponentialStrategyName, retryCount: 4,
             minBackoff: TimeSpan.FromMilliseconds(100),
             maxBackoff: TimeSpan.FromSeconds(30),
             deltaBackoff: TimeSpan.FromSeconds(5),
