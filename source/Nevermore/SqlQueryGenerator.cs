@@ -356,9 +356,6 @@ WHERE {innerColumnSelector} IN
 
         public void AddParameter(string fieldName, object value)
         {
-            if (value is IEnumerable<object>)
-                value = GetInValue(value);
-
             queryParameters.Add(fieldName.ToLower(), value);
         }
 
@@ -418,15 +415,6 @@ WHERE {innerColumnSelector} IN
         string GetEndsWithValue(object value)
         {
             return $"%{value}";
-        }
-
-        string GetInValue(object values)
-        {
-            var inVals = new StringBuilder();
-            inVals.Append("(");
-            inVals.Append(string.Join(", ", (values as IEnumerable<object>)));
-            inVals.Append(")");
-            return inVals.ToString();
         }
 
         string GetQueryOperand(SqlOperand operand)

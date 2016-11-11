@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
+using System.Text;
 using Nevermore.IntegrationTests.Chaos;
+using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
@@ -26,7 +29,7 @@ namespace Nevermore.IntegrationTests
                 ApplicationName = TestDatabaseName
             };
             TestDatabaseConnectionString = builder.ToString();
-            
+
             DropDatabase();
             CreateDatabase();
 
@@ -59,7 +62,12 @@ namespace Nevermore.IntegrationTests
         static void InitializeStore()
         {
             Mappings = new RelationalMappings();
-            Mappings.Install(new List<DocumentMap>());
+            Mappings.Install(new List<DocumentMap>()
+            {
+                new CustomerMap(),
+                new ProductMap(),
+                new LineItemMap()
+            });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
 
@@ -68,7 +76,7 @@ namespace Nevermore.IntegrationTests
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
-            
+
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
         }
 
@@ -77,6 +85,30 @@ namespace Nevermore.IntegrationTests
             Console.WriteLine("Performing migration");
             var migrator = new DatabaseMigrator();
             migrator.Migrate(Store);
+
+            var output = new StringBuilder();
+            SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
+
+            var mappings = new DocumentMap[]
+            {
+                new CustomerMap(),
+                new ProductMap(),
+                new LineItemMap()
+            };
+
+            Mappings.Install(mappings);
+
+            using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
+            {
+                output.Clear();
+
+                foreach (var map in mappings)
+                    SchemaGenerator.WriteTableSchema(map, null, output);
+
+                transaction.ExecuteScalar<int>(output.ToString());
+
+                transaction.Commit();
+            }
         }
 
         public static void ExecuteScript(string script, string connectionString = null)

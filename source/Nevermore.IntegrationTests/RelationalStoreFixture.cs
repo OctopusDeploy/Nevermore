@@ -11,37 +11,6 @@ namespace Nevermore.IntegrationTests
 {
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
-        private string schema;
-        
-        public override void FixtureSetUp()
-        {
-            base.FixtureSetUp();
-
-            var output = new StringBuilder();
-            SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
-            schema = output.ToString();
-
-            var mappings = new DocumentMap[]
-            {
-                new CustomerMap(),
-                new ProductMap(),
-                new LineItemMap()
-            };
-
-            Mappings.Install(mappings);
-
-            using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
-            {
-                output.Clear();
-
-                foreach (var map in mappings)
-                    SchemaGenerator.WriteTableSchema(map, null, output);
-
-                transaction.ExecuteScalar<int>(output.ToString());
-
-                transaction.Commit();
-            }
-        }
 
 
         [Test]

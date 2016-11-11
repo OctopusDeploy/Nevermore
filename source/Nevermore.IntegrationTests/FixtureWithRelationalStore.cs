@@ -1,5 +1,8 @@
 using System;
+using System.Data;
+using System.Text;
 using Nevermore.Contracts;
+using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using NUnit.Framework;
 
@@ -20,6 +23,7 @@ namespace Nevermore.IntegrationTests
         [OneTimeSetUp]
         public virtual void FixtureSetUp()
         {
+          
         }
 
         [SetUp]
