@@ -142,6 +142,13 @@ WHERE {innerColumnSelector} IN
 
         public void AddOrder(string fieldName, bool descending)
         {
+            if (fieldName.EndsWith(" desc", StringComparison.OrdinalIgnoreCase))
+            {
+                fieldName = fieldName.Substring(0, fieldName.Length - 5);
+                descending = true;
+            }
+
+            fieldName = fieldName.Trim('[', ']');
             fieldName = "[" + fieldName + "]";
             fieldName = descending ? fieldName + " DESC" : fieldName;
             if (!orderByFields.Contains(fieldName))
