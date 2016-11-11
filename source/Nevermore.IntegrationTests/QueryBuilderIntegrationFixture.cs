@@ -1,27 +1,33 @@
-﻿using Nevermore.Contracts;
-using Nevermore.IntegrationTests.Model;
+﻿using Nevermore.IntegrationTests.Model;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
-    public class RelationalTransactionFixture : FixtureWithRelationalStore
+    public class QueryBuilderIntegrationFixture : FixtureWithRelationalStore
     {
+        [Test]
+        public void WhereInClause()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                trn.Query<Product>()
+                    .Where("[Id] IN @ids")
+                    .Parameter("ids", new[] {"A", "B"})
+                    .ToList();
+            }
+        }
 
         [Test]
-        public void LoadWithSingleId()
+        public void WhereInClauseWhenParameterNamesDifferByCase()
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.Load<Product>("A");
+                trn.Query<Product>()
+                    .Where("[Id] IN @Ids")
+                    .Parameter("ids", new[] {"A", "B"})
+                    .ToList();
             }
         }
-        [Test]
-        public void LoadWithMultipleIds()
-        {
-            using (var trn = Store.BeginTransaction())
-            {
-                trn.Load<Product>(new [] { "A", "B"});
-            }
-        }
+
     }
 }

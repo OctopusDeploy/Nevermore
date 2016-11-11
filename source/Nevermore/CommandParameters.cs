@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Nevermore.Mapping;
 
 namespace Nevermore
@@ -82,7 +83,10 @@ namespace Nevermore
                     ContributeParameter(command, inClauseName, null);
                 }
 
-                command.CommandText = command.CommandText.Replace("@" + name.TrimStart('@'), "(" + string.Join(", ", inClauseNames.Select(x => "@" + x)) + ")");
+
+                var originalParameter = Regex.Escape("@" + name.TrimStart('@'));
+                var replacementParameters = "(" + string.Join(", ", inClauseNames.Select(x => "@" + x)) + ")";
+                command.CommandText = Regex.Replace(command.CommandText, originalParameter, match => replacementParameters, RegexOptions.IgnoreCase);
                 return;
             }
 
