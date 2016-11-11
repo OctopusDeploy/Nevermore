@@ -165,6 +165,20 @@ namespace Nevermore
         /// </summary>
         void Commit();
 
+        /// <summary>
+        /// Allocate an ID for the specified type. The type must be mapped.
+        /// If the mapping specifies a SingletonId, that is returned
+        /// </summary>
+        /// <param name="documentType"></param>
+        /// <returns></returns>
         string AllocateId(Type documentType);
+
+        /// <summary>
+        /// Allocates an ID using the specified table name. Any mapping for that table is not used.
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="idPrefix"></param>
+        /// <returns></returns>
+        string AllocateId(string tableName, string idPrefix);
     }
 }

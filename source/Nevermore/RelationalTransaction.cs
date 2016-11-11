@@ -259,8 +259,13 @@ namespace Nevermore
             if (!string.IsNullOrEmpty(mapping.SingletonId))
                 return mapping.SingletonId;
 
-            var key = keyAllocator.NextId(mapping.TableName);
-            return $"{mapping.IdPrefix}-{key}";
+            return AllocateId(mapping.TableName, mapping.IdPrefix);
+        }
+
+        public string AllocateId(string tableName, string idPrefix)
+        {
+            var key = keyAllocator.NextId(tableName);
+            return $"{idPrefix}-{key}";
         }
 
         public void Update<TDocument>(TDocument instance, string tableHint = null) where TDocument : class, IId
