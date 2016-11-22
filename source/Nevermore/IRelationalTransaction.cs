@@ -50,11 +50,19 @@ namespace Nevermore
         IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper);
 
         /// <summary>
+        /// Executes a delete query (bypasses the usual OctopusModelDeletionRules checks). Only use this if you are 100% certain you can 
+        /// delete from the given table without worrying about deletion rules.
+        /// </summary>
+        /// <param name="query">The SQL query to execute. Example: <c>DELETE FROM [Event]...</c></param>
+        /// <param name="args">Any arguments to pass to the query as command parameters.</param>
+        void ExecuteRawDeleteQuery(string query, CommandParameters args);
+
+        /// <summary>
         /// Executes a query that returns no results.
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
-        void ExecuteNonQuery(string query, CommandParameters args);
+        void ExecuteNonQuery(string query, CommandParameters args = null);
 
         /// <summary>
         /// Creates a query that returns strongly typed documents.

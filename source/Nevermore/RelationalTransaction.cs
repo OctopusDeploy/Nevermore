@@ -21,7 +21,7 @@ namespace Nevermore
 {
     public class RelationalTransaction : IRelationalTransaction
     {
-
+        
         static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         readonly RetriableOperation retriableOperation;
@@ -68,7 +68,7 @@ namespace Nevermore
             connection.OpenWithRetry();
             transaction = connection.BeginTransaction(isolationLevel);
         }
-
+        
         public T Load<T>(string id) where T : class, IId
         {
             return Query<T>()
@@ -196,7 +196,7 @@ namespace Nevermore
 
                 instanceCount++;
             }
-
+            
             var defaultIndexColumns = new string[] { };
             if (includeDefaultModelColumns)
                 defaultIndexColumns = new[] { "Id", "Json" };
@@ -272,7 +272,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[Json] = @Json" }));
+            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new []{ "[Json] = @Json" }));
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
@@ -306,7 +306,7 @@ namespace Nevermore
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
             using (new TimedSection(log, ms => $"Delete took {ms}ms: {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters {{"Id", id}}, mapping))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -321,8 +321,28 @@ namespace Nevermore
             }
         }
 
+        public void ExecuteRawDeleteQuery(string query, CommandParameters args)
+        {
+            using (new TimedSection(log, ms => $"Executing DELETE query took {ms}ms: {query}", 300))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            {
+                AddCommandTrace(command.CommandText);
+                try
+                {
+                    // We can retry deletes because deleting something that doesn't exist will silently do nothing
+                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Delete), "ExecuteDeleteQuery " + query);
+                }
+                catch (SqlException ex)
+                {
+                    throw WrapException(command, ex);
+                }
+            }
+        }
+
+
         public void ExecuteNonQuery(string query, CommandParameters args)
         {
+            using (new TimedSection(log, ms => $"Executing non query took {ms}ms: {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 AddCommandTrace(command.CommandText);
@@ -336,6 +356,7 @@ namespace Nevermore
                 }
             }
         }
+
 
         public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args)
         {
@@ -434,7 +455,7 @@ namespace Nevermore
                 }
             }
         }
-
+        
         static int GetOrdinal(IDataReader dr, string columnName)
         {
             for (var i = 0; i < dr.FieldCount; i++)
