@@ -97,7 +97,7 @@ Task("__Test")
     .IsDependentOn("__Build")
     .Does(() =>
 {
-    GetFiles("**/*Tests/project.json")
+    GetFiles("source/*Tests/project.json")
         .ToList()
         .ForEach(testProjectFile => 
         {

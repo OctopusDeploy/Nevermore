@@ -110,7 +110,8 @@ namespace Nevermore
         {
             AddParameter("_minrow", skip + 1);
             AddParameter("_maxrow", take + skip);
-            return "SELECT * FROM (SELECT *, Row_Number() over (" + GetOrderByClause() + ") as RowNum FROM dbo.[" + ViewOrTableName + "] " + tableHint + " " + GetWhereClause() + ") RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow ORDER BY RowNum";
+            var select = GetClausesForJoinQuery($"SELECT {{0}}.*, Row_Number() over ({GetOrderByClause("{0}")}) as RowNum", false);
+            return $"SELECT *\r\nFROM ({select}) RS\r\nWHERE RowNum >= @_minrow And RowNum <= @_maxrow\r\nORDER BY RowNum";
 
         }
 

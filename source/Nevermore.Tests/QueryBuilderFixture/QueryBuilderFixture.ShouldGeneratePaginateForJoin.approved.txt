@@ -1,0 +1,5 @@
+SELECT *
+FROM (SELECT t1.*, Row_Number() over (ORDER BY t1.[Id]) as RowNum FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) t1
+INNER JOIN (SELECT * FROM dbo.[Customers]) t2 ON t1.[CustomerId] = t2.[Id]) RS
+WHERE RowNum >= @_minrow And RowNum <= @_maxrow
+ORDER BY RowNum

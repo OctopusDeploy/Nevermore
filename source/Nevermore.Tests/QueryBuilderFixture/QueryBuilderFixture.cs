@@ -196,9 +196,24 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .QueryGenerator
                 .PaginateQuery(10,20);
 
-            const string expected = "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY [Foo]) as RowNum FROM dbo.[Orders]  WHERE ([Price] > 5)) RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow ORDER BY RowNum";
+            this.Assent(actual);
+        }
 
-            Assert.AreEqual(expected, actual);
+
+        [Test]
+        public void ShouldGeneratePaginateForJoin()
+        {
+
+            var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
+                .Where("[Price] > 5");
+            var rightQueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
+            var join = new Join(JoinType.InnerJoin, rightQueryBuilder.QueryGenerator)
+                .On("CustomerId", JoinOperand.Equal, "Id");
+            leftQueryBuilder.Join(join);
+
+            var actual = leftQueryBuilder.QueryGenerator.PaginateQuery(10,20);
+
+            this.Assent(actual);
         }
 
         [Test]
