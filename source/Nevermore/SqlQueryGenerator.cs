@@ -110,7 +110,7 @@ namespace Nevermore
         {
             AddParameter("_minrow", skip + 1);
             AddParameter("_maxrow", take + skip);
-            return "SELECT * FROM (SELECT *, Row_Number() over (" + GetOrderByClause() + ") as RowNum FROM dbo.[" + ViewOrTableName + "] " + tableHint + " " + GetWhereClause() + ") RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow";
+            return "SELECT * FROM (SELECT *, Row_Number() over (" + GetOrderByClause() + ") as RowNum FROM dbo.[" + ViewOrTableName + "] " + tableHint + " " + GetWhereClause() + ") RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow ORDER BY RowNum";
 
         }
 

@@ -196,7 +196,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .QueryGenerator
                 .PaginateQuery(10,20);
 
-            const string expected = "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY [Foo]) as RowNum FROM dbo.[Orders]  WHERE ([Price] > 5)) RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow";
+            const string expected = "SELECT * FROM (SELECT *, Row_Number() over (ORDER BY [Foo]) as RowNum FROM dbo.[Orders]  WHERE ([Price] > 5)) RS WHERE RowNum >= @_minrow And RowNum <= @_maxrow ORDER BY RowNum";
 
             Assert.AreEqual(expected, actual);
         }
