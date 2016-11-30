@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Nevermore.Joins;
 
 namespace Nevermore
@@ -199,6 +200,7 @@ WHERE {innerColumnSelector} IN
 
         public void AddWhere(string whereClause)
         {
+            whereClause = Regex.Replace(whereClause, @"@\w+", m => m.Value.ToLower());
             OpenSubClause();
             queryText.Append(whereClause);
             CloseSubClause();
