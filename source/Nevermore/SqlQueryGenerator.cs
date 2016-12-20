@@ -106,14 +106,31 @@ namespace Nevermore
             return $"SELECT * " + GetClauses(orderBy);
         }
 
-
-        public string PaginateQuery(int skip, int take)
+        public string PaginateWithWildcardQuery(int skip, int take)
         {
             AddParameter("_minrow", skip + 1);
             AddParameter("_maxrow", take + skip);
             var select = GetClausesForJoinQuery($"SELECT {{0}}.*, Row_Number() over ({GetOrderByClause("{0}")}) as RowNum", false);
             return $"SELECT *\r\nFROM ({select}) RS\r\nWHERE RowNum >= @_minrow And RowNum <= @_maxrow\r\nORDER BY RowNum";
+        }
 
+        public string PaginateQuery(int skip, int take)
+        {
+            AddParameter("_minrow", skip + 1);
+            AddParameter("_maxrow", take + skip);
+
+            var innerColumnSelector = "[Id]";
+            var select = GetClausesForJoinQuery($"SELECT {{0}}.{innerColumnSelector}, Row_Number() over ({GetOrderByClause("{0}")}) as RowNum", false);
+            var paginatedQuery = $@"SELECT *
+FROM dbo.[{ViewOrTableName}]
+WHERE {innerColumnSelector} IN
+(
+ SELECT {innerColumnSelector}
+ FROM ({select}) RS
+ WHERE RowNum >= @_minrow AND RowNum <= @_maxrow
+ ORDER BY RowNum
+)";
+            return paginatedQuery;
         }
 
         public static string PaginateQuery(string innerSql, int skip, int take, CommandParameters parameters,
