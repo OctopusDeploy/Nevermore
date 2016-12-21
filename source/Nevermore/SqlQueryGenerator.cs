@@ -128,7 +128,6 @@ WHERE {innerColumnSelector} IN
  SELECT {innerColumnSelector}
  FROM ({select}) RS
  WHERE RowNum >= @_minrow AND RowNum <= @_maxrow
- ORDER BY RowNum
 )";
             return paginatedQuery;
         }
