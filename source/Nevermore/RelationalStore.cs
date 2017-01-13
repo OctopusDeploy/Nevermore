@@ -111,7 +111,10 @@ namespace Nevermore
 
             var property = connectionStringBuilder.GetType().GetRuntimeProperty(propertyName);
 
-            if (property.GetValue(connectionStringBuilder) == property.GetValue(defaultConnectionStringBuilder))
+            var defaultValue = property.GetValue(defaultConnectionStringBuilder);
+            var currentValue = property.GetValue(connectionStringBuilder);
+
+            if (Equals(defaultValue, currentValue))
             {
                 property.SetValue(connectionStringBuilder, overrideValue);
             }
