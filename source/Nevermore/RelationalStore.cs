@@ -1,19 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Runtime.Serialization.Formatters;
+using System.Reflection;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        const int DefaultConnectTimeoutSeconds = 60 * 5; // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+        public const int DefaultConnectTimeoutSeconds = 60 * 5; // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+        public const int DefaultConnectRetryCount = 3;
+        public const int DefaultConnectRetryInterval = 10;
 
         private readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
@@ -92,16 +91,30 @@ namespace Nevermore
   
         static string SetConnectionStringOptions(string connectionString, string applicationName)
         {
-            return new SqlConnectionStringBuilder(connectionString)
+            var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 MultipleActiveResultSets = true,
                 Pooling = true,
-                ApplicationName = applicationName,
-                ConnectTimeout = DefaultConnectTimeoutSeconds,
-                ["ConnectRetryCount"] = 3,
-                ["ConnectRetryInterval"] = 10,
+                ApplicationName = applicationName
+            };
+
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout), DefaultConnectTimeoutSeconds);
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryCount), DefaultConnectRetryCount);
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryInterval), DefaultConnectRetryInterval);
+
+            return connectionStringBuilder.ToString();
+        }
+
+        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
+        {
+            var defaultConnectionStringBuilder = new SqlConnectionStringBuilder();
+
+            var property = connectionStringBuilder.GetType().GetRuntimeProperty(propertyName);
+
+            if (property.GetValue(connectionStringBuilder) == property.GetValue(defaultConnectionStringBuilder))
+            {
+                property.SetValue(connectionStringBuilder, overrideValue);
             }
-            .ToString();
         }
     }
 }

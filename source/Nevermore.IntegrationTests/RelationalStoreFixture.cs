@@ -141,7 +141,6 @@ namespace Nevermore.IntegrationTests
                 Assert.That(ex.Message, Is.EqualTo("Customers must have a unique name"));
             }
         }
-
     }
 
     public class HashSetReaderWriter : PropertyReaderWriterDecorator
