@@ -21,7 +21,7 @@ namespace Nevermore
 {
     public class RelationalTransaction : IRelationalTransaction
     {
-        
+
         static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         readonly RetriableOperation retriableOperation;
@@ -68,7 +68,7 @@ namespace Nevermore
             connection.OpenWithRetry();
             transaction = connection.BeginTransaction(isolationLevel);
         }
-        
+
         public T Load<T>(string id) where T : class, IId
         {
             return Query<T>()
@@ -201,7 +201,7 @@ namespace Nevermore
 
                 instanceCount++;
             }
-            
+
             var defaultIndexColumns = new string[] { };
             if (includeDefaultModelColumns)
                 defaultIndexColumns = new[] { "Id", "Json" };
@@ -282,7 +282,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new []{ "[Json] = @Json" }));
+            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[Json] = @Json" }));
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
@@ -321,7 +321,7 @@ namespace Nevermore
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
             using (new TimedSection(log, ms => $"Delete took {ms}ms: {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters {{"Id", id}}, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -395,19 +395,7 @@ namespace Nevermore
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping))
             {
                 AddCommandTrace(command.CommandText);
-                try
-                {
-                    return Stream<T>(command, mapping);
-                }
-                catch (SqlException ex)
-                {
-                    throw WrapException(command, ex);
-                }
-                catch (Exception ex)
-                {
-                    log.DebugException("Exception in relational transaction", ex);
-                    throw;
-                }
+                return Stream<T>(command, mapping);
             }
         }
 
@@ -434,53 +422,75 @@ namespace Nevermore
 
         IEnumerable<T> Stream<T>(IDbCommand command, DocumentMap mapping)
         {
-            long msUntilFirstRecord = -1;
-            using (var timedSection = new TimedSection(log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record): {command.CommandText}", 300))
-            using (var reader = command.ExecuteReaderWithRetry())
+            IDataReader reader = null;
+            try
             {
-                msUntilFirstRecord = timedSection.ElapsedMilliseconds;
-                var idIndex = GetOrdinal(reader, "Id");
-                var jsonIndex = GetOrdinal(reader, "Json");
-                var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
-
-                while (reader.Read())
+                long msUntilFirstRecord = -1;
+                using (var timedSection = new TimedSection(log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record): {command.CommandText}", 300))
                 {
-                    T instance;
 
-                    if (jsonIndex >= 0)
+                    try
                     {
-                        var json = reader[jsonIndex].ToString();
-
-                        var deserialized = JsonConvert.DeserializeObject(json, mapping.Type, jsonSerializerSettings);
-
-                        // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
-                        // If the deserialized object is not the desired type, then we are querying for a specific sub-type
-                        // and this record is a different sub-type, and should be excluded from the result-set. 
-                        if (deserialized is T)
-                            instance = (T)deserialized;
-                        else
-                            continue;
+                        reader = command.ExecuteReaderWithRetry();
                     }
-                    else
+                    catch (SqlException ex)
                     {
-                        instance = Activator.CreateInstance<T>();
+                        throw WrapException(command, ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.DebugException("Exception in relational transaction", ex);
+                        throw;
                     }
 
-                    foreach (var index in columnIndexes)
+                    msUntilFirstRecord = timedSection.ElapsedMilliseconds;
+                    var idIndex = GetOrdinal(reader, "Id");
+                    var jsonIndex = GetOrdinal(reader, "Json");
+                    var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
+
+                    while (reader.Read())
                     {
-                        if (index.Value >= 0)
+                        T instance;
+
+                        if (jsonIndex >= 0)
                         {
-                            index.Key.ReaderWriter.Write(instance, reader[index.Value]);
+                            var json = reader[jsonIndex].ToString();
+
+                            var deserialized = JsonConvert.DeserializeObject(json, mapping.Type, jsonSerializerSettings);
+
+                            // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
+                            // If the deserialized object is not the desired type, then we are querying for a specific sub-type
+                            // and this record is a different sub-type, and should be excluded from the result-set. 
+                            if (deserialized is T)
+                                instance = (T)deserialized;
+                            else
+                                continue;
                         }
-                    }
+                        else
+                        {
+                            instance = Activator.CreateInstance<T>();
+                        }
 
-                    if (idIndex >= 0)
-                    {
-                        mapping.IdColumn.ReaderWriter.Write(instance, reader[idIndex]);
-                    }
+                        foreach (var index in columnIndexes)
+                        {
+                            if (index.Value >= 0)
+                            {
+                                index.Key.ReaderWriter.Write(instance, reader[index.Value]);
+                            }
+                        }
 
-                    yield return instance;
+                        if (idIndex >= 0)
+                        {
+                            mapping.IdColumn.ReaderWriter.Write(instance, reader[idIndex]);
+                        }
+
+                        yield return instance;
+                    }
                 }
+            }
+            finally
+            {
+                reader?.Dispose();
             }
         }
 
@@ -495,7 +505,7 @@ namespace Nevermore
                 }
             }
         }
-        
+
         static int GetOrdinal(IDataReader dr, string columnName)
         {
             for (var i = 0; i < dr.FieldCount; i++)
