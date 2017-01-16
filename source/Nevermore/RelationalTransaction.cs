@@ -580,7 +580,7 @@ namespace Nevermore
                 RetryPolicy.NoRetry;
         }
 
-        static Exception WrapException(IDbCommand command, Exception ex)
+        Exception WrapException(IDbCommand command, Exception ex)
         {
             var sqlEx = ex as SqlException;
             if (sqlEx != null && sqlEx.Number == 1205) // deadlock
@@ -591,6 +591,8 @@ namespace Nevermore
                 WriteCurrentTransactions(builder);
                 throw new Exception(builder.ToString());
             }
+
+            log.DebugException("Error while executing SQL command", ex);
 
             return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText, ex);
         }
