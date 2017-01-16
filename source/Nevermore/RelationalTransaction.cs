@@ -166,6 +166,11 @@ namespace Nevermore
                     DetectAndThrowIfKnownException(ex, mapping);
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -233,6 +238,11 @@ namespace Nevermore
                     DetectAndThrowIfKnownException(ex, mapping);
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -294,6 +304,11 @@ namespace Nevermore
                     DetectAndThrowIfKnownException(ex, mapping);
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -318,6 +333,11 @@ namespace Nevermore
                 {
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -336,6 +356,11 @@ namespace Nevermore
                 {
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -353,6 +378,11 @@ namespace Nevermore
                 catch (SqlException ex)
                 {
                     throw WrapException(command, ex);
+                }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
                 }
             }
         }
@@ -373,6 +403,11 @@ namespace Nevermore
                 {
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -388,6 +423,11 @@ namespace Nevermore
                 catch (SqlException ex)
                 {
                     throw WrapException(command, ex);
+                }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
                 }
             }
         }
@@ -524,6 +564,11 @@ namespace Nevermore
                 {
                     throw WrapException(command, ex);
                 }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
+                }
             }
         }
 
@@ -552,6 +597,11 @@ namespace Nevermore
                 catch (SqlException ex)
                 {
                     throw WrapException(command, ex);
+                }
+                catch (Exception ex)
+                {
+                    log.DebugException("Exception in relational transaction", ex);
+                    throw;
                 }
             }
         }
