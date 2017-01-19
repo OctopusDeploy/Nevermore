@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Nevermore;
 using Nevermore.Transient;
 using System.Text;
+using System.Threading;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
@@ -19,6 +20,7 @@ using Nevermore.RelatedDocuments;
 
 namespace Nevermore
 {
+    [DebuggerDisplay("{ToString()}")]
     public class RelationalTransaction : IRelationalTransaction
     {
 
@@ -32,7 +34,9 @@ namespace Nevermore
         readonly IDbTransaction transaction;
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly IRelatedDocumentStore relatedDocumentStore;
+        private readonly int configuredMaxPoolSize;
         readonly ILog log = LogProvider.For<RelationalTransaction>();
+        private readonly string creatingThreadName;
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -41,14 +45,15 @@ namespace Nevermore
         readonly DateTime createdTime = DateTime.Now;
 
         public RelationalTransaction(
-            string connectionString,
-            RetriableOperation retriableOperation,
-            IsolationLevel isolationLevel,
-            ISqlCommandFactory sqlCommandFactory,
-            JsonSerializerSettings jsonSerializerSettings,
-            RelationalMappings mappings,
-            IKeyAllocator keyAllocator,
-            IRelatedDocumentStore relatedDocumentStore)
+            string connectionString, 
+            RetriableOperation retriableOperation, 
+            IsolationLevel isolationLevel, 
+            ISqlCommandFactory sqlCommandFactory, 
+            JsonSerializerSettings jsonSerializerSettings, 
+            RelationalMappings mappings, 
+            IKeyAllocator keyAllocator, 
+            IRelatedDocumentStore relatedDocumentStore, 
+            int configuredMaxPoolSize = 100)
         {
             this.retriableOperation = retriableOperation;
             this.sqlCommandFactory = sqlCommandFactory;
@@ -56,17 +61,34 @@ namespace Nevermore
             this.mappings = mappings;
             this.keyAllocator = keyAllocator;
             this.relatedDocumentStore = relatedDocumentStore;
+            this.configuredMaxPoolSize = configuredMaxPoolSize;
+            this.creatingThreadName = Thread.CurrentThread.Name;
 
+            try
+            {
+                AddToCurrentTransactions();
+                connection = new SqlConnection(connectionString);
+                connection.OpenWithRetry();
+                transaction = connection.BeginTransaction(isolationLevel);
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+
+        private void AddToCurrentTransactions()
+        {
             lock (CurrentTransactions)
             {
                 CurrentTransactions.Add(this);
-                if (CurrentTransactions.Count == 90)
+                var numberOfTransactions = CurrentTransactions.Count;
+                if (numberOfTransactions > configuredMaxPoolSize * 0.8)
+                    log.Debug("{numberOfTransactions} transactions active");
+                if(numberOfTransactions == configuredMaxPoolSize || numberOfTransactions == (int)(configuredMaxPoolSize * 0.9))
                     LogHighNumberOfTransactions();
             }
-
-            connection = new SqlConnection(connectionString);
-            connection.OpenWithRetry();
-            transaction = connection.BeginTransaction(isolationLevel);
         }
 
         public T Load<T>(string id) where T : class, IId
@@ -623,8 +645,8 @@ namespace Nevermore
 
         public void Dispose()
         {
-            transaction.Dispose();
-            connection.Dispose();
+            transaction?.Dispose();
+            connection?.Dispose();
 
             lock (CurrentTransactions)
                 CurrentTransactions.Remove(this);
@@ -672,10 +694,15 @@ namespace Nevermore
                 foreach (var trn in CurrentTransactions.OrderBy(t => t.createdTime))
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"Transaction with {trn.commandTrace.Count} commands started at {trn.createdTime:s} ({(DateTime.Now - trn.createdTime).TotalSeconds:n2} seconds ago)");
+                    sb.AppendLine($"Transaction {trn.connection?.State} with {trn.commandTrace.Count} commands started at {trn.createdTime:s} ({(DateTime.Now - trn.createdTime).TotalSeconds:n2} seconds ago)");
                     foreach (var command in trn.commandTrace)
                         sb.AppendLine(command);
                 }
+        }
+
+        public override string ToString()
+        {
+            return $"{createdTime} - {connection?.State} with {commandTrace.Count} commands by {creatingThreadName ?? "<unnamed>"}";
         }
 
         class ProjectionMapper : IProjectionMapper

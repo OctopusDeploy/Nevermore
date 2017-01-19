@@ -16,7 +16,7 @@ namespace Nevermore
 
         private readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
-        readonly Lazy<string> connectionString;
+        readonly Lazy<ConnectionStringInfo> connectionString;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         private readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
@@ -61,7 +61,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20)
         {
-            this.connectionString = new Lazy<string>(
+            this.connectionString = new Lazy<ConnectionStringInfo>(
                 () => SetConnectionStringOptions(connectionString(), applicationName)
             );
             this.sqlCommandFactory = sqlCommandFactory;
@@ -72,7 +72,7 @@ namespace Nevermore
             this.relatedDocumentStore = relatedDocumentStore;
         }
 
-        public string ConnectionString => connectionString.Value;
+        public string ConnectionString => connectionString.Value.ConnectionString;
 
         public void Reset()
         {
@@ -86,23 +86,23 @@ namespace Nevermore
 
         public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select)
         {
-            return new RelationalTransaction(ConnectionString, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore);
+            return new RelationalTransaction(ConnectionString, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, connectionString.Value.MaxPoolSize);
         }
   
-        static string SetConnectionStringOptions(string connectionString, string applicationName)
+        static ConnectionStringInfo SetConnectionStringOptions(string connectionString, string applicationName)
         {
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 MultipleActiveResultSets = true,
                 Pooling = true,
-                ApplicationName = applicationName
+                ApplicationName = applicationName,
             };
 
             OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout), DefaultConnectTimeoutSeconds);
             OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryCount), DefaultConnectRetryCount);
             OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryInterval), DefaultConnectRetryInterval);
 
-            return connectionStringBuilder.ToString();
+            return new ConnectionStringInfo(connectionStringBuilder);
         }
 
         static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
@@ -118,6 +118,18 @@ namespace Nevermore
             {
                 property.SetValue(connectionStringBuilder, overrideValue);
             }
+        }
+
+        class ConnectionStringInfo
+        {
+            public ConnectionStringInfo(SqlConnectionStringBuilder builder)
+            {
+                ConnectionString = builder.ToString();
+                MaxPoolSize = builder.MaxPoolSize;
+            }
+
+            public string ConnectionString { get; }
+            public int MaxPoolSize { get; }
         }
     }
 }
