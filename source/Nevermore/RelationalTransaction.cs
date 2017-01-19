@@ -23,9 +23,10 @@ namespace Nevermore
     [DebuggerDisplay("{ToString()}")]
     public class RelationalTransaction : IRelationalTransaction
     {
-
         static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation retriableOperation;
         readonly JsonSerializerSettings jsonSerializerSettings;
         readonly RelationalMappings mappings;
@@ -34,40 +35,41 @@ namespace Nevermore
         readonly IDbTransaction transaction;
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly IRelatedDocumentStore relatedDocumentStore;
-        private readonly int configuredMaxPoolSize;
         readonly ILog log = LogProvider.For<RelationalTransaction>();
-        private readonly string creatingThreadName;
+        readonly string name;
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
 
-        static readonly Collection<RelationalTransaction> CurrentTransactions = new Collection<RelationalTransaction>();
-        readonly DateTime createdTime = DateTime.Now;
+        public DateTime CreatedTime { get; } = DateTime.Now;
 
         public RelationalTransaction(
-            string connectionString, 
-            RetriableOperation retriableOperation, 
-            IsolationLevel isolationLevel, 
-            ISqlCommandFactory sqlCommandFactory, 
-            JsonSerializerSettings jsonSerializerSettings, 
-            RelationalMappings mappings, 
-            IKeyAllocator keyAllocator, 
-            IRelatedDocumentStore relatedDocumentStore, 
-            int configuredMaxPoolSize = 100)
+            RelationalTransactionRegistry registry,
+            RetriableOperation retriableOperation,
+            IsolationLevel isolationLevel,
+            ISqlCommandFactory sqlCommandFactory,
+            JsonSerializerSettings jsonSerializerSettings,
+            RelationalMappings mappings,
+            IKeyAllocator keyAllocator,
+            IRelatedDocumentStore relatedDocumentStore,
+            string name = null
+            )
         {
+            this.registry = registry;
             this.retriableOperation = retriableOperation;
             this.sqlCommandFactory = sqlCommandFactory;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.mappings = mappings;
             this.keyAllocator = keyAllocator;
             this.relatedDocumentStore = relatedDocumentStore;
-            this.configuredMaxPoolSize = configuredMaxPoolSize;
-            this.creatingThreadName = Thread.CurrentThread.Name;
+            this.name = name ?? Thread.CurrentThread.Name;
+            if (string.IsNullOrEmpty(name))
+                this.name = "<unknown>";
 
             try
             {
-                AddToCurrentTransactions();
-                connection = new SqlConnection(connectionString);
+                registry.Add(this);
+                connection = new SqlConnection(registry.ConnectionString);
                 connection.OpenWithRetry();
                 transaction = connection.BeginTransaction(isolationLevel);
             }
@@ -75,19 +77,6 @@ namespace Nevermore
             {
                 Dispose();
                 throw;
-            }
-        }
-
-        private void AddToCurrentTransactions()
-        {
-            lock (CurrentTransactions)
-            {
-                CurrentTransactions.Add(this);
-                var numberOfTransactions = CurrentTransactions.Count;
-                if (numberOfTransactions > configuredMaxPoolSize * 0.8)
-                    log.Debug("{numberOfTransactions} transactions active");
-                if(numberOfTransactions == configuredMaxPoolSize || numberOfTransactions == (int)(configuredMaxPoolSize * 0.9))
-                    LogHighNumberOfTransactions();
             }
         }
 
@@ -270,10 +259,10 @@ namespace Nevermore
 
         void AddCommandTrace(string commandText)
         {
-            lock (CurrentTransactions)
+            lock (commandTrace)
             {
                 if (commandTrace.Count == 100)
-                    log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", createdTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
+                    log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
 
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
@@ -647,9 +636,7 @@ namespace Nevermore
         {
             transaction?.Dispose();
             connection?.Dispose();
-
-            lock (CurrentTransactions)
-                CurrentTransactions.Remove(this);
+            registry.Remove(this);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)
@@ -670,7 +657,7 @@ namespace Nevermore
                 var builder = new StringBuilder();
                 builder.AppendLine(ex.Message);
                 builder.AppendLine("Current transactions: ");
-                WriteCurrentTransactions(builder);
+                registry.WriteCurrentTransactions(builder);
                 throw new Exception(builder.ToString());
             }
 
@@ -679,31 +666,25 @@ namespace Nevermore
             return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText, ex);
         }
 
-        void LogHighNumberOfTransactions()
+        internal void WriteDebugInfoTo(StringBuilder sb)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("There are a high number of transactions active. The below information may help the Octopus team diagnose the problem:");
-            sb.AppendLine($"Now: {DateTime.Now:s}");
-            WriteCurrentTransactions(sb);
-            log.Debug(sb.ToString());
+            string[] copy;
+            lock (commandTrace)
+                copy = commandTrace.ToArray();
+
+            sb.AppendLine($"Transaction '{name}' {connection?.State} with {copy.Length} commands started at {CreatedTime:s} ({(DateTime.Now - CreatedTime).TotalSeconds:n2} seconds ago)");
+            foreach (var command in copy)
+                sb.AppendLine(command);
         }
 
-        static void WriteCurrentTransactions(StringBuilder sb)
-        {
-            lock (CurrentTransactions)
-                foreach (var trn in CurrentTransactions.OrderBy(t => t.createdTime))
-                {
-                    sb.AppendLine();
-                    sb.AppendLine($"Transaction '{trn.creatingThreadName}' {trn.connection?.State} with {trn.commandTrace.Count} commands started at {trn.createdTime:s} ({(DateTime.Now - trn.createdTime).TotalSeconds:n2} seconds ago)");
-                    foreach (var command in trn.commandTrace)
-                        sb.AppendLine(command);
-                }
-        }
+
 
         public override string ToString()
         {
-            return $"{createdTime} - {connection?.State} with {commandTrace.Count} commands by {creatingThreadName ?? "<unnamed>"}";
+            return $"{CreatedTime} - {connection?.State} - {name}";
         }
+
+
 
         class ProjectionMapper : IProjectionMapper
         {
