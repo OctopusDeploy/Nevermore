@@ -694,7 +694,7 @@ namespace Nevermore
                 foreach (var trn in CurrentTransactions.OrderBy(t => t.createdTime))
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"Transaction {trn.connection?.State} with {trn.commandTrace.Count} commands started at {trn.createdTime:s} ({(DateTime.Now - trn.createdTime).TotalSeconds:n2} seconds ago)");
+                    sb.AppendLine($"Transaction '{trn.creatingThreadName}' {trn.connection?.State} with {trn.commandTrace.Count} commands started at {trn.createdTime:s} ({(DateTime.Now - trn.createdTime).TotalSeconds:n2} seconds ago)");
                     foreach (var command in trn.commandTrace)
                         sb.AppendLine(command);
                 }
