@@ -179,7 +179,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -251,7 +251,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -317,7 +317,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -346,7 +346,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -369,7 +369,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -392,7 +392,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -425,7 +425,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -450,7 +450,7 @@ namespace Nevermore
                     }
                     catch (Exception ex)
                     {
-                        log.DebugException("Exception in relational transaction", ex);
+                        log.DebugException($"Exception in relational transaction '{name}'", ex);
                         throw;
                     }
 
@@ -587,7 +587,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -621,7 +621,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException("Exception in relational transaction", ex);
+                    log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -661,9 +661,9 @@ namespace Nevermore
                 throw new Exception(builder.ToString());
             }
 
-            log.DebugException("Error while executing SQL command", ex);
+            log.DebugException($"Error while executing SQL command in transaction '{name}'", ex);
 
-            return new Exception("Error while executing SQL command: " + ex.Message + Environment.NewLine + "The command being executed was:" + Environment.NewLine + command.CommandText, ex);
+            return new Exception($"Error while executing SQL command in transaction '{name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
         }
 
         internal void WriteDebugInfoTo(StringBuilder sb)
