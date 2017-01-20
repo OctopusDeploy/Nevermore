@@ -10,13 +10,15 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        public const int DefaultConnectTimeoutSeconds = 60 * 5; // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+        public const int DefaultConnectTimeoutSeconds = 60 * 5;
+            // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+
         public const int DefaultConnectRetryCount = 3;
         public const int DefaultConnectRetryInterval = 10;
 
         private readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
-        readonly Lazy<string> connectionString;
+        readonly Lazy<RelationalTransactionRegistry> registry;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         private readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
@@ -61,7 +63,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20)
         {
-            this.connectionString = new Lazy<string>(
+            this.registry = new Lazy<RelationalTransactionRegistry>(
                 () => SetConnectionStringOptions(connectionString(), applicationName)
             );
             this.sqlCommandFactory = sqlCommandFactory;
@@ -72,40 +74,47 @@ namespace Nevermore
             this.relatedDocumentStore = relatedDocumentStore;
         }
 
-        public string ConnectionString => connectionString.Value;
+        public string ConnectionString => registry.Value.ConnectionString;
 
         public void Reset()
         {
             keyAllocator.Reset();
         }
 
-        public IRelationalTransaction BeginTransaction(RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select)
+        public IRelationalTransaction BeginTransaction(
+            RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
-            return BeginTransaction(IsolationLevel.ReadCommitted, retriableOperation);
+            return BeginTransaction(IsolationLevel.ReadCommitted, retriableOperation, name);
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel,
+            RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
-            return new RelationalTransaction(ConnectionString, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore);
+            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,
+                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name);
         }
-  
-        static string SetConnectionStringOptions(string connectionString, string applicationName)
+
+        static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName)
         {
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 MultipleActiveResultSets = true,
                 Pooling = true,
-                ApplicationName = applicationName
+                ApplicationName = applicationName,
             };
 
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout), DefaultConnectTimeoutSeconds);
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryCount), DefaultConnectRetryCount);
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryInterval), DefaultConnectRetryInterval);
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout),
+                DefaultConnectTimeoutSeconds);
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryCount),
+                DefaultConnectRetryCount);
+            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryInterval),
+                DefaultConnectRetryInterval);
 
-            return connectionStringBuilder.ToString();
+            return new RelationalTransactionRegistry(connectionStringBuilder);
         }
 
-        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
+        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName,
+            object overrideValue)
         {
             var defaultConnectionStringBuilder = new SqlConnectionStringBuilder();
 
