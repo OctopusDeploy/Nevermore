@@ -223,9 +223,7 @@ namespace Nevermore
         {
             return QueryGenerator.SelectQuery();
         }
-
-    
-
+        
         public IQueryBuilder<TRecord> NoLock()
         {
             Hint("NOLOCK");

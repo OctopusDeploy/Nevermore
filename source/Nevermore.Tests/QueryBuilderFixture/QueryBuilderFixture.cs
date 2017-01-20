@@ -198,12 +198,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             this.Assent(actual);
         }
-
-
+        
         [Test]
         public void ShouldGeneratePaginateForJoin()
         {
-
             var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
                 .Where("[Price] > 5");
             var rightQueryBuilder = new QueryBuilder<IDocument>(transaction, "Customers");
@@ -230,8 +228,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             Assert.AreEqual(expected, actual);
         }
-
-
+        
         [Test]
         public void ShouldGenerateTopForJoin()
         {
