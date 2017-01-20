@@ -159,7 +159,7 @@ namespace Nevermore
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
             }
 
-            using (new TimedSection(log, ms => $"Insert took {ms}ms: {statement}", 300))
+            using (new TimedSection(log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
             {
                 AddCommandTrace(command.CommandText);
@@ -225,7 +225,7 @@ namespace Nevermore
                 string.Join(", ", valueStatements)
                 );
 
-            using (new TimedSection(log, ms => $"Insert took {ms}ms: {statement}", 300))
+            using (new TimedSection(log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
             {
                 AddCommandTrace(command.CommandText);
@@ -300,7 +300,7 @@ namespace Nevermore
                 tableHint ?? "",
                 updates));
 
-            using (new TimedSection(log, ms => $"Update took {ms}ms: {statement}", 300))
+            using (new TimedSection(log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping), mapping))
             {
                 AddCommandTrace(command.CommandText);
@@ -331,7 +331,7 @@ namespace Nevermore
 
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
-            using (new TimedSection(log, ms => $"Delete took {ms}ms: {statement}", 300))
+            using (new TimedSection(log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping))
             {
                 AddCommandTrace(command.CommandText);
@@ -354,7 +354,7 @@ namespace Nevermore
 
         public void ExecuteRawDeleteQuery(string query, CommandParameters args)
         {
-            using (new TimedSection(log, ms => $"Executing DELETE query took {ms}ms: {query}", 300))
+            using (new TimedSection(log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 AddCommandTrace(command.CommandText);
@@ -378,7 +378,7 @@ namespace Nevermore
 
         public void ExecuteNonQuery(string query, CommandParameters args)
         {
-            using (new TimedSection(log, ms => $"Executing non query took {ms}ms: {query}", 300))
+            using (new TimedSection(log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 AddCommandTrace(command.CommandText);
@@ -437,7 +437,7 @@ namespace Nevermore
             try
             {
                 long msUntilFirstRecord = -1;
-                using (var timedSection = new TimedSection(log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record): {command.CommandText}", 300))
+                using (var timedSection = new TimedSection(log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
                 {
 
                     try
