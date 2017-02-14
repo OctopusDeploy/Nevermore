@@ -75,6 +75,7 @@ namespace Nevermore
         }
 
         public string ConnectionString => registry.Value.ConnectionString;
+        public int MaxPoolSize => registry.Value.MaxPoolSize;
 
         public void Reset()
         {

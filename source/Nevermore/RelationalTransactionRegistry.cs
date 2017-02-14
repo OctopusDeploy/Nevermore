@@ -12,16 +12,15 @@ namespace Nevermore
         readonly ILog log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly List<RelationalTransaction> transactions = new List<RelationalTransaction>();
-        readonly int maxPoolSize;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
         {
             ConnectionString = connectionString.ToString();
-            maxPoolSize = connectionString.MaxPoolSize;
+            MaxPoolSize = connectionString.MaxPoolSize;
         }
 
         public string ConnectionString { get; }
-
+        public int MaxPoolSize { get; }
 
         public void Add(RelationalTransaction trn)
         {
@@ -29,9 +28,9 @@ namespace Nevermore
             {
                 transactions.Add(trn);
                 var numberOfTransactions = transactions.Count;
-                if (numberOfTransactions > maxPoolSize * 0.8)
+                if (numberOfTransactions > MaxPoolSize * 0.8)
                     log.Debug("{numberOfTransactions} transactions active");
-                if (numberOfTransactions == maxPoolSize || numberOfTransactions == (int)(maxPoolSize * 0.9))
+                if (numberOfTransactions == MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
                     LogHighNumberOfTransactions();
             }
         }
