@@ -116,6 +116,18 @@ namespace Nevermore
 
         }
 
+        /// <summary>
+        /// The pages are sorted by orderBy, but the results within each page are not.
+        /// </summary>
+        /// <param name="innerSql"></param>
+        /// <param name="skip"></param>
+        /// <param name="take"></param>
+        /// <param name="parameters"></param>
+        /// <param name="tableName"></param>
+        /// <param name="orderBy"></param>
+        /// <param name="innerColumnSelector"></param>
+        /// <returns></returns>
+        [Obsolete("Use the QueryBuilder as this method does not sort within the page returned")]
         public static string PaginateQuery(string innerSql, int skip, int take, CommandParameters parameters,
             string tableName, string orderBy, string innerColumnSelector = "[Id]")
         {
