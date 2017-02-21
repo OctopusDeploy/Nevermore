@@ -84,6 +84,28 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void ShouldHandleIdsWithInOperand()
+        {
+            string customerId;
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer = new Customer { FirstName = "Alice", LastName = "Apple" };
+                transaction.Insert(customer);
+                transaction.Commit();
+                customerId = customer.Id;
+            }
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer = transaction.Query<Customer>()
+                                            .Where("Id", SqlOperand.In, new[] { customerId })
+                                            .Stream()
+                                            .Single();
+                Assert.AreEqual("Alice", customer.FirstName);
+            }
+        }
+
+        [Test]
         public void ShouldMultiSelect()
         {
             using(var transaction = Store.BeginTransaction())
