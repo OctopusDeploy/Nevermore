@@ -84,7 +84,7 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void ShouldHandleIdsWithInClause()
+        public void ShouldHandleIdsWithInOperand()
         {
             string customerId;
             using (var transaction = Store.BeginTransaction())
