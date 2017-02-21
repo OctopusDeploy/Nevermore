@@ -138,7 +138,7 @@ namespace Nevermore
             Insert(null, instance, null, tableHint);
         }
 
-        public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null) where TDocument : class, IId
+        public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
             var mapping = mappings.Get(instance.GetType());
             var statement = InsertStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
@@ -160,7 +160,7 @@ namespace Nevermore
             }
 
             using (new TimedSection(log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -289,7 +289,7 @@ namespace Nevermore
             return $"{idPrefix}-{key}";
         }
 
-        public void Update<TDocument>(TDocument instance, string tableHint = null) where TDocument : class, IId
+        public void Update<TDocument>(TDocument instance, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
             var mapping = mappings.Get(instance.GetType());
 
@@ -301,7 +301,7 @@ namespace Nevermore
                 updates));
 
             using (new TimedSection(log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping), mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping), mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -324,7 +324,7 @@ namespace Nevermore
         }
 
         // Delete does not require TDocument to implement IId because during recursive document delete we have only objects
-        public void Delete<TDocument>(TDocument instance) where TDocument : class
+        public void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class
         {
             var mapping = mappings.Get(instance.GetType());
             var id = (string)mapping.IdColumn.ReaderWriter.Read(instance);
@@ -332,7 +332,7 @@ namespace Nevermore
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
             using (new TimedSection(log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -352,10 +352,10 @@ namespace Nevermore
             }
         }
 
-        public void ExecuteRawDeleteQuery(string query, CommandParameters args)
+        public void ExecuteRawDeleteQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -376,10 +376,10 @@ namespace Nevermore
         }
 
 
-        public void ExecuteNonQuery(string query, CommandParameters args)
+        public void ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -399,20 +399,20 @@ namespace Nevermore
         }
 
 
-        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args)
+        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             var mapping = mappings.Get(typeof(T));
 
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 return Stream<T>(command, mapping);
             }
         }
 
-        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameters args, Func<IProjectionMapper, T> projectionMapper)
+        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameters args, Func<IProjectionMapper, T> projectionMapper, int? commandTimeoutSeconds = null)
         {
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -571,9 +571,9 @@ namespace Nevermore
             return result;
         }
 
-        public T ExecuteScalar<T>(string query, CommandParameters args)
+        public T ExecuteScalar<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try

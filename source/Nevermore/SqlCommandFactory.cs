@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using Nevermore.Mapping;
 
@@ -7,20 +8,16 @@ namespace Nevermore
     {
         public static readonly int DefaultCommandTimeoutSeconds = 60;
 
-        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args, DocumentMap mapping = null)
+        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameters args, DocumentMap mapping = null, int? commandTimeoutSeconds = null)
         {
             var command = connection.CreateCommand();
 
             try
             {
-                command.CommandTimeout = DefaultCommandTimeoutSeconds;
+                command.CommandTimeout = commandTimeoutSeconds ?? DefaultCommandTimeoutSeconds;
                 command.CommandText = statement;
                 command.Transaction = transaction;
-
-                if (args != null)
-                {
-                    args.ContributeTo(command, mapping);
-                }
+                args?.ContributeTo(command, mapping);
                 return command;
             }
             catch

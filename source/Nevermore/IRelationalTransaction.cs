@@ -14,8 +14,9 @@ namespace Nevermore
         /// <typeparam name="TResult">The scalar value type to return.</typeparam>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A scalar value.</returns>
-        TResult ExecuteScalar<TResult>(string query, CommandParameters args = null);
+        TResult ExecuteScalar<TResult>(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns a data reader, and allows you to manually read the fields.
@@ -44,10 +45,20 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT * FROM Release...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        IEnumerable<TDocument> ExecuteReader<TDocument>(string query, CommandParameters args);
+        IEnumerable<TDocument> ExecuteReader<TDocument>(string query, CommandParameters args, int? commandTimeoutSeconds = null);
 
-        IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper);
+        /// <summary>
+        /// Executes a query that returns strongly typed documents using a custom mapper function.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <param name="query">The SQL query to execute. Example: <c>SELECT * FROM Release...</c></param>
+        /// <param name="args">Any arguments to pass to the query as command parameters.</param>
+        /// <param name="projectionMapper">The mapper function to use to convert each record into the strongly typed document.</param>
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        /// <returns>A stream of resulting documents.</returns>
+        IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a delete query (bypasses the usual OctopusModelDeletionRules checks). Only use this if you are 100% certain you can 
@@ -55,14 +66,16 @@ namespace Nevermore
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>DELETE FROM [Event]...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
-        void ExecuteRawDeleteQuery(string query, CommandParameters args);
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void ExecuteRawDeleteQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns no results.
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
-        void ExecuteNonQuery(string query, CommandParameters args = null);
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void ExecuteNonQuery(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Creates a query that returns strongly typed documents.
@@ -140,7 +153,8 @@ namespace Nevermore
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="customAssignedId">The ID to assign to the document.</param>
         /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
-        void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts multiple items into a specific table.
@@ -158,14 +172,16 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being updated.</typeparam>
         /// <param name="instance">The document to update.</param>
         /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
-        void Update<TDocument>(TDocument instance, string tableHint = null) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void Update<TDocument>(TDocument instance, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Deletes an existing document from the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="instance">The document to delete.</param>
-        void Delete<TDocument>(TDocument instance) where TDocument : class;
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class;
 
         /// <summary>
         /// Commits the current pending transaction.
