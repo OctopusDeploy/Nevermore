@@ -170,7 +170,8 @@ WHERE {innerColumnSelector} IN
         public void AddWhereIn(WhereParameter whereParams)
         {
             var values = (string[])whereParams.Value;
-            var inClause = string.Join(", ", values.Select(v => "@" + v));
+            var parameterNames = values.Select(Normalise).ToArray();
+            var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
 
             OpenSubClause();
             AppendField(whereParams.FieldName);
@@ -178,10 +179,19 @@ WHERE {innerColumnSelector} IN
             AppendInParameter(inClause);
             CloseSubClause();
 
-            foreach (string value in values)
+            for (var i = 0; i < values.Length; i++)
             {
-                AddParameter(value, value);
+                AddParameter(parameterNames[i], values[i]);    
             }
+        }
+
+        // Only certain characters are allowed in SQL parameter names: https://msdn.microsoft.com/en-us/library/ms175874.aspx?f=255&mspperror=-2147217396#Anchor_1
+        // but for now we will keep it simple (e.g by not using a generic regex here) 
+        // to make sure we don't put any unnecessary load on our Server that is already struggling in certain scenarios.  
+        // https://blogs.msdn.microsoft.com/debuggingtoolbox/2008/04/02/comparing-regex-replace-string-replace-and-stringbuilder-replace-which-has-better-performance/
+        string Normalise(string value)
+        {
+            return value.Replace('-', '_');
         }
 
         public void AddWhere(WhereParameter whereParams, object startValue, object endValue)
