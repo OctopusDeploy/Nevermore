@@ -52,7 +52,7 @@ namespace Nevermore
                 return;
             }
 
-            if (!log.IsDebugEnabled())
+            if (log.IsDebugEnabled())
                 log.Debug(BuildHighNumberOfTransactionsMessage());
         }
 
