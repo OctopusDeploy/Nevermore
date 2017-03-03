@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Nevermore.Mapping
@@ -15,20 +16,28 @@ namespace Nevermore.Mapping
             if (value == null || value.Count == 0)
                 return "";
 
-            return $"|{string.Join("|", value)}| ";
+            return UnParse(value);
         }
 
         public override void Write(object target, object value)
         {
-            var valueAsString = (value ?? string.Empty).ToString().Split('|');
-
             var collection = base.Read(target) as ReferenceCollection;
             if (collection == null)
             {
                 base.Write(target, collection = new ReferenceCollection());
             }
 
-            collection.ReplaceAll(valueAsString.Where(item => !string.IsNullOrWhiteSpace(item)));
+            collection.ReplaceAll(Parse(value?.ToString()));
+        }
+
+        public static IEnumerable<string> Parse(string value)
+        {
+            return (value ?? string.Empty).Split('|').Where(item => !string.IsNullOrWhiteSpace(item));
+        }
+
+        public static string UnParse(IEnumerable<string> items)
+        {
+            return $"|{string.Join("|", items)}| ";
         }
     }
 }
