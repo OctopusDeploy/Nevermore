@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Text;
 using Nevermore.IntegrationTests.Model;
-using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
-
-
         [Test]
         public void ShouldGenerateIdsUnlessExplicitlyAssigned()
         {
@@ -164,58 +158,4 @@ namespace Nevermore.IntegrationTests
             }
         }
     }
-
-    public class HashSetReaderWriter : PropertyReaderWriterDecorator
-    {
-        public HashSetReaderWriter(IPropertyReaderWriter<object> original)
-            : base(original)
-        {
-        }
-
-        public override object Read(object target)
-        {
-            var value = base.Read(target) as HashSet<string>;
-            if (value == null || value.Count == 0)
-                return "";
-
-            var items = new StringBuilder();
-            items.Append("|");
-            foreach (var item in value)
-            {
-                items.Append(item);
-                items.Append("|");
-            }
-            return items.ToString();
-        }
-
-        public override void Write(object target, object value)
-        {
-            var valueAsString = (value ?? string.Empty).ToString().Split('|');
-
-            var collection = base.Read(target) as HashSet<string>;
-            if (collection == null)
-            {
-                base.Write(target, collection = new HashSet<string>());
-            }
-
-            collection.ReplaceAll(valueAsString.Where(v => !string.IsNullOrWhiteSpace(v)));
-        }
-
-    }
-
-    public static class HashSetExtensions
-    {
-        public static void ReplaceAll(this HashSet<string> collection, IEnumerable<string> newItems)
-        {
-            collection.Clear();
-
-            if (newItems == null) return;
-
-            foreach (var item in newItems)
-            {
-                collection.Add(item);
-            }
-        }
-    }
-
 }

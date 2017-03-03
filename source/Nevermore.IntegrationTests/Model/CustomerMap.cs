@@ -9,13 +9,7 @@ namespace Nevermore.IntegrationTests.Model
         {
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
-            Column(m => m.Roles, map =>
-            {
-                map.ReaderWriter = new HashSetReaderWriter(map.ReaderWriter);
-                map.DbType = DbType.String;
-                map.MaxLength = int.MaxValue;
-            });
-
+            Column(m => m.Roles);
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
         }
     }
