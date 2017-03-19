@@ -12,6 +12,7 @@ namespace Nevermore
         readonly ILog log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly List<RelationalTransaction> transactions = new List<RelationalTransaction>();
+        bool highNumberAlreadyLoggedAtError;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
         {
@@ -29,9 +30,10 @@ namespace Nevermore
                 transactions.Add(trn);
                 var numberOfTransactions = transactions.Count;
                 if (numberOfTransactions > MaxPoolSize * 0.8)
-                    log.Debug("{numberOfTransactions} transactions active");
-                if (numberOfTransactions == MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
-                    LogHighNumberOfTransactions();
+                    log.Info("{numberOfTransactions} transactions active");
+
+                if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
+                    LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
             }
         }
 
@@ -41,13 +43,26 @@ namespace Nevermore
                 transactions.Remove(trn);
         }
 
-        void LogHighNumberOfTransactions()
+        void LogHighNumberOfTransactions(bool reachedMax)
         {
-            StringBuilder sb = new StringBuilder();
+            if (reachedMax && !highNumberAlreadyLoggedAtError)
+            {
+                highNumberAlreadyLoggedAtError = true;
+                log.Error(BuildHighNumberOfTransactionsMessage());
+                return;
+            }
+
+            if (log.IsDebugEnabled())
+                log.Debug(BuildHighNumberOfTransactionsMessage());
+        }
+
+        string BuildHighNumberOfTransactionsMessage()
+        {
+            var sb = new StringBuilder();
             sb.AppendLine("There are a high number of transactions active. The below information may help the Octopus team diagnose the problem:");
             sb.AppendLine($"Now: {DateTime.Now:s}");
             WriteCurrentTransactions(sb);
-            log.Debug(sb.ToString());
+            return sb.ToString();
         }
 
         public void WriteCurrentTransactions(StringBuilder sb)
