@@ -193,7 +193,7 @@ WHERE {innerColumnSelector} IN
 
             for (var i = 0; i < values.Length; i++)
             {
-                AddParameter(parameterNames[i], values[i]);    
+                AddParameter(parameterNames[i], values[i]);
             }
         }
 
@@ -201,9 +201,9 @@ WHERE {innerColumnSelector} IN
         // but for now we will keep it simple (e.g by not using a generic regex here) 
         // to make sure we don't put any unnecessary load on our Server that is already struggling in certain scenarios.  
         // https://blogs.msdn.microsoft.com/debuggingtoolbox/2008/04/02/comparing-regex-replace-string-replace-and-stringbuilder-replace-which-has-better-performance/
-        string Normalise(string value)
+        static string Normalise(string value)
         {
-            return value.Replace('-', '_');
+            return value.Replace('-', '_').ToLower();
         }
 
         public void AddWhere(WhereParameter whereParams, object startValue, object endValue)

@@ -74,5 +74,17 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var parameter = "@" + parameters.Keys.Single();
             query.Should().Contain(parameter, "Should contain " + parameter);
         }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhereIn()
+        {
+            new QueryBuilder<IId>(transaction, "Order")
+                .Where("fOo", SqlOperand.In, new[] { "BaR", "BaZ" })
+                .ToList();
+
+            parameters.Count.Should().Be(2);
+            foreach (var parameter in parameters)
+                query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
+        }
     }
 }
