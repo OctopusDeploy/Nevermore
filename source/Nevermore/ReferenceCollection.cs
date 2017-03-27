@@ -6,7 +6,7 @@ namespace Nevermore
     /// <summary>
     /// A case-insensitive collection of unique strings used for holding document ID's.
     /// </summary>
-    public class ReferenceCollection : HashSet<string>
+    public class ReferenceCollection : HashSet<string>, IReadOnlyCollection<string>
     {
         public ReferenceCollection()
             : base((IEqualityComparer<string>) StringComparer.OrdinalIgnoreCase)
