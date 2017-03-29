@@ -8,7 +8,8 @@ namespace Nevermore.Transient
 {
     sealed class SqlDatabaseTransientErrorDetectionStrategy : ITransientErrorDetectionStrategy
     {
-        private ILog log = LogProvider.For<SqlDatabaseTransientErrorDetectionStrategy>();
+        // Getting a typed ILog causes JIT compilation - we should only do this once
+        static readonly ILog Log = LogProvider.For<SqlDatabaseTransientErrorDetectionStrategy>();
 
         static readonly int[] SimpleTransientErrorCodes = { 20, 64, 233, 10053, 10054, 10060, 10928, 10929, 40143, 40197, 40540, 40613 };
 
@@ -32,7 +33,7 @@ namespace Nevermore.Transient
             var sqlConnectionErrors = sqlErrors.Where(e => e.Message.Contains("requires an open and available Connection") || e.Message.Contains("broken and recovery is not possible")).ToList();
             if (sqlConnectionErrors.Any())
             {
-                log.Info($"Connection error detected. SQL Error code(s) {string.Join(", ", sqlConnectionErrors.Select(e => e.Number))}");
+                Log.Info($"Connection error detected. SQL Error code(s) {string.Join(", ", sqlConnectionErrors.Select(e => e.Number))}");
             }
 
             // Otherwise it could be another simple transient error

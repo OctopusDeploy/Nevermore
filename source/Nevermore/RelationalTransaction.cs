@@ -23,6 +23,8 @@ namespace Nevermore
     [DebuggerDisplay("{ToString()}")]
     public class RelationalTransaction : IRelationalTransaction
     {
+        // Getting a typed ILog causes JIT compilation - we should only do this once
+        static readonly ILog Log = LogProvider.For<RelationalTransaction>();
         static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -35,7 +37,6 @@ namespace Nevermore
         readonly IDbTransaction transaction;
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly IRelatedDocumentStore relatedDocumentStore;
-        readonly ILog log = LogProvider.For<RelationalTransaction>();
         readonly string name;
 
         // To help track deadlocks
@@ -159,7 +160,7 @@ namespace Nevermore
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
             }
 
-            using (new TimedSection(log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
@@ -179,7 +180,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -225,7 +226,7 @@ namespace Nevermore
                 string.Join(", ", valueStatements)
                 );
 
-            using (new TimedSection(log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
             {
                 AddCommandTrace(command.CommandText);
@@ -251,7 +252,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -262,7 +263,7 @@ namespace Nevermore
             lock (commandTrace)
             {
                 if (commandTrace.Count == 100)
-                    log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
+                    Log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
 
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
@@ -300,7 +301,7 @@ namespace Nevermore
                 tableHint ?? "",
                 updates));
 
-            using (new TimedSection(log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping), mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
@@ -317,7 +318,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -331,7 +332,7 @@ namespace Nevermore
 
             var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
 
-            using (new TimedSection(log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
@@ -346,7 +347,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -354,7 +355,7 @@ namespace Nevermore
 
         public void ExecuteRawDeleteQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
-            using (new TimedSection(log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(Log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
@@ -369,7 +370,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -378,7 +379,7 @@ namespace Nevermore
 
         public void ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
-            using (new TimedSection(log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
@@ -392,7 +393,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -425,7 +426,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -437,7 +438,7 @@ namespace Nevermore
             try
             {
                 long msUntilFirstRecord = -1;
-                using (var timedSection = new TimedSection(log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
+                using (var timedSection = new TimedSection(Log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
                 {
 
                     try
@@ -450,7 +451,7 @@ namespace Nevermore
                     }
                     catch (Exception ex)
                     {
-                        log.DebugException($"Exception in relational transaction '{name}'", ex);
+                        Log.DebugException($"Exception in relational transaction '{name}'", ex);
                         throw;
                     }
 
@@ -587,7 +588,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -621,7 +622,7 @@ namespace Nevermore
                 }
                 catch (Exception ex)
                 {
-                    log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
                     throw;
                 }
             }
@@ -661,7 +662,7 @@ namespace Nevermore
                 throw new Exception(builder.ToString());
             }
 
-            log.DebugException($"Error while executing SQL command in transaction '{name}'", ex);
+            Log.DebugException($"Error while executing SQL command in transaction '{name}'", ex);
 
             return new Exception($"Error while executing SQL command in transaction '{name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
         }

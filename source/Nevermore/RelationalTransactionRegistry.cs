@@ -9,7 +9,8 @@ namespace Nevermore
 {
     public class RelationalTransactionRegistry
     {
-        readonly ILog log = LogProvider.For<RelationalTransactionRegistry>();
+        // Getting a typed ILog causes JIT compilation - we should only do this once
+        static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly List<RelationalTransaction> transactions = new List<RelationalTransaction>();
         bool highNumberAlreadyLoggedAtError;
@@ -30,7 +31,7 @@ namespace Nevermore
                 transactions.Add(trn);
                 var numberOfTransactions = transactions.Count;
                 if (numberOfTransactions > MaxPoolSize * 0.8)
-                    log.Info("{numberOfTransactions} transactions active");
+                    Log.Info("{numberOfTransactions} transactions active");
 
                 if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
                     LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
@@ -48,12 +49,12 @@ namespace Nevermore
             if (reachedMax && !highNumberAlreadyLoggedAtError)
             {
                 highNumberAlreadyLoggedAtError = true;
-                log.Error(BuildHighNumberOfTransactionsMessage());
+                Log.Error(BuildHighNumberOfTransactionsMessage());
                 return;
             }
 
-            if (log.IsDebugEnabled())
-                log.Debug(BuildHighNumberOfTransactionsMessage());
+            if (Log.IsDebugEnabled())
+                Log.Debug(BuildHighNumberOfTransactionsMessage());
         }
 
         string BuildHighNumberOfTransactionsMessage()
