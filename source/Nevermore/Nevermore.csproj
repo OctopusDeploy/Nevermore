@@ -12,6 +12,12 @@
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <Version>1.0.0.0</Version>
+    <Authors>Octopus Deploy</Authors>
+    <PackageProjectUrl>https://github.com/OctopusDeploy/Nevermore</PackageProjectUrl>
+    <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/OctopusDeploy/Nevermore.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,14 +33,14 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
-    <PackageReference Include="System.Runtime" Version="4.1.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.1.0" />
-    <PackageReference Include="System.Collections.Concurrent" Version="4.0.12" />
-    <PackageReference Include="System.Data.Common" Version="4.1.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.1.0" />
-    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.1.0" />
-    <PackageReference Include="System.Reflection" Version="4.1.0" />
-    <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
+    <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
+    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+    <PackageReference Include="System.Reflection" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
