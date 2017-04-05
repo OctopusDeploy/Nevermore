@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Nevermore.Contracts;
 using NSubstitute;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -11,8 +11,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
         private IRelationalTransaction transaction;
         private string query = null;
         private CommandParameters parameters = null;
-        [SetUp]
-        public void SetUp()
+
+        public VariableCasingFixture()
         {
             query = null;
             parameters = null;
@@ -25,7 +25,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 });
         }
 
-        [Test]
+        [Fact]
         public void VariablesCasingIsNormalisedForWhere()
         {
             new QueryBuilder<IId>(transaction, "Order")
@@ -39,7 +39,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Test]
+        [Fact]
         public void VariablesCasingIsNormalisedForWhereSingleParam()
         {
             new QueryBuilder<IId>(transaction, "Order")
@@ -51,7 +51,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query.Should().Contain(parameter, "Should contain " + parameter);
         }
 
-        [Test]
+        [Fact]
         public void VariablesCasingIsNormalisedForWhereTwoParam()
         {
             new QueryBuilder<IId>(transaction, "Order")
@@ -63,7 +63,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Test]
+        [Fact]
         public void VariablesCasingIsNormalisedForWhereParamArray()
         {
             new QueryBuilder<IId>(transaction, "Order")
@@ -75,7 +75,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query.Should().Contain(parameter, "Should contain " + parameter);
         }
 
-        [Test]
+        [Fact]
         public void VariablesCasingIsNormalisedForWhereIn()
         {
             new QueryBuilder<IId>(transaction, "Order")

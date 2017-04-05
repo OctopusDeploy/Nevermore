@@ -8,13 +8,12 @@ using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore.IntegrationTests
 {
     public static class IntegrationTestDatabase
     {
-        static readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
+        static readonly string SqlInstance = "(local)\\SQLEXPRESS";
         static readonly string TestDatabaseName;
         static readonly string TestDatabaseConnectionString;
 

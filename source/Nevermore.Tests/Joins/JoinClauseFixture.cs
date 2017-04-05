@@ -1,12 +1,11 @@
 ﻿using Nevermore.Joins;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.Tests.Joins
 {
-    [TestFixture]
     public class JoinClauseFixture
     {
-        [Test]
+        [Fact]
         public void ShouldReturnEqualsString()
         {
             var target = new JoinClause("FieldA", JoinOperand.Equal, "FieldB");
@@ -14,7 +13,7 @@ namespace Nevermore.Tests.Joins
             const string expected = "FieldA = FieldB";
             var actual = target.ToString();
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
     }
 }

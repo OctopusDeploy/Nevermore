@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <Description>A JSON Document Store library for SQL Server</Description>
-    <VersionPrefix>0.0.0</VersionPrefix>
     <Authors>Octopus Deploy</Authors>
-    <TargetFramework>netstandard1.0</TargetFramework>
+    <TargetFramework>netstandard1.6</TargetFramework>
     <AssemblyName>Nevermore.Contracts</AssemblyName>
     <PackageId>Nevermore.Contracts</PackageId>
     <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
@@ -18,11 +17,6 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <Version>1.0.0.0</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.0' ">
-    <PackageReference Include="System.Runtime" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
-  </ItemGroup>
-
 </Project>

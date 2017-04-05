@@ -2,14 +2,13 @@
 using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.Tests.Joins
 {
-    [TestFixture]
     public class JoinExtensionsFixture
     {
-        [Test]
+        [Fact]
         public void ShouldAddInnerJoinToQueryBuilder()
         {
             var transaction = Substitute.For<IRelationalTransaction>();
@@ -18,14 +17,14 @@ namespace Nevermore.Tests.Joins
 
             leftQuery.InnerJoin(rightQuery);
 
-            Assert.IsNotEmpty(leftQuery.QueryGenerator.Joins);
+            Assert.NotEmpty(leftQuery.QueryGenerator.Joins);
 
             var join = leftQuery.QueryGenerator.Joins.Single();
-            Assert.AreEqual(rightQuery.QueryGenerator, join.RightQuery);
-            Assert.AreEqual(JoinType.InnerJoin, join.JoinType);
+            Assert.Equal(rightQuery.QueryGenerator, join.RightQuery);
+            Assert.Equal(JoinType.InnerJoin, join.JoinType);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAddClauseToLastJoin()
         {
             var transaction = Substitute.For<IRelationalTransaction>();
@@ -38,11 +37,11 @@ namespace Nevermore.Tests.Joins
                     .On(i.ToString(), JoinOperand.Equal, i.ToString());
 
                 var lastJoin = leftQuery.QueryGenerator.Joins.Last();
-                Assert.IsNotEmpty(lastJoin.JoinClauses);
+                Assert.NotEmpty(lastJoin.JoinClauses);
 
                 var joinClause = lastJoin.JoinClauses.Single();
                 var expected = $"{i} = {i}";
-                Assert.AreEqual(expected, joinClause.ToString());
+                Assert.Equal(expected, joinClause.ToString());
             }
         }
     }

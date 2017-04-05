@@ -1,13 +1,14 @@
 ﻿using Nevermore.Contracts;
+using Nevermore;
 using Nevermore.IntegrationTests.Model;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.IntegrationTests
 {
     public class RelationalTransactionFixture : FixtureWithRelationalStore
     {
 
-        [Test]
+        [Fact]
         public void LoadWithSingleId()
         {
             using (var trn = Store.BeginTransaction())
@@ -16,7 +17,7 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        [Test]
+        [Fact]
         public void LoadWithMultipleIds()
         {
             using (var trn = Store.BeginTransaction())

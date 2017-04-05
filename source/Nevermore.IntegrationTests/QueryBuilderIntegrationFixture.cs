@@ -1,11 +1,11 @@
 ﻿using Nevermore.IntegrationTests.Model;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.IntegrationTests
 {
     public class QueryBuilderIntegrationFixture : FixtureWithRelationalStore
     {
-        [Test]
+        [Fact]
         public void WhereInClause()
         {
             using (var trn = Store.BeginTransaction())
@@ -17,7 +17,7 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        [Test]
+        [Fact]
         public void WhereInClauseWhenParameterNamesDifferByCase()
         {
             using (var trn = Store.BeginTransaction())

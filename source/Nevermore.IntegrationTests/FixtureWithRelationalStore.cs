@@ -1,10 +1,6 @@
 using System;
-using System.Data;
-using System.Text;
-using Nevermore.Contracts;
-using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
-using NUnit.Framework;
+using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests
 {
@@ -20,29 +16,12 @@ namespace Nevermore.IntegrationTests
             get { return IntegrationTestDatabase.Mappings; }
         }
 
-        [OneTimeSetUp]
-        public virtual void FixtureSetUp()
-        {
-          
-        }
-
-        [SetUp]
-        public virtual void SetUp()
+        public FixtureWithRelationalStore()
         {
             IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
             IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
             IntegrationTestDatabase.Store.Reset();
-        }
-
-        [TearDown]
-        public virtual void TearDown()
-        {
-        }
-
-        [OneTimeTearDown]
-        public virtual void FixtureTearDown()
-        {
         }
 
         public int CountOf<T>() where T : class, IId

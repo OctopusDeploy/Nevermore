@@ -1,20 +1,17 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.IntegrationTests
 {
     public class KeyAllocatorFixture : FixtureWithRelationalStore
     {
-        public override void SetUp()
+        public KeyAllocatorFixture()
         {
-            base.SetUp();
             Mappings.Install(
                 new DocumentMap[]
                 {
@@ -24,7 +21,7 @@ namespace Nevermore.IntegrationTests
             );
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllocateKeysInChunks()
         {
             var allocatorA = new KeyAllocator(Store, 10);
@@ -66,7 +63,7 @@ namespace Nevermore.IntegrationTests
             AssertNext(allocatorB, "Todos", 31);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllocateForDifferentCollections()
         {
             var allocator = new KeyAllocator(Store, 10);
@@ -82,7 +79,7 @@ namespace Nevermore.IntegrationTests
             AssertNext(allocator, "Todos", 5);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllocateInParallel()
         {
             const int allocationCount = 20;
@@ -130,9 +127,9 @@ namespace Nevermore.IntegrationTests
             var projectIdsAfter = projectIds.Select(removePrefix).OrderBy(x => x).ToArray();
             var deploymentIdsAfter = deploymentIds.Select(removePrefix).OrderBy(x => x).ToArray();
 
-            Assert.That(projectIdsAfter, Is.Unique, "Duplicate project IDs generated");
-            Assert.That(deploymentIdsAfter, Is.Unique, "Duplicate environment IDs generated");
-
+            Assert.Equal(projectIdsAfter.Length, projectIdsAfter.Distinct().Count());
+            Assert.Equal(deploymentIdsAfter.Length, deploymentIdsAfter.Distinct().Count());
+            
             // Check that there are no gaps in sequence
 
             var firstProjectId = projectIdsAfter.First();
@@ -141,14 +138,12 @@ namespace Nevermore.IntegrationTests
             var expectedProjectIds = Enumerable.Range(firstProjectId, lastProjectId - firstProjectId + 1)
                 .ToList();
 
-            Assert.That(projectIdsAfter, Is.EqualTo(expectedProjectIds), "Ids should be in order with no gaps despite failed transactions");
+            Assert.Equal(expectedProjectIds, projectIdsAfter);
         }
-  
+
         static void AssertNext(KeyAllocator allocator, string collection, int expected)
         {
-            Assert.That(allocator.NextId(collection), Is.EqualTo(expected));
+            Assert.Equal(expected, allocator.NextId(collection));
         }
-
-
     }
 }
