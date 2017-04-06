@@ -133,7 +133,7 @@ Task("Publish")
 
 
 Task("Default")
-    .IsDependentOn("Publish");
+    .IsDependentOn("Publish")
     .IsDependentOn("CopyToLocalPackages");
 
 //////////////////////////////////////////////////////////////////////
