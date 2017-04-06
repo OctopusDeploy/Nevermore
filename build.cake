@@ -56,11 +56,7 @@ Task("Clean")
 Task("Restore")
     .IsDependentOn("Clean")
     .Does(() => {
-        MSBuild("./source/Nevermore.sln", settings => 
-			settings.SetVerbosity(Verbosity.Minimal)
-					.UseToolVersion(MSBuildToolVersion.VS2017)
-					.SetConfiguration("Release")
-					.WithTarget("Restore"));
+		DotNetCoreRestore("source");
     });
 
 
@@ -68,12 +64,11 @@ Task("Build")
     .IsDependentOn("Restore")
     .IsDependentOn("Clean")
     .Does(() => {
-		MSBuild("./source/Nevermore.sln", settings => 
-			settings.SetVerbosity(Verbosity.Minimal)
-					.UseToolVersion(MSBuildToolVersion.VS2017)
-					.SetConfiguration("Release")
-					.WithProperty("Version", nugetVersion)
-					.WithTarget("Build"));
+		 DotNetCoreBuild("./source", new DotNetCoreBuildSettings
+		{
+			Configuration = configuration,
+			ArgumentCustomization = args => args.Append($"/p:Version={nugetVersion}")
+		});
 	});
 
 Task("Test")
@@ -104,7 +99,41 @@ Task("CopyToLocalPackages")
 		CopyFiles($"./source/**/*.nupkg", localPackagesDir);
 	});
 
+	
+Task("Publish")
+    .IsDependentOn("CopyToArtifacts")
+    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
+    .Does(() =>
+{
+    
+	NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
+		ApiKey = EnvironmentVariable("MyGetApiKey")
+	});
+
+	NuGetPush($"{artifactsDir}/Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
+		ApiKey = EnvironmentVariable("MyGetApiKey")
+	});
+	
+    if (gitVersionInfo.PreReleaseTag == "")
+    {
+        NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+            Source = "https://www.nuget.org/api/v2/package",
+            ApiKey = EnvironmentVariable("NuGetApiKey")
+        });
+
+          NuGetPush($"{artifactsDir}/Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+            Source = "https://www.nuget.org/api/v2/package",
+            ApiKey = EnvironmentVariable("NuGetApiKey")
+        });
+    }
+	
+});
+
+
 Task("Default")
+    .IsDependentOn("Publish");
     .IsDependentOn("CopyToLocalPackages");
 
 //////////////////////////////////////////////////////////////////////
