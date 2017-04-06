@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests
     public class IntegrationTestDatabase
     {
         readonly ITestOutputHelper output;
-        readonly string SqlInstance = "(local)\\SQLEXPRESS";
+        readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
         readonly string TestDatabaseName;
         readonly string TestDatabaseConnectionString;
 
