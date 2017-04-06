@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class KeyAllocatorFixture : FixtureWithRelationalStore
     {
-        public KeyAllocatorFixture()
+        public KeyAllocatorFixture(ITestOutputHelper output) : base(output)
         {
             Mappings.Install(
                 new DocumentMap[]

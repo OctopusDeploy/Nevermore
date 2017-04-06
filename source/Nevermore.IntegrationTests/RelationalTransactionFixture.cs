@@ -2,11 +2,15 @@
 using Nevermore;
 using Nevermore.IntegrationTests.Model;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class RelationalTransactionFixture : FixtureWithRelationalStore
     {
+        public RelationalTransactionFixture(ITestOutputHelper output) : base(output)
+        {
+        }
 
         [Fact]
         public void LoadWithSingleId()

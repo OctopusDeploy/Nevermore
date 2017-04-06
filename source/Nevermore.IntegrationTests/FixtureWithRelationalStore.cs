@@ -1,28 +1,27 @@
 using System;
 using Nevermore.Mapping;
 using Nevermore.Contracts;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public abstract class FixtureWithRelationalStore
     {
-        protected IRelationalStore Store
+        readonly IntegrationTestDatabase integrationTestDatabase;
+
+        protected FixtureWithRelationalStore(ITestOutputHelper output)
         {
-            get { return IntegrationTestDatabase.Store; }
+            integrationTestDatabase = new IntegrationTestDatabase(output);
+
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
+            integrationTestDatabase.Store.Reset();
         }
 
-        protected RelationalMappings Mappings
-        {
-            get { return IntegrationTestDatabase.Mappings; }
-        }
+        protected IRelationalStore Store => integrationTestDatabase.Store;
 
-        public FixtureWithRelationalStore()
-        {
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.Store.Reset();
-        }
+        protected RelationalMappings Mappings => integrationTestDatabase.Mappings;
 
         public int CountOf<T>() where T : class, IId
         {

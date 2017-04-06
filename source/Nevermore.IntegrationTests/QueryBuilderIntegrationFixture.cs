@@ -1,10 +1,15 @@
 ﻿using Nevermore.IntegrationTests.Model;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class QueryBuilderIntegrationFixture : FixtureWithRelationalStore
     {
+        public QueryBuilderIntegrationFixture(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public void WhereInClause()
         {

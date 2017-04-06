@@ -10,7 +10,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
     public class QueryBuilderFixture
     {
         readonly ITableAliasGenerator tableAliasGenerator = Substitute.For<ITableAliasGenerator>();
-        private IRelationalTransaction transaction;
+        readonly IRelationalTransaction transaction;
 
         public QueryBuilderFixture()
         {
@@ -249,8 +249,6 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
-
-
             // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
             var environment = new
             {

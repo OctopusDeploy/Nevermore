@@ -2,11 +2,16 @@
 using System.Linq;
 using Nevermore.IntegrationTests.Model;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
+        public RelationalStoreFixture(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public void ShouldGenerateIdsUnlessExplicitlyAssigned()
         {
