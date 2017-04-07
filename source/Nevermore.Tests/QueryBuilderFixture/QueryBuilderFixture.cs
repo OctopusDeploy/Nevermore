@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assent;
+using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
@@ -571,7 +572,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Test]
-        public void ShouldGetCorrectSqlQueryForWhereIn()
+        public void ShouldGetCorrectSqlQueryForWhereInUsingWhereString()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
 
@@ -592,6 +593,17 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     && cp["octofront"].ToString() == "octofront"));
 
             Assert.That(result, Is.EqualTo(1));
+        }
+
+
+        [Test]
+        public void ShouldGetCorrectSqlQueryForWhereInUsingWhereArray()
+        {
+            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@queued, @running)) ORDER BY [Id]";
+            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
+                .Where("State", SqlOperand.In, new[] {State.Queued, State.Running });
+
+            queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
 
         [Test]
@@ -763,5 +775,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public int Id { get; set; }
         public string Title { get; set; }
         public bool Completed { get; set; }
+    }
+
+    public enum State
+    {
+        Queued,
+        Running
     }
 }
