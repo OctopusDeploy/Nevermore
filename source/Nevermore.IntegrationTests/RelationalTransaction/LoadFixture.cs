@@ -1,10 +1,9 @@
-﻿using Nevermore.Contracts;
-using Nevermore.IntegrationTests.Model;
+﻿using Nevermore.IntegrationTests.Model;
 using NUnit.Framework;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.RelationalTransaction
 {
-    public class RelationalTransactionFixture : FixtureWithRelationalStore
+    public class LoadFixture : FixtureWithRelationalStore
     {
 
         [Test]

@@ -184,6 +184,15 @@ namespace Nevermore
         void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class;
 
         /// <summary>
+        /// Deletes an existing document from the database by it's ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
+        void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class;
+
+
+        /// <summary>
         /// Commits the current pending transaction.
         /// </summary>
         void Commit();
