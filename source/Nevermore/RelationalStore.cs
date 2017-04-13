@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Reflection;
+using System.Text;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
@@ -76,6 +77,8 @@ namespace Nevermore
 
         public string ConnectionString => registry.Value.ConnectionString;
         public int MaxPoolSize => registry.Value.MaxPoolSize;
+
+        public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
 
         public void Reset()
         {
