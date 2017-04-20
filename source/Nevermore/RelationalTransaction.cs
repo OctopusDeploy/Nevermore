@@ -329,8 +329,18 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
             var id = (string)mapping.IdColumn.ReaderWriter.Read(instance);
+            DeleteInternal(mapping, id, commandTimeoutSeconds);
+        }
 
-            var statement = string.Format("DELETE from dbo.[{0}] WHERE Id = @Id", mapping.TableName);
+        public void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class
+        {
+            var mapping = mappings.Get(typeof(TDocument));
+            DeleteInternal(mapping, id, commandTimeoutSeconds);
+        }
+
+        public void DeleteInternal(DocumentMap mapping, string id, int? commandTimeoutSeconds)
+        { 
+            var statement = $"DELETE from dbo.[{mapping.TableName}] WHERE Id = @Id";
 
             using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping, commandTimeoutSeconds))

@@ -4,11 +4,11 @@ using Nevermore.IntegrationTests.Model;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.RelationalTransaction
 {
-    public class RelationalTransactionFixture : FixtureWithRelationalStore
+    public class LoadFixture : FixtureWithRelationalStore
     {
-        public RelationalTransactionFixture(ITestOutputHelper output) : base(output)
+        public LoadFixture(ITestOutputHelper output) : base(output)
         {
         }
 

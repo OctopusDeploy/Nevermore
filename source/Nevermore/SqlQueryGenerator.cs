@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -181,7 +182,7 @@ WHERE {innerColumnSelector} IN
         }
         public void AddWhereIn(WhereParameter whereParams)
         {
-            var values = (string[])whereParams.Value;
+            var values = ((IEnumerable) whereParams.Value).OfType<object>().Select(v => v.ToString()).ToArray();
             var parameterNames = values.Select(Normalise).ToArray();
             var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
 

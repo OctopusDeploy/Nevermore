@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Nevermore.Joins;
@@ -56,6 +57,12 @@ namespace Nevermore
                     break;
                 case SqlOperand.StartsWith:
                     QueryGenerator.WhereStartsWith(fieldName, value);
+                    break;
+                case SqlOperand.In:
+                    if(value is IEnumerable)
+                        QueryGenerator.WhereIn(fieldName, value);
+                    else
+                        throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
                     break;
                 default:
                     throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
