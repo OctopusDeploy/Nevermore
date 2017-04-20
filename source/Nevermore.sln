@@ -1,14 +1,14 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Nevermore", "Nevermore\Nevermore.xproj", "{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nevermore", "Nevermore\Nevermore.csproj", "{3BCE33DF-D46D-48D2-ACDE-D5BB6D1036F8}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Nevermore.Tests", "Nevermore.Tests\Nevermore.Tests.xproj", "{10E71E20-EBBD-4F03-87E8-5958B7E7B996}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nevermore.Tests", "Nevermore.Tests\Nevermore.Tests.csproj", "{10E71E20-EBBD-4F03-87E8-5958B7E7B996}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Nevermore.IntegrationTests", "Nevermore.IntegrationTests\Nevermore.IntegrationTests.xproj", "{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nevermore.IntegrationTests", "Nevermore.IntegrationTests\Nevermore.IntegrationTests.csproj", "{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{8FCDD3A3-1FFF-4089-BC33-D8772B1D05B6}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{8FCDD3A3-1FF
 		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Nevermore.Contracts", "Nevermore.Contracts\Nevermore.Contracts.xproj", "{643125C7-F477-4FA8-960B-E42372CE3AE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nevermore.Contracts", "Nevermore.Contracts\Nevermore.Contracts.csproj", "{643125C7-F477-4FA8-960B-E42372CE3AE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

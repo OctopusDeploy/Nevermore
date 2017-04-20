@@ -1,33 +1,32 @@
 ﻿using System.Data.SqlClient;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.Tests
 {
-    [TestFixture]
     public class RelationalStoreFixture
     {
-        [Test]
+        [Fact]
         public void ShouldSetDefaultConnectionStringOptions()
         {
             var store = new RelationalStore("Server=(local);", "Nevermore test", null, null, null, null, 20);
 
             var connectionStringBuilder = new SqlConnectionStringBuilder(store.ConnectionString);
 
-            Assert.That(connectionStringBuilder.ConnectTimeout, Is.EqualTo(RelationalStore.DefaultConnectTimeoutSeconds));
-            Assert.That(connectionStringBuilder.ConnectRetryCount, Is.EqualTo(RelationalStore.DefaultConnectRetryCount));
-            Assert.That(connectionStringBuilder.ConnectRetryInterval, Is.EqualTo(RelationalStore.DefaultConnectRetryInterval));
+            Assert.Equal(RelationalStore.DefaultConnectTimeoutSeconds, connectionStringBuilder.ConnectTimeout);
+            Assert.Equal(RelationalStore.DefaultConnectRetryCount, connectionStringBuilder.ConnectRetryCount);
+            Assert.Equal(RelationalStore.DefaultConnectRetryInterval, connectionStringBuilder.ConnectRetryInterval);
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotOverrideExplicitConnectionStringOptions()
         {
             var store = new RelationalStore("Server=(local);Connection Timeout=123;ConnectRetryCount=123;ConnectRetryInterval=59;", "Nevermore test", null, null, null, null, 20);
 
             var connectionStringBuilder = new SqlConnectionStringBuilder(store.ConnectionString);
 
-            Assert.That(connectionStringBuilder.ConnectTimeout, Is.EqualTo(123));
-            Assert.That(connectionStringBuilder.ConnectRetryCount, Is.EqualTo(123));
-            Assert.That(connectionStringBuilder.ConnectRetryInterval, Is.EqualTo(59));
+            Assert.Equal(123, connectionStringBuilder.ConnectTimeout);
+            Assert.Equal(123, connectionStringBuilder.ConnectRetryCount);
+            Assert.Equal(59, connectionStringBuilder.ConnectRetryInterval);
         }
     }
 }

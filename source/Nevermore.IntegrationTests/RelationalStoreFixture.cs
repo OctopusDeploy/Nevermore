@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Linq;
 using Nevermore.IntegrationTests.Model;
-using NUnit.Framework;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
-        [Test]
+        public RelationalStoreFixture(ITestOutputHelper output) : base(output)
+        {
+        }
+
+        [Fact]
         public void ShouldGenerateIdsUnlessExplicitlyAssigned()
         {
             // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
@@ -20,15 +25,15 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, "Customers-Chazza");
 
-                Assert.That(customer1.Id, Is.EqualTo("Customers-Alice"));
-                Assert.That(customer2.Id, Does.StartWith("Customers-"));
-                Assert.That(customer3.Id, Is.EqualTo("Customers-Chazza"));
+                Assert.Equal("Customers-Alice", customer1.Id);
+                Assert.StartsWith("Customers-", customer2.Id);
+                Assert.Equal("Customers-Chazza", customer3.Id);
 
                 transaction.Commit();
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldPersistReferenceCollectionsToAllowLikeSearches()
         {
             using(var transaction = Store.BeginTransaction())
@@ -49,11 +54,11 @@ namespace Nevermore.IntegrationTests
                     .Where("[Roles] LIKE @role")
                     .LikeParameter("role", "web-server")
                     .ToList();
-                Assert.That(customers.Count, Is.EqualTo(2));
+                Assert.Equal(2, customers.Count);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldPersistCollectionsToAllowInSearches()
         {
             using (var transaction = Store.BeginTransaction())
@@ -71,13 +76,13 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customers = transaction.Query<Customer>()
-                    .Where("LastName", SqlOperand.In, new [] {"Apple", "Banana"})
+                    .Where("LastName", SqlOperand.In, new[] { "Apple", "Banana" })
                     .ToList();
-                Assert.That(customers.Count, Is.EqualTo(2));
+                Assert.Equal(2, customers.Count);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldHandleIdsWithInOperand()
         {
             string customerId;
@@ -95,11 +100,11 @@ namespace Nevermore.IntegrationTests
                                             .Where("Id", SqlOperand.In, new[] { customerId })
                                             .Stream()
                                             .Single();
-                Assert.AreEqual("Alice", customer.FirstName);
+                Assert.Equal("Alice", customer.FirstName);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldMultiSelect()
         {
             using(var transaction = Store.BeginTransaction())
@@ -122,14 +127,14 @@ namespace Nevermore.IntegrationTests
                     Product = map.Map<Product>("prod")
                 }).ToList();
 
-                Assert.That(lines.Count, Is.EqualTo(3));
-                Assert.That(lines[0].LineItem.Name == "Line 1" && lines[0].Product.Name == "Talking Elmo" && lines[0].Product.Price == 100);
-                Assert.That(lines[1].LineItem.Name == "Line 2" && lines[1].Product.Name == "Talking Elmo" && lines[1].Product.Price == 100);
-                Assert.That(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200);
+                Assert.Equal(3, lines.Count);
+                Assert.True(lines[0].LineItem.Name == "Line 1" && lines[0].Product.Name == "Talking Elmo" && lines[0].Product.Price == 100);
+                Assert.True(lines[1].LineItem.Name == "Line 2" && lines[1].Product.Name == "Talking Elmo" && lines[1].Product.Price == 100);
+                Assert.True(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldShowNiceErrorIfFieldsAreTooLong()
         {
             // SQL normally thows "String or binary data would be truncated. The statement has been terminated."
@@ -137,11 +142,11 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var ex = Assert.Throws<StringTooLongException>(() => transaction.Insert(new Customer { FirstName = new string('A', 21), LastName = "Apple", LuckyNumbers = new[] { 12, 13 }, Nickname = "Ally", Roles = { "web-server", "app-server" } }));
-                Assert.That(ex.Message, Is.EqualTo("An attempt was made to store 21 characters in the Customer.FirstName column, which only allows 20 characters."));
+                Assert.Equal("An attempt was made to store 21 characters in the Customer.FirstName column, which only allows 20 characters.", ex.Message);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldShowFriendlyUniqueConstraintErrors()
         {
             using(var transaction = Store.BeginTransaction())
@@ -154,7 +159,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 var ex = Assert.Throws<UniqueConstraintViolationException>(() => transaction.Insert(customer3));
 
-                Assert.That(ex.Message, Is.EqualTo("Customers must have a unique name"));
+                Assert.Equal("Customers must have a unique name", ex.Message);
             }
         }
     }

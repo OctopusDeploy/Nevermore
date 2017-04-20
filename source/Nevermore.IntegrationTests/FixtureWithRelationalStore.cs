@@ -1,49 +1,27 @@
 using System;
-using System.Data;
-using System.Text;
-using Nevermore.Contracts;
-using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
-using NUnit.Framework;
+using Nevermore.Contracts;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public abstract class FixtureWithRelationalStore
     {
-        protected IRelationalStore Store
+        readonly IntegrationTestDatabase integrationTestDatabase;
+
+        protected FixtureWithRelationalStore(ITestOutputHelper output)
         {
-            get { return IntegrationTestDatabase.Store; }
+            integrationTestDatabase = new IntegrationTestDatabase(output);
+
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
+            integrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
+            integrationTestDatabase.Store.Reset();
         }
 
-        protected RelationalMappings Mappings
-        {
-            get { return IntegrationTestDatabase.Mappings; }
-        }
+        protected IRelationalStore Store => integrationTestDatabase.Store;
 
-        [OneTimeSetUp]
-        public virtual void FixtureSetUp()
-        {
-          
-        }
-
-        [SetUp]
-        public virtual void SetUp()
-        {
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"DELETE FROM ?\"");
-            IntegrationTestDatabase.ExecuteScript("EXEC sp_msforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
-            IntegrationTestDatabase.Store.Reset();
-        }
-
-        [TearDown]
-        public virtual void TearDown()
-        {
-        }
-
-        [OneTimeTearDown]
-        public virtual void FixtureTearDown()
-        {
-        }
+        protected RelationalMappings Mappings => integrationTestDatabase.Mappings;
 
         public int CountOf<T>() where T : class, IId
         {

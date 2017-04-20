@@ -3,7 +3,6 @@ using System.Data.SqlClient;
 using System.Reflection;
 using DbUp;
 using DbUp.Engine.Output;
-using Nevermore;
 
 namespace Nevermore.IntegrationTests
 {

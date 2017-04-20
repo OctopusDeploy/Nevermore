@@ -1,13 +1,17 @@
 ﻿using Nevermore.IntegrationTests.Model;
-using NUnit.Framework;
+using Xunit;
+using Xunit.Abstractions;
 using FluentAssertions;
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
 {
     public class DeleteFixture : FixtureWithRelationalStore
     {
+        public DeleteFixture(ITestOutputHelper output) : base(output)
+        {
+        }
 
-        [Test]
+        [Fact]
         public void DeleteByEntity()
         {
             var id = AddTestProduct();
@@ -23,7 +27,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Load<Product>(id).Should().BeNull();
         }
 
-        [Test]
+        [Fact]
         public void DeleteById()
         {
             var id = AddTestProduct();
@@ -52,6 +56,5 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 return product.Id;
             }
         }
-
     }
 }

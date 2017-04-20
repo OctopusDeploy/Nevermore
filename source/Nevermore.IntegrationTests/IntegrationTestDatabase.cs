@@ -8,19 +8,25 @@ using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
-    public static class IntegrationTestDatabase
+    public class IntegrationTestDatabase
     {
-        static readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
-        static readonly string TestDatabaseName;
-        static readonly string TestDatabaseConnectionString;
+        readonly ITestOutputHelper output;
+        readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
+        readonly string TestDatabaseName;
+        readonly string TestDatabaseConnectionString;
 
         static IntegrationTestDatabase()
         {
             TransientFaultHandling.InitializeRetryManager();
+        }
+
+        public IntegrationTestDatabase(ITestOutputHelper output)
+        {
+            this.output = output;
 
             TestDatabaseName = "Nevermore-IntegrationTests";
 
@@ -37,29 +43,29 @@ namespace Nevermore.IntegrationTests
             InstallSchema();
         }
 
-        public static RelationalStore Store { get; set; }
-        public static RelationalMappings Mappings { get; set; }
+        public RelationalStore Store { get; set; }
+        public RelationalMappings Mappings { get; set; }
 
-        static void CreateDatabase()
+        void CreateDatabase()
         {
             ExecuteScript(@"create database [" + TestDatabaseName + "]", GetMaster(TestDatabaseConnectionString));
         }
 
-        static void DropDatabase()
+        void DropDatabase()
         {
             try
             {
-                Console.WriteLine("Connecting to the 'master' database at " + TestDatabaseConnectionString);
-                Console.WriteLine("Dropping " + TestDatabaseName);
+                output.WriteLine("Connecting to the 'master' database at " + TestDatabaseConnectionString);
+                output.WriteLine("Dropping " + TestDatabaseName);
                 ExecuteScript("ALTER DATABASE [" + TestDatabaseName + "] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; drop database [" + TestDatabaseName + "]", GetMaster(TestDatabaseConnectionString));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Could not drop the existing database: " + ex.GetErrorSummary());
+                output.WriteLine("Could not drop the existing database: " + ex.GetErrorSummary());
             }
         }
 
-        static void InitializeStore()
+        void InitializeStore()
         {
             Mappings = new RelationalMappings();
             Mappings.Install(new List<DocumentMap>()
@@ -71,7 +77,7 @@ namespace Nevermore.IntegrationTests
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
 
-        static RelationalStore BuildRelationalStore(string connectionString, double chaosFactor = 0.2D)
+        RelationalStore BuildRelationalStore(string connectionString, double chaosFactor = 0.2D)
         {
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
@@ -80,7 +86,7 @@ namespace Nevermore.IntegrationTests
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
         }
 
-        static void InstallSchema()
+        void InstallSchema()
         {
             Console.WriteLine("Performing migration");
             var migrator = new DatabaseMigrator();
@@ -111,7 +117,7 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        public static void ExecuteScript(string script, string connectionString = null)
+        public void ExecuteScript(string script, string connectionString = null)
         {
             using (var connection = new SqlConnection(connectionString ?? TestDatabaseConnectionString))
             {
@@ -124,7 +130,7 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        static string GetMaster(string sqlConnectionString)
+        string GetMaster(string sqlConnectionString)
         {
             var builder = new SqlConnectionStringBuilder(sqlConnectionString)
             {

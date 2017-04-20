@@ -4,18 +4,16 @@ using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
-using NUnit.Framework;
+using Xunit;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
-    [TestFixture]
     public class QueryBuilderFixture
     {
         readonly ITableAliasGenerator tableAliasGenerator = Substitute.For<ITableAliasGenerator>();
-        private IRelationalTransaction transaction;
+        readonly IRelationalTransaction transaction;
 
-        [SetUp]
-        public void SetUp()
+        public QueryBuilderFixture()
         {
             transaction = Substitute.For<IRelationalTransaction>();
 
@@ -27,7 +25,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             });
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelect()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -37,10 +35,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5) ORDER BY [Id]";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelectNoOrder()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -50,10 +48,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelectForQueryBuilder()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -62,10 +60,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             const string expected = "SELECT * FROM dbo.[Orders] WHERE ([Price] > 5) ORDER BY [Id]";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelectForJoin()
         {
 
@@ -82,7 +80,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelectForMultipleJoins()
         {
 
@@ -104,7 +102,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateSelectForComplicatedSubqueryJoin()
         {
             var orders = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator);
@@ -130,7 +128,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateCount()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -141,11 +139,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var expected = "SELECT COUNT(*) FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldGenerateDelete()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -156,10 +154,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var expected = "DELETE FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateCountForQueryBuilder()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -170,10 +168,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             const string expected = "SELECT COUNT(*) FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateCountForJoin()
         {
             var leftQueryBuilder = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -188,7 +186,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGeneratePaginate()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -201,7 +199,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldGeneratePaginateForJoin()
         {
 
@@ -217,7 +215,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateTop()
         {
             var actual = new QueryBuilder<IDocument>(transaction, "Orders", tableAliasGenerator)
@@ -229,11 +227,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var expected = "SELECT TOP 100 * FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5) ORDER BY [Id]";
 
-            Assert.AreEqual(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldGenerateTopForJoin()
         {
 
@@ -249,11 +247,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
-
-
             // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
             var environment = new
             {
@@ -267,24 +263,24 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var actualParameter1 = queryBuilder.QueryGenerator.QueryParameters["jsonPatternSquareBracket"];
             const string expectedParameter1 = "%\"AutoDeployReleaseOverrides\":[[]{\"EnvironmentId\":\"Environments-1\"%";
-            Assert.AreEqual(actualParameter1, expectedParameter1);
+            Assert.Equal(actualParameter1, expectedParameter1);
 
             var actualParameter2 = queryBuilder.QueryGenerator.QueryParameters["jsonPatternPercentage"];
             const string expectedParameter2 = "%SomeNonExistantField > 5[%]%";
-            Assert.AreEqual(actualParameter2, expectedParameter2);
+            Assert.Equal(actualParameter2, expectedParameter2);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
         {
 
             var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
                 .LikePipedParameter("Name", "Foo|Bar|Baz");
 
-            Assert.AreEqual("%|Foo|Bar|Baz|%", queryBuilder.QueryGenerator.QueryParameters["Name"]);
+            Assert.Equal("%|Foo|Bar|Baz|%", queryBuilder.QueryGenerator.QueryParameters["Name"]);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereLessThan()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
@@ -302,10 +298,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(2));
+            Assert.Equal(2, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereLessThanExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
@@ -322,10 +318,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(2));
+            Assert.Equal(2, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqual()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
@@ -343,10 +339,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(10));
+            Assert.Equal(10, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqualExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
@@ -363,10 +359,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(10));
+            Assert.Equal(10, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereEquals()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
@@ -384,10 +380,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereEqualsExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
@@ -404,10 +400,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereNotEquals()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
@@ -425,10 +421,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereNotEqualsExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
@@ -445,10 +441,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThan()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
@@ -466,10 +462,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(11));
+            Assert.Equal(11, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
@@ -486,10 +482,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(3));
+            Assert.Equal(3, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqual()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
@@ -507,10 +503,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(21));
+            Assert.Equal(21, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqualExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
@@ -527,10 +523,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.That(result, Is.EqualTo(21));
+            Assert.Equal(21, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereContains()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
@@ -548,10 +544,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "%nevermore%"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereContainsExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
@@ -568,10 +564,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "%nevermore%"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereString()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
@@ -592,11 +588,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereArray()
         {
             const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@queued, @running)) ORDER BY [Id]";
@@ -606,7 +601,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
@@ -625,10 +620,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereBetween()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
@@ -649,10 +644,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereBetweenExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
@@ -671,10 +666,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqual()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
@@ -695,10 +690,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqualExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
@@ -717,10 +712,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.That(result, Is.EqualTo(1));
+            Assert.Equal(1, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForOrderBy()
         {
             const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title]";
@@ -737,11 +732,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp.Count == 0));
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.EqualTo(todoItem));
+            Assert.NotNull(result);
+            Assert.Equal(todoItem, result);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetCorrectSqlQueryForOrderByDescending()
         {
             const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title] DESC";
@@ -758,8 +753,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp => cp.Count == 0));
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.EqualTo(todoItem));
+            Assert.NotNull(result);
+            Assert.Equal(todoItem, result);
         }
     }
 

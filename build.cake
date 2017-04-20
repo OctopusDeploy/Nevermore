@@ -1,11 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // TOOLS
 //////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=GitVersion.CommandLine&version=3.6.4"
-#addin "MagicChunks"
-
-using Path = System.IO.Path;
-using IO = System.IO;
+#tool "nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0011"
+#addin "Cake.FileHelpers"
 
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -16,38 +13,31 @@ var configuration = Argument("configuration", "Release");
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 ///////////////////////////////////////////////////////////////////////////////
-var artifactsDir = "./artifacts";
-var projectsToPackage = new[] {
-    "./source/Nevermore.Contracts",
-    "./source/Nevermore"
-};
-var cleanups = new List<Action>();
-var isContinuousIntegrationBuild = !BuildSystem.IsLocalBuild;
-
-var gitVersionInfo = GitVersion(new GitVersionSettings {
-    OutputType = GitVersionOutput.Json
-});
-
-var nugetVersion = gitVersionInfo.NuGetVersion;
+var artifactsDir = "./artifacts/";
+var localPackagesDir = "../LocalPackages";
+GitVersion gitVersionInfo;
+string nugetVersion;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
 ///////////////////////////////////////////////////////////////////////////////
 Setup(context =>
 {
-    Information("Building Nevermore v{0}", nugetVersion);
-     if(BuildSystem.IsRunningOnTeamCity)
+    gitVersionInfo = GitVersion(new GitVersionSettings {
+        OutputType = GitVersionOutput.Json
+    });
+
+    if(BuildSystem.IsRunningOnTeamCity)
         BuildSystem.TeamCity.SetBuildNumber(gitVersionInfo.NuGetVersion);
-    if(BuildSystem.IsRunningOnAppVeyor)
-        AppVeyor.UpdateBuildVersion(gitVersionInfo.NuGetVersion);
+
+    nugetVersion = gitVersionInfo.NuGetVersion;
+
+    Information("Building Nevermore v{0}", nugetVersion);
+    Information("Informational Version {0}", gitVersionInfo.InformationalVersion);
 });
 
 Teardown(context =>
 {
-    Information("Cleaning up");
-    foreach(var item in cleanups)
-        item();
-
     Information("Finished running tasks.");
 });
 
@@ -55,98 +45,85 @@ Teardown(context =>
 //  PRIVATE TASKS
 //////////////////////////////////////////////////////////////////////
 
-Task("__Clean")
-    .Does(() =>
-{
-    CleanDirectory(artifactsDir);
-    CleanDirectories("./source/**/bin");
-    CleanDirectories("./source/**/obj");
-});
+Task("Clean")
+    .Does(() => {
+		CleanDirectory(artifactsDir);
+		CleanDirectories("./source/**/bin");
+		CleanDirectories("./source/**/obj");
+		CleanDirectories("./source/**/TestResults");
+	});
 
-Task("__Restore")
-    .Does(() => DotNetCoreRestore());
-
-Task("__UpdateProjectJsonVersion")
-    .Does(() =>
-{
-    foreach(var project in projectsToPackage)
-    {
-        var projectJson = $"{project}/project.json";
-        RestoreFileOnCleanup(projectJson);
-        Information("Updating {0} version -> {1}", projectJson, nugetVersion);
-
-        TransformConfig(projectJson, projectJson, new TransformationCollection {
-            { "version", nugetVersion }
-        });
-    }
-});
-
-Task("__Build")
-    .IsDependentOn("__Clean")
-    .IsDependentOn("__Restore")
-    .IsDependentOn("__UpdateProjectJsonVersion")
-    .Does(() =>
-{
-    DotNetCoreBuild("**/project.json", new DotNetCoreBuildSettings
-    {
-        Configuration = configuration
+Task("Restore")
+    .IsDependentOn("Clean")
+    .Does(() => {
+		DotNetCoreRestore("source");
     });
-});
-
-Task("__Test")
-    .IsDependentOn("__Build")
-    .Does(() =>
-{
-    GetFiles("source/*Tests/project.json")
-        .ToList()
-        .ForEach(testProjectFile => 
-        {
-            DotNetCoreTest(testProjectFile.ToString(), new DotNetCoreTestSettings
-            {
-                Configuration = configuration,
-                WorkingDirectory = Path.GetDirectoryName(testProjectFile.ToString())
-            });
-        });
-});
 
 
-Task("__Pack")
-    .IsDependentOn("__Test")
-    .Does(() => 
-{
-    foreach(var project in projectsToPackage)
-        DotNetCorePack(project, new DotNetCorePackSettings
-        {
-            Configuration = configuration,
-            OutputDirectory = artifactsDir,
-            NoBuild = true
-        });
-});
+Task("Build")
+    .IsDependentOn("Restore")
+    .IsDependentOn("Clean")
+    .Does(() => {
+		 DotNetCoreBuild("./source", new DotNetCoreBuildSettings
+		{
+			Configuration = configuration,
+			ArgumentCustomization = args => args.Append($"/p:Version={nugetVersion}")
+		});
+	});
 
-Task("__Publish")
-    .IsDependentOn("__Pack")
+Task("Test")
+    .IsDependentOn("Build")
+    .Does(() => {
+		var projects = GetFiles("./source/**/*Tests.csproj");
+		foreach(var project in projects)
+			DotNetCoreTest(project.FullPath, new DotNetCoreTestSettings
+			{
+				Configuration = configuration,
+				NoBuild = true,
+				ArgumentCustomization = args => args.Append("-l trx")
+			});
+	});
+	
+Task("CopyToArtifacts")
+    .IsDependentOn("Test")
+    .Does(() => {
+		CreateDirectory(artifactsDir);
+		CopyFiles($"./source/**/*.nupkg", artifactsDir);
+	});
+
+Task("CopyToLocalPackages")
+    .IsDependentOn("CopyToArtifacts")
+    .WithCriteria(BuildSystem.IsLocalBuild)
+    .Does(() => {
+		CreateDirectory(localPackagesDir);
+		CopyFiles($"./source/**/*.nupkg", localPackagesDir);
+	});
+
+	
+Task("Publish")
+    .IsDependentOn("CopyToArtifacts")
     .WithCriteria(BuildSystem.IsRunningOnTeamCity)
     .Does(() =>
 {
     
-	NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+	NuGetPush($"{artifactsDir}Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
 		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
 		ApiKey = EnvironmentVariable("MyGetApiKey")
 	});
 
-	NuGetPush($"{artifactsDir}/Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
 		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
 		ApiKey = EnvironmentVariable("MyGetApiKey")
 	});
 	
     if (gitVersionInfo.PreReleaseTag == "")
     {
-        NuGetPush($"{artifactsDir}/Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
+        NuGetPush($"{artifactsDir}Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
             Source = "https://www.nuget.org/api/v2/package",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
 
-          NuGetPush($"{artifactsDir}/Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+          NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
             Source = "https://www.nuget.org/api/v2/package",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
@@ -154,36 +131,10 @@ Task("__Publish")
 	
 });
 
-Task("__CopyToLocalPackages")
-    .WithCriteria(BuildSystem.IsLocalBuild)
-    .IsDependentOn("__Pack")
-    .Does(() =>
-{
-    CreateDirectory("../LocalPackages");
-    CopyFiles($"{artifactsDir}/*.{nugetVersion}*.nupkg", "../LocalPackages");
-});
 
-
-//////////////////////////////////////////////////////////////////////
-// HELPERS
-//////////////////////////////////////////////////////////////////////
-
-private void RestoreFileOnCleanup(string file)
-{
-    var contents = System.IO.File.ReadAllBytes(file);
-    cleanups.Add(() => {
-        Information("Restoring {0}", file);
-        System.IO.File.WriteAllBytes(file, contents);
-    });
-}
-
-
-//////////////////////////////////////////////////////////////////////
-// TASKS
-//////////////////////////////////////////////////////////////////////
 Task("Default")
-    .IsDependentOn("__CopyToLocalPackages")
-    .IsDependentOn("__Publish");
+    .IsDependentOn("Publish")
+    .IsDependentOn("CopyToLocalPackages");
 
 //////////////////////////////////////////////////////////////////////
 // EXECUTION
