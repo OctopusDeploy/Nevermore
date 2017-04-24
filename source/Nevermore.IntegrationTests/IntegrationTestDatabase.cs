@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests
 
         void CreateDatabase()
         {
-            ExecuteScript(@"create database [" + TestDatabaseName + "]", GetMaster(TestDatabaseConnectionString));
+            ExecuteScript(@"create database [" + TestDatabaseName + "] COLLATE SQL_Latin1_General_CP1_CS_AS", GetMaster(TestDatabaseConnectionString));
         }
 
         void DropDatabase()
