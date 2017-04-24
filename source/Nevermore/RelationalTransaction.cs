@@ -151,7 +151,7 @@ namespace Nevermore
                 "INSERT INTO dbo.[{0}] {1} ({2}) values ({3})",
                 tableName ?? mapping.TableName,
                 tableHint ?? "",
-                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] { "Id", "Json" })),
+                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] { "Id", "JSON" })),
                 string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@Json" }))
                 ));
 
@@ -212,7 +212,7 @@ namespace Nevermore
 
                 var defaultIndexColumnPlaceholders = new string[] { };
                 if (includeDefaultModelColumns)
-                    defaultIndexColumnPlaceholders = new[] { $"@{instancePrefix}Id", $"@{instancePrefix}Json" };
+                    defaultIndexColumnPlaceholders = new[] { $"@{instancePrefix}Id", $"@{instancePrefix}JSON" };
 
                 valueStatements.Add($"({string.Join(", ", mapping.IndexedColumns.Select(c => $"@{instancePrefix}{c.ColumnName}").Union(defaultIndexColumnPlaceholders))})");
 
@@ -221,7 +221,7 @@ namespace Nevermore
 
             var defaultIndexColumns = new string[] { };
             if (includeDefaultModelColumns)
-                defaultIndexColumns = new[] { "Id", "Json" };
+                defaultIndexColumns = new[] { "Id", "JSON" };
 
             var statement = string.Format(
                 "INSERT INTO dbo.[{0}] {1} ({2}) values {3}",
@@ -299,7 +299,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[Json] = @Json" }));
+            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @Json" }));
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
@@ -475,7 +475,7 @@ namespace Nevermore
 
                     msUntilFirstRecord = timedSection.ElapsedMilliseconds;
                     var idIndex = GetOrdinal(reader, "Id");
-                    var jsonIndex = GetOrdinal(reader, "Json");
+                    var jsonIndex = GetOrdinal(reader, "JSON");
                     var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
 
                     while (reader.Read())
@@ -568,7 +568,7 @@ namespace Nevermore
         {
             var result = new CommandParameters();
             result[$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
-            result[$"{prefix}Json"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
+            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
 
             foreach (var c in mapping.IndexedColumns)
             {
