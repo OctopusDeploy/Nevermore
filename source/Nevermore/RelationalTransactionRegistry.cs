@@ -31,7 +31,7 @@ namespace Nevermore
                 transactions.Add(trn);
                 var numberOfTransactions = transactions.Count;
                 if (numberOfTransactions > MaxPoolSize * 0.8)
-                    Log.Info("{numberOfTransactions} transactions active");
+                    Log.Info($"{numberOfTransactions} transactions active");
 
                 if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
                     LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
