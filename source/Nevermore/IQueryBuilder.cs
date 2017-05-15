@@ -47,7 +47,6 @@ namespace Nevermore
         [Pure]
         List<TRecord> ToList();
 
-        [Pure]
         void Delete();
 
         [Pure]
