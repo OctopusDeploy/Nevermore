@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using Newtonsoft.Json;
 using Nevermore;
@@ -81,6 +82,7 @@ namespace Nevermore
             }
         }
 
+        [Pure]
         public T Load<T>(string id) where T : class, IId
         {
             return Query<T>()
@@ -89,6 +91,7 @@ namespace Nevermore
                 .First();
         }
 
+        [Pure]
         public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
         {
             return Query<T>()
@@ -97,6 +100,7 @@ namespace Nevermore
                 .Stream().ToArray();
         }
 
+        [Pure]
         public T LoadRequired<T>(string id) where T : class, IId
         {
             var result = Load<T>(id);
@@ -105,6 +109,7 @@ namespace Nevermore
             return result;
         }
 
+        [Pure]
         public T[] LoadRequired<T>(IEnumerable<string> ids) where T : class, IId
         {
             var allIds = ids.ToArray();
@@ -410,6 +415,7 @@ namespace Nevermore
         }
 
 
+        [Pure]
         public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             var mapping = mappings.Get(typeof(T));
@@ -421,6 +427,7 @@ namespace Nevermore
             }
         }
 
+        [Pure]
         public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameters args, Func<IProjectionMapper, T> projectionMapper, int? commandTimeoutSeconds = null)
         {
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
@@ -442,6 +449,7 @@ namespace Nevermore
             }
         }
 
+        [Pure]
         IEnumerable<T> Stream<T>(IDbCommand command, DocumentMap mapping)
         {
             IDataReader reader = null;
@@ -550,6 +558,7 @@ namespace Nevermore
             }
         }
 
+        [Pure]
         public IQueryBuilder<T> Query<T>() where T : class, IId
         {
             return new QueryBuilder<T>(this, mappings.Get(typeof(T)).TableName);
@@ -582,6 +591,7 @@ namespace Nevermore
             return result;
         }
 
+        [Pure]
         public T ExecuteScalar<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))

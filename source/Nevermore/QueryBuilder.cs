@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using Nevermore.Joins;
 
@@ -174,38 +175,45 @@ namespace Nevermore
             return OrderByDescending(fieldName);
         }
 
+        [Pure]
         public int Count()
         {
             return transaction.ExecuteScalar<int>(QueryGenerator.CountQuery(), QueryGenerator.QueryParameters);
         }
 
+        [Pure]
         public bool Any()
         {
             return Count() != 0;
         }
 
+        [Pure]
         public TRecord First()
         {
             return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(), QueryGenerator.QueryParameters).FirstOrDefault();
         }
 
+        [Pure]
         public IEnumerable<TRecord> Take(int take)
         {
             return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(take), QueryGenerator.QueryParameters);
         }
 
+        [Pure]
         public List<TRecord> ToList(int skip, int take)
         {
             return transaction.ExecuteReader<TRecord>(QueryGenerator.PaginateQuery(skip, take), QueryGenerator.QueryParameters)
                 .ToList();
         }
 
+        [Pure]
         public List<TRecord> ToList(int skip, int take, out int totalResults)
         {
             totalResults = Count();
             return ToList(skip, take);
         }
 
+        [Pure]
         public List<TRecord> ToList()
         {
             return Stream().ToList();
@@ -216,16 +224,19 @@ namespace Nevermore
            transaction.ExecuteRawDeleteQuery(QueryGenerator.DeleteQuery(), QueryGenerator.QueryParameters);
         }
 
+        [Pure]
         public IEnumerable<TRecord> Stream()
         {
             return transaction.ExecuteReader<TRecord>(QueryGenerator.SelectQuery(), QueryGenerator.QueryParameters);
         }
 
+        [Pure]
         public IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector)
         {
             return Stream().ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
         }
 
+        [Pure]
         public string DebugViewRawQuery()
         {
             return QueryGenerator.SelectQuery();

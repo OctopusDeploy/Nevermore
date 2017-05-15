@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
