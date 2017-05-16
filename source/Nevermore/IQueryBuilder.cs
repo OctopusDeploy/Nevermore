@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using Nevermore.Joins;
 
 namespace Nevermore
@@ -26,36 +25,16 @@ namespace Nevermore
         IQueryBuilder<TRecord> Hint(string tableHint);
         IQueryBuilder<TRecord> NoLock();
 
-        [Pure]
         int Count();
-
-        [Pure]
         bool Any();
-
-        [Pure]
         TRecord First();
-
-        [Pure]
         IEnumerable<TRecord> Take(int take);
-
-        [Pure]
         List<TRecord> ToList(int skip, int take);
-
-        [Pure]
         List<TRecord> ToList(int skip, int take, out int totalResults);
-
-        [Pure]
         List<TRecord> ToList();
-
         void Delete();
-
-        [Pure]
         IEnumerable<TRecord> Stream();
-
-        [Pure]
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
-
-        [Pure]
         string DebugViewRawQuery();
     }
 }

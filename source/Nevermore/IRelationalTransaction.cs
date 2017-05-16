@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics.Contracts;
 using Nevermore.Contracts;
 
 namespace Nevermore
@@ -17,7 +16,6 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A scalar value.</returns>
-        [Pure]
         TResult ExecuteScalar<TResult>(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
@@ -49,7 +47,6 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        [Pure]
         IEnumerable<TDocument> ExecuteReader<TDocument>(string query, CommandParameters args, int? commandTimeoutSeconds = null);
 
         /// <summary>
@@ -61,7 +58,6 @@ namespace Nevermore
         /// <param name="projectionMapper">The mapper function to use to convert each record into the strongly typed document.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        [Pure]
         IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper, int? commandTimeoutSeconds = null);
 
         /// <summary>
@@ -86,7 +82,6 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <returns>A stream of resulting documents.</returns>
-        [Pure]
         IQueryBuilder<TDocument> Query<TDocument>() where TDocument : class, IId;
 
         /// <summary>
@@ -95,7 +90,6 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure]
         TDocument Load<TDocument>(string id) where TDocument : class, IId;
 
         /// <summary>
@@ -105,7 +99,6 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents.</returns>
-        [Pure]
         TDocument[] Load<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
@@ -114,7 +107,6 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure]
         TDocument LoadRequired<TDocument>(string id) where TDocument : class, IId;
 
         /// <summary>
@@ -124,7 +116,6 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents.</returns>
-        [Pure]
         TDocument[] LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
