@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>A JSON Document Store library for SQL Server</Description>
     <Authors>Octopus Deploy</Authors>
-    <TargetFrameworks>netstandard1.5;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard1.2;net451</TargetFrameworks>
     <AssemblyName>Nevermore.Contracts</AssemblyName>
     <PackageId>Nevermore.Contracts</PackageId>
     <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
