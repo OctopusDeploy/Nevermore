@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Reflection;
+using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
