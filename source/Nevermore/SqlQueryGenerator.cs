@@ -204,7 +204,10 @@ WHERE {innerColumnSelector} IN
         // https://blogs.msdn.microsoft.com/debuggingtoolbox/2008/04/02/comparing-regex-replace-string-replace-and-stringbuilder-replace-which-has-better-performance/
         static string Normalise(string value)
         {
-            return value.Replace('-', '_').ToLower();
+            return value
+                .Replace('-', '_')
+                .Replace(' ', '_')
+                .ToLower();
         }
 
         public void AddWhere(WhereParameter whereParams, object startValue, object endValue)

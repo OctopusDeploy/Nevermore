@@ -602,6 +602,33 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
+        public void ShouldGetCorrectSqlQueryForWhereInUsingWhereList()
+        {
+            var matches = new List<State>
+            {
+                State.Queued,
+                State.Running
+            };
+            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@queued, @running)) ORDER BY [Id]";
+            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
+                .Where("State", SqlOperand.In, matches);
+
+            queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
+        }
+
+        [Fact]
+        public void ShouldGetCorrectSqlQueryForWhereInWithSpaces()
+        {
+            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([Foo] IN (@bar_1, @bar_2)) ORDER BY [Id]";
+
+            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
+                .Where("Foo", SqlOperand.In, new[] { "Bar 1", "Bar 2" });
+
+            queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
+        }
+
+
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
