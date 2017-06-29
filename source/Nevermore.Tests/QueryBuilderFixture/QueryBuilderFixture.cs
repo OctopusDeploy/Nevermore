@@ -594,7 +594,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereArray()
         {
-            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@queued, @running)) ORDER BY [Id]";
+            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@state0, @state1)) ORDER BY [Id]";
             var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
                 .Where("State", SqlOperand.In, new[] {State.Queued, State.Running });
 
@@ -609,7 +609,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 State.Queued,
                 State.Running
             };
-            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@queued, @running)) ORDER BY [Id]";
+            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([State] IN (@state0, @state1)) ORDER BY [Id]";
             var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
                 .Where("State", SqlOperand.In, matches);
 
@@ -617,21 +617,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void ShouldGetCorrectSqlQueryForWhereInWithSpaces()
-        {
-            const string expectedSql = "SELECT * FROM dbo.[Project] WHERE ([Foo] IN (@bar_1, @bar_2)) ORDER BY [Id]";
-
-            var queryBuilder = new QueryBuilder<IDocument>(transaction, "Project")
-                .Where("Foo", SqlOperand.In, new[] { "Bar 1", "Bar 2" });
-
-            queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
-        }
-
-
-        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
-            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
+            const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@title0, @title1))";
 
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
@@ -644,8 +632,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameters>(cp =>
-                    cp["nevermore"].ToString() == "nevermore"
-                    && cp["octofront"].ToString() == "octofront"));
+                    cp["title0"].ToString() == "nevermore"
+                    && cp["title1"].ToString() == "octofront"));
 
             Assert.Equal(1, result);
         }
