@@ -183,7 +183,9 @@ WHERE {innerColumnSelector} IN
         public void AddWhereIn(WhereParameter whereParams)
         {
             var values = ((IEnumerable) whereParams.Value).OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameterNames = values.Select(Normalise).ToArray();
+            var parameterNames = Enumerable.Range(0, values.Length)
+                .Select(i => Normalise($"{whereParams.ParameterName}{i}"))
+                .ToArray();
             var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
 
             OpenSubClause();
