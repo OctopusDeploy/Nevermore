@@ -183,7 +183,9 @@ WHERE {innerColumnSelector} IN
         public void AddWhereIn(WhereParameter whereParams)
         {
             var values = ((IEnumerable) whereParams.Value).OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameterNames = values.Select(Normalise).ToArray();
+            var parameterNames = Enumerable.Range(0, values.Length)
+                .Select(i => Normalise($"{whereParams.ParameterName}{i}"))
+                .ToArray();
             var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
 
             OpenSubClause();
@@ -204,7 +206,10 @@ WHERE {innerColumnSelector} IN
         // https://blogs.msdn.microsoft.com/debuggingtoolbox/2008/04/02/comparing-regex-replace-string-replace-and-stringbuilder-replace-which-has-better-performance/
         static string Normalise(string value)
         {
-            return value.Replace('-', '_').ToLower();
+            return value
+                .Replace('-', '_')
+                .Replace(' ', '_')
+                .ToLower();
         }
 
         public void AddWhere(WhereParameter whereParams, object startValue, object endValue)

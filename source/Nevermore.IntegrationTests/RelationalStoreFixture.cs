@@ -121,7 +121,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.Json as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.json as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameters(), map => new
+                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.JSON as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameters(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")
