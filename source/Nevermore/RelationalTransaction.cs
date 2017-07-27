@@ -392,7 +392,7 @@ namespace Nevermore
         }
 
 
-        public void ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public int ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
@@ -400,7 +400,7 @@ namespace Nevermore
                 AddCommandTrace(command.CommandText);
                 try
                 {
-                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Select));
+                    return command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Select));
                 }
                 catch (SqlException ex)
                 {
