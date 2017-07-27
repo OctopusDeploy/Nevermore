@@ -4,7 +4,7 @@ using System.Data;
 namespace Nevermore.Transient
 {
     // ReSharper disable once InconsistentNaming
-    static class IDbCommandExtensions
+    public static class IDbCommandExtensions
     {
         public static int ExecuteNonQueryWithRetry(this IDbCommand command, string operationName = "ExecuteNonQuery")
         {
