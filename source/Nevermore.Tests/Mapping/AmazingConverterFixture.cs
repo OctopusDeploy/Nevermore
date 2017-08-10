@@ -1,27 +1,23 @@
 ﻿using System;
 using System.Xml.Linq;
 using Nevermore.Mapping;
-using NUnit.Framework;
-using Octopus.Core.Resources;
-using Octopus.Shared.Util;
+using Xunit;
 
-namespace Octopus.Tests.Octopus.Shared.Util
+namespace Nevermore.Tests.Mapping
 {
-    [TestFixture]
     public class AmazingConverterFixture
     {
-        [Test]
+        [Fact]
         public void CanConvert()
         {
-            Assert.AreEqual(null, AmazingConverter.Convert(null, typeof (string)), "reference type");
-            Assert.AreEqual(0, AmazingConverter.Convert(null, typeof (int)), "value type");
-            Assert.AreEqual(0.0f, AmazingConverter.Convert(0, typeof (float)), "int to float");
-            Assert.AreEqual(0, AmazingConverter.Convert(0L, typeof (int)), "long to int");
-            Assert.AreEqual("0", AmazingConverter.Convert(0, typeof (string)), "int to string");
-            Assert.AreEqual(DateTime.MinValue, AmazingConverter.Convert(null, typeof (DateTime)), "date");
-            Assert.AreEqual(35, AmazingConverter.Convert("35", typeof (int)), "string to int");
-            Assert.AreEqual((XName)"button", AmazingConverter.Convert("button", typeof (XName)), "op_Implicit");
-            Assert.AreEqual((SensitiveValue)"password", AmazingConverter.Convert("password", typeof (SensitiveValue)), "string to SensitiveValue using op_Implicit");
+            Assert.Equal(null, AmazingConverter.Convert(null, typeof (string)));
+            Assert.Equal(0, AmazingConverter.Convert(null, typeof (int)));
+            Assert.Equal(0.0f, AmazingConverter.Convert(0, typeof (float)));
+            Assert.Equal(0, AmazingConverter.Convert(0L, typeof (int)));
+            Assert.Equal("0", AmazingConverter.Convert(0, typeof (string)));
+            Assert.Equal(DateTime.MinValue, AmazingConverter.Convert(null, typeof (DateTime)));
+            Assert.Equal(35, AmazingConverter.Convert("35", typeof (int)));
+            Assert.Equal((XName)"button", AmazingConverter.Convert("button", typeof (XName)));
         }
     }
 }
