@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
@@ -9,7 +8,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Newtonsoft.Json;
-using Nevermore;
 using Nevermore.Transient;
 using System.Text;
 using System.Threading;
@@ -152,7 +150,7 @@ namespace Nevermore
                 tableName ?? mapping.TableName,
                 tableHint ?? "",
                 string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] { "Id", "JSON" })),
-                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@Json" }))
+                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@JSON" }))
                 ));
 
             var parameters = InstanceToParameters(instance, mapping);
@@ -299,7 +297,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @Json" }));
+            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @JSON" }));
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
