@@ -16,6 +16,8 @@ using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace Nevermore
 {
@@ -566,7 +568,7 @@ namespace Nevermore
         {
             var result = new CommandParameters();
             result[$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
-            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
+            result[$"{prefix}JSON"] = Serialize(instance, mapping);
 
             foreach (var c in mapping.IndexedColumns)
             {
@@ -576,7 +578,7 @@ namespace Nevermore
                     var attemptedLength = ((string)value).Length;
                     if (attemptedLength > c.MaxLength)
                     {
-                        throw new StringTooLongException(string.Format("An attempt was made to store {0} characters in the {1}.{2} column, which only allows {3} characters.", attemptedLength, mapping.TableName, c.ColumnName, c.MaxLength));
+                        throw new StringTooLongException($"An attempt was made to store {attemptedLength} characters in the {mapping.TableName}.{c.ColumnName} column, which only allows {c.MaxLength} characters.");
                     }
                 }
                 else if (value != null && value != DBNull.Value && value is DateTime && value.Equals(DateTime.MinValue))
@@ -587,6 +589,28 @@ namespace Nevermore
                 result[$"{prefix}{c.ColumnName}"] = value;
             }
             return result;
+        }
+
+        string Serialize(object instance, DocumentMap mapping)
+        {
+            using (var writer = new JTokenWriter())
+            {
+                var serializer = JsonSerializer.CreateDefault(jsonSerializerSettings);
+                serializer.Serialize(writer, instance, mapping.Type);
+
+                // ID is always stored as a column, no need to duplicate it in JSON
+                var token = (JObject)writer.Token;
+                token.Remove("Id");
+                
+                // Indexed columns are also stored as columns in the database table, so no need 
+                // to duplicate them.
+                foreach (var indexed in mapping.IndexedColumns)
+                {
+                    token.Remove(indexed.Property.Name);
+                }
+
+                return token.ToString(jsonSerializerSettings.Formatting, jsonSerializerSettings.Converters.ToArray());
+            }
         }
 
         [Pure]

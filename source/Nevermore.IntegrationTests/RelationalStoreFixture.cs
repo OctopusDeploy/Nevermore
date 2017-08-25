@@ -162,5 +162,41 @@ namespace Nevermore.IntegrationTests
                 Assert.Equal("Customers must have a unique name", ex.Message);
             }
         }
+
+        [Fact]
+        public void ShouldSerializeIndexedColumnsOnObjectsThatAreNotTheRoot()
+        {
+            // Customer appears as both the root (table row) of this graph, as well as inside of a property.
+            // Previously we used a custom JsonContractResolver that prevented Id and indexed columns from being
+            // serialized - but that affected both the root object as well as children. Since LastName is an indexed 
+            // column, the old behaviour meant ParentCustomer's last name would be null on deserialization. The 
+            // new approach hides the columns by only removing them from the root. 
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer1 = new Customer
+                {
+                    FirstName = "Alice",
+                    LastName = "Apple",
+
+                    ParentCustomer = new Customer()
+                    {
+                        FirstName = "Bob",
+                        LastName = "Smith"
+                    }
+                };
+
+                transaction.Insert(customer1);
+
+                transaction.Commit();
+            }
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer1Read = transaction.Query<Customer>().First();
+                Assert.Equal("Apple", customer1Read.LastName);
+                Assert.NotNull(customer1Read.ParentCustomer);
+                Assert.Equal("Smith", customer1Read.ParentCustomer.LastName);
+            }
+        }
     }
 }

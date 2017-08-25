@@ -83,7 +83,7 @@ namespace Nevermore.IntegrationTests
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
 
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings { ContractResolver = new RelationalJsonContractResolver(Mappings)}, new EmptyRelatedDocumentStore());
         }
 
         void InstallSchema()
