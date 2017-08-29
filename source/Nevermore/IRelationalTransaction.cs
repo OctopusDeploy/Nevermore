@@ -75,7 +75,8 @@ namespace Nevermore
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
-        void ExecuteNonQuery(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
+        /// <returns>The number of rows affected.</returns>
+        int ExecuteNonQuery(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Creates a query that returns strongly typed documents.

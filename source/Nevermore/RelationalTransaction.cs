@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
@@ -9,7 +8,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Newtonsoft.Json;
-using Nevermore;
 using Nevermore.Transient;
 using System.Text;
 using System.Threading;
@@ -152,7 +150,7 @@ namespace Nevermore
                 tableName ?? mapping.TableName,
                 tableHint ?? "",
                 string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] { "Id", "JSON" })),
-                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@Json" }))
+                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@JSON" }))
                 ));
 
             var parameters = InstanceToParameters(instance, mapping);
@@ -299,7 +297,7 @@ namespace Nevermore
         {
             var mapping = mappings.Get(instance.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @Json" }));
+            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @JSON" }));
             var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
@@ -392,7 +390,7 @@ namespace Nevermore
         }
 
 
-        public void ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public int ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
@@ -400,7 +398,7 @@ namespace Nevermore
                 AddCommandTrace(command.CommandText);
                 try
                 {
-                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Select));
+                    return command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Select));
                 }
                 catch (SqlException ex)
                 {
