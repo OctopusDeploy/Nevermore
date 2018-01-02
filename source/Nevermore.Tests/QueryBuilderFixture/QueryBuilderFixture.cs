@@ -617,6 +617,17 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
+        public void ShouldGetCorrectSqlQueryForWhereInUsingEmptyList()
+        {
+            const string expextedSql = "SELECT * FROM dbo.[Project] WHERE 0 = 1 ORDER BY [Id]";
+            var queryBuilder =
+                new QueryBuilder<IDocument>(transaction, "Project").Where("State", SqlOperand.In, new List<State>());
+
+            queryBuilder.DebugViewRawQuery().Should().Be(expextedSql);
+        }
+
+
+        [Fact]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@title0, @title1))";

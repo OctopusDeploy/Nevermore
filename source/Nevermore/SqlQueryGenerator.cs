@@ -183,20 +183,27 @@ WHERE {innerColumnSelector} IN
         public void AddWhereIn(WhereParameter whereParams)
         {
             var values = ((IEnumerable) whereParams.Value).OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameterNames = Enumerable.Range(0, values.Length)
-                .Select(i => Normalise($"{whereParams.ParameterName}{i}"))
-                .ToArray();
-            var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
-
-            OpenSubClause();
-            AppendField(whereParams.FieldName);
-            AppendOperand(whereParams.Operand);
-            AppendInParameter(inClause);
-            CloseSubClause();
-
-            for (var i = 0; i < values.Length; i++)
+            if (values.Any())
             {
-                AddParameter(parameterNames[i], values[i]);
+                var parameterNames = Enumerable.Range(0, values.Length)
+                    .Select(i => Normalise($"{whereParams.ParameterName}{i}"))
+                    .ToArray();
+                var inClause = string.Join(", ", parameterNames.Select(p => "@" + p));
+
+                OpenSubClause();
+                AppendField(whereParams.FieldName);
+                AppendOperand(whereParams.Operand);
+                AppendInParameter(inClause);
+                CloseSubClause();
+
+                for (var i = 0; i < values.Length; i++)
+                {
+                    AddParameter(parameterNames[i], values[i]);
+                }
+            }
+            else
+            {
+                AppendFalseClause();
             }
         }
 
@@ -433,6 +440,11 @@ WHERE {innerColumnSelector} IN
             queryText.Append("(");
             queryText.Append(inClause);
             queryText.Append(")");
+        }
+
+        void AppendFalseClause()
+        {
+            queryText.Append("0 = 1");
         }
 
         string Parameter(string fieldName)
