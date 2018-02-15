@@ -1,0 +1,2 @@
+SELECT ORD.[Id] AS [OrderId], Acc.[Id] AS [AccountId], ORD.[Number], ORD.[Id] AS [OrderId2] FROM dbo.[Orders] ORD
+INNER JOIN (SELECT * FROM dbo.[Accounts]) ACC ON ORD.[AccountId] = ACC.[Id] ORDER BY ORD.[Id]

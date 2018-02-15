@@ -1,0 +1,1 @@
+SELECT ROW_NUMBER() OVER (PARTITION BY [Region], [Area] ORDER BY [Foo]) AS ROWNUM FROM dbo.[Orders] ORDER BY [Id]

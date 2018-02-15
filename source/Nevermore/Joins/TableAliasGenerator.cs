@@ -26,7 +26,7 @@ namespace Nevermore.Joins
             }
             else
             {
-                alias = $"ALIAS_{RandomString()}";
+                alias = $"ALIAS_{RandomString()}"; // todo: make this deterministic, not random. Maybe just increment number instead
             }
             return alias;
         }

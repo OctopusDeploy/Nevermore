@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.Contracts;
+using Nevermore.Joins;
+using Nevermore.QueryGraph;
 using NSubstitute;
 using Xunit;
 
@@ -25,10 +27,15 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 });
         }
 
+        IQueryBuilder<IId> CreateQueryBuilder()
+        {
+            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new CommandParameters());
+        }
+
         [Fact]
         public void VariablesCasingIsNormalisedForWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
@@ -42,7 +49,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void VariablesCasingIsNormalisedForWhereSingleParam()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo", SqlOperand.GreaterThan, "Bar")
                 .ToList();
 
@@ -54,7 +61,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void VariablesCasingIsNormalisedForWhereTwoParam()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo", SqlOperand.Between, 1, 2)
                 .ToList();
 
@@ -66,7 +73,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void VariablesCasingIsNormalisedForWhereParamArray()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo", SqlOperand.Contains, new[] { 1, 2, 3 })
                 .ToList();
 
@@ -78,7 +85,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void VariablesCasingIsNormalisedForWhereIn()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo", SqlOperand.In, new[] { "BaR", "BaZ" })
                 .ToList();
 

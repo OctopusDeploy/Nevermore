@@ -1,4 +1,1 @@
-SELECT *
-FROM (SELECT t1.*, Row_Number() over (ORDER BY t1.[Foo]) as RowNum FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) t1) RS
-WHERE RowNum >= @_minrow And RowNum <= @_maxrow
-ORDER BY RowNum
+SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY [Foo]) AS RowNum FROM dbo.[Orders] WHERE ([Price] > 5)) t1 WHERE ([RowNum] >= @_minrow) AND ([RowNum] <= @_maxrow) ORDER BY [RowNum]

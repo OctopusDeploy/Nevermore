@@ -14,7 +14,9 @@ using System.Threading;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
+using Nevermore.Joins;
 using Nevermore.Mapping;
+using Nevermore.QueryGraph;
 using Nevermore.RelatedDocuments;
 
 namespace Nevermore
@@ -559,7 +561,7 @@ namespace Nevermore
         [Pure]
         public IQueryBuilder<T> Query<T>() where T : class, IId
         {
-            return new QueryBuilder<T>(this, mappings.Get(typeof(T)).TableName);
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, new TableAliasGenerator(), new CommandParameters());
         }
 
         CommandParameters InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)

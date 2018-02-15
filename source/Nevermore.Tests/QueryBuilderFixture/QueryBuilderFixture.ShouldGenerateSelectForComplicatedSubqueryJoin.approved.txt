@@ -1,4 +1,3 @@
-SELECT t1.* FROM (SELECT * FROM dbo.[Orders]) t1
-INNER JOIN (SELECT * FROM dbo.[Customers] WHERE (IsActive = 1)) t2 ON t1.[CustomerId] = t2.[Id] AND t1.[Owner] = t2.[Owner]
-INNER JOIN (SELECT * FROM dbo.[Accounts] WITH (UPDLOCK)) t3 ON t1.[AccountId] = t3.[Id]
-ORDER BY t1.[Id]
+SELECT t2.* FROM dbo.[Orders] t2
+INNER JOIN (SELECT * FROM dbo.[Customers] WHERE (IsActive = 1) ORDER BY [Id]) t1 ON t2.[CustomerId] = t1.[Id] AND t2.[Owner] = t1.[Owner]
+INNER JOIN (SELECT * FROM dbo.[Accounts] WITH (UPDLOCK)) t3 ON t2.[AccountId] = t3.[Id] ORDER BY t2.[Id]

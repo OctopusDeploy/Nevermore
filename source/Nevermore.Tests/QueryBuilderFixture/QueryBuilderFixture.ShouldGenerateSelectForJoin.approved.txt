@@ -1,3 +1,2 @@
-SELECT t1.* FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) t1
-INNER JOIN (SELECT * FROM dbo.[Customers]) t2 ON t1.[CustomerId] = t2.[Id]
-ORDER BY t1.[Id]
+SELECT t2.* FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) t2
+INNER JOIN dbo.[Customers] t1 ON t2.[CustomerId] = t1.[Id] ORDER BY t2.[Id]

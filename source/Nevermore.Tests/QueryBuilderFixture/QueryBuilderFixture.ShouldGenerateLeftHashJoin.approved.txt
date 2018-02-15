@@ -1,0 +1,2 @@
+SELECT t2.* FROM dbo.[Orders] t2
+LEFT HASH JOIN dbo.[Account] t1 ON t2.[AccountId] = t1.[Id] ORDER BY t2.[Id]
