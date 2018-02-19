@@ -7,6 +7,7 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using Nevermore.Transient;
 using System.Text;
@@ -475,28 +476,29 @@ namespace Nevermore
                     var idIndex = GetOrdinal(reader, "Id");
                     var jsonIndex = GetOrdinal(reader, "JSON");
                     var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
+                    var typeResolver = mapping.InstanceTypeResolver.TypeResolverFromReader(s => GetOrdinal(reader, s));
 
                     while (reader.Read())
                     {
                         T instance;
+                        var instanceType = typeResolver(reader);
 
                         if (jsonIndex >= 0)
                         {
-                            var json = reader[jsonIndex].ToString();
-
-                            var deserialized = JsonConvert.DeserializeObject(json, mapping.Type, jsonSerializerSettings);
-
                             // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
                             // If the deserialized object is not the desired type, then we are querying for a specific sub-type
                             // and this record is a different sub-type, and should be excluded from the result-set. 
-                            if (deserialized is T)
-                                instance = (T)deserialized;
+                            if (typeof(T).GetTypeInfo().IsAssignableFrom(instanceType))
+                            {
+                                var json = reader[jsonIndex].ToString();
+                                instance = (T)JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
+                            }
                             else
                                 continue;
                         }
                         else
                         {
-                            instance = Activator.CreateInstance<T>();
+                            instance = (T)Activator.CreateInstance(instanceType);
                         }
 
                         foreach (var index in columnIndexes)
@@ -564,9 +566,14 @@ namespace Nevermore
 
         CommandParameters InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
         {
-            var result = new CommandParameters();
-            result[$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
-            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
+            var result = new CommandParameters
+            {
+                [$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance)
+            };
+
+            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
+
+            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mType, jsonSerializerSettings);
 
             foreach (var c in mapping.IndexedColumns)
             {
@@ -723,7 +730,9 @@ namespace Nevermore
                 var mapping = mappings.Get(typeof(TResult));
                 var json = reader[GetColumnName(prefix, "JSON")].ToString();
 
-                var instance = JsonConvert.DeserializeObject<TResult>(json, jsonSerializerSettings);
+                var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
+
+                var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
                 foreach (var column in mapping.IndexedColumns)
                 {
                     column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
@@ -731,7 +740,7 @@ namespace Nevermore
 
                 mapping.IdColumn.ReaderWriter.Write(instance, reader[GetColumnName(prefix, mapping.IdColumn.ColumnName)]);
 
-                return instance;
+                return (TResult)instance;
             }
 
             public TColumn Read<TColumn>(Func<IDataReader, TColumn> callback)

@@ -1,4 +1,5 @@
-﻿using Nevermore.Contracts;
+﻿using System.Linq;
+using Nevermore.Contracts;
 using Nevermore;
 using Nevermore.IntegrationTests.Model;
 using Xunit;
@@ -27,6 +28,40 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             using (var trn = Store.BeginTransaction())
             {
                 trn.Load<Product>(new[] {"A", "B"});
+            }
+        }
+
+
+        [Fact]
+        public void StoreAndLoadInheritedTypes()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var originalSpecial = new SpecialProduct()
+                {
+                    Name = "Unicorn Dust",
+                    BonusMaterial = "Directors Commentary",
+                    Id = "UD-01"
+                };
+
+                var originalDud = new DodgyProduct()
+                {
+                    Id = "DO-01",
+                    Name = "Something",
+                    Price = 12.3m,
+                    Tax = 15m
+                };
+
+                trn.Insert<SpecialProduct>(originalSpecial);
+                trn.Insert<DodgyProduct>(originalDud);
+
+                var allProducts = trn.Query<Product>().ToList();
+                Assert.True(allProducts.Exists(p => p is SpecialProduct sp && sp.BonusMaterial == originalSpecial.BonusMaterial));
+                Assert.True(allProducts.Exists(p => p is DodgyProduct dp && dp.Tax == originalDud.Tax));
+
+                var onlySpecial = trn.Query<SpecialProduct>().ToList();
+                Assert.Equal(1, onlySpecial.Count);
+                Assert.Equal(originalSpecial.BonusMaterial, onlySpecial[0].BonusMaterial);
             }
         }
     }

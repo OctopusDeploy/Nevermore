@@ -13,6 +13,13 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
+        protected ColumnMapping TypeDiscriminatorColumn<T>(Expression<Func<TDocument, T>> property, Dictionary<T, Type> typeBuilder) where T : struct
+        {
+            var col = this.Column(property);
+            InstanceTypeResolver = new SubTypedResolver<TDocument, T>(col, typeBuilder);
+            return col;
+        }
+
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
         {
             var column = new ColumnMapping(GetPropertyInfo(property));
@@ -77,13 +84,16 @@ namespace Nevermore.Mapping
         {
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
+            InstanceTypeResolver = new StandardTypeResolver(this);
         }
 
         public string TableName { get; protected set; }
         public string IdPrefix { get; protected set; }
         public bool IsProjection { get; protected set; }
         public Type Type { get; protected set; }
+        public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
+
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
         /// </summary>
