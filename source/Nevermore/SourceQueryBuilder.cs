@@ -143,14 +143,14 @@ namespace Nevermore
         {
             if (alias == null)
             {
-                return new NewTableSource(tableOrViewName);
+                return new SimpleTableSource(tableOrViewName);
             }
-            return new AliasedTableSource(new NewTableSource(tableOrViewName), alias);
+            return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias);
         }
         
         AliasedTableSource CreateAliasedTableSource()
         {
-            return new AliasedTableSource(new NewTableSource(tableOrViewName), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
+            return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
         }
     }
 
