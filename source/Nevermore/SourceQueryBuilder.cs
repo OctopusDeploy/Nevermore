@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Nevermore.AST;
 
@@ -161,26 +160,6 @@ namespace Nevermore
         }
     }
 
-    public class Parameters : KeyedCollection<string, Parameter>
-    {
-        public Parameters()
-        {
-        }
-
-        public Parameters(Parameters parameters)
-        {
-            foreach (var parameter in parameters)
-            {
-                Add(parameter);
-            }
-        }
-
-        protected override string GetKeyForItem(Parameter item)
-        {
-            return item.ParameterName;
-        }
-    }
-
     public abstract class SourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
     {
         protected readonly IRelationalTransaction RelationalTransaction;
@@ -288,19 +267,9 @@ namespace Nevermore
             return Builder.Parameter(parameter);
         }
 
-        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
-            return Builder.Parameter(name, value);
-        }
-
-        public IQueryBuilder<TRecord> LikeParameter(string name, object value)
-        {
-            return Builder.LikeParameter(name, value);
-        }
-
-        public IQueryBuilder<TRecord> LikePipedParameter(string name, object value)
-        {
-            return Builder.LikePipedParameter(name, value);
+            return Builder.Parameter(parameter, value);
         }
 
         public abstract IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType);

@@ -102,13 +102,13 @@ namespace Nevermore
             {
                 case SqlOperand.Between:
                     return queryBuilder.WhereParameterised(fieldName, BinarySqlOperand.Between, startValueParameter, endValueParameter)
-                        .Parameter(startValueParameter.ParameterName, startValue)
-                        .Parameter(endValueParameter.ParameterName, endValue);
+                        .Parameter(startValueParameter, startValue)
+                        .Parameter(endValueParameter, endValue);
                 case SqlOperand.BetweenOrEqual:
                     return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, startValueParameter)
-                        .Parameter(startValueParameter.ParameterName, startValue)
+                        .Parameter(startValueParameter, startValue)
                         .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
-                        .Parameter(endValueParameter.ParameterName, endValue);
+                        .Parameter(endValueParameter, endValue);
                 default:
                     throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
             }
@@ -116,18 +116,18 @@ namespace Nevermore
 
         static IQueryBuilder<TRecord> AddUnaryWhereClauseAndParameter<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName, UnarySqlOperand operand, object value)
         {
-            var parameterName = fieldName.ToLower();
-            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(parameterName))
-                .Parameter(parameterName, value);
+            var parameter = new Parameter(fieldName);
+            return queryBuilder.WhereParameterised(fieldName, operand, parameter)
+                .Parameter(parameter, value);
         }
 
         static IQueryBuilder<TRecord> AddWhereIn<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName, IEnumerable values)
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName.ToLower()}{i}")).ToArray();
+            var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
             return stringValues.Zip(parameters, (value, parameter) => new {value, parameter})
                 .Aggregate(queryBuilder.WhereParameterised(fieldName, ArraySqlOperand.In, parameters),
-                    (p, pv) => p.Parameter(pv.parameter.ParameterName, pv.value));
+                    (p, pv) => p.Parameter(pv.parameter, pv.value));
         }
 
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
@@ -140,6 +140,22 @@ namespace Nevermore
                 default:
                     throw new ArgumentException($"The operand {operand} is not valid with a list of values", nameof(operand));
             }
+        }
+
+        public static IQueryBuilder<TRecord> Parameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name, object value)
+        {
+            var parameter = new Parameter(name);
+            return queryBuilder.Parameter(parameter, value);
+        }
+
+        public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name, object value)
+        {
+            return queryBuilder.Parameter(name, "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
+        }
+
+        public static IQueryBuilder<TRecord> LikePipedParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name, object value)
+        {
+            return queryBuilder.Parameter(name, "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
         }
     }
 }

@@ -1,4 +1,4 @@
 SELECT * FROM (SELECT t2.*, ROW_NUMBER() OVER (PARTITION BY t2.[EnvironmentId], t2.[ProjectId], t2.[TenantId] ORDER BY t2.[[Event].[Occurred]] DESC) AS Rank FROM dbo.[Deployment] t2
 INNER JOIN dbo.[DeploymentRelatedMachine] t1 ON t2.[Id] = t1.[DeploymentId]
 INNER JOIN dbo.[EventRelatedDocument] t3 ON t2.[Id] = t3.[RelatedDocumentId]
-INNER JOIN dbo.[Event] Event ON t2.[Id] = Event.[EventId] WHERE ([DeploymentRelatedMachine].MachineId = @machineId) AND ([Event].Category = 'DeploymentSucceeded')) t4 WHERE (Rank = 1) ORDER BY t4.[Id]
+INNER JOIN dbo.[Event] Event ON t2.[Id] = Event.[EventId] WHERE ([DeploymentRelatedMachine].MachineId = @machineid) AND ([Event].Category = 'DeploymentSucceeded')) t4 WHERE (Rank = 1) ORDER BY t4.[Id]

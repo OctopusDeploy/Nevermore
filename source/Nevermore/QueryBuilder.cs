@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Nevermore.AST;
 
 namespace Nevermore
@@ -28,20 +29,21 @@ namespace Nevermore
         {
             if (!String.IsNullOrWhiteSpace(whereClause))
             {
-                selectBuilder.AddWhere(whereClause);
+                var whereClauseNormalised = Regex.Replace(whereClause, @"@\w+", m => new Parameter(m.Value).ParameterName);
+                selectBuilder.AddWhere(whereClauseNormalised);
             }
             return this;
         }
 
         public IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter.ParameterName));
+            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter));
             return Parameter(parameter);
         }
 
         public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
         {
-            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter.ParameterName, endValueParameter.ParameterName));
+            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter, endValueParameter));
             return Parameter(startValueParameter).Parameter(endValueParameter);
         }
 
@@ -52,7 +54,7 @@ namespace Nevermore
             {
                 return AddAlwaysFalseWhere();
             }
-            selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList.Select(p => p.ParameterName).ToList()));
+            selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList));
             IQueryBuilder<TRecord> builder = this;
             return parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p));
         }
@@ -97,20 +99,10 @@ namespace Nevermore
             return this;
         }
 
-        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
-            parameterValues.Add(name, value);
+            parameterValues.Add(parameter.ParameterName, value);
             return this;
-        }
-
-        public IQueryBuilder<TRecord> LikeParameter(string name, object value)
-        {
-            return Parameter(name, "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
-        }
-
-        public IQueryBuilder<TRecord> LikePipedParameter(string name, object value)
-        {
-            return Parameter(name, "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
         }
 
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
@@ -201,19 +193,16 @@ namespace Nevermore
         public List<TRecord> ToList(int skip, int take)
         {
             const string rowNumberColumnName = "RowNum";
-            const string minRowParameterName = "_minrow";
-            const string maxRowParameterName = "_maxrow";
+            var minRowParameter = new Parameter("_minrow");
+            var maxRowParameter = new Parameter("_maxrow");
 
             selectBuilder.AddDefaultColumnSelection();
             selectBuilder.AddRowNumberColumn(rowNumberColumnName, new List<Column>());
 
             var subqueryBuilder = CreateSubqueryBuilder();
-            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameterName));
-            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameterName));
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
-
-            Parameter(minRowParameterName, skip + 1);
-            Parameter(maxRowParameterName, take + skip);
 
             return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parameterValues).ToList();
         }

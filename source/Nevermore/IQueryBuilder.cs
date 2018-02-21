@@ -47,9 +47,7 @@ namespace Nevermore
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params string[] partitionByColumns);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns);
         IQueryBuilder<TRecord> Parameter(Parameter parameter);
-        IQueryBuilder<TRecord> Parameter(string name, object value);
-        IQueryBuilder<TRecord> LikeParameter(string name, object value);
-        IQueryBuilder<TRecord> LikePipedParameter(string name, object value);
+        IQueryBuilder<TRecord> Parameter(Parameter parameter, object value);
 
         IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType);
         ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder);
@@ -66,25 +64,6 @@ namespace Nevermore
         IEnumerable<TRecord> Stream();
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
         string DebugViewRawQuery();
-    }
-
-    public class Parameter
-    {
-        public Parameter(string parameterName, IDataType dataType)
-        {
-            ParameterName = parameterName;
-            DataType = dataType;
-        }
-
-        public Parameter(string parameterName)
-        {
-            ParameterName = parameterName;
-        }
-
-        public string ParameterName { get; }
-
-        // Data type must be specified if you are creating a stored proc or function, otherwise it is not required
-        public IDataType DataType { get; }
     }
 
     public class ColumnFromTable

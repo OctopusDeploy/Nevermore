@@ -18,7 +18,6 @@ namespace Nevermore
 
         protected override ISelectColumns DefaultSelect => new SelectAllFrom(From.Source.Alias);
 
-        // Pass this in to the base class in the constructor, store in a separate field. Then if you use it, remove it
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
             yield return new OrderByField(new TableColumn(new Column("Id"), From.Source.Alias));
