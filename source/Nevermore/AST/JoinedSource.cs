@@ -6,46 +6,37 @@ namespace Nevermore.AST
 {
     public class JoinedSource : ISelectSource
     {
-        public Join LastJoin { get; }
+        readonly IReadOnlyList<Join> joins;
         public IAliasedSelectSource Source { get; }
-        public IReadOnlyList<Join> IntermediateJoins { get; }
 
-        public JoinedSource(IAliasedSelectSource source, IReadOnlyList<Join> intermediateJoins, Join lastJoin) // todo, don't need intermediate + last joins here
+        public JoinedSource(IAliasedSelectSource source, IReadOnlyList<Join> joins)
         {
-            this.LastJoin = lastJoin;
-            IntermediateJoins = intermediateJoins;
+            this.joins = joins;
             Source = source;
-        }
-
-        public JoinedSource AddClause(JoinClause clause)
-        {
-            return new JoinedSource(Source, IntermediateJoins, new Join(LastJoin.Clauses.Concat(new [] {clause}).ToList(), LastJoin.Source, LastJoin.Type));
         }
 
         public string GenerateSql()
         {
-            var sourceParts = new [] {Source.GenerateSql()}.Concat(IntermediateJoins.Concat(new [] {LastJoin}).Select(j => j.GenerateSql(Source.Alias)));
+            var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql(Source.Alias)));
             return string.Join("\r\n", sourceParts);
         }
     }
 
     public class Join
     {
+        readonly IAliasedSelectSource source;
+        readonly JoinType type;
+        readonly IReadOnlyList<JoinClause> clauses;
+
         public Join(IReadOnlyList<JoinClause> clauses, IAliasedSelectSource source, JoinType type)
         {
-            Clauses = clauses;
-            Source = source;
-            Type = type;
+            this.clauses = clauses;
+            this.source = source;
+            this.type = type;
         }
 
-        public IAliasedSelectSource Source { get; }
-        public JoinType Type { get; }
-        public IReadOnlyList<JoinClause> Clauses { get; }
-
-        public string GenerateSql(string leftSourceAlias)
-        {
-            return $"{GenerateJoinTypeSql(Type)} {Source.GenerateSql()} ON {string.Join(" AND ", Clauses.Select(c => c.GenerateSql(leftSourceAlias, Source.Alias)))}";
-        }
+        public string GenerateSql(string leftSourceAlias) => 
+            $"{GenerateJoinTypeSql(type)} {source.GenerateSql()} ON {string.Join(" AND ", clauses.Select(c => c.GenerateSql(leftSourceAlias, source.Alias)))}";
 
         string GenerateJoinTypeSql(JoinType joinType)
         {

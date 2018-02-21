@@ -45,7 +45,9 @@ namespace Nevermore
     {
         readonly IAliasedSelectSource originalSource;
         readonly List<Join> intermediateJoins = new List<Join>();
-        Join lastJoin;
+        JoinType type;
+        IAliasedSelectSource joinSource;
+        List<JoinClause> clauses;
 
         public JoinSourceQueryBuilder(IAliasedSelectSource originalSource, JoinType joinType, IAliasedSelectSource nextJoin, 
             IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues,
@@ -53,34 +55,39 @@ namespace Nevermore
             : base(relationalTransaction, tableAliasGenerator, parameterValues, parameters)
         {
             this.originalSource = originalSource;
-            lastJoin = new Join(new List<JoinClause>(), nextJoin, joinType);
+            clauses = new List<JoinClause>();
+            joinSource = nextJoin;
+            type = joinType;
         }
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            if (lastJoin.Clauses.Count == 0)
+            if (clauses.Count == 0)
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }
-            var joinedSource = new JoinedSource(originalSource, intermediateJoins, lastJoin);
+            var joinedSource = new JoinedSource(originalSource, intermediateJoins.Concat(new [] {new Join(clauses.ToList(), joinSource, type)}).ToList());
             return new JoinSelectBuilder(joinedSource);
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
-            if (lastJoin.Clauses.Count == 0)
+            if (clauses.Count == 0)
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }
-            intermediateJoins.Add(lastJoin);
-            lastJoin = new Join(new List<JoinClause>(), source, joinType);
+
+            intermediateJoins.Add(new Join(clauses.ToList(), joinSource, type));
+            clauses = new List<JoinClause>();
+            joinSource = source;
+            type = joinType;
             return this;
         }
 
         public IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField)
         {
             var newClause = new JoinClause(leftField, operand, rightField);
-            lastJoin = new Join(lastJoin.Clauses.Concat(new[] {newClause}).ToList(), lastJoin.Source, lastJoin.Type);
+            clauses.Add(newClause);
             return this;
         }
     }
