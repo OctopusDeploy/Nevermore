@@ -1130,7 +1130,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void ShouldGenerateComplexQueryUsingWith()
+        public void ShouldGenerateComplexQueryUsingWith() // TODO: Work out how to add the api to support the `With` keyword
         {
             var nugetPackagesWithHasVersion = CreateQueryBuilder<IDocument>("GetNuGetPackages")
                 .AllColumns()
