@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Nevermore.Joins
+namespace Nevermore
 {
     public interface ITableAliasGenerator
     {
@@ -26,7 +26,7 @@ namespace Nevermore.Joins
             }
             else
             {
-                alias = $"ALIAS_{RandomString()}"; // todo: make this deterministic, not random. Maybe just increment number instead
+                alias = $"ALIAS_{RandomString()}"; // todo: make this deterministic, not random. Maybe just increment a number instead
             }
             return alias;
         }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Nevermore.Joins;
 using Xunit;
 
 namespace Nevermore.Tests.Joins

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Nevermore.QueryGraph;
+using Nevermore.AST;
 
 namespace Nevermore
 {

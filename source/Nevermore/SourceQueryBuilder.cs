@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Nevermore.Joins;
-using Nevermore.QueryGraph;
+using Nevermore.AST;
 
 namespace Nevermore
 {
@@ -138,11 +137,6 @@ namespace Nevermore
         {
             var source = new TableSourceWithHint(CreateSimpleTableSource(), tableHint);
             return CreateQueryBuilder(new TableSelectBuilder(source));
-        }
-
-        public IQueryBuilder<TRecord> NoLock()
-        {
-            return Hint("NOLOCK");
         }
 
         ISimpleTableSource CreateSimpleTableSource()

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Nevermore.Joins;
 
 namespace Nevermore
 {
@@ -575,41 +574,6 @@ namespace Nevermore
 //            }
 //        }
 //    }
-
-    public enum SqlOperand
-    {
-        Equal,
-        In,
-        StartsWith,
-        EndsWith,
-        Between,
-        BetweenOrEqual,
-        GreaterThan,
-        GreaterThanOrEqual,
-        LessThan,
-        LessThanOrEqual,
-        NotEqual,
-        Contains
-    }
     
-    public enum UnarySqlOperand
-    {
-        Equal,
-        Like,
-        GreaterThan,
-        GreaterThanOrEqual,
-        LessThan,
-        LessThanOrEqual,
-        NotEqual
-    }
-
-    public enum BinarySqlOperand
-    {
-        Between
-    }
-
-    public enum ArraySqlOperand
-    {
-        In
-    }
+    
 }

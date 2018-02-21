@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nevermore.Joins;
 
-namespace Nevermore.QueryGraph
+namespace Nevermore.AST
 {
     // To add
     // Join conditions
@@ -551,6 +550,17 @@ namespace Nevermore.QueryGraph
             }
         }
     }
+
+    public enum JoinType
+    {
+        InnerJoin,
+        LeftHashJoin
+    }
+
+    public enum JoinOperand
+    {
+        Equal
+    }
     
     public class Join
     {
@@ -701,5 +711,26 @@ namespace Nevermore.QueryGraph
         {
             return $"{expression} AS [{alias}]";
         }
+    }
+
+    public enum UnarySqlOperand
+    {
+        Equal,
+        Like,
+        GreaterThan,
+        GreaterThanOrEqual,
+        LessThan,
+        LessThanOrEqual,
+        NotEqual
+    }
+
+    public enum BinarySqlOperand
+    {
+        Between
+    }
+
+    public enum ArraySqlOperand
+    {
+        In
     }
 }

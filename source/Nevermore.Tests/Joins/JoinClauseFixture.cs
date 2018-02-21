@@ -1,5 +1,4 @@
-﻿using Nevermore.Joins;
-using Nevermore.QueryGraph;
+﻿using Nevermore.AST;
 using Xunit;
 
 namespace Nevermore.Tests.Joins

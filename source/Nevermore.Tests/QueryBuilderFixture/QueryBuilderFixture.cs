@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using Assent;
 using FluentAssertions;
+using Nevermore.AST;
 using Nevermore.Contracts;
-using Nevermore.Joins;
-using Nevermore.QueryGraph;
 using NSubstitute;
 using Xunit;
-using JoinClause = Nevermore.QueryGraph.JoinClause;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -77,7 +75,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
 
             var actual = leftQueryBuilder
-                .Join(rightQueryBuilder.AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(rightQueryBuilder.AsAliasedSource())
                 .On("CustomerId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -93,8 +91,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts");
 
             var actual = leftQueryBuilder
-                .Join(join1QueryBuilder.AsAliasedSource(), JoinType.InnerJoin).On("CustomerId", JoinOperand.Equal, "Id")
-                .Join(join2QueryBuilder.AsAliasedSource(), JoinType.InnerJoin).On("AccountId", JoinOperand.Equal, "Id")
+                .InnerJoin(join1QueryBuilder.AsAliasedSource()).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(join2QueryBuilder.AsAliasedSource()).On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
             this.Assent(actual);
@@ -110,10 +108,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var accounts = CreateQueryBuilder<IDocument>("Accounts").Hint("WITH (UPDLOCK)");
 
-            var actual = orders.Join(customers.Subquery().AsSource(), JoinType.InnerJoin)
+            var actual = orders.InnerJoin(customers.Subquery().AsSource())
                 .On("CustomerId", JoinOperand.Equal, "Id")
                 .On("Owner", JoinOperand.Equal, "Owner")
-                .Join(accounts.Subquery().AsSource(), JoinType.InnerJoin).On("AccountId", JoinOperand.Equal, "Id")
+                .InnerJoin(accounts.Subquery().AsSource()).On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
             this.Assent(actual);
@@ -175,7 +173,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
             var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
-            leftQueryBuilder.Join(rightQueryBuilder.AsAliasedSource(), JoinType.InnerJoin).On("CustomerId", JoinOperand.Equal, "Id")
+            leftQueryBuilder.InnerJoin(rightQueryBuilder.AsAliasedSource()).On("CustomerId", JoinOperand.Equal, "Id")
                 .Count();
 
             this.Assent(actual);
@@ -205,7 +203,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Where("[Price] > 5");
             var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
             leftQueryBuilder
-                .Join(rightQueryBuilder.AsAliasedSource(), JoinType.InnerJoin).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(rightQueryBuilder.AsAliasedSource()).On("CustomerId", JoinOperand.Equal, "Id")
                 .ToList(10, 20);
 
             this.Assent(actual);
@@ -238,7 +236,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Where("[Price] > 5");
             var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
 
-            leftQueryBuilder.Join(rightQueryBuilder.AsAliasedSource(), JoinType.InnerJoin).On("CustomerId", JoinOperand.Equal, "Id")
+            leftQueryBuilder.InnerJoin(rightQueryBuilder.AsAliasedSource()).On("CustomerId", JoinOperand.Equal, "Id")
                 .Take(100);
 
             this.Assent(actual);
@@ -817,7 +815,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .Alias("ORD")
-                .Join(accounts.AsSource(), JoinType.InnerJoin)
+                .InnerJoin(accounts.AsSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .Where("Id", SqlOperand.Equal, 1)
                 .OrderBy("Name")
@@ -873,7 +871,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .Alias("ORD")
-                .Join(accounts.AsSource(), JoinType.InnerJoin)
+                .InnerJoin(accounts.AsSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .Column("Id", "OrderId", "ORD")
                 .Column("Id", "AccountId", "Acc")
@@ -922,7 +920,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .Join(account.AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(account.AsAliasedSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .OrderBy("Foo")
                 .AddRowNumberColumn("ROWNUM", "Region", "Area")
@@ -938,7 +936,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Alias("ACC");
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .Alias("ORD")
-                .Join(account.AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(account.AsAliasedSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .OrderBy("Foo")
                 .AddRowNumberColumn("ROWNUM", new ColumnFromTable("Region", "ACC"), new ColumnFromTable("Area", "ACC"))
@@ -975,7 +973,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .Join(account.AsAliasedSource(), JoinType.LeftHashJoin)
+                .LeftHashJoin(account.AsAliasedSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -989,9 +987,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Where("Name", SqlOperand.StartsWith, "Bob");
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .Join(customers.Subquery().AsSource(), JoinType.InnerJoin)
+                .InnerJoin(customers.Subquery().AsSource())
                 .On("CustomerId", JoinOperand.Equal, "Id")
-                .Join(account.AsAliasedSource(), JoinType.LeftHashJoin)
+                .LeftHashJoin(account.AsAliasedSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -1006,9 +1004,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var dashboard = CurrentDeployments()
                 .Union(PreviousDeployments())
                 .Alias("d")
-                .Join(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource())
                 .On("TaskId", JoinOperand.Equal, "Id")
-                .Join(CreateQueryBuilder<IDocument>("Release").Alias(releaseTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("Release").Alias(releaseTableAlias).AsAliasedSource())
                 .On("ReleaseId", JoinOperand.Equal, "Id")
                 .Column("Id", "Id")
                 .Column("Created", "Created")
@@ -1039,7 +1037,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             return CreateQueryBuilder<IDocument>("Deployment")
                 .Alias(deploymentTableAlias)
-                .Join(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource())
                 .On("TaskId", JoinOperand.Equal, "Id")
                 .CalculatedColumn("'C'", "CurrentOrPrevious")
                 .Column("Id", "Id")
@@ -1061,9 +1059,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string l = "l";
             return CreateQueryBuilder<IDocument>("Deployment")
                 .Alias(deploymentTableAlias)
-                .Join(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias).AsAliasedSource())
                 .On("TaskId", JoinOperand.Equal, "Id")
-                .Join(LQuery().Subquery().Alias(l).AsSource(), JoinType.LeftHashJoin)
+                .LeftHashJoin(LQuery().Subquery().Alias(l).AsSource())
                 .On("Id", JoinOperand.Equal, "Id")
                 .CalculatedColumn("'P'", "CurrentOrPrevious")
                 .Column("Id", "Id")
@@ -1095,7 +1093,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var serverTaskTableAlias = "t";
             return CreateQueryBuilder<IDocument>("Deployment")
                 .Alias(deploymentTableAlias)
-                .Join(CreateQueryBuilder<IDocument>("ServerTask").Alias(serverTaskTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(serverTaskTableAlias).AsAliasedSource())
                 .On("TaskId", JoinOperand.Equal, "Id")
                 .Column("Id", "Id")
                 .OrderByDescending("Created")
@@ -1109,11 +1107,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string eventTableAlias = "Event";
 
             var withJoins = CreateQueryBuilder<IDocument>("Deployment")
-                .Join(CreateQueryBuilder<IDocument>("DeploymentRelatedMachine").AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("DeploymentRelatedMachine").AsAliasedSource())
                 .On("Id", JoinOperand.Equal, "DeploymentId")
-                .Join(CreateQueryBuilder<IDocument>("EventRelatedDocument").AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("EventRelatedDocument").AsAliasedSource())
                 .On("Id", JoinOperand.Equal, "RelatedDocumentId")
-                .Join(CreateQueryBuilder<IDocument>("Event").Alias(eventTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .InnerJoin(CreateQueryBuilder<IDocument>("Event").Alias(eventTableAlias).AsAliasedSource())
                 .On("Id", JoinOperand.Equal, "EventId")
                 .AllColumns()
                 .OrderByDescending($"[{eventTableAlias}].[Occurred]")
@@ -1121,7 +1119,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             var actual = withJoins
                 .Where("[DeploymentRelatedMachine].MachineId = @machineId")
-                .Parameter(new Parameter("machineId", new NVarChar()))
+                .Parameter(new Parameter("machineId", new NVarCharMax()))
                 .Where("[Event].Category = \'DeploymentSucceeded\'")
                 .Subquery()
                 .Where("Rank = 1");

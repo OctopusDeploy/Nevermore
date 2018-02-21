@@ -14,9 +14,7 @@ using System.Threading;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
-using Nevermore.Joins;
 using Nevermore.Mapping;
-using Nevermore.QueryGraph;
 using Nevermore.RelatedDocuments;
 
 namespace Nevermore

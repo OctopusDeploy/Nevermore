@@ -1,8 +1,6 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.Contracts;
-using Nevermore.Joins;
-using Nevermore.QueryGraph;
 using NSubstitute;
 using Xunit;
 
