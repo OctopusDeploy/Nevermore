@@ -8,7 +8,7 @@ namespace Nevermore
     {
         readonly string parameterName;
 
-        public UnaryWhereParameter(string fieldName, UnarySqlOperand operand, string parameterName = null)
+        public UnaryWhereParameter(string fieldName, UnarySqlOperand operand, string parameterName)
         {
             this.parameterName = parameterName;
             FieldName = fieldName;
@@ -17,7 +17,7 @@ namespace Nevermore
 
         public string FieldName { get; }
         public UnarySqlOperand Operand { get; }
-        public virtual string ParameterName => parameterName?.ToLower() ?? FieldName.ToLower();
+        public virtual string ParameterName => parameterName.ToLower();
     }
 
     public class BinaryWhereParameter
@@ -41,11 +41,11 @@ namespace Nevermore
 
     public class ArrayWhereParameter
     {
-        readonly int numberOfParameters;
+        readonly IReadOnlyList<string> parameterNames;
 
-        public ArrayWhereParameter(string fieldName, ArraySqlOperand operand, int numberOfParameters)
+        public ArrayWhereParameter(string fieldName, ArraySqlOperand operand, IReadOnlyList<string> parameterNames)
         {
-            this.numberOfParameters = numberOfParameters;
+            this.parameterNames = parameterNames;
             FieldName = fieldName;
             Operand = operand;
         }
@@ -53,6 +53,6 @@ namespace Nevermore
         public string FieldName { get; }
         public ArraySqlOperand Operand { get; }
 
-        public IEnumerable<string> ParameterNames => Enumerable.Range(0, numberOfParameters).Select(i => $"{FieldName.ToLower()}{i}");
+        public IEnumerable<string> ParameterNames => parameterNames;
     }
 }

@@ -198,7 +198,7 @@ namespace Nevermore
 
             var mapping = mappings.Get(instances.First().GetType()); // All instances share the same mapping.
 
-            var parameters = new CommandParameters();
+            var parameters = new CommandParameterValues();
             var valueStatements = new List<string>();
             var instanceCount = 0;
             foreach (var instance in instances)
@@ -348,7 +348,7 @@ namespace Nevermore
             var statement = $"DELETE from dbo.[{mapping.TableName}] WHERE Id = @Id";
 
             using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameters { { "Id", id } }, mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameterValues { { "Id", id } }, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -368,7 +368,7 @@ namespace Nevermore
             }
         }
 
-        public void ExecuteRawDeleteQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public void ExecuteRawDeleteQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(Log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
@@ -392,7 +392,7 @@ namespace Nevermore
         }
 
 
-        public int ExecuteNonQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public int ExecuteNonQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
@@ -416,7 +416,7 @@ namespace Nevermore
 
 
         [Pure]
-        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
         {
             var mapping = mappings.Get(typeof(T));
 
@@ -428,7 +428,7 @@ namespace Nevermore
         }
 
         [Pure]
-        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameters args, Func<IProjectionMapper, T> projectionMapper, int? commandTimeoutSeconds = null)
+        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameterValues args, Func<IProjectionMapper, T> projectionMapper, int? commandTimeoutSeconds = null)
         {
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
@@ -561,12 +561,12 @@ namespace Nevermore
         [Pure]
         public IQueryBuilder<T> Query<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, new TableAliasGenerator(), new CommandParameters());
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, new TableAliasGenerator(), new CommandParameterValues(), new Parameters());
         }
 
-        CommandParameters InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
+        CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
         {
-            var result = new CommandParameters();
+            var result = new CommandParameterValues();
             result[$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
             result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
 
@@ -592,7 +592,7 @@ namespace Nevermore
         }
 
         [Pure]
-        public T ExecuteScalar<T>(string query, CommandParameters args, int? commandTimeoutSeconds = null)
+        public T ExecuteScalar<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
         {
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
@@ -621,10 +621,10 @@ namespace Nevermore
 
         public void ExecuteReader(string query, object args, Action<IDataReader> readerCallback)
         {
-            ExecuteReader(query, new CommandParameters(args), readerCallback);
+            ExecuteReader(query, new CommandParameterValues(args), readerCallback);
         }
 
-        public void ExecuteReader(string query, CommandParameters args, Action<IDataReader> readerCallback)
+        public void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback)
         {
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {

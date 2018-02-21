@@ -595,14 +595,12 @@ namespace Nevermore
     public enum UnarySqlOperand
     {
         Equal,
-        StartsWith,
-        EndsWith,
+        Like,
         GreaterThan,
         GreaterThanOrEqual,
         LessThan,
         LessThanOrEqual,
-        NotEqual,
-        Contains
+        NotEqual
     }
 
     public enum BinarySqlOperand

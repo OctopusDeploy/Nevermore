@@ -29,7 +29,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName)
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameters());
+            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameterValues(), new Parameters());
         }
 
         [Fact]
@@ -123,7 +123,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGenerateCount()
         {
             string actual = null;
-            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             CreateQueryBuilder<IDocument>("Orders")
                 .NoLock()
@@ -154,7 +154,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGenerateCountForQueryBuilder()
         {
             string actual = null;
-            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             CreateQueryBuilder<IDocument>("Orders")
                 .NoLock()
@@ -170,7 +170,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGenerateCountForJoin()
         {
             string actual = null;
-            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
@@ -185,7 +185,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGeneratePaginate()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
             CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5")
                 .OrderBy("Foo")
@@ -199,7 +199,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGeneratePaginateForJoin()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
@@ -215,7 +215,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGenerateTop()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
             CreateQueryBuilder<IDocument>("Orders")
                 .NoLock()
                 .Where("[Price] > 5")
@@ -232,7 +232,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         public void ShouldGenerateTopForJoin()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameters>());
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
@@ -247,22 +247,26 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
+            CommandParameterValues parameterValues = null;
+            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+
             // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
             var environment = new
             {
                 Id = "Environments-1"
             };
-            var queryBuilder = CreateQueryBuilder<IDocument>("Project")
+            CreateQueryBuilder<IDocument>("Project")
                 .Where("[JSON] LIKE @jsonPatternSquareBracket")
                 .LikeParameter("jsonPatternSquareBracket", $"\"AutoDeployReleaseOverrides\":[{{\"EnvironmentId\":\"{environment.Id}\"")
                 .Where("[JSON] NOT LIKE @jsonPatternPercentage")
-                .LikeParameter("jsonPatternPercentage", $"SomeNonExistantField > 5%");
+                .LikeParameter("jsonPatternPercentage", $"SomeNonExistantField > 5%")
+                .ToList();
 
-            var actualParameter1 = queryBuilder.QueryParameters["jsonPatternSquareBracket"];
+            var actualParameter1 = parameterValues["jsonPatternSquareBracket"];
             const string expectedParameter1 = "%\"AutoDeployReleaseOverrides\":[[]{\"EnvironmentId\":\"Environments-1\"%";
             Assert.Equal(actualParameter1, expectedParameter1);
 
-            var actualParameter2 = queryBuilder.QueryParameters["jsonPatternPercentage"];
+            var actualParameter2 = parameterValues["jsonPatternPercentage"];
             const string expectedParameter2 = "%SomeNonExistantField > 5[%]%";
             Assert.Equal(actualParameter2, expectedParameter2);
         }
@@ -270,11 +274,14 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Fact]
         public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
         {
+            CommandParameterValues parameterValues = null;
+            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
-            var queryBuilder = CreateQueryBuilder<IDocument>("Project")
-                .LikePipedParameter("Name", "Foo|Bar|Baz");
+            CreateQueryBuilder<IDocument>("Project")
+                .LikePipedParameter("Name", "Foo|Bar|Baz")
+                .ToList();
 
-            Assert.Equal("%|Foo|Bar|Baz|%", queryBuilder.QueryParameters["Name"]);
+            Assert.Equal("%|Foo|Bar|Baz|%", parameterValues["Name"]);
         }
 
         [Fact]
@@ -283,7 +290,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(2);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -293,7 +300,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(2, result);
         }
@@ -304,7 +311,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] < @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(2);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -313,7 +320,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(2, result);
         }
@@ -324,7 +331,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(10);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -334,7 +341,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(10, result);
         }
@@ -345,7 +352,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] <= @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(10);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -354,7 +361,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(10, result);
         }
@@ -365,7 +372,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -375,7 +382,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             Assert.Equal(1, result);
         }
@@ -386,7 +393,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] = @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -395,7 +402,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             Assert.Equal(1, result);
         }
@@ -406,7 +413,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -416,7 +423,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             Assert.Equal(1, result);
         }
@@ -427,7 +434,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] <> @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -436,7 +443,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             Assert.Equal(1, result);
         }
@@ -447,7 +454,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(11);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -457,7 +464,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(11, result);
         }
@@ -468,7 +475,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] > @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(3);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -477,7 +484,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(3, result);
         }
@@ -488,7 +495,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(21);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -498,7 +505,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(21, result);
         }
@@ -509,7 +516,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @completed)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(21);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -518,7 +525,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             Assert.Equal(21, result);
         }
@@ -529,7 +536,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -539,7 +546,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "%nevermore%"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "%nevermore%"));
 
             Assert.Equal(1, result);
         }
@@ -550,7 +557,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] LIKE @title)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -559,7 +566,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp["title"].ToString() == "%nevermore%"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "%nevermore%"));
 
             Assert.Equal(1, result);
         }
@@ -570,7 +577,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@nevermore, @octofront))";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -581,7 +588,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
@@ -630,7 +637,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[TodoItem] WHERE ([Title] IN (@title0, @title1))";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -639,7 +646,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     cp["title0"].ToString() == "nevermore"
                     && cp["title1"].ToString() == "octofront"));
 
@@ -652,7 +659,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -663,7 +670,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
@@ -676,7 +683,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -685,7 +692,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
@@ -698,7 +705,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -709,7 +716,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
@@ -722,7 +729,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT COUNT(*) FROM dbo.[Todos] WHERE ([Completed] >= @startvalue) AND ([Completed] <= @endvalue)";
 
 
-            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
@@ -731,7 +738,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp =>
+                Arg.Is<CommandParameterValues>(cp =>
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
@@ -744,7 +751,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title]";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
-            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(new[] { todoItem });
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -753,7 +760,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteReader<TodoItem>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp.Count == 0));
+                Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
             Assert.NotNull(result);
             Assert.Equal(todoItem, result);
@@ -765,7 +772,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             const string expectedSql = "SELECT TOP 1 * FROM dbo.[TodoItem] ORDER BY [Title] DESC";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
-            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameters>())
+            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(new[] { todoItem });
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
@@ -774,7 +781,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.Received(1).ExecuteReader<TodoItem>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameters>(cp => cp.Count == 0));
+                Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
             Assert.NotNull(result);
             Assert.Equal(todoItem, result);
@@ -1094,6 +1101,76 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .OrderByDescending("Created")
                 .AddRowNumberColumn("Rank", new ColumnFromTable("EnvironmentId", deploymentTableAlias), new ColumnFromTable("ProjectId", deploymentTableAlias))
                 .Where($"NOT (({serverTaskTableAlias}.State = \'Canceled\' OR {serverTaskTableAlias}.State = \'Cancelling\') AND {serverTaskTableAlias}.StartTime IS NULL)");
+        }
+
+        [Fact]
+        public void ShouldGenerateComplexQueryWithParameters()
+        {
+            const string eventTableAlias = "Event";
+
+            var withJoins = CreateQueryBuilder<IDocument>("Deployment")
+                .Join(CreateQueryBuilder<IDocument>("DeploymentRelatedMachine").AsAliasedSource(), JoinType.InnerJoin)
+                .On("Id", JoinOperand.Equal, "DeploymentId")
+                .Join(CreateQueryBuilder<IDocument>("EventRelatedDocument").AsAliasedSource(), JoinType.InnerJoin)
+                .On("Id", JoinOperand.Equal, "RelatedDocumentId")
+                .Join(CreateQueryBuilder<IDocument>("Event").Alias(eventTableAlias).AsAliasedSource(), JoinType.InnerJoin)
+                .On("Id", JoinOperand.Equal, "EventId")
+                .AllColumns()
+                .OrderByDescending($"[{eventTableAlias}].[Occurred]")
+                .AddRowNumberColumn("Rank", "EnvironmentId", "ProjectId", "TenantId");
+
+            var actual = withJoins
+                .Where("[DeploymentRelatedMachine].MachineId = @machineId")
+                .Parameter(new Parameter("machineId", new NVarChar()))
+                .Where("[Event].Category = \'DeploymentSucceeded\'")
+                .Subquery()
+                .Where("Rank = 1");
+
+            this.Assent(actual.DebugViewRawQuery());
+        }
+
+        [Fact]
+        public void ShouldGenerateComplexQueryUsingWith()
+        {
+            var nugetPackagesWithHasVersion = CreateQueryBuilder<IDocument>("GetNuGetPackages")
+                .AllColumns()
+                .CalculatedColumn("CASE WHEN VersionSpecial = \'\' THEN 0 ELSE 1 END", "HasVersionSpecial")
+                .Subquery();
+            var nugetPackageswithRecency = VersionOrder(nugetPackagesWithHasVersion)
+                .AddRowNumberColumn("Recency", "PackageId");
+            var packages = VersionOrder(nugetPackageswithRecency.OrderBy("PackageId"))
+                .AddRowNumberColumn("RowNumber")
+                .AllColumns()
+                .Where("(@allowPreRelease = 1) or (@allowPreRelease = 0 and VersionSpecial = \'\')")
+                .Parameter(new Parameter("allowPreRelease"))
+                .Where("(@packageId is null or @packageId = \'\') or (@partialMatch = 0 and PackageId = @packageId) or (@partialMatch = 1 and PackageId LIKE \'%\' + @packageId + \'%\')")
+                .Parameter(new Parameter("packageId"))
+                .Parameter(new Parameter("partialMatch"))
+                .Subquery()
+                .Alias("Packages");
+
+            packages
+                .AllColumns()
+                .OrderBy("RowNumber")
+                .AddRowNumberColumn("FilteredRowNumber")
+                .Where("@latestOnly = 0 OR (@latestOnly = 1 and Recency = 1)")
+                .Parameter(new Parameter("latestOnly"));
+
+            var actual = packages
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        IQueryBuilder<IDocument> VersionOrder(IQueryBuilder<IDocument> builder)
+        {
+            return builder
+                .OrderByDescending("VersionMajor")
+                .OrderByDescending("VersionMinor")
+                .OrderByDescending("VersionBuild")
+                .OrderByDescending("VersionRevision")
+                .OrderBy("HasVersionSpecial")
+                .OrderByDescending("VersionSpecial");
         }
     }
 

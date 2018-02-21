@@ -250,9 +250,7 @@ namespace Nevermore.QueryGraph
         {
             switch (operand)
             {
-                case UnarySqlOperand.Contains:
-                case UnarySqlOperand.EndsWith:
-                case UnarySqlOperand.StartsWith:
+                case UnarySqlOperand.Like:
                     return "LIKE";
                 case UnarySqlOperand.Equal:
                     return "=";

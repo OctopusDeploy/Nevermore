@@ -16,7 +16,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A scalar value.</returns>
-        TResult ExecuteScalar<TResult>(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
+        TResult ExecuteScalar<TResult>(string query, CommandParameterValues args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns a data reader, and allows you to manually read the fields.
@@ -37,7 +37,7 @@ namespace Nevermore
         /// A callback that will be invoked with the SQL data reader. The reader will be disposed
         /// after the callback returns.
         /// </param>
-        void ExecuteReader(string query, CommandParameters args, Action<IDataReader> readerCallback);
+        void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback);
 
         /// <summary>
         /// Executes a query that returns strongly typed documents.
@@ -47,7 +47,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        IEnumerable<TDocument> ExecuteReader<TDocument>(string query, CommandParameters args, int? commandTimeoutSeconds = null);
+        IEnumerable<TDocument> ExecuteReader<TDocument>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns strongly typed documents using a custom mapper function.
@@ -58,7 +58,7 @@ namespace Nevermore
         /// <param name="projectionMapper">The mapper function to use to convert each record into the strongly typed document.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameters args, Func<IProjectionMapper, TDocument> projectionMapper, int? commandTimeoutSeconds = null);
+        IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameterValues args, Func<IProjectionMapper, TDocument> projectionMapper, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a delete query (bypasses the usual OctopusModelDeletionRules checks). Only use this if you are 100% certain you can 
@@ -67,7 +67,7 @@ namespace Nevermore
         /// <param name="query">The SQL query to execute. Example: <c>DELETE FROM [Event]...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
-        void ExecuteRawDeleteQuery(string query, CommandParameters args, int? commandTimeoutSeconds = null);
+        void ExecuteRawDeleteQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns no results.
@@ -76,7 +76,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         /// <returns>The number of rows affected.</returns>
-        int ExecuteNonQuery(string query, CommandParameters args = null, int? commandTimeoutSeconds = null);
+        int ExecuteNonQuery(string query, CommandParameterValues args = null, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Creates a query that returns strongly typed documents.

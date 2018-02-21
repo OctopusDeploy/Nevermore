@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Nevermore.Joins;
 using Nevermore.QueryGraph;
@@ -11,7 +12,8 @@ namespace Nevermore
         readonly ISelect select;
         string alias;
 
-        public SubquerySourceBuilder(ISelect select, string alias, IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameters parameters) : base(relationalTransaction, tableAliasGenerator, parameters)
+        public SubquerySourceBuilder(ISelect select, string alias, IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, Parameters parameters) 
+            : base(relationalTransaction, tableAliasGenerator, parameterValues, parameters)
         {
             this.select = select;
             this.alias = alias;
@@ -25,7 +27,7 @@ namespace Nevermore
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             return new JoinSourceQueryBuilder<TRecord>(AsSource(), joinType,
-                source, RelationalTransaction, TableAliasGenerator, new CommandParameters(Parameters));
+                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
         }
 
         public ISubquerySource AsSource()
@@ -46,7 +48,10 @@ namespace Nevermore
         readonly List<Join> intermediateJoins = new List<Join>();
         Join lastJoin;
 
-        public JoinSourceQueryBuilder(IAliasedSelectSource originalSource, JoinType joinType, IAliasedSelectSource nextJoin, IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameters parameters) : base(relationalTransaction, tableAliasGenerator, parameters)
+        public JoinSourceQueryBuilder(IAliasedSelectSource originalSource, JoinType joinType, IAliasedSelectSource nextJoin, 
+            IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues,
+            Parameters parameters) 
+            : base(relationalTransaction, tableAliasGenerator, parameterValues, parameters)
         {
             this.originalSource = originalSource;
             lastJoin = new Join(new List<JoinClause>(), nextJoin, joinType);
@@ -79,11 +84,6 @@ namespace Nevermore
             lastJoin = new Join(lastJoin.Clauses.Concat(new[] {newClause}).ToList(), lastJoin.Source, lastJoin.Type);
             return this;
         }
-
-        public IJoinSourceQueryBuilder<TRecord> ThenInnerJoin(IAliasedSelectSource source)
-        {
-            return Join(source, JoinType.InnerJoin);
-        }
     }
 
     public class TableSourceQueryBuilder<TRecord> : SourceQueryBuilder<TRecord>, ITableSourceQueryBuilder<TRecord>
@@ -93,8 +93,9 @@ namespace Nevermore
 
         public TableSourceQueryBuilder(string tableOrViewName, IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator, 
-            CommandParameters parameters) 
-            : base(relationalTransaction, tableAliasGenerator, parameters)
+            CommandParameterValues parameterValues,
+            Parameters parameters) 
+            : base(relationalTransaction, tableAliasGenerator, parameterValues, parameters)
         {
             this.tableOrViewName = tableOrViewName;
         }
@@ -107,7 +108,7 @@ namespace Nevermore
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(), joinType,
-                source, RelationalTransaction, TableAliasGenerator, new CommandParameters(Parameters));
+                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
         }
 
         public ITableSourceQueryBuilder<TRecord> View(string viewName)
@@ -159,16 +160,38 @@ namespace Nevermore
         }
     }
 
+    public class Parameters : KeyedCollection<string, Parameter>
+    {
+        public Parameters()
+        {
+        }
+
+        public Parameters(Parameters parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                Add(parameter);
+            }
+        }
+
+        protected override string GetKeyForItem(Parameter item)
+        {
+            return item.ParameterName;
+        }
+    }
+
     public abstract class SourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
     {
         protected readonly IRelationalTransaction RelationalTransaction;
         protected readonly ITableAliasGenerator TableAliasGenerator;
-        protected readonly CommandParameters Parameters;
+        protected readonly CommandParameterValues ParameterValues;
+        protected readonly Parameters Parameters;
 
-        protected SourceQueryBuilder(IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameters parameters)
+        protected SourceQueryBuilder(IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, Parameters parameters)
         {
             RelationalTransaction = relationalTransaction;
             TableAliasGenerator = tableAliasGenerator;
+            ParameterValues = parameterValues;
             Parameters = parameters;
         }
 
@@ -185,7 +208,7 @@ namespace Nevermore
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameters(Parameters));
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -193,19 +216,20 @@ namespace Nevermore
             return Builder.Where(whereClause);
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object value)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            return Builder.Where(fieldName, operand, value);
+            return Builder.WhereParameterised(fieldName, operand, parameter);
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object startValue, object endValue)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
         {
-            return Builder.Where(fieldName, operand, startValue, endValue);
+            return Builder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter);
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, IEnumerable<object> values)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+            IEnumerable<Parameter> parameterNames)
         {
-            return Builder.Where(fieldName, operand, values);
+            return Builder.WhereParameterised(fieldName, operand, parameterNames);
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string orderByClause)
@@ -233,6 +257,11 @@ namespace Nevermore
             return Builder.Column(name, columnAlias, tableAlias);
         }
 
+        public IQueryBuilder<TRecord> AllColumns()
+        {
+            return Builder.AllColumns();
+        }
+
         public IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias)
         {
             return Builder.CalculatedColumn(expression, columnAlias);
@@ -251,6 +280,11 @@ namespace Nevermore
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns)
         {
             return Builder.AddRowNumberColumn(columnAlias, partitionByColumns);
+        }
+
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter)
+        {
+            return Builder.Parameter(parameter);
         }
 
         public IQueryBuilder<TRecord> Parameter(string name, object value)
@@ -338,7 +372,5 @@ namespace Nevermore
         {
             return Builder.DebugViewRawQuery();
         }
-
-        public CommandParameters QueryParameters => Builder.QueryParameters;
     }
 }

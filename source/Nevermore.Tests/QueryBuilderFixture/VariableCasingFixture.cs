@@ -12,24 +12,24 @@ namespace Nevermore.Tests.QueryBuilderFixture
     {
         private IRelationalTransaction transaction;
         private string query = null;
-        private CommandParameters parameters = null;
+        private CommandParameterValues parameters = null;
 
         public VariableCasingFixture()
         {
             query = null;
             parameters = null;
             transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameters>()))
+            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameterValues>()))
                 .Do(c =>
                 {
                     query = c.Arg<string>();
-                    parameters = c.Arg<CommandParameters>();
+                    parameters = c.Arg<CommandParameterValues>();
                 });
         }
 
         IQueryBuilder<IId> CreateQueryBuilder()
         {
-            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new CommandParameters());
+            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new CommandParameterValues(), new Parameters());
         }
 
         [Fact]

@@ -34,15 +34,14 @@ namespace Nevermore
     public interface IJoinSourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
     {
         IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField);
-        IJoinSourceQueryBuilder<TRecord> ThenInnerJoin(IAliasedSelectSource source); // todo: delete, don't need it!!
     }
 
     public interface IQueryBuilder<TRecord>
     {
         IQueryBuilder<TRecord> Where(string whereClause);
-        IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object value);
-        IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object startValue, object endValue);
-        IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, IEnumerable<object> values);
+        IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);
+        IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
+        IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
 
         IOrderedQueryBuilder<TRecord> OrderBy(string orderByClause);
         IOrderedQueryBuilder<TRecord> OrderByDescending(string orderByClause);
@@ -50,10 +49,12 @@ namespace Nevermore
         IQueryBuilder<TRecord> Column(string name);
         IQueryBuilder<TRecord> Column(string name, string columnAlias);
         IQueryBuilder<TRecord> Column(string name, string columnAlias, string tableAlias);
+        IQueryBuilder<TRecord> AllColumns();
         IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params string[] partitionByColumns);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns);
+        IQueryBuilder<TRecord> Parameter(Parameter parameter);
         IQueryBuilder<TRecord> Parameter(string name, object value);
         IQueryBuilder<TRecord> LikeParameter(string name, object value);
         IQueryBuilder<TRecord> LikePipedParameter(string name, object value);
@@ -73,7 +74,142 @@ namespace Nevermore
         IEnumerable<TRecord> Stream();
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
         string DebugViewRawQuery();
-        CommandParameters QueryParameters { get; }
+    }
+
+    public class Parameter
+    {
+        public Parameter(string parameterName, IDataType dataType)
+        {
+            ParameterName = parameterName;
+            DataType = dataType;
+        }
+
+        public Parameter(string parameterName)
+        {
+            ParameterName = parameterName;
+        }
+
+        public string ParameterName { get; }
+
+        // Data type must be specified if you are creating a stored proc or function, otherwise it is not required
+        public IDataType DataType { get; }
+    }
+
+    public interface IDataType
+    {
+        string GenerateSql();
+    }
+
+    public class NVarChar : IDataType
+    {
+        readonly int? length;
+
+        public NVarChar(int length)
+        {
+            this.length = length;
+        }
+
+        public NVarChar()
+        {
+            length = null;
+        }
+
+        public string GenerateSql()
+        {
+            var size = length == null ? "MAX" : length.ToString();
+            return $"NVARCHAR({size})";
+        }
+    }
+
+    public class DataType
+    {
+        Type ColumnDataType { get; set; }
+        uint Length { get; set; }
+    }
+
+    public static class QueryBuilderExtensions
+    {
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName, SqlOperand operand, object value)
+        {
+            switch(operand)
+            {
+                case SqlOperand.Equal:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Equal, value);
+                case SqlOperand.GreaterThan:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.GreaterThan, value);
+                case SqlOperand.GreaterThanOrEqual:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.GreaterThanOrEqual, value);
+                case SqlOperand.LessThan:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.LessThan, value);
+                case SqlOperand.LessThanOrEqual:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.LessThanOrEqual, value);
+                case SqlOperand.NotEqual:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.NotEqual, value);
+                case SqlOperand.Contains:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}%");
+                case SqlOperand.StartsWith:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"{value}%");
+                case SqlOperand.EndsWith:
+                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}");
+                case SqlOperand.In:
+                    if (value is IEnumerable enumerable)
+                        return AddWhereIn(queryBuilder, fieldName, enumerable);
+                    else
+                        throw new ArgumentException($"The operand {operand} is not valid with only one value",
+                            nameof(operand));
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
+            }
+        }
+
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+            SqlOperand operand, object startValue, object endValue)
+        {
+            Parameter startValueParameter = new Parameter("StartValue");
+            Parameter endValueParameter = new Parameter("EndValue");
+            switch (operand)
+            {
+                case SqlOperand.Between:
+                    return queryBuilder.WhereParameterised(fieldName, BinarySqlOperand.Between, startValueParameter, endValueParameter)
+                        .Parameter(startValueParameter.ParameterName, startValue)
+                        .Parameter(endValueParameter.ParameterName, endValue);
+                case SqlOperand.BetweenOrEqual:
+                    return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, startValueParameter)
+                        .Parameter(startValueParameter.ParameterName, startValue)
+                        .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
+                        .Parameter(endValueParameter.ParameterName, endValue);
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
+            }
+        }
+
+        static IQueryBuilder<TRecord> AddUnaryWhereClauseAndParameter<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName, UnarySqlOperand operand, object value)
+        {
+            var parameterName = fieldName.ToLower();
+            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(parameterName))
+                .Parameter(parameterName, value);
+        }
+
+        static IQueryBuilder<TRecord> AddWhereIn<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName, IEnumerable values)
+        {
+            var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
+            var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName.ToLower()}{i}")).ToArray();
+            return stringValues.Zip(parameters, (value, parameter) => new {value, parameter})
+                .Aggregate(queryBuilder.WhereParameterised(fieldName, ArraySqlOperand.In, parameters),
+                    (p, pv) => p.Parameter(pv.parameter.ParameterName, pv.value));
+        }
+
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+            SqlOperand operand, IEnumerable<object> values)
+        {
+            switch (operand)
+            {
+                case SqlOperand.In:
+                    return AddWhereIn(queryBuilder, fieldName, values);
+                default:
+                    throw new ArgumentException($"The operand {operand} is not valid with a list of values", nameof(operand));
+            }
+        }
     }
 
     public class ColumnFromTable // todo: rename
@@ -93,15 +229,17 @@ namespace Nevermore
         readonly TSelectBuilder selectBuilder;
         readonly IRelationalTransaction transaction;
         readonly ITableAliasGenerator tableAliasGenerator;
-        public CommandParameters QueryParameters { get; }
+        readonly CommandParameterValues parameterValues;
+        readonly Parameters parameters;
 
         public QueryBuilder(TSelectBuilder selectBuilder, IRelationalTransaction transaction,
-            ITableAliasGenerator tableAliasGenerator, CommandParameters queryParameters)
+            ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, Parameters parameters)
         {
             this.selectBuilder = selectBuilder;
             this.transaction = transaction;
             this.tableAliasGenerator = tableAliasGenerator;
-            QueryParameters = queryParameters;
+            this.parameterValues = parameterValues;
+            this.parameters = parameters;
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -113,98 +251,39 @@ namespace Nevermore
             return this;
         }
 
-        IQueryBuilder<TRecord> AddUnaryWhereClauseAndParameter(string fieldName, UnarySqlOperand operand, object value)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            var unaryParameter = new UnaryWhereParameter(fieldName, operand);
-            selectBuilder.AddWhere(unaryParameter);
-            return Parameter(unaryParameter.ParameterName, value);
+            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter.ParameterName));
+            return Parameter(parameter);
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object value)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
         {
-            switch(operand)
-                {
-                    case SqlOperand.Equal:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.Equal, value);
-                    case SqlOperand.GreaterThan:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.GreaterThan, value);
-                    case SqlOperand.GreaterThanOrEqual:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.GreaterThanOrEqual, value);
-                    case SqlOperand.LessThan:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.LessThan, value);
-                    case SqlOperand.LessThanOrEqual:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.LessThanOrEqual, value);
-                    case SqlOperand.NotEqual:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.NotEqual, value);
-                    case SqlOperand.Contains:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.Contains, $"%{value}%");
-                    case SqlOperand.StartsWith:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.StartsWith, $"{value}%");
-                    case SqlOperand.EndsWith:
-                        return AddUnaryWhereClauseAndParameter(fieldName, UnarySqlOperand.EndsWith, $"%{value}");
-                    case SqlOperand.In:
-                        if (value is IEnumerable enumerable)
-                            return AddWhereIn(fieldName, enumerable);
-                        else
-                            throw new ArgumentException($"The operand {operand} is not valid with only one value",
-                                nameof(operand));
-                    default:
-                        throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
-                }
+            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter.ParameterName, endValueParameter.ParameterName));
+            return Parameter(startValueParameter).Parameter(endValueParameter);
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object startValue, object endValue)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames)
         {
-            switch (operand)
+            var parameterNamesList = parameterNames.ToList();
+            if (!parameterNamesList.Any())
             {
-                case SqlOperand.Between:
-                    var parameter = new BinaryWhereParameter(fieldName, BinarySqlOperand.Between, "StartValue", "EndValue");
-                    selectBuilder.AddWhere(parameter);
-                    return Parameter(parameter.FirstParameterName, startValue)
-                        .Parameter(parameter.SecondParameterName, endValue);
-                case SqlOperand.BetweenOrEqual:
-                    var greaterThanWhereParameter = new UnaryWhereParameter(fieldName, UnarySqlOperand.GreaterThanOrEqual, "StartValue");
-                    var lessThanWhereParameter = new UnaryWhereParameter(fieldName, UnarySqlOperand.LessThanOrEqual, "EndValue");
-                    selectBuilder.AddWhere(greaterThanWhereParameter);
-                    selectBuilder.AddWhere(lessThanWhereParameter);
-                    return Parameter(greaterThanWhereParameter.ParameterName, startValue)
-                        .Parameter(lessThanWhereParameter.ParameterName, endValue);
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
+                return AddAlwaysFalseWhere();
             }
+            selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList.Select(p => p.ParameterName).ToList()));
+            IQueryBuilder<TRecord> builder = this;
+            return parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p));
         }
-
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, IEnumerable<object> values)
-        {
-            switch (operand)
-            {
-                case SqlOperand.In:
-                    AddWhereIn(fieldName, values);
-                    break;
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with a list of values", nameof(operand));
-            }
-
-            return this;
-        }
-
-        IQueryBuilder<TRecord> AddWhereIn(string fieldName, IEnumerable values)
-        {
-            var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
-            if (!stringValues.Any()) return AddAlwaysFalseWhere();
-            {
-                var arrayWhereParameter = new ArrayWhereParameter(fieldName, ArraySqlOperand.In, stringValues.Length);
-                selectBuilder.AddWhere(arrayWhereParameter);
-                IQueryBuilder<TRecord> queryBuilderAsInterface = this;
-                return stringValues.Zip(arrayWhereParameter.ParameterNames, (value, parameterName) => new {value, parameterName})
-                    .Aggregate(queryBuilderAsInterface, (p, nv) => p.Parameter(nv.parameterName, nv.value));
-            }
-
-        }
-
+        
         IQueryBuilder<TRecord> AddAlwaysFalseWhere()
         {
             return Where("0 = 1");
+        }
+
+        public IQueryBuilder<TRecord> AllColumns()
+        {
+            selectBuilder.AddDefaultColumnSelection();
+            return this;
         }
 
         public IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias)
@@ -230,12 +309,17 @@ namespace Nevermore
             return this;
         }
 
-        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter)
         {
-            QueryParameters.Add(name, value);
+            parameters.Add(parameter);
             return this;
         }
 
+        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        {
+            parameterValues.Add(name, value);
+            return this;
+        }
 
         public IQueryBuilder<TRecord> LikeParameter(string name, object value)
         {
@@ -250,18 +334,18 @@ namespace Nevermore
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             var subquery = new SubquerySource(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias());
-            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, new CommandParameters(QueryParameters));
+            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
         }
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
             return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelect(true), queryBuilder.GetSelectBuilder().GenerateSelect(true) }), tableAliasGenerator.GenerateTableAlias(),
-                transaction, tableAliasGenerator, new CommandParameters(QueryParameters));
+                transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
         }
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameters(QueryParameters));
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
         }
 
         SubquerySelectBuilder CreateSubqueryBuilder()
@@ -320,7 +404,7 @@ namespace Nevermore
         public int Count()
         {
             selectBuilder.AddColumnSelection(new SelectCountSource());
-            return transaction.ExecuteScalar<int>(selectBuilder.GenerateSelect().GenerateSql(), QueryParameters);
+            return transaction.ExecuteScalar<int>(selectBuilder.GenerateSelect().GenerateSql(), parameterValues);
         }
 
         [Pure]
@@ -339,7 +423,7 @@ namespace Nevermore
         public IEnumerable<TRecord> Take(int take)
         {
             selectBuilder.AddTop(take);
-            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), QueryParameters);
+            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), parameterValues);
         }
 
         [Pure]
@@ -360,7 +444,7 @@ namespace Nevermore
             Parameter(minRowParameterName, skip + 1);
             Parameter(maxRowParameterName, take + skip);
 
-            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), QueryParameters).ToList();
+            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parameterValues).ToList();
         }
 
         [Pure]
@@ -379,7 +463,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), QueryParameters);
+            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), parameterValues);
         }
 
         [Pure]
@@ -396,7 +480,7 @@ namespace Nevermore
 
         public void Delete()
         {
-            transaction.ExecuteRawDeleteQuery(selectBuilder.DeleteQuery(), QueryParameters);
+            transaction.ExecuteRawDeleteQuery(selectBuilder.DeleteQuery(), parameterValues);
         }
     }
 }
