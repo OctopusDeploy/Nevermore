@@ -9,10 +9,6 @@ namespace Nevermore.AST
         string GenerateSql();
     }
 
-    public interface IColumn : ISelectColumns
-    {
-    }
-
     public class AggregateSelectColumns : ISelectColumns
     {
         readonly IReadOnlyList<ISelectColumns> columns;
@@ -82,48 +78,5 @@ namespace Nevermore.AST
         public bool AggregatesRows => false;
 
         public string GenerateSql() => $"ROW_NUMBER() {over.GenerateSql()} AS {alias}";
-    }
-
-    public class CalculatedColumn : IColumn
-    {
-        readonly string expression;
-        readonly string alias;
-
-        public CalculatedColumn(string expression, string alias)
-        {
-            this.expression = expression;
-            this.alias = alias;
-        }
-
-        public bool AggregatesRows => false;
-        public string GenerateSql() => $"{expression} AS [{alias}]";
-    }
-
-    public class Column : IColumn
-    {
-        readonly string columnName;
-
-        public Column(string columnName)
-        {
-            this.columnName = columnName;
-        }
-
-        public bool AggregatesRows => false;
-        public string GenerateSql() => $"[{columnName}]";
-    }
-
-    public class TableColumn : IColumn
-    {
-        readonly Column column;
-        readonly string tableAlias;
-
-        public TableColumn(Column column, string tableAlias)
-        {
-            this.column = column;
-            this.tableAlias = tableAlias;
-        }
-
-        public bool AggregatesRows => false;
-        public string GenerateSql() => $"{tableAlias}.{column.GenerateSql()}";
     }
 }

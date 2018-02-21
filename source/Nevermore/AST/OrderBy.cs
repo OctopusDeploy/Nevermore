@@ -23,23 +23,20 @@ namespace Nevermore.AST
         Descending
     }
 
-    // todo: make this immutable
     public class OrderByField
     {
-        readonly string fieldName;
-        public string TableAlias { get; set; }
-        public OrderByDirection Direction { get; set; } = OrderByDirection.Ascending;
+        readonly IColumn column;
+        readonly OrderByDirection direction;
 
-        public OrderByField(string fieldName)
+        public OrderByField(IColumn column, OrderByDirection direction = OrderByDirection.Ascending)
         {
-            this.fieldName = fieldName;
+            this.column = column;
+            this.direction = direction;
         }
 
         public string GenerateSql()
         {
-            var direction = Direction == OrderByDirection.Descending ? " DESC" : string.Empty;
-            var field = TableAlias == null ? $"[{fieldName}]" : $"{TableAlias}.[{fieldName}]";
-            return $"{field}{direction}";
+            return $"{column.GenerateSql()}{(direction == OrderByDirection.Descending ? " DESC" : string.Empty)}";
         }
     }
 }

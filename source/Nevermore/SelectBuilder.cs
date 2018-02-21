@@ -21,7 +21,7 @@ namespace Nevermore
         // Pass this in to the base class in the constructor, store in a separate field. Then if you use it, remove it
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
-            yield return new OrderByField("Id") { TableAlias = From.Source.Alias };
+            yield return new OrderByField(new TableColumn(new Column("Id"), From.Source.Alias));
         }
 
         public override void AddWhere(UnaryWhereParameter whereParams)
@@ -49,7 +49,7 @@ namespace Nevermore
 
         public override void AddOrder(string fieldName, bool @descending)
         {
-            OrderByClauses.Add(new OrderByField(fieldName) { Direction = @descending ? OrderByDirection.Descending : OrderByDirection.Ascending, TableAlias = From.Source.Alias });
+            OrderByClauses.Add(new OrderByField(new TableColumn(new Column(fieldName), From.Source.Alias), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
         }
 
         public override void AddColumn(string columnName)
@@ -90,7 +90,7 @@ namespace Nevermore
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
-            yield return new OrderByField("Id");
+            yield return new OrderByField(new Column("Id"));
         }
     }
 
@@ -115,7 +115,7 @@ namespace Nevermore
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
-            yield return new OrderByField("Id") { TableAlias = From.Alias };
+            yield return new OrderByField(new TableColumn(new Column("Id"), From.Alias));
         }
     }
 
@@ -170,7 +170,7 @@ namespace Nevermore
 
         public virtual void AddOrder(string fieldName, bool @descending)
         {
-            OrderByClauses.Add(new OrderByField(fieldName) { Direction = @descending ? OrderByDirection.Descending : OrderByDirection.Ascending });
+            OrderByClauses.Add(new OrderByField(new Column(fieldName), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
         }
 
         public virtual void AddWhere(UnaryWhereParameter whereParams)

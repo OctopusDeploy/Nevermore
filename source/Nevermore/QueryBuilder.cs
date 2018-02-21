@@ -70,7 +70,7 @@ namespace Nevermore
 
         public IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias)
         {
-            selectBuilder.AddColumnSelection(new CalculatedColumn(expression, columnAlias));
+            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(expression), columnAlias));
             return this;
         }
 
