@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using Nevermore.AST;
 
 namespace Nevermore
@@ -74,30 +75,54 @@ namespace Nevermore
         static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder,
             Expression expr)
         {
-            if (!(expr is BinaryExpression binExpr))
-                throw new NotSupportedException(
-                    $"The predicate supplied is not supported. Only simple BinaryExpressions and LogicalBinaryExpressions are supported. The predicate is a {expr.GetType()}.");
-
-            switch (binExpr.NodeType)
+            if (expr is BinaryExpression binExpr)
             {
-                case ExpressionType.Equal:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.Equal, binExpr);
-                case ExpressionType.GreaterThan:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.GreaterThan, binExpr);
-                case ExpressionType.GreaterThanOrEqual:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.GreaterThanOrEqual,
-                        binExpr);
-                case ExpressionType.LessThan:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThan, binExpr);
-                case ExpressionType.LessThanOrEqual:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThanOrEqual, binExpr);
-                case ExpressionType.NotEqual:
-                    return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.NotEqual, binExpr);
-                case ExpressionType.AndAlso:
-                    return AddLogicalAndOperatorWhereClauses(queryBuilder, binExpr);
-                default:
-                    throw new NotSupportedException($"The operand {binExpr.NodeType.ToString()} is not supported.");
+                switch (binExpr.NodeType)
+                {
+                    case ExpressionType.Equal:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.Equal, binExpr);
+                    case ExpressionType.GreaterThan:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.GreaterThan, binExpr);
+                    case ExpressionType.GreaterThanOrEqual:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.GreaterThanOrEqual, binExpr);
+                    case ExpressionType.LessThan:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThan, binExpr);
+                    case ExpressionType.LessThanOrEqual:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThanOrEqual, binExpr);
+                    case ExpressionType.NotEqual:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.NotEqual, binExpr);
+                    case ExpressionType.AndAlso:
+                        return AddLogicalAndOperatorWhereClauses(queryBuilder, binExpr);
+                    default:
+                        throw new NotSupportedException($"The operand {binExpr.NodeType.ToString()} is not supported.");
+                }
             }
+
+            if (expr is MethodCallExpression methExpr)
+            {
+                var property = GetProperty(methExpr.Object);
+                var fieldName = property.Name;
+                
+                if(methExpr.Arguments.Count != 1 || methExpr.Arguments[0].Type != typeof(string))
+                    throw new NotSupportedException("Only method calls that take a single string argument are supports");
+                
+                var value = (string) GetValueFromExpression(methExpr.Arguments[0], typeof(string));
+                
+                switch (methExpr.Method.Name)
+                {
+                    case "Contains":
+                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}%");
+                    case "StartsWith":
+                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"{value}%");
+                    case "EndsWith":
+                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}");
+                    default:
+                        throw new NotSupportedException($"The method {methExpr.Method.Name} is not supported. Only Contains, StartWith and EndsWith is supported");
+                }
+            }
+
+            throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
+
         }
 
         static IQueryBuilder<TRecord> AddLogicalAndOperatorWhereClauses<TRecord>(IQueryBuilder<TRecord> queryBuilder, BinaryExpression binExpr)
@@ -106,25 +131,24 @@ namespace Nevermore
             return AddWhereClauseFromExpression(queryBuilder, binExpr.Right);
         }
 
+        static PropertyInfo GetProperty(Expression expression)
+        {
+            if (expression is UnaryExpression unaryExpr)
+                expression = unaryExpr.Operand;
+
+            if (expression is MemberExpression memberExpr && memberExpr.Member is PropertyInfo pi)
+                return pi;
+
+            throw new NotSupportedException(
+                $"The left hand side of the predicate must be a property accessor (PropertyExpression or UnaryExpression). It is a {expression.GetType()}.");
+        }
+        
         static IQueryBuilder<TRecord> AddUnaryWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, UnarySqlOperand operand, BinaryExpression binaryExpression)
         {
-            PropertyInfo GetLeft()
-            {
-                var leftExpr = binaryExpression.Left;
-                if (binaryExpression.Left is UnaryExpression unaryExpr)
-                    leftExpr = unaryExpr.Operand;
+            var property = GetProperty(binaryExpression.Left);
 
-                if (leftExpr is MemberExpression memberExpr && memberExpr.Member is PropertyInfo pi)
-                    return pi;
-
-                throw new NotSupportedException(
-                    $"The left hand side of the predicate must be a property accessor (PropertyExpression or UnaryExpression). It is a {binaryExpression.Left.GetType()}.");
-            }
-
-            var left = GetLeft();
-
-            var value = GetValueFromExpression(binaryExpression.Right, left.PropertyType);
-            var fieldName = left.Name;
+            var value = GetValueFromExpression(binaryExpression.Right, property.PropertyType);
+            var fieldName = property.Name;
             return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, operand, value);
         }
         
