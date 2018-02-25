@@ -94,6 +94,15 @@ var store = new RelationalStore(
 );
 ```
 
+## Set up transient fault handling
+Nevermore is configured with various strategies to handling transient faults; the default is to exponentially back off when retrying. No matter which route you take regarding transient faults, you still need to initialize the transient fault handler at application start - put this line in your `Startup.cs` (or equivalent location):
+
+```csharp
+TransientFaultHandling.InitializeRetryManager();
+```
+
+Without this line, you will receive an error that "Retry manager not set" when trying to begin a new transaction.
+
 ## Add an item to the database
 
 ```csharp

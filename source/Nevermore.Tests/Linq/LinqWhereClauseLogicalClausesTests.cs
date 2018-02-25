@@ -18,7 +18,7 @@ namespace Nevermore.Tests.Linq
                 .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([String] = @string) ORDER BY [Id]");
         }
         
-        [Fact]
+        [Fact(Skip = "Queries where the same property is specified twice in the where clause are not yet supported")]
         public void AndWithTheSameProperty()
         {
             var (builder, _) = NewQueryBuilder();
@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([String] = @string) ORDER BY [Id]");
+                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([Int] = @int2) ORDER BY [Id]");
         }
         
     }
