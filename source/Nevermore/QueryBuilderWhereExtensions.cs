@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 using Nevermore.AST;
 
 namespace Nevermore
@@ -72,8 +71,8 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate)
          => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
 
-        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder,
-            Expression expr)
+        
+        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, Expression expr)
         {
             if (expr is BinaryExpression binExpr)
             {
@@ -100,29 +99,46 @@ namespace Nevermore
 
             if (expr is MethodCallExpression methExpr)
             {
-                var property = GetProperty(methExpr.Object);
-                var fieldName = property.Name;
+                if(methExpr.Arguments.Count == 1 && methExpr.Arguments[0].Type == typeof(string))
+                    return AddStringMethodFromExpression(queryBuilder, methExpr);
                 
-                if(methExpr.Arguments.Count != 1 || methExpr.Arguments[0].Type != typeof(string))
-                    throw new NotSupportedException("Only method calls that take a single string argument are supports");
+                if(methExpr.Method.Name == "Contains")
+                    return AddContainsFromExpression(queryBuilder, methExpr);
                 
-                var value = (string) GetValueFromExpression(methExpr.Arguments[0], typeof(string));
-                
-                switch (methExpr.Method.Name)
-                {
-                    case "Contains":
-                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}%");
-                    case "StartsWith":
-                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"{value}%");
-                    case "EndsWith":
-                        return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}");
-                    default:
-                        throw new NotSupportedException($"The method {methExpr.Method.Name} is not supported. Only Contains, StartWith and EndsWith is supported");
-                }
+                throw new NotSupportedException("Only method calls that take a single string argument and Enumerable.Contains methods are supported");
             }
 
             throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
 
+        }
+
+        static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr)
+        {
+            var property = GetProperty(methExpr.Arguments.Count == 1 ? methExpr.Arguments[0] : methExpr.Arguments[1]);
+            var value = (IEnumerable) GetValueFromExpression(methExpr.Arguments.Count == 1 ? methExpr.Object : methExpr.Arguments[0], property.PropertyType);
+
+            return AddWhereIn(queryBuilder, property.Name, value);
+        }
+        
+
+        static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) 
+        {
+            var property = GetProperty(methExpr.Object);
+            var fieldName = property.Name;
+
+            var value = (string) GetValueFromExpression(methExpr.Arguments[0], typeof(string));
+
+            switch (methExpr.Method.Name)
+            {
+                case "Contains":
+                    return queryBuilder.Where(fieldName, SqlOperand.Contains, value);
+                case "StartsWith":
+                    return queryBuilder.Where(fieldName, SqlOperand.StartsWith, value);
+                case "EndsWith":
+                    return queryBuilder.Where(fieldName, SqlOperand.EndsWith, value);
+                default:
+                    throw new NotSupportedException($"The method {methExpr.Method.Name} is not supported. Only Contains, StartWith and EndsWith is supported");
+            }
         }
 
         static IQueryBuilder<TRecord> AddLogicalAndOperatorWhereClauses<TRecord>(IQueryBuilder<TRecord> queryBuilder, BinaryExpression binExpr)
