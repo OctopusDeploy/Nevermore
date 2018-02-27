@@ -559,7 +559,7 @@ namespace Nevermore
         [Pure]
         public IQueryBuilder<T> Query<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, new TableAliasGenerator(), new CommandParameterValues(), new Parameters());
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, new TableAliasGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)

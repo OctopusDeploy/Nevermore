@@ -117,18 +117,18 @@ namespace Nevermore
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             var subquery = new SubquerySource(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias());
-            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
+            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
             return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelect(true), queryBuilder.GetSelectBuilder().GenerateSelect(true) }), tableAliasGenerator.GenerateTableAlias(),
-                transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
+                transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), new Parameters(parameters));
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         SubquerySelectBuilder CreateSubqueryBuilder()

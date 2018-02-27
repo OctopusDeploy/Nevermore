@@ -27,7 +27,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName)
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameterValues(), new Parameters());
+            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Fact]
@@ -1025,7 +1025,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Column("Version", "Version", releaseTableAlias)
                 .Where("([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C')");
 
-            var actual = dashboard.DebugViewRawQuery();
+            var actual = dashboard.AsView("Dashboard");
 
             this.Assent(actual);
         }
@@ -1127,49 +1127,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             this.Assent(actual.DebugViewRawQuery());
         }
 
-        //[Fact]
-        //public void ShouldGenerateComplexQueryUsingWith() // WIP GetNuGetPackages stored proc TODO: Work out how to add the api to support the `With` keyword
-        //{
-        //    var nugetPackagesWithHasVersion = CreateQueryBuilder<IDocument>("GetNuGetPackages")
-        //        .AllColumns()
-        //        .CalculatedColumn("CASE WHEN VersionSpecial = \'\' THEN 0 ELSE 1 END", "HasVersionSpecial")
-        //        .Subquery();
-        //    var nugetPackageswithRecency = VersionOrder(nugetPackagesWithHasVersion)
-        //        .AddRowNumberColumn("Recency", "PackageId");
-        //    var packages = VersionOrder(nugetPackageswithRecency.OrderBy("PackageId"))
-        //        .AddRowNumberColumn("RowNumber")
-        //        .AllColumns()
-        //        .Where("(@allowPreRelease = 1) or (@allowPreRelease = 0 and VersionSpecial = \'\')")
-        //        .Parameter(new Parameter("allowPreRelease"))
-        //        .Where("(@packageId is null or @packageId = \'\') or (@partialMatch = 0 and PackageId = @packageId) or (@partialMatch = 1 and PackageId LIKE \'%\' + @packageId + \'%\')")
-        //        .Parameter(new Parameter("packageId"))
-        //        .Parameter(new Parameter("partialMatch"))
-        //        .Subquery()
-        //        .Alias("Packages");
 
-        //    packages
-        //        .AllColumns()
-        //        .OrderBy("RowNumber")
-        //        .AddRowNumberColumn("FilteredRowNumber")
-        //        .Where("@latestOnly = 0 OR (@latestOnly = 1 and Recency = 1)")
-        //        .Parameter(new Parameter("latestOnly"));
-
-        //    var actual = packages
-        //        .DebugViewRawQuery();
-
-        //    this.Assent(actual);
-        //}
-
-        //IQueryBuilder<IDocument> VersionOrder(IQueryBuilder<IDocument> builder)
-        //{
-        //    return builder
-        //        .OrderByDescending("VersionMajor")
-        //        .OrderByDescending("VersionMinor")
-        //        .OrderByDescending("VersionBuild")
-        //        .OrderByDescending("VersionRevision")
-        //        .OrderBy("HasVersionSpecial")
-        //        .OrderByDescending("VersionSpecial");
-        //}
     }
 
     public class Todos
