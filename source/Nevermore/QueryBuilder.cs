@@ -14,15 +14,18 @@ namespace Nevermore
         readonly ITableAliasGenerator tableAliasGenerator;
         readonly CommandParameterValues parameterValues;
         readonly Parameters parameters;
+        readonly ParameterDefaults parameterDefaults;
 
         public QueryBuilder(TSelectBuilder selectBuilder, IRelationalTransaction transaction,
-            ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, Parameters parameters)
+            ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, 
+            Parameters parameters, ParameterDefaults parameterDefaults)
         {
             this.selectBuilder = selectBuilder;
             this.transaction = transaction;
             this.tableAliasGenerator = tableAliasGenerator;
             this.parameterValues = parameterValues;
             this.parameters = parameters;
+            this.parameterDefaults = parameterDefaults;
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -96,6 +99,12 @@ namespace Nevermore
         public IQueryBuilder<TRecord> Parameter(Parameter parameter)
         {
             parameters.Add(parameter);
+            return this;
+        }
+
+        public IQueryBuilder<TRecord> ParameterDefault(Parameter parameter, object defaultValue)
+        {
+            parameterDefaults.Add(new ParameterDefault(parameter, defaultValue));
             return this;
         }
 
@@ -233,6 +242,7 @@ namespace Nevermore
         }
 
         public Parameters Parameters => new Parameters(parameters);
+        public ParameterDefaults ParameterDefaults => new ParameterDefaults(parameterDefaults);
 
         [Pure]
         public string DebugViewRawQuery()

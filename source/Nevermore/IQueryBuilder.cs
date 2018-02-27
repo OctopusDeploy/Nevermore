@@ -47,6 +47,7 @@ namespace Nevermore
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params string[] partitionByColumns);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns);
         IQueryBuilder<TRecord> Parameter(Parameter parameter);
+        IQueryBuilder<TRecord> ParameterDefault(Parameter parameter, object defaultValue);
         IQueryBuilder<TRecord> Parameter(Parameter parameter, object value);
 
         IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType);
@@ -64,6 +65,7 @@ namespace Nevermore
         IEnumerable<TRecord> Stream();
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
         Parameters Parameters { get; }
+        ParameterDefaults ParameterDefaults { get; }
         string DebugViewRawQuery();
     }
 

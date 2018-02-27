@@ -29,7 +29,8 @@ namespace Nevermore.Tests.Query
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
                 captures,
-                parameters
+                parameters,
+                new ParameterDefaults()
             );
 
             return (builder, (parameters, captures));

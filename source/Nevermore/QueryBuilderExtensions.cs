@@ -6,7 +6,7 @@ namespace Nevermore
     {
         public static string AsStoredProcedure<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string storedProcedureName)
         {
-            return new StoredProcedure(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, storedProcedureName).GenerateSql();
+            return new StoredProcedure(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, storedProcedureName).GenerateSql();
         }
 
         public static string AsView<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string viewName)
@@ -16,7 +16,7 @@ namespace Nevermore
 
         public static string AsFunction<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string functionName)
         {
-            return new Function(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, functionName).GenerateSql();
+            return new Function(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, functionName).GenerateSql();
         }
     }
 }

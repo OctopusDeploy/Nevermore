@@ -16,9 +16,6 @@ namespace Nevermore
             }
         }
 
-        protected override string GetKeyForItem(Parameter item)
-        {
-            return item.ParameterName;
-        }
+        protected override string GetKeyForItem(Parameter item) => item.ParameterName;
     }
 }

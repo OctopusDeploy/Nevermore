@@ -7,9 +7,10 @@ namespace Nevermore.AST
     {
         readonly ISelect select;
         readonly Parameters parameters;
+        readonly ParameterDefaults defaults;
         readonly string procedureName;
 
-        public StoredProcedure(ISelect select, Parameters parameters, string procedureName)
+        public StoredProcedure(ISelect select, Parameters parameters, ParameterDefaults defaults, string procedureName)
         {
             if (parameters.Any(p => p.DataType == null))
             {
@@ -18,6 +19,7 @@ namespace Nevermore.AST
 
             this.select = select;
             this.parameters = parameters;
+            this.defaults = defaults;
             this.procedureName = procedureName;
         }
 
@@ -25,13 +27,19 @@ namespace Nevermore.AST
         {
             return $@"CREATE PROCEDURE dbo.[{procedureName}]
 (
-{string.Join("\r\n\t", parameters.Select(p => $"@{p.ParameterName} {p.DataType.GenerateSql()}"))}
+{string.Join("\r\n\t", parameters.Select(ParameterSql))}
 )
 AS
 BEGIN (
 {select.GenerateSql()}
 )
 END";
+        }
+
+        string ParameterSql(Parameter p)
+        {
+            var defaultValue = defaults.Contains(p.ParameterName) ? $" = {defaults[p.ParameterName].GenerateSql()}": string.Empty;
+            return $"@{p.ParameterName} {p.DataType.GenerateSql()}{defaultValue}";
         }
     }
 }

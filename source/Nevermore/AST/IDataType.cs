@@ -21,4 +21,19 @@ namespace Nevermore.AST
 
         public string GenerateSql() => $"NVARCHAR({length})";
     }
+
+    public class BigInt : IDataType
+    {
+        public string GenerateSql() => "BIGINT";
+    }
+
+    public class Int : IDataType
+    {
+        public string GenerateSql() => "INT";
+    }
+
+    public class Bit : IDataType
+    {
+        public string GenerateSql() => "BIT";
+    }
 }

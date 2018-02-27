@@ -188,7 +188,7 @@ namespace Nevermore
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), Parameters);
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), Parameters, ParameterDefaults);
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -267,6 +267,11 @@ namespace Nevermore
             return Builder.Parameter(parameter);
         }
 
+        public IQueryBuilder<TRecord> ParameterDefault(Parameter parameter, object defaultValue)
+        {
+            return Builder.ParameterDefault(parameter, defaultValue);
+        }
+
         public IQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
             return Builder.Parameter(parameter, value);
@@ -338,7 +343,8 @@ namespace Nevermore
             return Builder.ToDictionary(keySelector);
         }
 
-        public Parameters Parameters => new Parameters(parameters);
+        public Parameters Parameters => Builder.Parameters;
+        public ParameterDefaults ParameterDefaults => Builder.ParameterDefaults;
 
         public string DebugViewRawQuery()
         {
