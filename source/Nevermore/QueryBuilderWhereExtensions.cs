@@ -8,44 +8,6 @@ using Nevermore.AST;
 
 namespace Nevermore
 {
-    public static class TableSourceQueryBuilderExtensions
-    {
-        public static IQueryBuilder<TRecord> NoLock<TRecord>(this ITableSourceQueryBuilder<TRecord> queryBuilder)
-        {
-            return queryBuilder.Hint("NOLOCK");
-        }
-    }
-
-    public static class OrderedQueryBuilderExtensions
-    {
-        public static IOrderedQueryBuilder<TRecord> ThenBy<TRecord>(this IOrderedQueryBuilder<TRecord> queryBuilder,
-            string orderByClause)
-        {
-            return queryBuilder.OrderBy(orderByClause);
-        }
-
-        public static IOrderedQueryBuilder<TRecord> ThenByDescending<TRecord>(
-            this IOrderedQueryBuilder<TRecord> queryBuilder, string orderByClause)
-        {
-            return queryBuilder.OrderByDescending(orderByClause);
-        }
-    }
-
-    public static class QueryBuilderJoinExtensions
-    {
-        public static IJoinSourceQueryBuilder<TRecord> InnerJoin<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
-            IAliasedSelectSource source)
-        {
-            return queryBuilder.Join(source, JoinType.InnerJoin);
-        }
-
-        public static IJoinSourceQueryBuilder<TRecord> LeftHashJoin<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
-            IAliasedSelectSource source)
-        {
-            return queryBuilder.Join(source, JoinType.LeftHashJoin);
-        }
-    }
-
     public enum SqlOperand
     {
         Equal,

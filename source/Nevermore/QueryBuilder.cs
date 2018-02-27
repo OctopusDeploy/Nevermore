@@ -232,6 +232,8 @@ namespace Nevermore
             return Stream().ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
         }
 
+        public Parameters Parameters => new Parameters(parameters);
+
         [Pure]
         public string DebugViewRawQuery()
         {

@@ -25,7 +25,7 @@ namespace Nevermore
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             return new JoinSourceQueryBuilder<TRecord>(AsSource(), joinType,
-                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
+                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), Parameters);
         }
 
         public ISubquerySource AsSource()
@@ -113,7 +113,7 @@ namespace Nevermore
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
             return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(), joinType,
-                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
+                source, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), Parameters);
         }
 
         public ITableSourceQueryBuilder<TRecord> View(string viewName)
@@ -165,14 +165,14 @@ namespace Nevermore
         protected readonly IRelationalTransaction RelationalTransaction;
         protected readonly ITableAliasGenerator TableAliasGenerator;
         protected readonly CommandParameterValues ParameterValues;
-        protected readonly Parameters Parameters;
+        readonly Parameters parameters;
 
         protected SourceQueryBuilder(IRelationalTransaction relationalTransaction, ITableAliasGenerator tableAliasGenerator, CommandParameterValues parameterValues, Parameters parameters)
         {
             RelationalTransaction = relationalTransaction;
             TableAliasGenerator = tableAliasGenerator;
             ParameterValues = parameterValues;
-            Parameters = parameters;
+            this.parameters = parameters;
         }
 
         protected abstract ISelectBuilder CreateSelectBuilder();
@@ -188,7 +188,7 @@ namespace Nevermore
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), new Parameters(Parameters));
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, new CommandParameterValues(ParameterValues), Parameters);
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -337,6 +337,8 @@ namespace Nevermore
         {
             return Builder.ToDictionary(keySelector);
         }
+
+        public Parameters Parameters => new Parameters(parameters);
 
         public string DebugViewRawQuery()
         {

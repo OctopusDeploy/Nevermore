@@ -63,6 +63,7 @@ namespace Nevermore
         void Delete();
         IEnumerable<TRecord> Stream();
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
+        Parameters Parameters { get; }
         string DebugViewRawQuery();
     }
 
