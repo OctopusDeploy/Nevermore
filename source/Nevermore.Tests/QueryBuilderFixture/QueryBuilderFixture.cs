@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assent;
 using FluentAssertions;
@@ -997,7 +998,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void ShouldGenerateComplexDashboardQuery()
+        public void ShouldGenerateComplexDashboardView()
         {
             const string taskTableAlias = "t";
             const string releaseTableAlias = "r";
@@ -1102,7 +1103,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void ShouldGenerateComplexQueryWithParameters()
+        public void ShouldGenerateComplexStoredProcedureWithParameters()
         {
             const string eventTableAlias = "Event";
 
@@ -1124,10 +1125,60 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Subquery()
                 .Where("Rank = 1");
 
-            this.Assent(actual.DebugViewRawQuery());
+            this.Assent(actual.AsStoredProcedure("LatestSuccessfulDeploymentsToMachine"));
         }
 
+        [Fact]
+        public void ShouldGenerateFunctionWithParameters()
+        {
+            var packagesQuery = CreateQueryBuilder<IDocument>("NuGetPackages")
+                .Where("PackageId = @packageid")
+                .Parameter(new Parameter("packageid", new NVarChar(250)));
 
+            this.Assent(packagesQuery.AsFunction("PackagesMatchingId"));
+        }
+
+        [Fact]
+        public void ShouldGenerateStoredProcWithDefaultValues()
+        {
+            var packageIdParameter = new Parameter("packageid", new NVarChar(250));
+            var query = CreateQueryBuilder<IDocument>("NuGetPackages")
+                .Where("(@packageid is '') or (PackageId = @packageid)")
+                .Parameter(packageIdParameter)
+                .ParameterDefault(packageIdParameter, "");
+
+            this.Assent(query.AsStoredProcedure("PackagesMatchingId"));
+        }
+
+        [Fact]
+        public void ShouldGenerateFunctionWithDefaultValues()
+        {
+            var packageIdParameter = new Parameter("packageid", new NVarChar(250));
+            var query = CreateQueryBuilder<IDocument>("NuGetPackages")
+                .Where("(@packageid is '') or (PackageId = @packageid)")
+                .Parameter(packageIdParameter)
+                .ParameterDefault(packageIdParameter, "");
+
+            this.Assent(query.AsFunction("PackagesMatchingId"));
+        }
+
+        [Fact]
+        public void ShouldThrowIfNoParameterDataTypesSuppliedForStoredProc()
+        {
+            var query = CreateQueryBuilder<IDocument>("Deployment")
+                .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
+
+            query.Invoking(q => q.AsStoredProcedure("GetDeployment")).ShouldThrow<Exception>();
+        }
+
+        [Fact]
+        public void ShouldThrowIfNoParameterDataTypesSuppliedForFunction()
+        {
+            var query = CreateQueryBuilder<IDocument>("Deployment")
+                .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
+
+            query.Invoking(q => q.AsFunction("GetDeployment")).ShouldThrow<Exception>();
+        }
     }
 
     public class Todos

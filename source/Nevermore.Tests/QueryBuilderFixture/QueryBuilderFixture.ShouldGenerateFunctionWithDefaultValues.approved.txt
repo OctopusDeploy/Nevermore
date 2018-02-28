@@ -1,0 +1,9 @@
+CREATE FUNCTION dbo.[PackagesMatchingId]
+(
+@packageid NVARCHAR(250) = ''
+)
+RETURNS TABLE
+AS
+RETURN (
+SELECT * FROM dbo.[NuGetPackages] WHERE ((@packageid is '') or (PackageId = @packageid)) ORDER BY [Id]
+)

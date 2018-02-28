@@ -14,7 +14,18 @@ namespace Nevermore
         }
 
         public string ParameterName => parameter.ParameterName;
-        public string GenerateSql() => defaultValue.ToString();
+        public string GenerateSql()
+        {
+            switch (defaultValue)
+            {
+                case string s:
+                    return $"'{s}'";
+                case bool b:
+                    return b ? "1" : "0";
+                default:
+                    return defaultValue.ToString();
+            }
+        }
     }
 
     public class ParameterDefaults : KeyedCollection<string, ParameterDefault>
