@@ -251,6 +251,11 @@ namespace Nevermore
             return Builder.CalculatedColumn(expression, columnAlias);
         }
 
+        public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
+        {
+            return Builder.AsType<TNewRecord>();
+        }
+
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
         {
             return Builder.AddRowNumberColumn(columnAlias);

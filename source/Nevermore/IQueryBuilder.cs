@@ -43,6 +43,8 @@ namespace Nevermore
         IQueryBuilder<TRecord> Column(string name, string columnAlias, string tableAlias);
         IQueryBuilder<TRecord> AllColumns();
         IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias);
+        IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
+
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params string[] partitionByColumns);
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns);

@@ -79,6 +79,11 @@ namespace Nevermore
             return this;
         }
 
+        public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
+        {
+            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
+        }
+
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
         {
             return AddRowNumberColumn(columnAlias, new string[0]);
