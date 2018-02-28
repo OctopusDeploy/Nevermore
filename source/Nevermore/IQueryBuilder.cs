@@ -4,11 +4,11 @@ using Nevermore.AST;
 
 namespace Nevermore
 {
-    public interface IOrderedQueryBuilder<TRecord> : IQueryBuilder<TRecord>
+    public interface IOrderedQueryBuilder<TRecord> : IQueryBuilder<TRecord> where TRecord : class
     {
     }
 
-    public interface ITableSourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
+    public interface ITableSourceQueryBuilder<TRecord> : IQueryBuilder<TRecord> where TRecord : class
     {
         ITableSourceQueryBuilder<TRecord> View(string viewName);
         ITableSourceQueryBuilder<TRecord> Table(string tableName);
@@ -17,18 +17,18 @@ namespace Nevermore
         IAliasedSelectSource AsAliasedSource();
     }
 
-    public interface ISubquerySourceBuilder<TRecord> : IQueryBuilder<TRecord>
+    public interface ISubquerySourceBuilder<TRecord> : IQueryBuilder<TRecord> where TRecord : class
     {
         ISubquerySource AsSource();
         ISubquerySourceBuilder<TRecord> Alias(string subqueryAlias);
     }
 
-    public interface IJoinSourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
+    public interface IJoinSourceQueryBuilder<TRecord> : IQueryBuilder<TRecord> where TRecord : class
     {
         IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField);
     }
 
-    public interface IQueryBuilder<TRecord>
+    public interface IQueryBuilder<TRecord> where TRecord : class
     {
         IQueryBuilder<TRecord> Where(string whereClause);
         IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);

@@ -7,7 +7,7 @@ using Nevermore.AST;
 
 namespace Nevermore
 {
-    public class QueryBuilder<TRecord, TSelectBuilder> : IOrderedQueryBuilder<TRecord> where TSelectBuilder: ISelectBuilder // todo: add class constraint on TRecord
+    public class QueryBuilder<TRecord, TSelectBuilder> : IOrderedQueryBuilder<TRecord> where TSelectBuilder: ISelectBuilder where TRecord : class
     {
         readonly TSelectBuilder selectBuilder;
         readonly IRelationalTransaction transaction;

@@ -5,7 +5,7 @@ using Nevermore.AST;
 
 namespace Nevermore
 {
-    public class SubquerySourceBuilder<TRecord> : SourceQueryBuilder<TRecord>, ISubquerySourceBuilder<TRecord>
+    public class SubquerySourceBuilder<TRecord> : SourceQueryBuilder<TRecord>, ISubquerySourceBuilder<TRecord> where TRecord : class
     {
         readonly ISelect select;
         string alias;
@@ -41,7 +41,7 @@ namespace Nevermore
         }
     }
 
-    public class JoinSourceQueryBuilder<TRecord> : SourceQueryBuilder<TRecord>, IJoinSourceQueryBuilder<TRecord>
+    public class JoinSourceQueryBuilder<TRecord> : SourceQueryBuilder<TRecord>, IJoinSourceQueryBuilder<TRecord> where TRecord : class
     {
         readonly IAliasedSelectSource originalSource;
         readonly List<Join> intermediateJoins = new List<Join>();
@@ -92,7 +92,7 @@ namespace Nevermore
         }
     }
 
-    public class TableSourceQueryBuilder<TRecord> : SourceQueryBuilder<TRecord>, ITableSourceQueryBuilder<TRecord>
+    public class TableSourceQueryBuilder<TRecord> : SourceQueryBuilder<TRecord>, ITableSourceQueryBuilder<TRecord> where TRecord : class
     {
         string tableOrViewName;
         string alias;
@@ -162,7 +162,7 @@ namespace Nevermore
         }
     }
 
-    public abstract class SourceQueryBuilder<TRecord> : IQueryBuilder<TRecord>
+    public abstract class SourceQueryBuilder<TRecord> : IQueryBuilder<TRecord> where TRecord : class
     {
         protected readonly IRelationalTransaction RelationalTransaction;
         protected readonly ITableAliasGenerator TableAliasGenerator;

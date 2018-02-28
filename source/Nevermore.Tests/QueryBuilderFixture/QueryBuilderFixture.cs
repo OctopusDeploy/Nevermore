@@ -26,7 +26,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             });
         }
 
-        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName)
+        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
             return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }

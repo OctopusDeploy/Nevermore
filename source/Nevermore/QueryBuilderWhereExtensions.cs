@@ -28,13 +28,14 @@ namespace Nevermore
     {
 
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression) 
-            => queryBuilder.Where((string) GetValueFromExpression(expression.Body, typeof(string)));
+            where TRecord : class => queryBuilder.Where((string) GetValueFromExpression(expression.Body, typeof(string)));
 
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate)
-         => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate) 
+            where TRecord : class => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
 
         
-        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, Expression expr)
+        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, Expression expr) 
+            where TRecord : class
         {
             if (expr is BinaryExpression binExpr)
             {
@@ -74,7 +75,7 @@ namespace Nevermore
 
         }
 
-        static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr)
+        static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
         {
             var property = GetProperty(methExpr.Arguments.Count == 1 ? methExpr.Arguments[0] : methExpr.Arguments[1]);
             var value = (IEnumerable) GetValueFromExpression(methExpr.Arguments.Count == 1 ? methExpr.Object : methExpr.Arguments[0], property.PropertyType);
@@ -83,7 +84,7 @@ namespace Nevermore
         }
         
 
-        static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) 
+        static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
         {
             var property = GetProperty(methExpr.Object);
             var fieldName = property.Name;
@@ -103,7 +104,7 @@ namespace Nevermore
             }
         }
 
-        static IQueryBuilder<TRecord> AddLogicalAndOperatorWhereClauses<TRecord>(IQueryBuilder<TRecord> queryBuilder, BinaryExpression binExpr)
+        static IQueryBuilder<TRecord> AddLogicalAndOperatorWhereClauses<TRecord>(IQueryBuilder<TRecord> queryBuilder, BinaryExpression binExpr) where TRecord : class
         {
             queryBuilder = AddWhereClauseFromExpression(queryBuilder, binExpr.Left);
             return AddWhereClauseFromExpression(queryBuilder, binExpr.Right);
@@ -121,7 +122,8 @@ namespace Nevermore
                 $"The left hand side of the predicate must be a property accessor (PropertyExpression or UnaryExpression). It is a {expression.GetType()}.");
         }
         
-        static IQueryBuilder<TRecord> AddUnaryWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, UnarySqlOperand operand, BinaryExpression binaryExpression)
+        static IQueryBuilder<TRecord> AddUnaryWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, UnarySqlOperand operand, BinaryExpression binaryExpression) 
+            where TRecord : class
         {
             var property = GetProperty(binaryExpression.Left);
 
@@ -143,7 +145,7 @@ namespace Nevermore
         }
 
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, object value)
+            SqlOperand operand, object value) where TRecord : class
         {
             switch (operand)
             {
@@ -180,7 +182,7 @@ namespace Nevermore
         }
 
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, object startValue, object endValue)
+            SqlOperand operand, object startValue, object endValue) where TRecord : class
         {
             Parameter startValueParameter = new Parameter("StartValue");
             Parameter endValueParameter = new Parameter("EndValue");
@@ -203,7 +205,7 @@ namespace Nevermore
         }
 
         static IQueryBuilder<TRecord> AddUnaryWhereClauseAndParameter<TRecord>(IQueryBuilder<TRecord> queryBuilder,
-            string fieldName, UnarySqlOperand operand, object value)
+            string fieldName, UnarySqlOperand operand, object value) where TRecord : class
         {
             var parameter = new Parameter(fieldName);
             return queryBuilder.WhereParameterised(fieldName, operand, parameter)
@@ -211,7 +213,7 @@ namespace Nevermore
         }
 
         static IQueryBuilder<TRecord> AddWhereIn<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            IEnumerable values)
+            IEnumerable values) where TRecord : class
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
             var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
@@ -221,7 +223,7 @@ namespace Nevermore
         }
 
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, IEnumerable<object> values)
+            SqlOperand operand, IEnumerable<object> values) where TRecord : class
         {
             switch (operand)
             {
@@ -234,21 +236,21 @@ namespace Nevermore
         }
 
         public static IQueryBuilder<TRecord> Parameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name,
-            object value)
+            object value) where TRecord : class
         {
             var parameter = new Parameter(name);
             return queryBuilder.Parameter(parameter, value);
         }
 
         public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
-            string name, object value)
+            string name, object value) where TRecord : class
         {
             return queryBuilder.Parameter(name,
                 "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
         }
 
         public static IQueryBuilder<TRecord> LikePipedParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
-            string name, object value)
+            string name, object value) where TRecord : class
         {
             return queryBuilder.Parameter(name,
                 "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
