@@ -1024,7 +1024,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Column("QueueTime", "QueueTime", taskTableAlias)
                 .Column("CompletedTime", "CompletedTime", taskTableAlias)
                 .Column("Version", "Version", releaseTableAlias)
-                .Where("([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C')");
+                .Where("([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C')")
+                .IgnoreDefaultOrderBy();
 
             var actual = dashboard.AsView("Dashboard");
 
@@ -1123,7 +1124,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .Parameter(new Parameter("machineId", new NVarCharMax()))
                 .Where("[Event].Category = \'DeploymentSucceeded\'")
                 .Subquery()
-                .Where("Rank = 1");
+                .Where("Rank = 1")
+                .IgnoreDefaultOrderBy();
 
             this.Assent(actual.AsStoredProcedure("LatestSuccessfulDeploymentsToMachine"));
         }
@@ -1178,6 +1180,15 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
 
             query.Invoking(q => q.AsFunction("GetDeployment")).ShouldThrow<Exception>();
+        }
+
+        [Fact]
+        public void ShouldNotIncludeOrderByIdIfDefaultOrderByIsIgnored()
+        {
+            CreateQueryBuilder<IDocument>("Orders")
+                .IgnoreDefaultOrderBy()
+                .DebugViewRawQuery()
+                .Should().BeEquivalentTo("SELECT * FROM dbo.[Orders]");
         }
     }
 

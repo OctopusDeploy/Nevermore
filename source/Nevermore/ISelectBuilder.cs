@@ -9,6 +9,7 @@ namespace Nevermore
         string DeleteQuery();
 
         void AddOrder(string fieldName, bool descending);
+        void IgnoreDefaultOrderBy();
         void AddWhere(UnaryWhereParameter whereParams);
         void AddWhere(BinaryWhereParameter whereParams);
         void AddWhere(ArrayWhereParameter whereParams);
@@ -19,6 +20,6 @@ namespace Nevermore
         void AddRowNumberColumn(string alias, IReadOnlyList<Column> partitionBys);
         void AddRowNumberColumn(string alias, IReadOnlyList<TableColumn> partitionBys);
         void AddDefaultColumnSelection();
-        ISelect GenerateSelect(bool shouldIgnoreDefaultOrderBy = false);
+        ISelect GenerateSelect();
     }
 }

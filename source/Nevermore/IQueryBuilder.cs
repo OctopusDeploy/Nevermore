@@ -37,6 +37,7 @@ namespace Nevermore
 
         IOrderedQueryBuilder<TRecord> OrderBy(string orderByClause);
         IOrderedQueryBuilder<TRecord> OrderByDescending(string orderByClause);
+        IQueryBuilder<TRecord> IgnoreDefaultOrderBy();
 
         IQueryBuilder<TRecord> Column(string name);
         IQueryBuilder<TRecord> Column(string name, string columnAlias);

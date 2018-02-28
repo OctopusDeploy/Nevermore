@@ -125,6 +125,7 @@ namespace Nevermore
         protected readonly List<IWhereClause> WhereClauses;
         ISelectColumns columnSelection = null;
         IRowSelection rowSelection = new AllRows();
+        bool ignoreDefaultOrderBy = false;
 
         protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses)
         {
@@ -137,9 +138,9 @@ namespace Nevermore
 
         protected abstract IEnumerable<OrderByField> GetDefaultOrderByFields();
 
-        ISelect Select(bool shouldIgnoreDefaultOrderBy = false)
+        public ISelect GenerateSelect()
         {
-            return new Select(rowSelection, ColumnSelection, From, GetWhere() ?? new Where(), GetOrderBy(shouldIgnoreDefaultOrderBy));
+            return new Select(rowSelection, ColumnSelection, From, GetWhere() ?? new Where(), GetOrderBy());
         }
 
         protected Where GetWhere()
@@ -147,12 +148,12 @@ namespace Nevermore
             return WhereClauses.Any() ? new Where(new AndClause(WhereClauses)) : null;
         }
 
-        OrderBy GetOrderBy(bool shouldIgnoreDefaultOrderBy)
+        OrderBy GetOrderBy()
         {
             if (!OrderByClauses.Any())
             {
                 // If you are doing something like COUNT(*) then it doesn't make sense to order by ID as a default behaviour.
-                if (shouldIgnoreDefaultOrderBy || ColumnSelection.AggregatesRows) return null;
+                if (ignoreDefaultOrderBy || ColumnSelection.AggregatesRows) return null;
                 var orderByFields = GetDefaultOrderByFields().ToList();
                 return !orderByFields.Any() ? null : new OrderBy(orderByFields);
             }
@@ -170,6 +171,11 @@ namespace Nevermore
         public virtual void AddOrder(string fieldName, bool @descending)
         {
             OrderByClauses.Add(new OrderByField(new Column(fieldName), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
+        }
+
+        public void IgnoreDefaultOrderBy()
+        {
+            ignoreDefaultOrderBy = true;
         }
 
         public virtual void AddWhere(UnaryWhereParameter whereParams)
@@ -222,7 +228,9 @@ namespace Nevermore
 
         protected void InnerAddRowNumberColumn(string alias, IReadOnlyList<IColumn> partitionBys)
         {
-            var orderByClauses = OrderByClauses.Any() ? OrderByClauses : GetDefaultOrderByFields().ToList();
+            var orderByClauses = OrderByClauses.Any() 
+                ? OrderByClauses 
+                : ignoreDefaultOrderBy ? new List<OrderByField>() : GetDefaultOrderByFields().ToList();
             if (!orderByClauses.Any())
                 throw new InvalidOperationException("Cannot create a ROW_NUMBER() column without an order by clause");
 
@@ -234,11 +242,6 @@ namespace Nevermore
         public void AddDefaultColumnSelection()
         {
             AddColumnSelection(DefaultSelect);
-        }
-
-        public ISelect GenerateSelect(bool shouldIgnoreDefaultOrderBy = false)
-        {
-            return Select(shouldIgnoreDefaultOrderBy);
         }
 
         ISelectColumns ColumnSelection => columnSelection ?? DefaultSelect;

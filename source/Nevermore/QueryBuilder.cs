@@ -121,24 +121,30 @@ namespace Nevermore
 
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType)
         {
-            var subquery = new SubquerySource(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias());
+            selectBuilder.IgnoreDefaultOrderBy();
+            var subquery = new SubquerySource(selectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
             return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
-            return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelect(true), queryBuilder.GetSelectBuilder().GenerateSelect(true) }), tableAliasGenerator.GenerateTableAlias(),
+            selectBuilder.IgnoreDefaultOrderBy();
+            var unionedSelectBuilder = queryBuilder.GetSelectBuilder();
+            unionedSelectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelect(), unionedSelectBuilder.GenerateSelect() }), tableAliasGenerator.GenerateTableAlias(),
                 transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
+            selectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, new CommandParameterValues(parameterValues), Parameters, ParameterDefaults);
         }
 
         SubquerySelectBuilder CreateSubqueryBuilder()
         {
-            return new SubquerySelectBuilder(new SubquerySource(selectBuilder.GenerateSelect(true), tableAliasGenerator.GenerateTableAlias()));
+            selectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySelectBuilder(new SubquerySource(selectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias()));
         }
 
         public ISelectBuilder GetSelectBuilder()
@@ -156,6 +162,12 @@ namespace Nevermore
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
             selectBuilder.AddOrder(fieldName, true);
+            return this;
+        }
+
+        public IQueryBuilder<TRecord> IgnoreDefaultOrderBy()
+        {
+            selectBuilder.IgnoreDefaultOrderBy();
             return this;
         }
 
