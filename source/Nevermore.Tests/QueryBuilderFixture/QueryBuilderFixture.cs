@@ -134,21 +134,6 @@ namespace Nevermore.Tests.QueryBuilderFixture
             Assert.Equal(expected, actual);
         }
 
-
-        [Fact]
-        public void ShouldGenerateDelete()
-        {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
-                .NoLock()
-                .Where("[Price] > 5")
-                .GetSelectBuilder()
-                .DeleteQuery();
-
-            var expected = "DELETE FROM dbo.[Orders] NOLOCK WHERE ([Price] > 5)";
-
-            Assert.Equal(expected, actual);
-        }
-
         [Fact]
         public void ShouldGenerateCountForQueryBuilder()
         {
@@ -1188,7 +1173,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             CreateQueryBuilder<IDocument>("Orders")
                 .IgnoreDefaultOrderBy()
                 .DebugViewRawQuery()
-                .Should().BeEquivalentTo("SELECT * FROM dbo.[Orders]");
+                .Should().Be("SELECT * FROM dbo.[Orders]");
         }
     }
 

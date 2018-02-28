@@ -342,11 +342,6 @@ namespace Nevermore
             return Builder.ToList();
         }
 
-        public void Delete()
-        {
-            Builder.Delete();
-        }
-
         public IEnumerable<TRecord> Stream()
         {
             return Builder.Stream();

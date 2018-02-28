@@ -86,6 +86,13 @@ namespace Nevermore
         IQueryBuilder<TDocument> Query<TDocument>() where TDocument : class, IId;
 
         /// <summary>
+        /// Creates a deletion query for a strongly typed document.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Used to find the table against which the query will be executed.</typeparam>
+        /// <returns>A builder to further customize the query</returns>
+        IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class, IId;
+
+        /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>

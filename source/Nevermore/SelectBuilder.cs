@@ -41,11 +41,6 @@ namespace Nevermore
                 whereParams.Operand, whereParams.ParameterNames));
         }
 
-        public override string DeleteQuery()
-        {
-            throw new NotImplementedException("Joins are not supported in delete operations");
-        }
-
         public override void AddOrder(string fieldName, bool @descending)
         {
             OrderByClauses.Add(new OrderByField(new TableColumn(new Column(fieldName), From.Source.Alias), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
@@ -80,11 +75,6 @@ namespace Nevermore
         {
         }
 
-        public override string DeleteQuery()
-        {
-            return new Delete(From, GetWhere() ?? new Where()).GenerateSql();
-        }
-
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
@@ -103,11 +93,6 @@ namespace Nevermore
         SubquerySelectBuilder(ISubquerySource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses) 
             : base(@from, whereClauses, orderByClauses)
         {
-        }
-
-        public override string DeleteQuery()
-        {
-            throw new NotImplementedException("Subqueries are not supported with delete operations");
         }
 
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
@@ -143,7 +128,7 @@ namespace Nevermore
             return new Select(rowSelection, ColumnSelection, From, GetWhere() ?? new Where(), GetOrderBy());
         }
 
-        protected Where GetWhere()
+        Where GetWhere()
         {
             return WhereClauses.Any() ? new Where(new AndClause(WhereClauses)) : null;
         }
@@ -165,8 +150,6 @@ namespace Nevermore
         {
             rowSelection = new Top(top);
         }
-
-        public abstract string DeleteQuery();
 
         public virtual void AddOrder(string fieldName, bool @descending)
         {

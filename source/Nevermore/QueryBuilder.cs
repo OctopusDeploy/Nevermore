@@ -266,10 +266,5 @@ namespace Nevermore
         {
             return selectBuilder.GenerateSelect().GenerateSql();
         }
-
-        public void Delete()
-        {
-            transaction.ExecuteRawDeleteQuery(selectBuilder.DeleteQuery(), parameterValues);
-        }
     }
 }

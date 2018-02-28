@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Nevermore.Transient;
 using System.Text;
 using System.Threading;
+using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
@@ -78,6 +79,11 @@ namespace Nevermore
                 Dispose();
                 throw;
             }
+        }
+
+        public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class, IId
+        {
+            return new DeleteQueryBuilder<TDocument>(this, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Pure]

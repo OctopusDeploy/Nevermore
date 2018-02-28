@@ -64,7 +64,6 @@ namespace Nevermore
         List<TRecord> ToList(int skip, int take);
         List<TRecord> ToList(int skip, int take, out int totalResults);
         List<TRecord> ToList();
-        void Delete();
         IEnumerable<TRecord> Stream();
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
         Parameters Parameters { get; }

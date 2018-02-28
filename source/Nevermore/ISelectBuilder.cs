@@ -6,7 +6,6 @@ namespace Nevermore
     public interface ISelectBuilder
     {
         void AddTop(int top);
-        string DeleteQuery();
 
         void AddOrder(string fieldName, bool descending);
         void IgnoreDefaultOrderBy();
