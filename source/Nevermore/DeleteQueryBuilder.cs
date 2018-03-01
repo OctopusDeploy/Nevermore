@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Nevermore.AST;
 
 namespace Nevermore
@@ -21,7 +22,13 @@ namespace Nevermore
 
         public IDeleteQueryBuilder<TRecord> Where(string whereClause)
         {
-            return AddWhereClause(new CustomWhereClause(whereClause));
+            if (!string.IsNullOrWhiteSpace(whereClause))
+            {
+                var whereClauseNormalised = Regex.Replace(whereClause, @"@\w+", m => new Parameter(m.Value).ParameterName);
+                return AddWhereClause(new CustomWhereClause(whereClauseNormalised));
+            }
+
+            return this;
         }
 
         public IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)

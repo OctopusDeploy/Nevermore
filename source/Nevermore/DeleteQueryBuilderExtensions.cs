@@ -34,5 +34,11 @@ namespace Nevermore
                 .Aggregate(queryBuilder.WhereParameterised(fieldName, operand, parameters),
                     (p, pv) => p.Parameter(pv.parameter, pv.value));
         }
+
+        public static IDeleteQueryBuilder<TRecord> Parameter<TRecord>(this IDeleteQueryBuilder<TRecord> queryBuilder,
+            string parameterName, object value) where TRecord : class
+        {
+            return queryBuilder.Parameter(new Parameter(parameterName), value);
+        }
     }
 }
