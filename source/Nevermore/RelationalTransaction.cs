@@ -90,26 +90,27 @@ namespace Nevermore
         }
 
         [Pure]
-        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
+        public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
         {
             var blocks = ids.Select((id, index) => (id: id, index: index))
                 .GroupBy(x => x.index / 500, y => y.id)
                 .ToArray();
             
-            var results = new List<T>();
-
             foreach (var block in blocks)
             {
-                results.AddRange(
-                    Query<T>()
-                        .Where("[Id] IN @ids")
-                        .Parameter("ids", block.ToArray())
-                        .Stream()
-                );
-            }
+                var results = Query<T>()
+                    .Where("[Id] IN @ids")
+                    .Parameter("ids", block.ToArray())
+                    .Stream();
 
-            return results.ToArray();
+                foreach (var result in results)
+                    yield return result;
+            }
         }
+
+        [Pure]
+        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
+            => LoadStream<T>(ids).ToArray();
 
         [Pure]
         public T LoadRequired<T>(string id) where T : class, IId
