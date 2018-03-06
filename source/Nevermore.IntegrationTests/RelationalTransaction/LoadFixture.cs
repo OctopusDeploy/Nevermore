@@ -39,5 +39,14 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Load<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
             }
         }
+        
+        [Fact]
+        public void LoadStreamWithMoreThan2100Ids()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
+            }
+        }
     }
 }
