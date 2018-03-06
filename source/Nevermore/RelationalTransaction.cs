@@ -92,7 +92,9 @@ namespace Nevermore
         [Pure]
         public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
         {
-            var blocks = ids.Select((id, index) => (id: id, index: index))
+            var blocks = ids
+                .Distinct()
+                .Select((id, index) => (id: id, index: index))
                 .GroupBy(x => x.index / 500, y => y.id)
                 .ToArray();
             
