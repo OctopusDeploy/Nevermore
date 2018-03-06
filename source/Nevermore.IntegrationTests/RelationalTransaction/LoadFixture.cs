@@ -1,4 +1,5 @@
-﻿using Nevermore.Contracts;
+﻿using System.Linq;
+using Nevermore.Contracts;
 using Nevermore;
 using Nevermore.IntegrationTests.Model;
 using Xunit;
@@ -27,6 +28,15 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             using (var trn = Store.BeginTransaction())
             {
                 trn.Load<Product>(new[] {"A", "B"});
+            }
+        }
+        
+        [Fact]
+        public void LoadWithMoreThan2100Ids()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                trn.Load<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
             }
         }
     }
