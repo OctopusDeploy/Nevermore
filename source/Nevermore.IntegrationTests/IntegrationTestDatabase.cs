@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests
     public class IntegrationTestDatabase
     {
         readonly ITestOutputHelper output;
-        readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
+        readonly string SqlInstance = "(local)\\SQLEXPRESS";
         readonly string TestDatabaseName;
         readonly string TestDatabaseConnectionString;
 
@@ -83,7 +83,7 @@ namespace Nevermore.IntegrationTests
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
 
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(){ TypeNameHandling = TypeNameHandling.Auto }, new EmptyRelatedDocumentStore());
         }
 
         void InstallSchema()
