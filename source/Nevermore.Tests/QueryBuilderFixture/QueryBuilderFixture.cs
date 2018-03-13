@@ -11,21 +11,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
 {
     public class QueryBuilderFixture
     {
-        readonly ITableAliasGenerator tableAliasGenerator = Substitute.For<ITableAliasGenerator>();
-        readonly IRelationalTransaction transaction;
-
-        public QueryBuilderFixture()
-        {
-            transaction = Substitute.For<IRelationalTransaction>();
-
-            var tableNumber = 0;
-            tableAliasGenerator.GenerateTableAlias(Arg.Any<string>()).Returns(delegate
-            {
-                tableNumber++;
-                return "t" + tableNumber;
-            });
-        }
-
+        readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
+        readonly IRelationalTransaction transaction = Substitute.For<IRelationalTransaction>();
+        
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
             return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());

@@ -1,2 +1,2 @@
-SELECT * FROM (SELECT t2.*, ROW_NUMBER() OVER (ORDER BY t2.[Id]) AS RowNum FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) t2
-INNER JOIN dbo.[Customers] t1 ON t2.[CustomerId] = t1.[Id]) t3 WHERE ([RowNum] >= @_minrow) AND ([RowNum] <= @_maxrow) ORDER BY [RowNum]
+SELECT * FROM (SELECT ALIAS_GENERATED_2.*, ROW_NUMBER() OVER (ORDER BY ALIAS_GENERATED_2.[Id]) AS RowNum FROM (SELECT * FROM dbo.[Orders] WHERE ([Price] > 5)) ALIAS_GENERATED_2
+INNER JOIN dbo.[Customers] ALIAS_Customers_1 ON ALIAS_GENERATED_2.[CustomerId] = ALIAS_Customers_1.[Id]) ALIAS_GENERATED_3 WHERE ([RowNum] >= @_minrow) AND ([RowNum] <= @_maxrow) ORDER BY [RowNum]

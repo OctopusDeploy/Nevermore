@@ -1,3 +1,3 @@
-SELECT t2.* FROM dbo.[Orders] t2
-INNER JOIN dbo.[Customers] t1 ON t2.[CustomerId] = t1.[Id]
-INNER JOIN dbo.[Accounts] t3 ON t2.[AccountId] = t3.[Id] ORDER BY t2.[Id]
+SELECT ALIAS_Orders_2.* FROM dbo.[Orders] ALIAS_Orders_2
+INNER JOIN dbo.[Customers] ALIAS_Customers_1 ON ALIAS_Orders_2.[CustomerId] = ALIAS_Customers_1.[Id]
+INNER JOIN dbo.[Accounts] ALIAS_Accounts_3 ON ALIAS_Orders_2.[AccountId] = ALIAS_Accounts_3.[Id] ORDER BY ALIAS_Orders_2.[Id]

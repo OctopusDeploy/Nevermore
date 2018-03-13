@@ -6,6 +6,6 @@ AS
 BEGIN (
 SELECT * FROM (SELECT [Id] AS [Id] FROM dbo.[Orders]
 UNION
-SELECT [Id] AS [Id] FROM dbo.[Account] WHERE ([Name] = @name)) t1 ORDER BY t1.[Id]
+SELECT [Id] AS [Id] FROM dbo.[Account] WHERE ([Name] = @name)) ALIAS_GENERATED_1 ORDER BY ALIAS_GENERATED_1.[Id]
 )
 END

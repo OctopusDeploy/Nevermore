@@ -4,9 +4,9 @@ CREATE PROCEDURE dbo.[LatestSuccessfulDeploymentsToMachine]
 )
 AS
 BEGIN (
-SELECT * FROM (SELECT t2.*, ROW_NUMBER() OVER (PARTITION BY t2.[EnvironmentId], t2.[ProjectId], t2.[TenantId] ORDER BY t2.[[Event].[Occurred]] DESC) AS Rank FROM dbo.[Deployment] t2
-INNER JOIN dbo.[DeploymentRelatedMachine] t1 ON t2.[Id] = t1.[DeploymentId]
-INNER JOIN dbo.[EventRelatedDocument] t3 ON t2.[Id] = t3.[RelatedDocumentId]
-INNER JOIN dbo.[Event] Event ON t2.[Id] = Event.[EventId] WHERE ([DeploymentRelatedMachine].MachineId = @machineid) AND ([Event].Category = 'DeploymentSucceeded')) t4 WHERE (Rank = 1)
+SELECT * FROM (SELECT ALIAS_Deployment_2.*, ROW_NUMBER() OVER (PARTITION BY ALIAS_Deployment_2.[EnvironmentId], ALIAS_Deployment_2.[ProjectId], ALIAS_Deployment_2.[TenantId] ORDER BY ALIAS_Deployment_2.[[Event].[Occurred]] DESC) AS Rank FROM dbo.[Deployment] ALIAS_Deployment_2
+INNER JOIN dbo.[DeploymentRelatedMachine] ALIAS_DeploymentRelatedMachine_1 ON ALIAS_Deployment_2.[Id] = ALIAS_DeploymentRelatedMachine_1.[DeploymentId]
+INNER JOIN dbo.[EventRelatedDocument] ALIAS_EventRelatedDocument_3 ON ALIAS_Deployment_2.[Id] = ALIAS_EventRelatedDocument_3.[RelatedDocumentId]
+INNER JOIN dbo.[Event] Event ON ALIAS_Deployment_2.[Id] = Event.[EventId] WHERE ([DeploymentRelatedMachine].MachineId = @machineid) AND ([Event].Category = 'DeploymentSucceeded')) ALIAS_GENERATED_4 WHERE (Rank = 1)
 )
 END
