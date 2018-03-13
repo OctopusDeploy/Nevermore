@@ -42,7 +42,10 @@ namespace Nevermore.Tests.Linq
             var (parameters, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([String] LIKE @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] LIKE @string)
+ORDER BY [Id]");
 
             parameters.Single().ParameterName.Should().Be("string");
             paramValues.Should().Contain("string", expected);

@@ -89,7 +89,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] = @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] = @int)
+ORDER BY [Id]");
 
             parameters.Single().ParameterName.Should().Be("int");
             paramValues.Should().Contain("int", 2);
@@ -104,7 +107,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([DateTime] = @datetime) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([DateTime] = @datetime)
+ORDER BY [Id]");
 
             parameters.Single().ParameterName.Should().Be("datetime");
             paramValues.Should().Contain("datetime", new DateTime(2011,1,1,4,5,6));
@@ -119,7 +125,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Enum] = @enum) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] = @enum)
+ORDER BY [Id]");
 
             parameters.Single().ParameterName.Should().Be("enum");
             paramValues.Should().Contain("enum", Bar.A);
@@ -131,7 +140,10 @@ namespace Nevermore.Tests.Linq
             var (parameters, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([String] = @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] = @string)
+ORDER BY [Id]");
 
             parameters.Single().ParameterName.Should().Be("string");
             paramValues.Should().Contain("string", "Bar");

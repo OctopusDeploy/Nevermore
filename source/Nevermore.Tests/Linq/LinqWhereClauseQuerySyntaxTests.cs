@@ -17,7 +17,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+ORDER BY [Id]");
         }
 
         [Fact(Skip = "Queries where the same property is specified twice in the where clause are not yet supported")]
@@ -32,7 +35,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+ORDER BY [Id]");
         }
 
         [Fact]
@@ -47,7 +53,11 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([String] = @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+AND ([String] = @string)
+ORDER BY [Id]");
         }
 
         [Fact]
@@ -61,7 +71,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE (N = 100) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE (N = 100)
+ORDER BY [Id]");
         }
     }
 }

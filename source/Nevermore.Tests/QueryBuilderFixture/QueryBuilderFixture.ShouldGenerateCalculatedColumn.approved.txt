@@ -1,1 +1,3 @@
-SELECT 'CONSTANT' AS [MyConstant] FROM dbo.[Orders] ORDER BY [Id]
+SELECT 'CONSTANT' AS [MyConstant]
+FROM dbo.[Orders]
+ORDER BY [Id]

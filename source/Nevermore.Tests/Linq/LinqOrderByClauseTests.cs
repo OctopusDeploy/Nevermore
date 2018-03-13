@@ -15,7 +15,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
         [Fact]
@@ -27,7 +29,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
         [Fact]
@@ -41,7 +45,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
         [Fact]
@@ -55,7 +61,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
         [Fact]
@@ -67,7 +75,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
         [Fact]
@@ -79,7 +89,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
         
         [Fact]
@@ -93,7 +105,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
         [Fact]
@@ -107,7 +121,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
     }
 }

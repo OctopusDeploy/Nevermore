@@ -16,7 +16,11 @@ namespace Nevermore.Tests.Column
                 .Column(c => c.Baz)
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo("SELECT [Foo], [Bar], [Baz] FROM dbo.[Records] ORDER BY [Id]");
+            actual.ShouldBeEquivalentTo(@"SELECT [Foo],
+[Bar],
+[Baz]
+FROM dbo.[Records]
+ORDER BY [Id]");
         }
 
         [Fact]
@@ -28,7 +32,11 @@ namespace Nevermore.Tests.Column
                 .Column(c => c.Baz, "C")
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo("SELECT [Foo] AS [A], [Bar] AS [B], [Baz] AS [C] FROM dbo.[Records] ORDER BY [Id]");
+            actual.ShouldBeEquivalentTo(@"SELECT [Foo] AS [A],
+[Bar] AS [B],
+[Baz] AS [C]
+FROM dbo.[Records]
+ORDER BY [Id]");
         }
 
         [Fact]
@@ -42,7 +50,11 @@ namespace Nevermore.Tests.Column
                 .Column(c => c.Baz, "C", tableAlias)
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo("SELECT MyTable.[Foo] AS [A], MyTable.[Bar] AS [B], MyTable.[Baz] AS [C] FROM dbo.[Records] MyTable ORDER BY [Id]");
+            actual.ShouldBeEquivalentTo(@"SELECT MyTable.[Foo] AS [A],
+MyTable.[Bar] AS [B],
+MyTable.[Baz] AS [C]
+FROM dbo.[Records] MyTable
+ORDER BY [Id]");
         }
 
         static ITableSourceQueryBuilder<Record> CreateQueryBuilder()

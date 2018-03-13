@@ -1,2 +1,5 @@
-SELECT ROW_NUMBER() OVER (PARTITION BY ACC.[Region], ACC.[Area] ORDER BY ORD.[Foo]) AS ROWNUM FROM dbo.[Orders] ORD
-INNER JOIN dbo.[Account] ACC ON ORD.[AccountId] = ACC.[Id] ORDER BY ORD.[Id]
+SELECT ROW_NUMBER() OVER (PARTITION BY ACC.[Region], ACC.[Area] ORDER BY ORD.[Foo]) AS ROWNUM
+FROM dbo.[Orders] ORD
+INNER JOIN dbo.[Account] ACC
+ON ORD.[AccountId] = ACC.[Id]
+ORDER BY ORD.[Id]

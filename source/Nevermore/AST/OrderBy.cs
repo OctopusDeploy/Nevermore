@@ -16,9 +16,7 @@ namespace Nevermore.AST
 
         public string GenerateSql()
         {
-            const string separator = @",
-";
-            return $"ORDER BY {string.Join(separator, fields.Select(f => f.GenerateSql()))}";
+            return $"ORDER BY {string.Join(@", ", fields.Select(f => f.GenerateSql()))}";
         }
 
         public override string ToString() => GenerateSql();

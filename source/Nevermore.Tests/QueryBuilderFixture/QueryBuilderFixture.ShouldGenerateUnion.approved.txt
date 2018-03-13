@@ -1,3 +1,9 @@
-SELECT * FROM (SELECT [Id] AS [Id] FROM dbo.[Orders]
-UNION
-SELECT [Id] AS [Id] FROM dbo.[Account]) ALIAS_GENERATED_1 ORDER BY ALIAS_GENERATED_1.[Id]
+SELECT *
+FROM (
+    SELECT [Id] AS [Id]
+    FROM dbo.[Orders]
+    UNION
+    SELECT [Id] AS [Id]
+    FROM dbo.[Account]
+) ALIAS_GENERATED_1
+ORDER BY ALIAS_GENERATED_1.[Id]

@@ -1,10 +1,17 @@
 CREATE PROCEDURE dbo.[ShouldCollectParametersFromSubqueriesInJoin]
 (
-@name NVARCHAR(MAX) = 'Bob'
+    @name NVARCHAR(MAX) = 'Bob'
 )
 AS
 BEGIN (
-SELECT ALIAS_Orders_2.* FROM dbo.[Orders] ALIAS_Orders_2
-INNER JOIN (SELECT * FROM dbo.[Customers] WHERE ([Name] = @name)) ALIAS_GENERATED_1 ON ALIAS_Orders_2.[CustomerId] = ALIAS_GENERATED_1.[Id] ORDER BY ALIAS_Orders_2.[Id]
+    SELECT ALIAS_Orders_2.*
+    FROM dbo.[Orders] ALIAS_Orders_2
+    INNER JOIN (
+        SELECT *
+        FROM dbo.[Customers]
+        WHERE ([Name] = @name)
+    ) ALIAS_GENERATED_1
+    ON ALIAS_Orders_2.[CustomerId] = ALIAS_GENERATED_1.[Id]
+    ORDER BY ALIAS_Orders_2.[Id]
 )
 END

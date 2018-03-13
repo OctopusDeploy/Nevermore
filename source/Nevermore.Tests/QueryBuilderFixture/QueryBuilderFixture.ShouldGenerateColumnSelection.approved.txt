@@ -1,1 +1,5 @@
-SELECT [Foo], [Bar], [Baz] FROM dbo.[Orders] ORDER BY [Id]
+SELECT [Foo],
+[Bar],
+[Baz]
+FROM dbo.[Orders]
+ORDER BY [Id]

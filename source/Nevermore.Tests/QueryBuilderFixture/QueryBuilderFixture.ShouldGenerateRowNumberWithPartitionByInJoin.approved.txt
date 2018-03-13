@@ -1,2 +1,5 @@
-SELECT ROW_NUMBER() OVER (PARTITION BY ALIAS_Orders_2.[Region], ALIAS_Orders_2.[Area] ORDER BY ALIAS_Orders_2.[Foo]) AS ROWNUM FROM dbo.[Orders] ALIAS_Orders_2
-INNER JOIN dbo.[Account] ALIAS_Account_1 ON ALIAS_Orders_2.[AccountId] = ALIAS_Account_1.[Id] ORDER BY ALIAS_Orders_2.[Id]
+SELECT ROW_NUMBER() OVER (PARTITION BY ALIAS_Orders_2.[Region], ALIAS_Orders_2.[Area] ORDER BY ALIAS_Orders_2.[Foo]) AS ROWNUM
+FROM dbo.[Orders] ALIAS_Orders_2
+INNER JOIN dbo.[Account] ALIAS_Account_1
+ON ALIAS_Orders_2.[AccountId] = ALIAS_Account_1.[Id]
+ORDER BY ALIAS_Orders_2.[Id]

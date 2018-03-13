@@ -1,2 +1,5 @@
-SELECT ALIAS_Orders_2.* FROM dbo.[Orders] ALIAS_Orders_2
-LEFT HASH JOIN dbo.[Account] ALIAS_Account_1 ON ALIAS_Orders_2.[AccountId] = ALIAS_Account_1.[Id] ORDER BY ALIAS_Orders_2.[Id]
+SELECT ALIAS_Orders_2.*
+FROM dbo.[Orders] ALIAS_Orders_2
+LEFT HASH JOIN dbo.[Account] ALIAS_Account_1
+ON ALIAS_Orders_2.[AccountId] = ALIAS_Account_1.[Id]
+ORDER BY ALIAS_Orders_2.[Id]

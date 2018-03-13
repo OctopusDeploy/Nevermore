@@ -15,7 +15,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+ORDER BY [Id]");
         }
         
         [Fact]
@@ -27,7 +30,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] <= @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] <= @int)
+ORDER BY [Id]");
         }
         
         
@@ -40,7 +46,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] > @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] > @int)
+ORDER BY [Id]");
         }
         
         [Fact]
@@ -52,7 +61,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] >= @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] >= @int)
+ORDER BY [Id]");
         }
         
         [Fact]
@@ -64,7 +76,10 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] <> @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] <> @int)
+ORDER BY [Id]");
         }
         
     }

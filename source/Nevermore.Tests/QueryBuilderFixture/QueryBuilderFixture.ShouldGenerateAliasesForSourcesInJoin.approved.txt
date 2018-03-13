@@ -1,2 +1,9 @@
-SELECT ORD.* FROM dbo.[Orders] ORD
-INNER JOIN (SELECT * FROM dbo.[Accounts]) ACC ON ORD.[AccountId] = ACC.[Id] WHERE (ORD.[Id] = @id) ORDER BY ORD.[Name]
+SELECT ORD.*
+FROM dbo.[Orders] ORD
+INNER JOIN (
+    SELECT *
+    FROM dbo.[Accounts]
+) ACC
+ON ORD.[AccountId] = ACC.[Id]
+WHERE (ORD.[Id] = @id)
+ORDER BY ORD.[Name]
