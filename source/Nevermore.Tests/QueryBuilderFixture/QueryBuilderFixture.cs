@@ -105,7 +105,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var orders = CreateQueryBuilder<IDocument>("Orders");
             var customers = CreateQueryBuilder<IDocument>("Customers")
                 .Where("IsActive = 1")
-                .OrderBy("Id");
+                .OrderBy("Created");
 
             var accounts = CreateQueryBuilder<IDocument>("Accounts").Hint("WITH (UPDLOCK)");
 
