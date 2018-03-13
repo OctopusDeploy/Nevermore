@@ -16,5 +16,7 @@ namespace Nevermore.AST
         {
             return string.Join("\r\nUNION\r\n", selects.Select(s => s.GenerateSql()));
         }
+
+        public override string ToString() => GenerateSql();
     }
 }

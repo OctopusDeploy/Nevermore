@@ -21,5 +21,7 @@
             var alias = string.IsNullOrEmpty(Alias) ? string.Empty : $" {Alias}";
             return $"({source.GenerateSql()}){alias}";
         }
+
+        public override string ToString() => GenerateSql();
     }
 }

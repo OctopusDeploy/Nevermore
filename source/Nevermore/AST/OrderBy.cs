@@ -15,6 +15,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => $"ORDER BY {string.Join(", ", fields.Select(f => f.GenerateSql()))}";
+        public override string ToString() => GenerateSql();
     }
 
     public enum OrderByDirection
@@ -38,5 +39,7 @@ namespace Nevermore.AST
         {
             return $"{column.GenerateSql()}{(direction == OrderByDirection.Descending ? " DESC" : string.Empty)}";
         }
+
+        public override string ToString() => GenerateSql();
     }
 }

@@ -15,6 +15,7 @@
 
         public bool AggregatesRows => false;
         public string GenerateSql() => $"{expression}";
+        public override string ToString() => GenerateSql();
     }
 
     public class Column : IColumn
@@ -28,6 +29,7 @@
 
         public bool AggregatesRows => false;
         public string GenerateSql() => $"[{columnName}]";
+        public override string ToString() => GenerateSql();
     }
 
     public class TableColumn : IColumn
@@ -43,5 +45,6 @@
 
         public bool AggregatesRows => false;
         public string GenerateSql() => $"{tableAlias}.{column.GenerateSql()}";
+        public override string ToString() => GenerateSql();
     }
 }

@@ -15,10 +15,12 @@
         }
 
         public string GenerateSql() => $"TOP {numberOfRows} ";
+        public override string ToString() => GenerateSql();
     }
 
     public class AllRows : IRowSelection
     {
         public string GenerateSql() => "";
+        public override string ToString() => GenerateSql();
     }
 }

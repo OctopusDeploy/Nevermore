@@ -22,5 +22,10 @@
             var orderByString = orderBy != null ? $" {orderBy.GenerateSql()}" : string.Empty;
             return $"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()} FROM {from.GenerateSql()}{where.GenerateSql()}{orderByString}";
         }
+
+        public override string ToString()
+        {
+            return GenerateSql();
+        }
     }
 }

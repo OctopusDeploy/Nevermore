@@ -21,6 +21,7 @@ namespace Nevermore.AST
         public bool AggregatesRows => columns.Any(c => c.AggregatesRows);
 
         public string GenerateSql() => string.Join(", ", columns.Select(c => c.GenerateSql()));
+        public override string ToString() => GenerateSql();
     }
 
     public class AliasedColumn : ISelectColumns
@@ -36,6 +37,7 @@ namespace Nevermore.AST
 
         public bool AggregatesRows => false;
         public string GenerateSql() => $"{column.GenerateSql()} AS [{columnAlias}]";
+        public override string ToString() => GenerateSql();
     }
 
     public class SelectAllFrom : ISelectColumns
@@ -50,18 +52,21 @@ namespace Nevermore.AST
         public bool AggregatesRows => false;
 
         public string GenerateSql() => $"{tableAlias}.*";
+        public override string ToString() => GenerateSql();
     }
 
     public class SelectAllSource : ISelectColumns
     {
         public bool AggregatesRows => false;
         public string GenerateSql() => "*";
+        public override string ToString() => GenerateSql();
     }
 
     public class SelectCountSource : ISelectColumns
     {
         public bool AggregatesRows => true;
         public string GenerateSql() => "COUNT(*)";
+        public override string ToString() => GenerateSql();
     }
 
     public class SelectRowNumber : ISelectColumns
@@ -78,5 +83,6 @@ namespace Nevermore.AST
         public bool AggregatesRows => false;
 
         public string GenerateSql() => $"ROW_NUMBER() {over.GenerateSql()} AS {alias}";
+        public override string ToString() => GenerateSql();
     }
 }

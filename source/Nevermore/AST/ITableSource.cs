@@ -18,6 +18,7 @@
         }
 
         public string GenerateSql() => $"dbo.[{tableOrViewName}]";
+        public override string ToString() => GenerateSql();
     }
 
     public class AliasedTableSource : ISimpleTableSource, IAliasedSelectSource
@@ -33,6 +34,7 @@
         public string Alias { get; }
 
         public string GenerateSql() => $"{source.GenerateSql()} {Alias}";
+        public override string ToString() => GenerateSql();
     }
 
     public class TableSourceWithHint : ITableSource
@@ -50,5 +52,7 @@
         {
             return $"{tableSource.GenerateSql()} {tableHint}";
         }
+
+        public override string ToString() => GenerateSql();
     }
 }

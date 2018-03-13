@@ -21,6 +21,8 @@ namespace Nevermore.AST
         {
             return whereClause != null ? $" WHERE {whereClause.GenerateSql()}" : string.Empty;
         }
+
+        public override string ToString() => GenerateSql();
     }
 
     public interface IWhereClause
@@ -38,6 +40,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => string.Join(" AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
+        public override string ToString() => GenerateSql();
     }
 
     public class ArrayWhereClause : IWhereClause
@@ -54,6 +57,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} ({string.Join(", ", parameterNames.Select(p => $"@{p}"))})";
+        public override string ToString() => GenerateSql();
 
         string GetQueryOperandSql()
         {
@@ -88,6 +92,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} @{firstParameterName} AND @{secondParameterName}";
+        public override string ToString() => GenerateSql();
 
         string GetQueryOperandSql()
         {
@@ -116,6 +121,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => whereClause;
+        public override string ToString() => GenerateSql();
     }
 
     public class UnaryWhereClause : IWhereClause
@@ -132,6 +138,7 @@ namespace Nevermore.AST
         }
 
         public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} @{parameterName}";
+        public override string ToString() => GenerateSql();
 
         string GetQueryOperandSql()
         {

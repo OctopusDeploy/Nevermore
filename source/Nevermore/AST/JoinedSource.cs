@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Nevermore.AST
@@ -20,8 +21,11 @@ namespace Nevermore.AST
             var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql(Source.Alias)));
             return string.Join("\r\n", sourceParts);
         }
+        
+        public override string ToString() => GenerateSql();
     }
 
+    [DebuggerDisplay("{" + nameof(DebugSql) + "()}")]
     public class Join
     {
         readonly IAliasedSelectSource source;
@@ -37,6 +41,8 @@ namespace Nevermore.AST
 
         public string GenerateSql(string leftSourceAlias) => 
             $"{GenerateJoinTypeSql(type)} {source.GenerateSql()} ON {string.Join(" AND ", clauses.Select(c => c.GenerateSql(leftSourceAlias, source.Alias)))}";
+
+        string DebugSql() => GenerateSql("leftSource");
 
         string GenerateJoinTypeSql(JoinType joinType)
         {
@@ -63,6 +69,7 @@ namespace Nevermore.AST
         Equal
     }
 
+    [DebuggerDisplay("{" + nameof(DebugSql) + "()}")]
     public class JoinClause
     {
         readonly string leftFieldName;
@@ -80,6 +87,8 @@ namespace Nevermore.AST
         {
             return $"{leftTableAlias}.[{leftFieldName}] {GetQueryOperand()} {rightTableAlias}.[{rightFieldName}]";
         }
+
+        string DebugSql() => GenerateSql("leftSource", "rightSource");
 
         string GetQueryOperand()
         {
