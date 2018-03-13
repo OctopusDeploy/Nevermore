@@ -222,14 +222,14 @@ namespace Nevermore
             return Builder.WhereParameterised(fieldName, operand, parameterNames);
         }
 
-        public IOrderedQueryBuilder<TRecord> OrderBy(string orderByClause)
+        public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)
         {
-            return Builder.OrderBy(orderByClause);
+            return Builder.OrderBy(fieldName);
         }
 
-        public IOrderedQueryBuilder<TRecord> OrderByDescending(string orderByClause)
+        public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
-            return Builder.OrderByDescending(orderByClause);
+            return Builder.OrderByDescending(fieldName);
         }
 
         public IQueryBuilder<TRecord> IgnoreDefaultOrderBy()

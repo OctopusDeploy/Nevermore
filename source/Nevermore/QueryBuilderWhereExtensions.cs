@@ -26,10 +26,23 @@ namespace Nevermore
 
     public static class QueryBuilderWhereExtensions
     {
-
+        /// <summary>
+        /// Adds a where expression to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="expression">The expression that will be converted into a where clause in the query</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression) 
             where TRecord : class => queryBuilder.Where((string) GetValueFromExpression(expression.Body, typeof(string)));
 
+        /// <summary>
+        /// Adds a where expression to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="predicate">A predicate which will be converted into a where clause in the query</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate) 
             where TRecord : class => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
 
@@ -235,6 +248,14 @@ namespace Nevermore
             }
         }
 
+        /// <summary>
+        /// Provides a value for a parameter that has already been added to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="name">The name of the parameter for which the value applies</param>
+        /// <param name="value">The value of the parameter</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Parameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name,
             object value) where TRecord : class
         {
@@ -242,6 +263,15 @@ namespace Nevermore
             return queryBuilder.Parameter(parameter, value);
         }
 
+        /// <summary>
+        /// Provides a value for a parameter that has already been added to the query.
+        /// The provided value will be surrounded with "%" characters in the SQL string.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="name">The name of the parameter for which the value applies</param>
+        /// <param name="value">The value of the parameter</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string name, object value) where TRecord : class
         {
@@ -249,6 +279,15 @@ namespace Nevermore
                 "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
         }
 
+        /// <summary>
+        /// Provides a value for a parameter that has already been added to the query.
+        /// The provided value is a pipe separated list of values, and will be surrounded with "%" characters in the SQL string.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="name">The name of the parameter for which the value applies</param>
+        /// <param name="value">The value of the parameter</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> LikePipedParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string name, object value) where TRecord : class
         {

@@ -5,17 +5,44 @@ namespace Nevermore
 {
     public static class QueryBuilderColumnExtensions
     {
+        /// <summary>
+        /// Adds a column to the column selection for the query.
+        /// If no columns are explicitly added to the column selection for the query, all columns will be selected.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="expression">An expression to return the column from a record. This will be used to determine the name of the column</param>        
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Column<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, object>> expression) where TRecord : class
         {
             return queryBuilder.Column(GetColumnNameFromExpression(expression));
         }
 
+        /// <summary>
+        /// Adds a column to the column selection for the query, and aliases the column.
+        /// If no columns are explicitly added to the column selection for the query, all columns will be selected.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="expression">An expression to return the column from a record. This will be used to determine the name of the column</param>
+        /// <param name="columnAlias">The alias to use for this column</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Column<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             Expression<Func<TRecord, object>> expression, string columnAlias) where TRecord : class
         {
             return queryBuilder.Column(GetColumnNameFromExpression(expression), columnAlias);
         }
 
+        /// <summary>
+        /// Adds a column to the column selection for the query from a specific table that has been aliased in the query, and then aliases the column.
+        /// If no columns are explicitly added to the column selection for the query, all columns will be selected.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="expression">An expression to return the column from a record. This will be used to determine the name of the column</param>
+        /// <param name="columnAlias">The alias to use for this column</param>
+        /// <param name="tableAlias">The alias of the table from which the column originates</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Column<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             Expression<Func<TRecord, object>> expression, string columnAlias, string tableAlias) where TRecord : class
         {
