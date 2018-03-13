@@ -10,12 +10,21 @@ namespace Nevermore
 
         public Parameters(Parameters parameters)
         {
-            foreach (var parameter in parameters)
-            {
-                Add(parameter);
-            }
+            AddRange(parameters);
+        }
+
+        public Parameters(params Parameters[] parameters)
+        {
+            foreach (var parametersCollection in parameters)
+                AddRange(parametersCollection);
         }
 
         protected override string GetKeyForItem(Parameter item) => item.ParameterName;
+
+        public void AddRange(Parameters parameters)
+        {
+            foreach (var parameter in parameters)
+                Add(parameter);
+        }
     }
 }

@@ -36,12 +36,23 @@ namespace Nevermore
 
         public ParameterDefaults(ParameterDefaults parameterDefaults)
         {
-            foreach (var parameter in parameterDefaults)
+            AddRange(parameterDefaults);
+        }
+
+        public ParameterDefaults(params ParameterDefaults[] parameterDefaults)
+        {
+            foreach (var defaultsCollection in parameterDefaults)
             {
-                Add(parameter);
+                AddRange(defaultsCollection);
             }
         }
 
         protected override string GetKeyForItem(ParameterDefault item) => item.ParameterName;
+
+        public void AddRange(ParameterDefaults defaults)
+        {
+            foreach (var def in defaults)
+                Add(def);
+        }
     }
 }

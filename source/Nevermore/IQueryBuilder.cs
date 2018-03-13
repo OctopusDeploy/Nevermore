@@ -53,7 +53,7 @@ namespace Nevermore
         IQueryBuilder<TRecord> ParameterDefault(Parameter parameter, object defaultValue);
         IQueryBuilder<TRecord> Parameter(Parameter parameter, object value);
 
-        IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType);
+        IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults);
         ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder);
         ISubquerySourceBuilder<TRecord> Subquery(); 
         ISelectBuilder GetSelectBuilder();
@@ -68,6 +68,7 @@ namespace Nevermore
         IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
         Parameters Parameters { get; }
         ParameterDefaults ParameterDefaults { get; }
+        CommandParameterValues ParameterValues { get; }
         string DebugViewRawQuery();
     }
 

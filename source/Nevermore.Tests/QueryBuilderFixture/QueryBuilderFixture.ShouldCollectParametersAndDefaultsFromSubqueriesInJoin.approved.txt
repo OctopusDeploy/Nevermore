@@ -1,0 +1,10 @@
+CREATE PROCEDURE dbo.[ShouldCollectParametersFromSubqueriesInJoin]
+(
+@name NVARCHAR(MAX) = 'Bob'
+)
+AS
+BEGIN (
+SELECT t2.* FROM dbo.[Orders] t2
+INNER JOIN (SELECT * FROM dbo.[Customers] WHERE ([Name] = @name)) t1 ON t2.[CustomerId] = t1.[Id] ORDER BY t2.[Id]
+)
+END

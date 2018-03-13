@@ -24,6 +24,20 @@ namespace Nevermore
             CommandType = from.CommandType;
         }
 
+        public CommandParameterValues(params CommandParameterValues[] from)
+            : this()
+        {
+            if (from.Any())
+            {
+                CommandType = from.First().CommandType;
+            }
+
+            foreach (var values in from)
+            {
+                AddRange(values);
+            }
+        }
+
         public CommandParameterValues(object args)
             : this()
         {

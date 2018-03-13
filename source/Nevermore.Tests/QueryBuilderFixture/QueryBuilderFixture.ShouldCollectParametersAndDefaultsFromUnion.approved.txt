@@ -1,0 +1,11 @@
+CREATE PROCEDURE dbo.[ShouldCollectParametersAndDefaultsFromUnion]
+(
+@name NVARCHAR(MAX) = 'ABC'
+)
+AS
+BEGIN (
+SELECT * FROM (SELECT [Id] AS [Id] FROM dbo.[Orders]
+UNION
+SELECT [Id] AS [Id] FROM dbo.[Account] WHERE ([Name] = @name)) t1 ORDER BY t1.[Id]
+)
+END
