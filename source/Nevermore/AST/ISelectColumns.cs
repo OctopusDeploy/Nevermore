@@ -20,7 +20,8 @@ namespace Nevermore.AST
 
         public bool AggregatesRows => columns.Any(c => c.AggregatesRows);
 
-        public string GenerateSql() => string.Join(", ", columns.Select(c => c.GenerateSql()));
+        public string GenerateSql() => string.Join(@",
+", columns.Select(c => c.GenerateSql()));
         public override string ToString() => GenerateSql();
     }
 

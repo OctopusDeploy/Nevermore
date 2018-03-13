@@ -14,7 +14,13 @@ namespace Nevermore.AST
             this.fields = fields;
         }
 
-        public string GenerateSql() => $"ORDER BY {string.Join(", ", fields.Select(f => f.GenerateSql()))}";
+        public string GenerateSql()
+        {
+            const string separator = @",
+";
+            return $"ORDER BY {string.Join(separator, fields.Select(f => f.GenerateSql()))}";
+        }
+
         public override string ToString() => GenerateSql();
     }
 

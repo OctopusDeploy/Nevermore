@@ -27,11 +27,11 @@ namespace Nevermore.AST
         {
             return $@"CREATE PROCEDURE dbo.[{procedureName}]
 (
-{string.Join("\r\n\t", parameters.Select(ParameterSql))}
+{Format.IndentLines(string.Join("\r\n", parameters.Select(ParameterSql)))}
 )
 AS
 BEGIN (
-{select.GenerateSql()}
+{Format.IndentLines(select.GenerateSql())}
 )
 END";
         }

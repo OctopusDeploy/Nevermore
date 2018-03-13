@@ -27,12 +27,12 @@ namespace Nevermore.AST
         {
             return $@"CREATE FUNCTION dbo.[{functionName}]
 (
-{string.Join("\r\n\t", parameters.Select(ParameterSql))}
+{Format.IndentLines(string.Join("\r\n", parameters.Select(ParameterSql)))}
 )
 RETURNS TABLE
 AS
 RETURN (
-{select.GenerateSql()}
+{Format.IndentLines(select.GenerateSql())}
 )";
         }
 

@@ -14,7 +14,7 @@
         public string GenerateSql()
         {
             return $@"CREATE VIEW dbo.[{viewName}] AS
-{select.GenerateSql()}";
+{Format.IndentLines(select.GenerateSql())}";
         }
     }
 }

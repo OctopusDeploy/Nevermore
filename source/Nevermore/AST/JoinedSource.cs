@@ -39,8 +39,13 @@ namespace Nevermore.AST
             this.type = type;
         }
 
-        public string GenerateSql(string leftSourceAlias) => 
-            $"{GenerateJoinTypeSql(type)} {source.GenerateSql()} ON {string.Join(" AND ", clauses.Select(c => c.GenerateSql(leftSourceAlias, source.Alias)))}";
+        public string GenerateSql(string leftSourceAlias)
+        {
+            var separator = @"
+AND ";
+            return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}
+ON {string.Join(separator, clauses.Select(c => c.GenerateSql(leftSourceAlias, source.Alias)))}";
+        }
 
         string DebugSql() => GenerateSql("leftSource");
 

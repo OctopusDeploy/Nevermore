@@ -19,8 +19,10 @@
 
         public string GenerateSql()
         {
-            var orderByString = orderBy != null ? $" {orderBy.GenerateSql()}" : string.Empty;
-            return $"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()} FROM {from.GenerateSql()}{where.GenerateSql()}{orderByString}";
+            var orderByString = orderBy != null ? $@"
+{orderBy.GenerateSql()}" : string.Empty;
+            return $@"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()}
+FROM {from.GenerateSql()}{where.GenerateSql()}{orderByString}";
         }
 
         public override string ToString()

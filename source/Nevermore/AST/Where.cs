@@ -19,7 +19,8 @@ namespace Nevermore.AST
 
         public string GenerateSql()
         {
-            return whereClause != null ? $" WHERE {whereClause.GenerateSql()}" : string.Empty;
+            return whereClause != null ? $@"
+WHERE {whereClause.GenerateSql()}" : string.Empty;
         }
 
         public override string ToString() => GenerateSql();
@@ -39,7 +40,8 @@ namespace Nevermore.AST
             this.subClauses = subClauses;
         }
 
-        public string GenerateSql() => string.Join(" AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
+        public string GenerateSql() => string.Join(@"
+AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
         public override string ToString() => GenerateSql();
     }
 
