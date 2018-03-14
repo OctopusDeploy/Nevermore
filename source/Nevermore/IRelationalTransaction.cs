@@ -110,6 +110,15 @@ namespace Nevermore
         TDocument[] Load<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents as a lazy loaded stream.</returns>
+        IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
+
+        /// <summary>
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>

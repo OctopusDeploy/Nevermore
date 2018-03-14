@@ -7,6 +7,7 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using Nevermore.Transient;
 using System.Text;
@@ -96,13 +97,29 @@ namespace Nevermore
         }
 
         [Pure]
-        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
+        public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
         {
-            return Query<T>()
-                .Where("[Id] IN @ids")
-                .Parameter("ids", ids.ToArray())
-                .Stream().ToArray();
+            var blocks = ids
+                .Distinct()
+                .Select((id, index) => (id: id, index: index))
+                .GroupBy(x => x.index / 500, y => y.id)
+                .ToArray();
+            
+            foreach (var block in blocks)
+            {
+                var results = Query<T>()
+                    .Where("[Id] IN @ids")
+                    .Parameter("ids", block.ToArray())
+                    .Stream();
+
+                foreach (var result in results)
+                    yield return result;
+            }
         }
+
+        [Pure]
+        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
+            => LoadStream<T>(ids).ToArray();
 
         [Pure]
         public T LoadRequired<T>(string id) where T : class, IId
@@ -481,28 +498,30 @@ namespace Nevermore
                     var idIndex = GetOrdinal(reader, "Id");
                     var jsonIndex = GetOrdinal(reader, "JSON");
                     var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
+                    var typeResolver = mapping.InstanceTypeResolver.TypeResolverFromReader(s => GetOrdinal(reader, s));
 
                     while (reader.Read())
                     {
                         T instance;
+                        var instanceType = typeResolver(reader);
 
                         if (jsonIndex >= 0)
                         {
                             var json = reader[jsonIndex].ToString();
-
-                            var deserialized = JsonConvert.DeserializeObject(json, mapping.Type, jsonSerializerSettings);
-
+                            var deserialized = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
                             // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
                             // If the deserialized object is not the desired type, then we are querying for a specific sub-type
                             // and this record is a different sub-type, and should be excluded from the result-set. 
                             if (deserialized is T)
+                            {
                                 instance = (T)deserialized;
+                            }
                             else
                                 continue;
                         }
                         else
                         {
-                            instance = Activator.CreateInstance<T>();
+                            instance = (T)Activator.CreateInstance(instanceType);
                         }
 
                         foreach (var index in columnIndexes)
@@ -570,9 +589,14 @@ namespace Nevermore
 
         CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
         {
-            var result = new CommandParameterValues();
-            result[$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance);
-            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mapping.Type, jsonSerializerSettings);
+            var result = new CommandParameterValues
+            {
+                [$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance)
+            };
+
+            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
+
+            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mType, jsonSerializerSettings);
 
             foreach (var c in mapping.IndexedColumns)
             {
@@ -702,14 +726,10 @@ namespace Nevermore
                 sb.AppendLine(command);
         }
 
-
-
         public override string ToString()
         {
             return $"{CreatedTime} - {connection?.State} - {name}";
         }
-
-
 
         class ProjectionMapper : IProjectionMapper
         {
@@ -729,7 +749,9 @@ namespace Nevermore
                 var mapping = mappings.Get(typeof(TResult));
                 var json = reader[GetColumnName(prefix, "JSON")].ToString();
 
-                var instance = JsonConvert.DeserializeObject<TResult>(json, jsonSerializerSettings);
+                var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
+
+                var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
                 foreach (var column in mapping.IndexedColumns)
                 {
                     column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
@@ -737,7 +759,7 @@ namespace Nevermore
 
                 mapping.IdColumn.ReaderWriter.Write(instance, reader[GetColumnName(prefix, mapping.IdColumn.ColumnName)]);
 
-                return instance;
+                return (TResult)instance;
             }
 
             public TColumn Read<TColumn>(Func<IDataReader, TColumn> callback)

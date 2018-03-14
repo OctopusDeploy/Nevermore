@@ -110,7 +110,7 @@ namespace Nevermore.IntegrationTests
             using(var transaction = Store.BeginTransaction())
             {
                 transaction.Insert(new Product { Name = "Talking Elmo", Price = 100 }, "product-1");
-                transaction.Insert(new Product { Name = "Lego set", Price = 200 }, "product-2");
+                transaction.Insert(new SpecialProduct() { Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, "product-2");
 
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 1", Quantity = 10 });
                 transaction.Insert(new LineItem { ProductId = "product-1", Name = "Line 2", Quantity = 10 });
@@ -130,7 +130,8 @@ namespace Nevermore.IntegrationTests
                 Assert.Equal(3, lines.Count);
                 Assert.True(lines[0].LineItem.Name == "Line 1" && lines[0].Product.Name == "Talking Elmo" && lines[0].Product.Price == 100);
                 Assert.True(lines[1].LineItem.Name == "Line 2" && lines[1].Product.Name == "Talking Elmo" && lines[1].Product.Price == 100);
-                Assert.True(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200);
+                Assert.True(lines[2].LineItem.Name == "Line 3" && lines[2].Product.Name == "Lego set" && lines[2].Product.Price == 200 &&
+                            lines[2].Product is SpecialProduct sp && sp.BonusMaterial == "Out-takes");
             }
         }
 
