@@ -267,7 +267,8 @@ namespace Nevermore
         ISubquerySourceBuilder<TRecord> Subquery(); 
 
         /// <summary>
-        /// Executes the query, and counts the number of rows
+        /// Executes the query, and counts the number of rows.
+        /// Any order by clauses will be ignored
         /// </summary>
         /// <returns>The number of rows in the result set</returns>
         int Count();

@@ -116,6 +116,22 @@ ORDER BY [Id]";
         }
 
         [Fact]
+        public void ShouldSuppressOrderByWhenGeneratingCount()
+        {
+            string actual = null;
+            transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            CreateQueryBuilder<IDocument>("Orders")
+                .OrderBy("Created")
+                .Count();
+
+            var expected = @"SELECT COUNT(*)
+FROM dbo.[Orders]";
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public void ShouldGenerateCount()
         {
             string actual = null;

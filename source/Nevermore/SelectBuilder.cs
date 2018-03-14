@@ -182,15 +182,18 @@ namespace Nevermore
 
         OrderBy GetOrderBy()
         {
-            if (!OrderByClauses.Any())
+            // If you are doing something like COUNT(*) then it doesn't make sense to include an Order By clause
+            if (GetColumnSelection().AggregatesRows)
             {
-                // If you are doing something like COUNT(*) then it doesn't make sense to order by ID as a default behaviour.
-                if (ShouldIgnoreDefaultOrderBy || GetColumnSelection().AggregatesRows) return null;
-                var orderByFields = GetDefaultOrderByFields().ToList();
-                return !orderByFields.Any() ? null : new OrderBy(orderByFields);
+                return null;
             }
 
-            return new OrderBy(OrderByClauses);
+            if (OrderByClauses.Any()) return new OrderBy(OrderByClauses);
+
+            if (ShouldIgnoreDefaultOrderBy) return null;
+            var orderByFields = GetDefaultOrderByFields().ToList();
+            return !orderByFields.Any() ? null : new OrderBy(orderByFields);
+
         }
 
         public void AddTop(int top)
