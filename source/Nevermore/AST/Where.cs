@@ -73,11 +73,6 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
         }
     }
 
-    public enum ArraySqlOperand
-    {
-        In
-    }
-
     public class BinaryWhereClause : IWhereClause
     {
         readonly IWhereFieldReference whereFieldReference;
@@ -106,11 +101,6 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
                     throw new NotSupportedException("Operand " + operand + " is not supported!");
             }
         }
-    }
-    
-    public enum BinarySqlOperand
-    {
-        Between
     }
 
     public class CustomWhereClause : IWhereClause
@@ -164,16 +154,5 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
                     throw new NotSupportedException("Operand " + operand + " is not supported!");
             }
         }
-    }
-
-    public enum UnarySqlOperand
-    {
-        Equal,
-        Like,
-        GreaterThan,
-        GreaterThanOrEqual,
-        LessThan,
-        LessThanOrEqual,
-        NotEqual
     }
 }
