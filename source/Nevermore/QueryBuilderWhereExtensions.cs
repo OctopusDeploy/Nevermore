@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Nevermore.AST;
 
 namespace Nevermore
 {
@@ -23,7 +22,7 @@ namespace Nevermore
         NotEqual,
         Contains
     }
-
+    
     public static class QueryBuilderWhereExtensions
     {
         /// <summary>
@@ -93,7 +92,7 @@ namespace Nevermore
             var property = GetProperty(methExpr.Arguments.Count == 1 ? methExpr.Arguments[0] : methExpr.Arguments[1]);
             var value = (IEnumerable) GetValueFromExpression(methExpr.Arguments.Count == 1 ? methExpr.Object : methExpr.Arguments[0], property.PropertyType);
 
-            return AddWhereIn(queryBuilder, property.Name, value);
+            return queryBuilder.Where(property.Name, ArraySqlOperand.In, value);
         }
         
 
@@ -107,11 +106,11 @@ namespace Nevermore
             switch (methExpr.Method.Name)
             {
                 case "Contains":
-                    return queryBuilder.Where(fieldName, SqlOperand.Contains, value);
+                    return queryBuilder.Where(fieldName, UnarySqlOperand.Like, $"%{value}%");
                 case "StartsWith":
-                    return queryBuilder.Where(fieldName, SqlOperand.StartsWith, value);
+                    return queryBuilder.Where(fieldName, UnarySqlOperand.Like, $"{value}%");
                 case "EndsWith":
-                    return queryBuilder.Where(fieldName, SqlOperand.EndsWith, value);
+                    return queryBuilder.Where(fieldName, UnarySqlOperand.Like, $"%{value}");
                 default:
                     throw new NotSupportedException($"The method {methExpr.Method.Name} is not supported. Only Contains, StartWith and EndsWith is supported");
             }
@@ -142,7 +141,7 @@ namespace Nevermore
 
             var value = GetValueFromExpression(binaryExpression.Right, property.PropertyType);
             var fieldName = property.Name;
-            return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, operand, value);
+            return queryBuilder.Where(fieldName, operand, value);
         }
         
         static object GetValueFromExpression(Expression expression, Type resultType)
@@ -157,95 +156,81 @@ namespace Nevermore
             return getterLambda.Compile()();
         }
 
+        /// <summary>
+        /// Adds a unary where expression to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="operand">The SQL operator to be used in the where clause</param>
+        /// <param name="value">The value to compare against the column values. It will be added to the query as a parameter.</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, object value) where TRecord : class
-        {
-            switch (operand)
-            {
-                case SqlOperand.Equal:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Equal, value);
-                case SqlOperand.GreaterThan:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.GreaterThan, value);
-                case SqlOperand.GreaterThanOrEqual:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.GreaterThanOrEqual,
-                        value);
-                case SqlOperand.LessThan:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.LessThan, value);
-                case SqlOperand.LessThanOrEqual:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.LessThanOrEqual,
-                        value);
-                case SqlOperand.NotEqual:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.NotEqual, value);
-                case SqlOperand.Contains:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}%");
-                case SqlOperand.StartsWith:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"{value}%");
-                case SqlOperand.EndsWith:
-                    return AddUnaryWhereClauseAndParameter(queryBuilder, fieldName, UnarySqlOperand.Like, $"%{value}");
-                case SqlOperand.In:
-                    if (value is IEnumerable enumerable)
-                        return AddWhereIn(queryBuilder, fieldName, enumerable);
-                    else
-                        throw new ArgumentException($"The operand {operand} is not valid with only one value",
-                            nameof(operand));
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with only one value",
-                        nameof(operand));
-            }
-        }
-
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, object startValue, object endValue) where TRecord : class
-        {
-            Parameter startValueParameter = new Parameter("StartValue");
-            Parameter endValueParameter = new Parameter("EndValue");
-            switch (operand)
-            {
-                case SqlOperand.Between:
-                    return queryBuilder.WhereParameterised(fieldName, BinarySqlOperand.Between, startValueParameter,
-                            endValueParameter)
-                        .Parameter(startValueParameter, startValue)
-                        .Parameter(endValueParameter, endValue);
-                case SqlOperand.BetweenOrEqual:
-                    return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual,
-                            startValueParameter)
-                        .Parameter(startValueParameter, startValue)
-                        .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
-                        .Parameter(endValueParameter, endValue);
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
-            }
-        }
-
-        static IQueryBuilder<TRecord> AddUnaryWhereClauseAndParameter<TRecord>(IQueryBuilder<TRecord> queryBuilder,
-            string fieldName, UnarySqlOperand operand, object value) where TRecord : class
+            UnarySqlOperand operand, object value) where TRecord : class
         {
             var parameter = new Parameter(fieldName);
             return queryBuilder.WhereParameterised(fieldName, operand, parameter)
                 .Parameter(parameter, value);
         }
 
-        static IQueryBuilder<TRecord> AddWhereIn<TRecord>(IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            IEnumerable values) where TRecord : class
+        /// <summary>
+        /// Adds a binary where expression to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="operand">The SQL operator to be used in the where clause</param>
+        /// <param name="startValue">The first or starting value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
+        /// <param name="endValue">The second or ending value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+            BinarySqlOperand operand, object startValue, object endValue) where TRecord : class
+        {
+            Parameter startValueParameter = new Parameter("StartValue");
+            Parameter endValueParameter = new Parameter("EndValue");
+            return queryBuilder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter)
+                .Parameter(startValueParameter, startValue)
+                .Parameter(endValueParameter, endValue);
+        }
+
+        /// <summary>
+        /// Adds a where between or equal expression to the query.
+        /// This determines if a column value is within the provided range by adding two unary where expressions to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="startValue">The first or starting value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
+        /// <param name="endValue">The second or ending value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        public static IQueryBuilder<TRecord> WhereBetweenOrEqual<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
+            string fieldName, object startValue, object endValue) where TRecord : class
+        {
+            Parameter startValueParameter = new Parameter("StartValue");
+            Parameter endValueParameter = new Parameter("EndValue");
+            return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, startValueParameter)
+                .Parameter(startValueParameter, startValue)
+                .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
+                .Parameter(endValueParameter, endValue);
+        }
+
+        /// <summary>
+        /// Adds an array based where clause expression to the query.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type of the query builder</typeparam>
+        /// <param name="queryBuilder">The query builder</param>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="operand">The SQL operator to be used in the where clause</param>
+        /// <param name="values">The values to compare against the column values. Each value will be added to the query as a separate parameter.</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+            ArraySqlOperand operand, IEnumerable values) where TRecord : class
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
             var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
             return stringValues.Zip(parameters, (value, parameter) => new {value, parameter})
-                .Aggregate(queryBuilder.WhereParameterised(fieldName, ArraySqlOperand.In, parameters),
+                .Aggregate(queryBuilder.WhereParameterised(fieldName, operand, parameters),
                     (p, pv) => p.Parameter(pv.parameter, pv.value));
-        }
-
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
-            SqlOperand operand, IEnumerable<object> values) where TRecord : class
-        {
-            switch (operand)
-            {
-                case SqlOperand.In:
-                    return AddWhereIn(queryBuilder, fieldName, values);
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with a list of values",
-                        nameof(operand));
-            }
         }
 
         /// <summary>

@@ -76,7 +76,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customers = transaction.Query<Customer>()
-                    .Where("LastName", SqlOperand.In, new[] { "Apple", "Banana" })
+                    .Where("LastName", ArraySqlOperand.In, new[] { "Apple", "Banana" })
                     .ToList();
                 Assert.Equal(2, customers.Count);
             }
@@ -97,7 +97,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = transaction.Query<Customer>()
-                                            .Where("Id", SqlOperand.In, new[] { customerId })
+                                            .Where("Id", ArraySqlOperand.In, new[] { customerId })
                                             .Stream()
                                             .Single();
                 Assert.Equal("Alice", customer.FirstName);

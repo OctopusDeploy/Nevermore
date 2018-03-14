@@ -305,7 +305,7 @@ WHERE ([Completed] < @completed)";
                 .Returns(2);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.LessThan, 5)
+                .Where("Completed", UnarySqlOperand.LessThan, 5)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -348,7 +348,7 @@ WHERE ([Completed] <= @completed)";
                 .Returns(10);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.LessThanOrEqual, 5)
+                .Where("Completed", UnarySqlOperand.LessThanOrEqual, 5)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -392,7 +392,7 @@ WHERE ([Title] = @title)";
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
-                .Where("Title", SqlOperand.Equal, "nevermore")
+                .Where("Title", UnarySqlOperand.Equal, "nevermore")
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -435,7 +435,7 @@ WHERE ([Title] <> @title)";
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
-                .Where("Title", SqlOperand.NotEqual, "nevermore")
+                .Where("Title", UnarySqlOperand.NotEqual, "nevermore")
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -478,7 +478,7 @@ WHERE ([Completed] > @completed)";
                 .Returns(3);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.GreaterThan, 5)
+                .Where("Completed", UnarySqlOperand.GreaterThan, 5)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -521,7 +521,7 @@ WHERE ([Completed] >= @completed)";
                 .Returns(21);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.GreaterThanOrEqual, 5)
+                .Where("Completed", UnarySqlOperand.GreaterThanOrEqual, 5)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -564,7 +564,7 @@ WHERE ([Title] LIKE @title)";
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
-                .Where("Title", SqlOperand.Contains, "nevermore")
+                .Where(t => t.Title.Contains("nevermore"))
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -608,7 +608,7 @@ WHERE ([State] IN (@state0, @state1))
 ORDER BY [Id]";
 
             var queryBuilder = CreateQueryBuilder<IDocument>("Project")
-                .Where("State", SqlOperand.In, new[] { State.Queued, State.Running });
+                .Where("State", ArraySqlOperand.In, new[] { State.Queued, State.Running });
 
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
@@ -626,7 +626,7 @@ FROM dbo.[Project]
 WHERE ([State] IN (@state0, @state1))
 ORDER BY [Id]";
             var queryBuilder = CreateQueryBuilder<IDocument>("Project")
-                .Where("State", SqlOperand.In, matches);
+                .Where("State", ArraySqlOperand.In, matches);
 
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
@@ -640,7 +640,7 @@ WHERE (0 = 1)
 ORDER BY [Id]";
 
             var queryBuilder =
-                CreateQueryBuilder<IDocument>("Project").Where("State", SqlOperand.In, new List<State>());
+                CreateQueryBuilder<IDocument>("Project").Where("State", ArraySqlOperand.In, new List<State>());
 
             queryBuilder.DebugViewRawQuery().Should().Be(expextedSql);
         }
@@ -658,7 +658,7 @@ WHERE ([Title] IN (@title0, @title1))";
                 .Returns(1);
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
-                .Where("Title", SqlOperand.In, new[] { "nevermore", "octofront" })
+                .Where("Title", ArraySqlOperand.In, new[] { "nevermore", "octofront" })
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -707,7 +707,7 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.Between, 5, 10)
+                .Where("Completed", BinarySqlOperand.Between, 5, 10)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -756,7 +756,7 @@ AND ([Completed] <= @endvalue)";
                 .Returns(1);
 
             var result = CreateQueryBuilder<Todos>("Todos")
-                .Where("Completed", SqlOperand.BetweenOrEqual, 5, 10)
+                .WhereBetweenOrEqual("Completed", 5, 10)
                 .Count();
 
             transaction.Received(1).ExecuteScalar<int>(
@@ -846,7 +846,7 @@ ORDER BY [Title] DESC";
                 .Alias("ORD")
                 .InnerJoin(accounts)
                 .On("AccountId", JoinOperand.Equal, "Id")
-                .Where("Id", SqlOperand.Equal, 1)
+                .Where("Id", UnarySqlOperand.Equal, 1)
                 .OrderBy("Name")
                 .DebugViewRawQuery();
 
@@ -994,7 +994,7 @@ ORDER BY [Title] DESC";
             transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             var account = CreateQueryBuilder<IDocument>("Account")
-                .Where("Name", SqlOperand.Equal, "ABC")
+                .Where("Name", UnarySqlOperand.Equal, "ABC")
                 .Column("Id", "Id");
             CreateQueryBuilder<IDocument>("Orders")
                 .Column("Id", "Id")
@@ -1045,17 +1045,22 @@ ORDER BY [Title] DESC";
         [Fact]
         public void ShouldGenerateMultipleJoinTypes()
         {
-            var customers = CreateQueryBuilder<IDocument>("Customers")
-                .Where("Name", SqlOperand.StartsWith, "Bob");
+            var customers = CreateQueryBuilder<Customer>("Customers")
+                .Where(c => c.Name.StartsWith("Bob"));
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .InnerJoin(customers.Subquery())
+                .InnerJoin(customers.AsType<IDocument>().Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id")
                 .LeftHashJoin(account.AsAliasedSource())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
             this.Assent(actual);
+        }
+
+        class Customer
+        {
+            public string Name { get; set; }
         }
 
         [Fact]
@@ -1147,7 +1152,7 @@ ORDER BY [Title] DESC";
                 .Subquery()
                 .Alias("LatestDeployment")
                 .Column("Id")
-                .Where("Rank", SqlOperand.Equal, 1);
+                .Where("Rank", UnarySqlOperand.Equal, 1);
         } 
         
         IQueryBuilder<IDocument> LatestDeployment()
@@ -1261,7 +1266,7 @@ FROM dbo.[Orders]");
 
             var query = CreateQueryBuilder<IDocument>("Orders")
                 .InnerJoin(CreateQueryBuilder<IDocument>("Customers")
-                    .Where("Name", SqlOperand.Equal, "Bob")
+                    .Where("Name", UnarySqlOperand.Equal, "Bob")
                     .Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id");
 
