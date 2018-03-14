@@ -16,11 +16,22 @@ namespace Nevermore
         {
         }
 
+        JoinSelectBuilder(JoinedSource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection, IRowSelection rowSelection, bool shouldIgnoreDefaultOrderBy) 
+            : base(@from, whereClauses, orderByClauses, columnSelection, rowSelection, shouldIgnoreDefaultOrderBy)
+        {
+        }
+
         protected override ISelectColumns DefaultSelect => new SelectAllFrom(From.Source.Alias);
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
             yield return new OrderByField(new TableColumn(new Column("Id"), From.Source.Alias));
+        }
+
+        public override ISelectBuilder Clone()
+        {
+            return new JoinSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection, ShouldIgnoreDefaultOrderBy);
         }
 
         public override void AddWhere(UnaryWhereParameter whereParams)
@@ -75,11 +86,23 @@ namespace Nevermore
         {
         }
 
+        TableSelectBuilder(ITableSource from, List<IWhereClause> whereClauses,
+            List<OrderByField> orderByClauses, ISelectColumns columnSelection, 
+            IRowSelection rowSelection, bool shouldIgnoreDefaultOrderBy)
+            : base(from, whereClauses, orderByClauses, columnSelection, rowSelection, shouldIgnoreDefaultOrderBy)
+        {
+        }
+
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
             yield return new OrderByField(new Column("Id"));
+        }
+
+        public override ISelectBuilder Clone()
+        {
+            return new TableSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection, ShouldIgnoreDefaultOrderBy);
         }
     }
 
@@ -95,11 +118,22 @@ namespace Nevermore
         {
         }
 
+        SubquerySelectBuilder(ISubquerySource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection, IRowSelection rowSelection, bool shouldIgnoreDefaultOrderBy) 
+            : base(@from, whereClauses, orderByClauses, columnSelection, rowSelection, shouldIgnoreDefaultOrderBy)
+        {
+        }
+
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
             yield return new OrderByField(new TableColumn(new Column("Id"), From.Alias));
+        }
+
+        public override ISelectBuilder Clone()
+        {
+            return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection, ShouldIgnoreDefaultOrderBy);
         }
     }
 
@@ -108,15 +142,26 @@ namespace Nevermore
         protected readonly TSource From;
         protected readonly List<OrderByField> OrderByClauses;
         protected readonly List<IWhereClause> WhereClauses;
-        ISelectColumns columnSelection = null;
-        IRowSelection rowSelection = new AllRows();
-        bool ignoreDefaultOrderBy = false;
+        protected ISelectColumns ColumnSelection;
+        protected IRowSelection RowSelection;
+        protected bool ShouldIgnoreDefaultOrderBy;
 
         protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses)
+            :this(from, whereClauses, orderByClauses, null, new AllRows(), false)
+        {
+        }
+
+        protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection,
+            IRowSelection rowSelection, 
+            bool shouldIgnoreDefaultOrderBy)
         {
             From = from;
             WhereClauses = whereClauses;
             OrderByClauses = orderByClauses;
+            this.RowSelection = rowSelection;
+            this.ColumnSelection = columnSelection;
+            this.ShouldIgnoreDefaultOrderBy = shouldIgnoreDefaultOrderBy;
         }
 
         protected abstract ISelectColumns DefaultSelect { get; }
@@ -125,8 +170,10 @@ namespace Nevermore
 
         public ISelect GenerateSelect()
         {
-            return new Select(rowSelection, ColumnSelection, From, GetWhere() ?? new Where(), GetOrderBy());
+            return new Select(RowSelection, GetColumnSelection(), From, GetWhere() ?? new Where(), GetOrderBy());
         }
+
+        public abstract ISelectBuilder Clone();
 
         Where GetWhere()
         {
@@ -138,7 +185,7 @@ namespace Nevermore
             if (!OrderByClauses.Any())
             {
                 // If you are doing something like COUNT(*) then it doesn't make sense to order by ID as a default behaviour.
-                if (ignoreDefaultOrderBy || ColumnSelection.AggregatesRows) return null;
+                if (ShouldIgnoreDefaultOrderBy || GetColumnSelection().AggregatesRows) return null;
                 var orderByFields = GetDefaultOrderByFields().ToList();
                 return !orderByFields.Any() ? null : new OrderBy(orderByFields);
             }
@@ -148,7 +195,7 @@ namespace Nevermore
 
         public void AddTop(int top)
         {
-            rowSelection = new Top(top);
+            RowSelection = new Top(top);
         }
 
         public virtual void AddOrder(string fieldName, bool @descending)
@@ -158,7 +205,7 @@ namespace Nevermore
 
         public void IgnoreDefaultOrderBy()
         {
-            ignoreDefaultOrderBy = true;
+            ShouldIgnoreDefaultOrderBy = true;
         }
 
         public virtual void AddWhere(UnaryWhereParameter whereParams)
@@ -194,9 +241,9 @@ namespace Nevermore
 
         public void AddColumnSelection(ISelectColumns columns)
         {
-            columnSelection = columnSelection == null
+            ColumnSelection = ColumnSelection == null
                 ? columns
-                : new AggregateSelectColumns(new List<ISelectColumns>() { columnSelection, columns });
+                : new AggregateSelectColumns(new List<ISelectColumns>() { ColumnSelection, columns });
         }
 
         public virtual void AddRowNumberColumn(string alias, IReadOnlyList<Column> partitionBys)
@@ -213,7 +260,7 @@ namespace Nevermore
         {
             var orderByClauses = OrderByClauses.Any() 
                 ? OrderByClauses 
-                : ignoreDefaultOrderBy ? new List<OrderByField>() : GetDefaultOrderByFields().ToList();
+                : ShouldIgnoreDefaultOrderBy ? new List<OrderByField>() : GetDefaultOrderByFields().ToList();
             if (!orderByClauses.Any())
                 throw new InvalidOperationException("Cannot create a ROW_NUMBER() column without an order by clause");
 
@@ -227,6 +274,6 @@ namespace Nevermore
             AddColumnSelection(DefaultSelect);
         }
 
-        ISelectColumns ColumnSelection => columnSelection ?? DefaultSelect;
+        ISelectColumns GetColumnSelection() => ColumnSelection ?? DefaultSelect;
     }
 }
