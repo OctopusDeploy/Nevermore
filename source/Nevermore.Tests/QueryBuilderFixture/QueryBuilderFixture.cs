@@ -1090,8 +1090,7 @@ ORDER BY [Title] DESC";
                 .Column("QueueTime", "QueueTime", taskTableAlias)
                 .Column("CompletedTime", "CompletedTime", taskTableAlias)
                 .Column("Version", "Version", releaseTableAlias)
-                .Where("([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C')")
-                .IgnoreDefaultOrderBy();
+                .Where("([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C')");
 
             var actual = dashboard.AsView("Dashboard");
 
@@ -1190,8 +1189,7 @@ ORDER BY [Title] DESC";
                 .Parameter(new Parameter("machineId", new NVarCharMax()))
                 .Where("[Event].Category = \'DeploymentSucceeded\'")
                 .Subquery()
-                .Where("Rank = 1")
-                .IgnoreDefaultOrderBy();
+                .Where("Rank = 1");
 
             this.Assent(actual.AsStoredProcedure("LatestSuccessfulDeploymentsToMachine"));
         }
@@ -1246,16 +1244,6 @@ ORDER BY [Title] DESC";
                 .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
 
             query.Invoking(q => q.AsFunction("GetDeployment")).ShouldThrow<Exception>();
-        }
-
-        [Fact]
-        public void ShouldNotIncludeOrderByIdIfDefaultOrderByIsIgnored()
-        {
-            CreateQueryBuilder<IDocument>("Orders")
-                .IgnoreDefaultOrderBy()
-                .DebugViewRawQuery()
-                .Should().Be(@"SELECT *
-FROM dbo.[Orders]");
         }
 
         [Fact]

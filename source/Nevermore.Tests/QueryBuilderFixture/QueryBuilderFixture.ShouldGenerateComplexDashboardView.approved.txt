@@ -62,3 +62,4 @@ CREATE VIEW dbo.[Dashboard] AS
     INNER JOIN dbo.[Release] r
     ON d.[ReleaseId] = r.[Id]
     WHERE (([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C'))
+    ORDER BY d.[Id]

@@ -19,5 +19,6 @@ BEGIN (
         AND ([Event].Category = 'DeploymentSucceeded')
     ) ALIAS_GENERATED_4
     WHERE (Rank = 1)
+    ORDER BY ALIAS_GENERATED_4.[Id]
 )
 END

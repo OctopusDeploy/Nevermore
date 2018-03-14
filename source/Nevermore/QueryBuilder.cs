@@ -171,12 +171,6 @@ namespace Nevermore
             return this;
         }
 
-        public IQueryBuilder<TRecord> IgnoreDefaultOrderBy()
-        {
-            selectBuilder.IgnoreDefaultOrderBy();
-            return this;
-        }
-
         public IQueryBuilder<TRecord> Column(string name)
         {
             selectBuilder.AddColumn(name);

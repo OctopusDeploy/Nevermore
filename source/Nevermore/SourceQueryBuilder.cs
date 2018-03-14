@@ -232,11 +232,6 @@ namespace Nevermore
             return Builder.OrderByDescending(fieldName);
         }
 
-        public IQueryBuilder<TRecord> IgnoreDefaultOrderBy()
-        {
-            return Builder.IgnoreDefaultOrderBy();
-        }
-
         public IQueryBuilder<TRecord> Column(string name)
         {
             return Builder.Column(name);

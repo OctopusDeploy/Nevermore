@@ -128,7 +128,6 @@ namespace Nevermore
         /// <param name="fieldName">The column that the query should be ordered by</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName);
-        IQueryBuilder<TRecord> IgnoreDefaultOrderBy();
 
         /// <summary>
         /// Adds a column to the column selection for the query.
