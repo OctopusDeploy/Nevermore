@@ -236,8 +236,14 @@ namespace Nevermore
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
+            
+            var parmeterValues = new CommandParameterValues(paramValues)
+            {
+                {minRowParameter.ParameterName, skip + 1},
+                {maxRowParameter.ParameterName, take + skip}
+            };
 
-            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), paramValues).ToList();
+            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues).ToList();
         }
 
         [Pure]

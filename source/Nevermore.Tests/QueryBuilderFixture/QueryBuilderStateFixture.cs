@@ -107,6 +107,7 @@ WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
+            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
@@ -134,6 +135,8 @@ FROM (
 WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
+
+            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
 
             queryBuilder.ToList();
 

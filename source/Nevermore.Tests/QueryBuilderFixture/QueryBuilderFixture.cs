@@ -1293,6 +1293,34 @@ ORDER BY [Title] DESC";
 
             this.Assent(query.AsStoredProcedure("ShouldCollectParametersFromSubqueriesInJoin"));
         }
+
+        [Fact]
+        public void ShouldAddPaginatedQueryParameters()
+        {
+            CommandParameterValues parameterValues = null;
+            string query = null;
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(q => query = q), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+
+            CreateQueryBuilder<IDocument>("Orders")
+                .Where("Id", UnarySqlOperand.Equal, "1")
+                .ToList(10, 20);
+
+            query.ShouldBeEquivalentTo(@"SELECT *
+FROM (
+    SELECT *,
+    ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
+    FROM dbo.[Orders]
+    WHERE ([Id] = @id)
+) ALIAS_GENERATED_1
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
+ORDER BY [RowNum]");
+
+            parameterValues.Count.ShouldBeEquivalentTo(3);
+            parameterValues["id"].ShouldBeEquivalentTo("1");
+            parameterValues["_minrow"].ShouldBeEquivalentTo(11);
+            parameterValues["_maxrow"].ShouldBeEquivalentTo(30);
+        }
     }
 
     public class Todos
