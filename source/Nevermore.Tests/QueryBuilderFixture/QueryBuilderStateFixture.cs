@@ -202,7 +202,7 @@ ORDER BY [Id]");
         [Fact]
         public void ShouldAddWhereClauseToExistingQueryBuilder()
         {
-            transaction.Query<IDocument>().Returns(TableQueryBuilder("Accounts"));
+            transaction.TableQuery<IDocument>().Returns(TableQueryBuilder("Accounts"));
 
             var query = transaction.Query<IDocument>();
 

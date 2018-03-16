@@ -50,7 +50,7 @@ namespace Nevermore.IntegrationTests
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
             using (var transaction = Store.BeginTransaction())
             {
-                var customers = transaction.Query<Customer>()
+                var customers = transaction.TableQuery<Customer>()
                     .Where("[Roles] LIKE @role")
                     .LikeParameter("role", "web-server")
                     .ToList();
@@ -75,7 +75,7 @@ namespace Nevermore.IntegrationTests
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
             using (var transaction = Store.BeginTransaction())
             {
-                var customers = transaction.Query<Customer>()
+                var customers = transaction.TableQuery<Customer>()
                     .Where("LastName", ArraySqlOperand.In, new[] { "Apple", "Banana" })
                     .ToList();
                 Assert.Equal(2, customers.Count);
@@ -96,7 +96,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var customer = transaction.Query<Customer>()
+                var customer = transaction.TableQuery<Customer>()
                                             .Where("Id", ArraySqlOperand.In, new[] { customerId })
                                             .Stream()
                                             .Single();

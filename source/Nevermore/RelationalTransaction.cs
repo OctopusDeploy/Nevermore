@@ -91,7 +91,7 @@ namespace Nevermore
         [Pure]
         public T Load<T>(string id) where T : class, IId
         {
-            return Query<T>()
+            return TableQuery<T>()
                 .Where("[Id] = @id")
                 .Parameter("id", id)
                 .First();
@@ -108,7 +108,7 @@ namespace Nevermore
             
             foreach (var block in blocks)
             {
-                var results = Query<T>()
+                var results = TableQuery<T>()
                     .Where("[Id] IN @ids")
                     .Parameter("ids", block.ToArray())
                     .Stream();
@@ -135,7 +135,7 @@ namespace Nevermore
         public T[] LoadRequired<T>(IEnumerable<string> ids) where T : class, IId
         {
             var allIds = ids.ToArray();
-            var results = Query<T>()
+            var results = TableQuery<T>()
                 .Where("[Id] IN @ids")
                 .Parameter("ids", allIds)
                 .Stream().ToArray();
@@ -583,7 +583,7 @@ namespace Nevermore
         }
 
         [Pure]
-        public ITableSourceQueryBuilder<T> Query<T>() where T : class, IId
+        public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
             return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }

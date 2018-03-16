@@ -83,7 +83,7 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <returns>A stream of resulting documents.</returns>
-        ITableSourceQueryBuilder<TDocument> Query<TDocument>() where TDocument : class, IId;
+        ITableSourceQueryBuilder<TDocument> TableQuery<TDocument>() where TDocument : class, IId;
 
         /// <summary>
         /// Creates a deletion query for a strongly typed document.
