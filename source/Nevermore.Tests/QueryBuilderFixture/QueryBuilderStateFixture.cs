@@ -199,11 +199,36 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
+        [Fact]
+        public void ShouldAddWhereClauseToExistingQueryBuilder()
+        {
+            transaction.Query<IDocument>().Returns(TableQueryBuilder("Accounts"));
+
+            var query = transaction.Query<IDocument>();
+
+            // Don't capture the new query builder here - there is code in Octopus that is structured this way
+            query.Where("Id", UnarySqlOperand.Equal, 1);
+            query.ToList();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM dbo.[Accounts]
+WHERE ([Id] = @id)
+ORDER BY [Id]");
+        }
+
         string LastExecutedQuery() => executedQueries.Last();
 
         IQueryBuilder<IDocument> QueryBuilder(string tableName)
         {
-            return new QueryBuilder<IDocument, TableSelectBuilder>(new TableSelectBuilder(new SimpleTableSource(tableName)), transaction, new TableAliasGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return TableQueryBuilder(tableName)
+                // This convert the table query builder to a normal query builder. 
+                // If you don't do this, then you are only testing the implementation of ITableSourceQueryBuilder, which creates a brand new query builder from most modifications.
+                .AsType<IDocument>();
+        }
+
+        ITableSourceQueryBuilder<IDocument> TableQueryBuilder(string tableName)
+        {
+            return new TableSourceQueryBuilder<IDocument>(tableName, transaction, new TableAliasGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
     }
 }
