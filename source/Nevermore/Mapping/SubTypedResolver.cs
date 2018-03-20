@@ -64,7 +64,10 @@ namespace Nevermore.Mapping
         public override Func<IDataReader, Type> TypeResolverFromReader(Func<string, int> columnOrdinal)
         {
             var colIndex = columnOrdinal(column.ColumnName);
-            return reader => GetType(reader[colIndex].ToString());
+            return reader => GetType(
+                0 <= colIndex && colIndex < reader.FieldCount 
+                ? reader[colIndex].ToString() 
+                : "");
         }
 
         Type GetType(string value)
