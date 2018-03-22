@@ -122,7 +122,8 @@ namespace Nevermore
         {
             if (ContainsKey(parameterName))
             {
-                if (!this[parameterName].Equals(value))
+                var existingValue = this[parameterName];
+                if (!existingValue?.Equals(value) ?? value != null)
                     throw new Exception($"The parameter {parameterName} already exists with a different value");
             }
             else

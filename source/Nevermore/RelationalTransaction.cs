@@ -173,7 +173,7 @@ namespace Nevermore
             var parameters = InstanceToParameters(instance, mapping);
             if (string.IsNullOrWhiteSpace(instance.Id))
             {
-                parameters.AddParameter("Id", string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId);
+                parameters["Id"] = string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId;
             }
             else if (customAssignedId != null && customAssignedId != instance.Id)
             {
