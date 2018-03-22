@@ -25,8 +25,8 @@ namespace Nevermore
     {
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransaction>();
-        static readonly ConcurrentDictionary<string, string> InsertStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        static readonly ConcurrentDictionary<string, string> UpdateStatementTemplates = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        static readonly ConcurrentDictionary<DocumentMap, string> InsertStatementTemplates = new ConcurrentDictionary<DocumentMap, string>();
+        static readonly ConcurrentDictionary<DocumentMap, string> UpdateStatementTemplates = new ConcurrentDictionary<DocumentMap, string>();
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation retriableOperation;
@@ -98,7 +98,7 @@ namespace Nevermore
                 .Select((id, index) => (id: id, index: index))
                 .GroupBy(x => x.index / 500, y => y.id)
                 .ToArray();
-            
+
             foreach (var block in blocks)
             {
                 var results = Query<T>()
@@ -162,7 +162,7 @@ namespace Nevermore
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
             var mapping = mappings.Get(instance.GetType());
-            var statement = InsertStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
+            var statement = InsertStatementTemplates.GetOrAdd(mapping, t => string.Format(
                 "INSERT INTO dbo.[{0}] {1} ({2}) values ({3})",
                 tableName ?? mapping.TableName,
                 tableHint ?? "",
@@ -315,7 +315,7 @@ namespace Nevermore
             var mapping = mappings.Get(instance.GetType());
 
             var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @JSON" }));
-            var statement = UpdateStatementTemplates.GetOrAdd(mapping.TableName, t => string.Format(
+            var statement = UpdateStatementTemplates.GetOrAdd(mapping, t => string.Format(
                 "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
                 mapping.TableName,
                 tableHint ?? "",
@@ -359,7 +359,7 @@ namespace Nevermore
         }
 
         public void DeleteInternal(DocumentMap mapping, string id, int? commandTimeoutSeconds)
-        { 
+        {
             var statement = $"DELETE from dbo.[{mapping.TableName}] WHERE Id = @Id";
 
             using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
@@ -491,7 +491,6 @@ namespace Nevermore
                     msUntilFirstRecord = timedSection.ElapsedMilliseconds;
                     var idIndex = GetOrdinal(reader, "Id");
                     var jsonIndex = GetOrdinal(reader, "JSON");
-                    var columnIndexes = mapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
                     var typeResolver = mapping.InstanceTypeResolver.TypeResolverFromReader(s => GetOrdinal(reader, s));
 
                     while (reader.Read())
@@ -505,7 +504,7 @@ namespace Nevermore
                             var deserialized = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
                             // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
                             // If the deserialized object is not the desired type, then we are querying for a specific sub-type
-                            // and this record is a different sub-type, and should be excluded from the result-set. 
+                            // and this record is a different sub-type, and should be excluded from the result-set.
                             if (deserialized is T)
                             {
                                 instance = (T)deserialized;
@@ -517,6 +516,9 @@ namespace Nevermore
                         {
                             instance = (T)Activator.CreateInstance(instanceType);
                         }
+
+                        var specificMapping = mappings.Get(instanceType);
+                        var columnIndexes = specificMapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
 
                         foreach (var index in columnIndexes)
                         {
@@ -592,7 +594,7 @@ namespace Nevermore
 
             result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mType, jsonSerializerSettings);
 
-            foreach (var c in mapping.IndexedColumns)
+            foreach (var c in mappings.Get(mType).IndexedColumns)
             {
                 var value = c.ReaderWriter.Read(instance);
                 if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
@@ -746,7 +748,7 @@ namespace Nevermore
                 var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
 
                 var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
-                foreach (var column in mapping.IndexedColumns)
+                foreach (var column in mappings.Get(instanceType).IndexedColumns)
                 {
                     column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
                 }

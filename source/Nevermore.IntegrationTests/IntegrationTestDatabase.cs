@@ -68,10 +68,12 @@ namespace Nevermore.IntegrationTests
         void InitializeStore()
         {
             Mappings = new RelationalMappings();
+
             Mappings.Install(new List<DocumentMap>()
             {
                 new CustomerMap(),
-                new ProductMap(),
+                new ProductMap<Product>(),
+                new SpecialProductMap(),
                 new LineItemMap()
             });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
@@ -95,10 +97,14 @@ namespace Nevermore.IntegrationTests
             var output = new StringBuilder();
             SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
 
+            // needed for products, but not to generate the table
+            Mappings.Install(new List<DocumentMap>() { new ProductMap<Product>() });
+
+            // needed to generate the table
             var mappings = new DocumentMap[]
             {
                 new CustomerMap(),
-                new ProductMap(),
+                new SpecialProductMap(),
                 new LineItemMap()
             };
 
