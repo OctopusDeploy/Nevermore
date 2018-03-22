@@ -10,6 +10,7 @@ using Nevermore.Mapping;
 
 namespace Nevermore
 {
+    // It would be nice if this did not inherit from Dictionary<string, object> directly, to make it easier to control mutations (eg by always going through `AddParameter`)
     public class CommandParameters : Dictionary<string, object>
     {
         public CommandParameters()
@@ -43,7 +44,7 @@ namespace Nevermore
                 var rw = PropertyReaderFactory.Create<object>(type, property.Name);
 
                 var value = rw.Read(args);
-                this[property.Name] = value;
+                AddParameter(property.Name, value);
             }
         }
 
@@ -114,10 +115,19 @@ namespace Nevermore
         public void AddRange(CommandParameters other)
         {
             foreach (var item in other)
+                AddParameter(item.Key, item.Value);
+        }
+
+        public void AddParameter(string parameterName, object value)
+        {
+            if (ContainsKey(parameterName))
             {
-                if (ContainsKey(item.Key))
-                    throw new Exception($"The parameter {item.Key} already exists");
-                this[item.Key] = item.Value;
+                if (!this[parameterName].Equals(value))
+                    throw new Exception($"The parameter {parameterName} already exists with a different value");
+            }
+            else
+            {
+                this[parameterName] = value;
             }
         }
     }

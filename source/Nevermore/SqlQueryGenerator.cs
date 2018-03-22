@@ -132,8 +132,8 @@ namespace Nevermore
         public static string PaginateQuery(string innerSql, int skip, int take, CommandParameters parameters,
             string tableName, string orderBy, string innerColumnSelector = "[Id]")
         {
-            parameters.Add("_minrow", skip + 1);
-            parameters.Add("_maxrow", take + skip);
+            parameters.AddParameter("_minrow", skip + 1);
+            parameters.AddParameter("_maxrow", take + skip);
             return $@"SELECT *
 FROM dbo.[{tableName}]
 WHERE {innerColumnSelector} IN
@@ -401,14 +401,13 @@ WHERE {innerColumnSelector} IN
 
         public void AddParameter(string fieldName, object value)
         {
-            queryParameters.Add(fieldName.ToLower(), value);
+            queryParameters.AddParameter(fieldName.ToLower(), value);
         }
 
         public void AddJoin(IJoin join)
         {
             Joins.Add(join);
         }
-
 
         void AppendField(string fieldName)
         {
