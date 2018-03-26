@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using Assent;
 using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Joins;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Nevermore.Tests.QueryBuilderFixture
@@ -781,6 +783,78 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             Assert.NotNull(result);
             Assert.Equal(todoItem, result);
+        }
+
+        [Fact]
+        public void ShouldAllowAddingSameParameterTwice()
+        {
+            string actual = null;
+            CommandParameters parameters = null;
+            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameters>(p => parameters = p));
+
+            var date = DateTime.Now;
+            new QueryBuilder<TodoItem>(transaction, "Todos")
+                .Where("AddedDate", SqlOperand.Equal, date)
+                .Where("AddedDate", SqlOperand.Equal, date)
+                .First();
+
+            const string expected = "SELECT TOP 1 * FROM dbo.[Todos] WHERE ([AddedDate] = @addeddate) AND ([AddedDate] = @addeddate) ORDER BY [Id]";
+
+            parameters.Values.Count.ShouldBeEquivalentTo(1);
+            parameters["AddedDate"].ShouldBeEquivalentTo(date);
+
+            actual.ShouldBeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void ShouldAllowSameParameterFromJoin()
+        {
+            var date = DateTime.Now;
+
+            var orders = new QueryBuilder<IDocument>(transaction, "Orders")
+                .Where("CreatedDate = @date")
+                .Parameter("date", date);
+
+            string actual = null;
+            CommandParameters parameters = null;
+            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameters>(p => parameters = p));
+
+            new QueryBuilder<TodoItem>(transaction, "Customer")
+                .Where("JoinedDate = @date")
+                .Parameter("date", date)
+                .InnerJoin(orders)
+                .On("Id", JoinOperand.Equal, "CustomerId")
+                .First();
+
+            const string expected = @"SELECT TOP 1 ALIAS_Customer_0.* FROM (SELECT * FROM dbo.[Customer] WHERE (JoinedDate = @date)) ALIAS_Customer_0
+INNER JOIN (SELECT * FROM dbo.[Orders] WHERE (CreatedDate = @date)) ALIAS_Orders_1 ON ALIAS_Customer_0.[Id] = ALIAS_Orders_1.[CustomerId]
+ORDER BY ALIAS_Customer_0.[Id]";
+
+            parameters.Values.Count.ShouldBeEquivalentTo(1);
+            parameters["date"].ShouldBeEquivalentTo(date);
+
+            actual.ShouldBeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void ShouldThrowIfSameParameterHasDifferentValue()
+        {
+            var createdDate = DateTime.Now;
+
+            var orders = new QueryBuilder<IDocument>(transaction, "Orders")
+                .Where("CreatedDate = @date")
+                .Parameter("date", createdDate);
+
+            var joinedDate = createdDate + TimeSpan.FromDays(1);
+            var query = new QueryBuilder<TodoItem>(transaction, "Customer")
+                .Where("JoinedDate = @date")
+                .Parameter("date", joinedDate)
+                .InnerJoin(orders)
+                .On("Id", JoinOperand.Equal, "CustomerId");
+
+            query.Invoking(q => q.First()).ShouldThrow<Exception>().WithMessage("The parameter date already exists with a different value");
         }
     }
 
