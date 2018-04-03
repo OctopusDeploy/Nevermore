@@ -10,25 +10,30 @@ namespace Nevermore.Tests.QueryBuilderFixture
     {
         private IRelationalTransaction transaction;
         private string query = null;
-        private CommandParameters parameters = null;
+        private CommandParameterValues parameters = null;
 
         public VariableCasingFixture()
         {
             query = null;
             parameters = null;
             transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameters>()))
+            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameterValues>()))
                 .Do(c =>
                 {
                     query = c.Arg<string>();
-                    parameters = c.Arg<CommandParameters>();
+                    parameters = c.Arg<CommandParameterValues>();
                 });
+        }
+
+        IQueryBuilder<IId> CreateQueryBuilder()
+        {
+            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Fact]
         public void VariablesCasingIsNormalisedForWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
@@ -40,10 +45,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void VariablesCasingIsNormalisedForWhereSingleParam()
+        public void VariablesCasingIsNormalisedForUnaryWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.GreaterThan, "Bar")
+            CreateQueryBuilder()
+                .Where("fOo", UnarySqlOperand.GreaterThan, "Bar")
                 .ToList();
 
             parameters.Count.Should().Be(1);
@@ -52,10 +57,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void VariablesCasingIsNormalisedForWhereTwoParam()
+        public void VariablesCasingIsNormalisedForBinaryWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.Between, 1, 2)
+            CreateQueryBuilder()
+                .Where("fOo", BinarySqlOperand.Between, 1, 2)
                 .ToList();
 
             parameters.Count.Should().Be(2);
@@ -64,22 +69,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
         }
 
         [Fact]
-        public void VariablesCasingIsNormalisedForWhereParamArray()
+        public void VariablesCasingIsNormalisedForArrayWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.Contains, new[] { 1, 2, 3 })
-                .ToList();
-
-            parameters.Count.Should().Be(1);
-            var parameter = "@" + parameters.Keys.Single();
-            query.Should().Contain(parameter, "Should contain " + parameter);
-        }
-
-        [Fact]
-        public void VariablesCasingIsNormalisedForWhereIn()
-        {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.In, new[] { "BaR", "BaZ" })
+            CreateQueryBuilder()
+                .Where("fOo", ArraySqlOperand.In, new[] { "BaR", "BaZ" })
                 .ToList();
 
             parameters.Count.Should().Be(2);

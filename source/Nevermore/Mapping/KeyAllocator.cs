@@ -84,7 +84,7 @@ namespace Nevermore.Mapping
             {
                 using (var transaction = store.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    var parameters = new CommandParameters
+                    var parameters = new CommandParameterValues
                     {
                         {"collectionName", collectionName},
                         {"blockSize", blockSize}

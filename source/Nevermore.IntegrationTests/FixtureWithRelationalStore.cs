@@ -25,7 +25,7 @@ namespace Nevermore.IntegrationTests
 
         public int CountOf<T>() where T : class, IId
         {
-            return InTransaction(s => s.Query<T>().Count());
+            return InTransaction(s => s.TableQuery<T>().Count());
         }
 
         public void StoreAll<T>(params T[] items) where T : class, IId

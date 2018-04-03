@@ -73,12 +73,12 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert<SpecialProduct>(originalSpecial);
                 trn.Insert<DodgyProduct>(originalDud);
 
-                var allProducts = trn.Query<Product>().ToList();
+                var allProducts = trn.TableQuery<Product>().ToList();
                 Assert.True(allProducts.Exists(p =>
                     p is SpecialProduct sp && sp.BonusMaterial == originalSpecial.BonusMaterial));
                 Assert.True(allProducts.Exists(p => p is DodgyProduct dp && dp.Tax == originalDud.Tax));
 
-                var onlySpecial = trn.Query<SpecialProduct>().ToList();
+                var onlySpecial = trn.TableQuery<SpecialProduct>().ToList();
                 Assert.Equal(1, onlySpecial.Count);
                 Assert.Equal(originalSpecial.BonusMaterial, onlySpecial[0].BonusMaterial);
             }

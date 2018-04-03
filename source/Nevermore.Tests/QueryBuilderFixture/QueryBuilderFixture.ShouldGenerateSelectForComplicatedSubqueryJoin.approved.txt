@@ -1,4 +1,16 @@
-SELECT t1.* FROM (SELECT * FROM dbo.[Orders]) t1
-INNER JOIN (SELECT * FROM dbo.[Customers] WHERE (IsActive = 1)) t2 ON t1.[CustomerId] = t2.[Id] AND t1.[Owner] = t2.[Owner]
-INNER JOIN (SELECT * FROM dbo.[Accounts] WITH (UPDLOCK)) t3 ON t1.[AccountId] = t3.[Id]
-ORDER BY t1.[Id]
+SELECT ALIAS_Orders_2.*
+FROM dbo.[Orders] ALIAS_Orders_2
+INNER JOIN (
+    SELECT *
+    FROM dbo.[Customers]
+    WHERE (IsActive = 1)
+    ORDER BY [Created]
+) ALIAS_GENERATED_1
+ON ALIAS_Orders_2.[CustomerId] = ALIAS_GENERATED_1.[Id]
+AND ALIAS_Orders_2.[Owner] = ALIAS_GENERATED_1.[Owner]
+INNER JOIN (
+    SELECT *
+    FROM dbo.[Accounts] WITH (UPDLOCK)
+) ALIAS_GENERATED_3
+ON ALIAS_Orders_2.[AccountId] = ALIAS_GENERATED_3.[Id]
+ORDER BY ALIAS_Orders_2.[Id]

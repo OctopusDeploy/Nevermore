@@ -50,7 +50,7 @@ namespace Nevermore.IntegrationTests
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
             using (var transaction = Store.BeginTransaction())
             {
-                var customers = transaction.Query<Customer>()
+                var customers = transaction.TableQuery<Customer>()
                     .Where("[Roles] LIKE @role")
                     .LikeParameter("role", "web-server")
                     .ToList();
@@ -75,8 +75,8 @@ namespace Nevermore.IntegrationTests
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
             using (var transaction = Store.BeginTransaction())
             {
-                var customers = transaction.Query<Customer>()
-                    .Where("LastName", SqlOperand.In, new[] { "Apple", "Banana" })
+                var customers = transaction.TableQuery<Customer>()
+                    .Where("LastName", ArraySqlOperand.In, new[] { "Apple", "Banana" })
                     .ToList();
                 Assert.Equal(2, customers.Count);
             }
@@ -96,8 +96,8 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var customer = transaction.Query<Customer>()
-                                            .Where("Id", SqlOperand.In, new[] { customerId })
+                var customer = transaction.TableQuery<Customer>()
+                                            .Where("Id", ArraySqlOperand.In, new[] { customerId })
                                             .Stream()
                                             .Single();
                 Assert.Equal("Alice", customer.FirstName);
@@ -121,7 +121,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.BonusMaterial as prod_bonusmaterial, prod.JSON as prod_json, prod.Type as prod_type from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameters(), map => new
+                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.BonusMaterial as prod_bonusmaterial, prod.JSON as prod_json, prod.Type as prod_type from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")

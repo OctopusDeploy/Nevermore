@@ -9,31 +9,35 @@ namespace Nevermore.Tests.Linq
         [Fact]
         public void SingleOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
         [Fact]
         public void SingleOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderByDescending(f => f.Int);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
         [Fact]
         public void SingleQuerySyntaxOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int
@@ -41,13 +45,15 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
         [Fact]
         public void SingleQuerySyntaxOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int descending 
@@ -55,37 +61,43 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
         [Fact]
         public void MultipleOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int).ThenBy(f => f.String);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
         [Fact]
         public void MultipleOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int).ThenByDescending(f => f.String);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
         
         [Fact]
         public void MultipleQuerySyntaxOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int, b.String
@@ -93,13 +105,15 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
         [Fact]
         public void MultipleQuerySyntaxOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int, b.String descending 
@@ -107,7 +121,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
     }
 }

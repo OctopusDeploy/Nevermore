@@ -1,184 +1,203 @@
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using Nevermore.Joins;
+using System.Text.RegularExpressions;
+using Nevermore.AST;
 
 namespace Nevermore
 {
-    public class QueryBuilder<TRecord> : IOrderedQueryBuilder<TRecord> where TRecord : class
+    public class QueryBuilder<TRecord, TSelectBuilder> : IOrderedQueryBuilder<TRecord> where TSelectBuilder: ISelectBuilder where TRecord : class
     {
+        readonly TSelectBuilder selectBuilder;
         readonly IRelationalTransaction transaction;
+        readonly ITableAliasGenerator tableAliasGenerator;
+        readonly CommandParameterValues paramValues;
+        readonly Parameters @params;
+        readonly ParameterDefaults paramDefaults;
 
-        public QueryBuilder(IRelationalTransaction transaction, string viewOrTableName, ITableAliasGenerator tableAliasGenerator = null)
+        public QueryBuilder(TSelectBuilder selectBuilder, IRelationalTransaction transaction,
+            ITableAliasGenerator tableAliasGenerator, CommandParameterValues paramValues, 
+            Parameters @params, ParameterDefaults paramDefaults)
         {
+            this.selectBuilder = selectBuilder;
             this.transaction = transaction;
-            QueryGenerator = new SqlQueryGenerator(viewOrTableName, tableAliasGenerator);
+            this.tableAliasGenerator = tableAliasGenerator;
+            this.paramValues = paramValues;
+            this.@params = @params;
+            this.paramDefaults = paramDefaults;
         }
-
-        public IQueryGenerator QueryGenerator { get; }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
         {
             if (!String.IsNullOrWhiteSpace(whereClause))
             {
-                QueryGenerator.AddWhere(whereClause);
+                var whereClauseNormalised = Regex.Replace(whereClause, @"@\w+", m => new Parameter(m.Value).ParameterName);
+                selectBuilder.AddWhere(whereClauseNormalised);
             }
             return this;
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object value)
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            switch (operand)
+            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter));
+            return Parameter(parameter);
+        }
+
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
+        {
+            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter, endValueParameter));
+            return Parameter(startValueParameter).Parameter(endValueParameter);
+        }
+
+        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames)
+        {
+            var parameterNamesList = parameterNames.ToList();
+            if (!parameterNamesList.Any())
             {
-                case SqlOperand.Contains:
-                    QueryGenerator.WhereContains(fieldName, value);
-                    break;
-                case SqlOperand.EndsWith:
-                    QueryGenerator.WhereEndsWith(fieldName, value);
-                    break;
-                case SqlOperand.Equal:
-                    QueryGenerator.WhereEquals(fieldName, value);
-                    break;
-                case SqlOperand.NotEqual:
-                    QueryGenerator.WhereNotEquals(fieldName, value);
-                    break;
-                case SqlOperand.GreaterThan:
-                    QueryGenerator.WhereGreaterThan(fieldName, value);
-                    break;
-                case SqlOperand.GreaterThanOrEqual:
-                    QueryGenerator.WhereGreaterThanOrEqual(fieldName, value);
-                    break;
-                case SqlOperand.LessThan:
-                    QueryGenerator.WhereLessThan(fieldName, value);
-                    break;
-                case SqlOperand.LessThanOrEqual:
-                    QueryGenerator.WhereLessThanOrEqual(fieldName, value);
-                    break;
-                case SqlOperand.StartsWith:
-                    QueryGenerator.WhereStartsWith(fieldName, value);
-                    break;
-                case SqlOperand.In:
-                    if(value is IEnumerable)
-                        QueryGenerator.WhereIn(fieldName, value);
-                    else
-                        throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
-                    break;
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with only one value", nameof(operand));
+                return AddAlwaysFalseWhere();
             }
+            selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList));
+            IQueryBuilder<TRecord> builder = this;
+            return parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p));
+        }
+        
+        IQueryBuilder<TRecord> AddAlwaysFalseWhere()
+        {
+            return Where("0 = 1");
+        }
 
+        public IQueryBuilder<TRecord> AllColumns()
+        {
+            selectBuilder.AddDefaultColumnSelection();
             return this;
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, object startValue, object endValue)
+        public IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias)
         {
-            switch (operand)
-            {
-                case SqlOperand.Between:
-                    QueryGenerator.WhereBetween(fieldName, startValue, endValue);
-                    break;
-                case SqlOperand.BetweenOrEqual:
-                    QueryGenerator.WhereBetweenOrEqual(fieldName, startValue, endValue);
-                    break;
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with two values", nameof(operand));
-            }
-
+            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(expression), columnAlias));
             return this;
         }
 
-        public IQueryBuilder<TRecord> Where(string fieldName, SqlOperand operand, IEnumerable<object> values)
+        public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
-            switch (operand)
-            {
-                case SqlOperand.In:
-                    QueryGenerator.WhereIn(fieldName, values);
-                    break;
-                case SqlOperand.ContainsAll:
-                    break;
-                case SqlOperand.ContainsAny:
-                    break;
-                default:
-                    throw new ArgumentException($"The operand {operand} is not valid with a list of values", nameof(operand));
-            }
+            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, ParameterValues, Parameters, ParameterDefaults);
+        }
 
+        public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
+        {
+            return AddRowNumberColumn(columnAlias, new string[0]);
+        }
+
+        public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params string[] partitionByColumns)
+        {
+            selectBuilder.AddRowNumberColumn(columnAlias, partitionByColumns.Select(c => new Column(c)).ToList());
             return this;
         }
 
-        public IQueryBuilder<TRecord> Join(IJoin join)
+        public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns)
         {
-            QueryGenerator.AddJoin(join);
+            selectBuilder.AddRowNumberColumn(columnAlias, partitionByColumns.Select(c => new TableColumn(new Column(c.ColumnName), c.Table)).ToList());
             return this;
         }
 
-        public IQueryBuilder<TRecord> Parameter(string name, object value)
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter)
         {
-            QueryGenerator.AddParameter(name, value);
+            @params.Add(parameter);
             return this;
         }
 
-
-        public IQueryBuilder<TRecord> LikeParameter(string name, object value)
+        public IQueryBuilder<TRecord> ParameterDefault(Parameter parameter, object defaultValue)
         {
-            QueryGenerator.AddParameter(name, "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
+            paramDefaults.Add(new ParameterDefault(parameter, defaultValue));
             return this;
         }
 
-        public IQueryBuilder<TRecord> LikePipedParameter(string name, object value)
+        public IQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
-            QueryGenerator.AddParameter(name, "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
+            paramValues.Add(parameter.ParameterName, value);
             return this;
         }
 
-
-        public IQueryBuilder<TRecord> View(string viewName)
+        public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            QueryGenerator.UseView(viewName);
-            return this;
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.IgnoreDefaultOrderBy();
+            var subquery = new SubquerySource(clonedSelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
+            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator,
+                new CommandParameterValues(ParameterValues, parameterValues), 
+                new Parameters(Parameters, parameters),
+                new ParameterDefaults(ParameterDefaults, parameterDefaults));
         }
 
-        public IQueryBuilder<TRecord> Table(string tableName)
+        public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
-            QueryGenerator.UseTable(tableName);
-            return this;
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.IgnoreDefaultOrderBy();
+            var unionedSelectBuilder = queryBuilder.GetSelectBuilder();
+            unionedSelectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySourceBuilder<TRecord>(new Union(new [] { clonedSelectBuilder.GenerateSelect(), unionedSelectBuilder.GenerateSelect() }), tableAliasGenerator.GenerateTableAlias(),
+                transaction, tableAliasGenerator, 
+                new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues), 
+                new Parameters(Parameters, queryBuilder.Parameters), 
+                new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults));
         }
 
-        public IQueryBuilder<TRecord> Hint(string tableHintClause)
+        public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            QueryGenerator.UseHint(tableHintClause);
-            return this;
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySourceBuilder<TRecord>(clonedSelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, ParameterValues, Parameters, ParameterDefaults);
+        }
+
+        SubquerySelectBuilder CreateSubqueryBuilder(ISelectBuilder subquerySelectBuilder)
+        {
+            subquerySelectBuilder.IgnoreDefaultOrderBy();
+            return new SubquerySelectBuilder(new SubquerySource(subquerySelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias()));
+        }
+
+        public ISelectBuilder GetSelectBuilder()
+        {
+            return selectBuilder.Clone();
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)
         {
-            QueryGenerator.AddOrder(fieldName, false);
+            selectBuilder.AddOrder(fieldName, false);
             return this;
-        }
-
-
-        public IOrderedQueryBuilder<TRecord> ThenBy(string fieldName)
-        {
-            return OrderBy(fieldName);
         }
 
 
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
-            QueryGenerator.AddOrder(fieldName, true);
+            selectBuilder.AddOrder(fieldName, true);
             return this;
         }
 
-        public IOrderedQueryBuilder<TRecord> ThenByDescending(string fieldName)
+        public IQueryBuilder<TRecord> Column(string name)
         {
-            return OrderByDescending(fieldName);
+            selectBuilder.AddColumn(name);
+            return this;
+        }
+
+        public IQueryBuilder<TRecord> Column(string name, string columnAlias)
+        {
+            selectBuilder.AddColumn(name, columnAlias);
+            return this;
+        }
+
+        public IQueryBuilder<TRecord> Column(string name, string columnAlias, string tableAlias)
+        {
+            selectBuilder.AddColumnSelection(new AliasedColumn(new TableColumn(new Column(name), tableAlias), columnAlias));
+            return this;
         }
 
         [Pure]
         public int Count()
         {
-            return transaction.ExecuteScalar<int>(QueryGenerator.CountQuery(), QueryGenerator.QueryParameters);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues);
         }
 
         [Pure]
@@ -190,20 +209,41 @@ namespace Nevermore
         [Pure]
         public TRecord First()
         {
-            return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(), QueryGenerator.QueryParameters).FirstOrDefault();
+            return Take(1).FirstOrDefault();
         }
 
         [Pure]
         public IEnumerable<TRecord> Take(int take)
         {
-            return transaction.ExecuteReader<TRecord>(QueryGenerator.TopQuery(take), QueryGenerator.QueryParameters);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddTop(take);
+            return transaction.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues);
         }
 
         [Pure]
         public List<TRecord> ToList(int skip, int take)
         {
-            return transaction.ExecuteReader<TRecord>(QueryGenerator.PaginateQuery(skip, take), QueryGenerator.QueryParameters)
-                .ToList();
+            const string rowNumberColumnName = "RowNum";
+            var minRowParameter = new Parameter("_minrow");
+            var maxRowParameter = new Parameter("_maxrow");
+
+            var clonedSelectBuilder = selectBuilder.Clone();
+
+            clonedSelectBuilder.AddDefaultColumnSelection();
+            clonedSelectBuilder.AddRowNumberColumn(rowNumberColumnName, new List<Column>());
+
+            var subqueryBuilder = CreateSubqueryBuilder(clonedSelectBuilder);
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
+            subqueryBuilder.AddOrder("RowNum", false);
+            
+            var parmeterValues = new CommandParameterValues(paramValues)
+            {
+                {minRowParameter.ParameterName, skip + 1},
+                {maxRowParameter.ParameterName, take + skip}
+            };
+
+            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues).ToList();
         }
 
         [Pure]
@@ -219,15 +259,10 @@ namespace Nevermore
             return Stream().ToList();
         }
 
-        public void Delete()
-        {
-           transaction.ExecuteRawDeleteQuery(QueryGenerator.DeleteQuery(), QueryGenerator.QueryParameters);
-        }
-
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(QueryGenerator.SelectQuery(), QueryGenerator.QueryParameters);
+            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues);
         }
 
         [Pure]
@@ -236,18 +271,14 @@ namespace Nevermore
             return Stream().ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
         }
 
+        public Parameters Parameters => new Parameters(@params);
+        public ParameterDefaults ParameterDefaults => new ParameterDefaults(paramDefaults);
+        public CommandParameterValues ParameterValues => new CommandParameterValues(paramValues);
+
         [Pure]
         public string DebugViewRawQuery()
         {
-            return QueryGenerator.SelectQuery();
-        }
-
-    
-
-        public IQueryBuilder<TRecord> NoLock()
-        {
-            Hint("NOLOCK");
-            return this;
+            return selectBuilder.GenerateSelect().GenerateSql();
         }
     }
 }

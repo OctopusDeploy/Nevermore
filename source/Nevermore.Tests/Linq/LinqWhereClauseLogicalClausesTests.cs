@@ -9,25 +9,33 @@ namespace Nevermore.Tests.Linq
         [Fact]
         public void And()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.Where(f => f.Int < 2 && f.String == "bar");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([String] = @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+AND ([String] = @string)
+ORDER BY [Id]");
         }
         
         [Fact(Skip = "Queries where the same property is specified twice in the where clause are not yet supported")]
         public void AndWithTheSameProperty()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.Where(f => f.Int > 2 && f.Int < 4);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([Int] = @int2) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+AND ([Int] = @int2)
+ORDER BY [Id]");
         }
         
     }

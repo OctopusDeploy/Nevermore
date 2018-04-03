@@ -10,21 +10,35 @@ using Nevermore.Mapping;
 
 namespace Nevermore
 {
-    public class CommandParameters : Dictionary<string, object>
+    public class CommandParameterValues : Dictionary<string, object>
     {
-        public CommandParameters()
+        public CommandParameterValues()
             : base(StringComparer.OrdinalIgnoreCase)
         {
             CommandType = CommandType.Text;
         }
 
-        public CommandParameters(CommandParameters from)
+        public CommandParameterValues(CommandParameterValues from)
             : base(from, StringComparer.OrdinalIgnoreCase)
         {
             CommandType = from.CommandType;
         }
 
-        public CommandParameters(object args)
+        public CommandParameterValues(params CommandParameterValues[] from)
+            : this()
+        {
+            if (from.Any())
+            {
+                CommandType = from.First().CommandType;
+            }
+
+            foreach (var values in from)
+            {
+                AddRange(values);
+            }
+        }
+
+        public CommandParameterValues(object args)
             : this()
         {
             AddFromParametersObject(args);
@@ -111,7 +125,7 @@ namespace Nevermore
             command.Parameters.Add(param);
         }
 
-        public void AddRange(CommandParameters other)
+        public void AddRange(CommandParameterValues other)
         {
             foreach (var item in other)
             {
