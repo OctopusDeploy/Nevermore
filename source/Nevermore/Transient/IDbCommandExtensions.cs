@@ -71,7 +71,7 @@ namespace Nevermore.Transient
             }
             catch (Exception ex)
             {
-                throw new Exception($"Exception occured while executing a reader for `{command.CommandText}`", ex);
+                throw new Exception($"Exception occurred while executing a reader for `{command.CommandText}`", ex);
             }
         }
 
