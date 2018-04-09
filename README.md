@@ -139,6 +139,24 @@ using (var trn = store.BeginTransaction())
 }
 ```
 
+It turns out SQL Server has a pretty good DSL for querying databases... called SQL. So you can use that too. 
+
+```csharp
+string orderId; // The id for the next example
+using (var trn = store.BeginTransaction())
+{
+    var order = trn.Query<Order>()
+        .Where("[Completed] = @completed")
+        .Parameter("completed", false) 
+        .First();
+    orderId = order.Id;
+    order.Completed = true;
+
+    trn.Update(order);
+    trn.Commit();
+}
+```
+
 ## Retrieve by Id
 ```csharp
 using (var trn = store.BeginTransaction())
