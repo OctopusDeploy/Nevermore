@@ -181,9 +181,9 @@ Make sure you call Update on the object to update - there's no Unit of Work mana
 If you really dislike embedding SQL queries (you do realize it's translated to SQL anyway, right?) you can use some builders:
 
 ```
-    var order = trn.Query<Order>()
-        .Where(nameof(Order.Completed), SqlOperand.Equal, false)
-        .First();
+var order = trn.Query<Order>()
+     .Where(nameof(Order.Completed), SqlOperand.Equal, false)
+     .First();
 ```
 
 ## Retrieve by Id
