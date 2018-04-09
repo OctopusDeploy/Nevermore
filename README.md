@@ -200,3 +200,12 @@ using (var trn = store.BeginTransaction())
 }
 ```
 
+## Other features
+
+Nevermore is inspired by micro-ORM's like Dapper, and like most micro-ORM's doesn't try to hide the fact that you are using SQL Server. But it adds JSON storage as a prime concept. This gives lots of advantages. 
+
+ - You get all the regular benefits of SQL Server - indexing, partitioning, a well-known universe of tooling and operations support
+ - You can query against views (just `Map` a document class to a view instead of a table)
+ - You can run and query stored procedures
+ - You can still use foreign keys, but you don't need to
+ 
