@@ -7,17 +7,18 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Reflection;
-using Newtonsoft.Json;
-using Nevermore.Transient;
 using System.Text;
 using System.Threading;
+
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Nevermore.Transient;
+
+using Newtonsoft.Json;
 
 namespace Nevermore
 {
@@ -352,14 +353,14 @@ namespace Nevermore
         }
 
         // Delete does not require TDocument to implement IId because during recursive document delete we have only objects
-        public void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class
+        public void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
             var mapping = mappings.Get(instance.GetType());
             var id = (string)mapping.IdColumn.ReaderWriter.Read(instance);
             DeleteInternal(mapping, id, commandTimeoutSeconds);
         }
 
-        public void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class
+        public void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
             var mapping = mappings.Get(typeof(TDocument));
             DeleteInternal(mapping, id, commandTimeoutSeconds);

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Nevermore.AST;
 
 namespace Nevermore
 {
@@ -11,6 +10,8 @@ namespace Nevermore
         IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
 
         IDeleteQueryBuilder<TRecord> Parameter(Parameter parameter, object value);
+
+        IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
 
         void Delete();
     }
