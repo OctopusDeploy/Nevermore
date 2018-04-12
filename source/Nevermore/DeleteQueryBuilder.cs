@@ -72,6 +72,11 @@ namespace Nevermore
                 new CommandParameterValues(parameterValues) {{parameter.ParameterName, value}});
         }
 
+        public IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
+        {
+            return new DeleteQueryBuilder<TNewRecord>(this.relationalTransaction, this.tableName, this.whereClauses, this.parameterValues);
+        }
+
         public void Delete()
         {
             var whereClausesList = whereClauses.ToList();
