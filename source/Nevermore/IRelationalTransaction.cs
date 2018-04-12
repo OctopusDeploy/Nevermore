@@ -198,7 +198,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="instance">The document to delete.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
-        void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class;
+        void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Deletes an existing document from the database by it's ID.
@@ -206,7 +206,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="id">The id of the document to delete.</param>
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
-        void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class;
+        void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
 
         /// <summary>
