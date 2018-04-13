@@ -28,6 +28,7 @@ namespace Nevermore.Tests.Query
                 new TableSelectBuilder(new SimpleTableSource("Foo")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
+                new ParameterNameGenerator(), 
                 captures,
                 parameters,
                 new ParameterDefaults()

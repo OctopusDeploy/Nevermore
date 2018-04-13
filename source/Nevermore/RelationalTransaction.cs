@@ -41,6 +41,7 @@ namespace Nevermore
         readonly IRelatedDocumentStore relatedDocumentStore;
         readonly string name;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
+        readonly IParameterNameGenerator parameterNameGenerator = new ParameterNameGenerator();
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -588,7 +589,7 @@ namespace Nevermore
         [Pure]
         public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, parameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
