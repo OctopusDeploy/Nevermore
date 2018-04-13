@@ -229,8 +229,8 @@ namespace Nevermore
         public List<TRecord> ToList(int skip, int take)
         {
             const string rowNumberColumnName = "RowNum";
-            var minRowParameter = new Parameter("_minrow");
-            var maxRowParameter = new Parameter("_maxrow");
+            var minRowParameter = new Parameter(GenerateUniqueParameterName("_minrow"));
+            var maxRowParameter = new Parameter(GenerateUniqueParameterName("_maxrow"));
 
             var clonedSelectBuilder = selectBuilder.Clone();
 

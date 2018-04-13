@@ -103,8 +103,8 @@ FROM (
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
     FROM dbo.[Accounts]
 ) ALIAS_GENERATED_1
-WHERE ([RowNum] >= @_minrow)
-AND ([RowNum] <= @_maxrow)
+WHERE ([RowNum] >= @_minrow_1)
+AND ([RowNum] <= @_maxrow_2)
 ORDER BY [RowNum]");
 
             queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
@@ -132,8 +132,8 @@ FROM (
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
     FROM dbo.[Accounts]
 ) ALIAS_GENERATED_1
-WHERE ([RowNum] >= @_minrow)
-AND ([RowNum] <= @_maxrow)
+WHERE ([RowNum] >= @_minrow_1)
+AND ([RowNum] <= @_maxrow_2)
 ORDER BY [RowNum]");
 
             queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
@@ -212,7 +212,7 @@ ORDER BY [Id]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM dbo.[Accounts]
-WHERE ([Id] = @id)
+WHERE ([Id] = @id_1)
 ORDER BY [Id]");
         }
 

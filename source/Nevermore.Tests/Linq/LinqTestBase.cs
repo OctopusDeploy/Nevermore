@@ -24,11 +24,13 @@ namespace Nevermore.Tests.Query
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
+            var parameterNameGenerator = Substitute.For<IParameterNameGenerator>();
+            parameterNameGenerator.GenerateUniqueParametername(Arg.Any<string>()).Returns(c => c.Arg<string>());
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
                 new TableSelectBuilder(new SimpleTableSource("Foo")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
-                new ParameterNameGenerator(), 
+                parameterNameGenerator, 
                 captures,
                 parameters,
                 new ParameterDefaults()

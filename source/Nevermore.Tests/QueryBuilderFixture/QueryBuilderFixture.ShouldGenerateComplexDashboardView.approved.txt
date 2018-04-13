@@ -51,7 +51,7 @@ CREATE VIEW dbo.[Dashboard] AS
                 ON d.[TaskId] = t.[Id]
                 WHERE (NOT ((t.State = 'Canceled' OR t.State = 'Cancelling') AND t.StartTime IS NULL))
             ) LatestDeployment
-            WHERE ([Rank] = @rank)
+            WHERE ([Rank] = @rank_1)
         ) l
         ON d.[Id] = l.[Id]
         WHERE (t.State = 'Success')
