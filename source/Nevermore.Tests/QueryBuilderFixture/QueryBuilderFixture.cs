@@ -1320,6 +1320,80 @@ ORDER BY [RowNum]");
             parameterValues["_minrow_2"].ShouldBeEquivalentTo(11);
             parameterValues["_maxrow_3"].ShouldBeEquivalentTo(30);
         }
+
+        [Fact]
+        public void ShouldGenerateUniqueParameterNames()
+        {
+            string actual = null;
+            CommandParameterValues parameters = null;
+            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameterValues>(p => parameters = p));
+
+            var earlyDate = DateTime.Now;
+            var laterDate = earlyDate + TimeSpan.FromDays(1);
+            var query = CreateQueryBuilder<TodoItem>("Todos")
+                .Where("AddedDate", UnarySqlOperand.GreaterThan, earlyDate)
+                .Where("AddedDate", UnarySqlOperand.LessThan, laterDate);
+
+            query.First();
+
+            const string expected = @"SELECT TOP 1 *
+FROM dbo.[Todos]
+WHERE ([AddedDate] > @addeddate_1)
+AND ([AddedDate] < @addeddate_2)
+ORDER BY [Id]";
+
+            parameters.Values.Count.ShouldBeEquivalentTo(2);
+            parameters["addeddate_1"].ShouldBeEquivalentTo(earlyDate);
+            parameters["addeddate_2"].ShouldBeEquivalentTo(laterDate);
+
+            actual.ShouldBeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void ShouldGenerateUniqueParameterNamesInJoin()
+        {
+            string actual = null;
+            CommandParameterValues parameters = null;
+            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameterValues>(p => parameters = p));
+
+            var createdDate = DateTime.Now;
+            var joinDate = createdDate - TimeSpan.FromDays(1);
+            var sharedFieldName = "Date";
+
+            var orders = CreateQueryBuilder<IDocument>("Orders")
+                .Where(sharedFieldName, UnarySqlOperand.Equal, createdDate);
+
+
+            var query = CreateQueryBuilder<TodoItem>("Customer")
+                .Where(sharedFieldName, UnarySqlOperand.Equal, joinDate)
+                .InnerJoin(orders.Subquery())
+                .On("Id", JoinOperand.Equal, "CustomerId");
+
+            query.First();
+
+            const string expected =
+                @"SELECT TOP 1 ALIAS_GENERATED_2.*
+FROM (
+    SELECT *
+    FROM dbo.[Customer]
+    WHERE ([Date] = @date_2)
+) ALIAS_GENERATED_2
+INNER JOIN (
+    SELECT *
+    FROM dbo.[Orders]
+    WHERE ([Date] = @date_1)
+) ALIAS_GENERATED_1
+ON ALIAS_GENERATED_2.[Id] = ALIAS_GENERATED_1.[CustomerId]
+ORDER BY ALIAS_GENERATED_2.[Id]";
+
+            parameters.Values.Count.ShouldBeEquivalentTo(2);
+            parameters["date_1"].ShouldBeEquivalentTo(createdDate);
+            parameters["date_2"].ShouldBeEquivalentTo(joinDate);
+
+            actual.ShouldBeEquivalentTo(expected);
+        }
     }
 
     public class Todos
