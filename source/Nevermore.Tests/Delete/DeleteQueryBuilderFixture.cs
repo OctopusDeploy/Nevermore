@@ -107,8 +107,8 @@ WHERE ([Price] IN (@lowerprice, @upperprice))");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price_1)");
-            values["price_1"].Should().Be(5);
+WHERE ([Price] > @price_0)");
+            values["price_0"].Should().Be(5);
         }
 
         [Fact]
@@ -123,9 +123,9 @@ WHERE ([Price] > @price_1)");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] BETWEEN @startvalue_1 AND @endvalue_2)");
-            values["startvalue_1"].Should().Be(5);
-            values["endvalue_2"].Should().Be(10);
+WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
+            values["startvalue_0"].Should().Be(5);
+            values["endvalue_1"].Should().Be(10);
         }
 
         [Fact]
@@ -140,10 +140,10 @@ WHERE ([Price] BETWEEN @startvalue_1 AND @endvalue_2)");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] IN (@price0_1, @price1_2, @price2_3))");
-            values["price0_1"].Should().Be("5");
-            values["price1_2"].Should().Be("10");
-            values["price2_3"].Should().Be("15");
+WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
+            values["price0_0"].Should().Be("5");
+            values["price1_1"].Should().Be("10");
+            values["price2_2"].Should().Be("15");
         }
 
         [Fact]
@@ -159,10 +159,10 @@ WHERE ([Price] IN (@price0_1, @price1_2, @price2_3))");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price_1)
-AND ([Price] < @price_2)");
-            values["price_1"].Should().Be(5);
-            values["price_2"].Should().Be(10);
+WHERE ([Price] > @price_0)
+AND ([Price] < @price_1)");
+            values["price_0"].Should().Be(5);
+            values["price_1"].Should().Be(10);
         }
     }
 }

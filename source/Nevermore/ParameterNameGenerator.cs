@@ -7,7 +7,7 @@
 
     class ParameterNameGenerator : IParameterNameGenerator
     {
-        int parameterCount = 1;
+        int parameterCount = 0;
         public string GenerateUniqueParametername(string parameterDescription)
         {
             return $"{new Parameter(parameterDescription).ParameterName}_{parameterCount++}";
