@@ -87,7 +87,7 @@ namespace Nevermore
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class, IId
         {
-            return new DeleteQueryBuilder<TDocument>(this, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(this, parameterNameGenerator, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Pure]

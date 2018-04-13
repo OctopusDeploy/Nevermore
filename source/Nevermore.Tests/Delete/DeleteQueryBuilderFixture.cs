@@ -18,7 +18,7 @@ namespace Nevermore.Tests.Delete
 
         IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(transaction, tableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(transaction, new ParameterNameGenerator(), tableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Fact]
@@ -102,14 +102,13 @@ WHERE ([Price] IN (@lowerprice, @upperprice))");
             CommandParameterValues values = null;
             transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
 
-            var parameter = new Parameter("price");
             CreateQueryBuilder<IDocument>("Orders")
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price)");
-            values[parameter.ParameterName].Should().Be(5);
+WHERE ([Price] > @price_1)");
+            values["price_1"].Should().Be(5);
         }
 
         [Fact]
@@ -124,9 +123,9 @@ WHERE ([Price] > @price)");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] BETWEEN @startvalue AND @endvalue)");
-            values["startvalue"].Should().Be(5);
-            values["endvalue"].Should().Be(10);
+WHERE ([Price] BETWEEN @startvalue_1 AND @endvalue_2)");
+            values["startvalue_1"].Should().Be(5);
+            values["endvalue_2"].Should().Be(10);
         }
 
         [Fact]
@@ -141,10 +140,29 @@ WHERE ([Price] BETWEEN @startvalue AND @endvalue)");
                 .Delete();
 
             actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] IN (@price0, @price1, @price2))");
-            values["price0"].Should().Be("5");
-            values["price1"].Should().Be("10");
-            values["price2"].Should().Be("15");
+WHERE ([Price] IN (@price0_1, @price1_2, @price2_3))");
+            values["price0_1"].Should().Be("5");
+            values["price1_2"].Should().Be("10");
+            values["price2_3"].Should().Be("15");
+        }
+
+        [Fact]
+        public void ShouldGenerateUniqueParameterNames()
+        {
+            string actual = null;
+            CommandParameterValues values = null;
+            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
+
+            CreateQueryBuilder<IDocument>("Orders")
+                .Where("Price", UnarySqlOperand.GreaterThan, 5)
+                .Where("Price", UnarySqlOperand.LessThan, 10)
+                .Delete();
+
+            actual.Should().Be(@"DELETE FROM dbo.[Orders]
+WHERE ([Price] > @price_1)
+AND ([Price] < @price_2)");
+            values["price_1"].Should().Be(5);
+            values["price_2"].Should().Be(10);
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Nevermore
         IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
 
         IDeleteQueryBuilder<TRecord> Parameter(Parameter parameter, object value);
+        string GenerateUniqueParameterName(string parameterDescription);
 
         IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
 
