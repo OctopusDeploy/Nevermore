@@ -119,6 +119,11 @@ namespace Nevermore
             return this;
         }
 
+        public string GenerateUniqueParameterName(string parameterDescription)
+        {
+            return parameterDescription;
+        }
+
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
             var clonedSelectBuilder = selectBuilder.Clone();
