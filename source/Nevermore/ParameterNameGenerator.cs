@@ -2,13 +2,13 @@
 {
     public interface IParameterNameGenerator
     {
-        string GenerateUniqueParametername(string parameterDescription);
+        string GenerateUniqueParameterName(string parameterDescription);
     }
 
     class ParameterNameGenerator : IParameterNameGenerator
     {
         int parameterCount = 0;
-        public string GenerateUniqueParametername(string parameterDescription)
+        public string GenerateUniqueParameterName(string parameterDescription)
         {
             return $"{new Parameter(parameterDescription).ParameterName}_{parameterCount++}";
         }

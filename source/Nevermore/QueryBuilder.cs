@@ -69,7 +69,7 @@ namespace Nevermore
             return new ArrayParametersQueryBuilder<TRecord>(parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p)), parameterNamesList);
         }
 
-        Parameter GenerateUniqueParameter(Parameter parameter) => new Parameter(parameterNameGenerator.GenerateUniqueParametername(parameter.ParameterName), parameter.DataType);
+        Parameter GenerateUniqueParameter(Parameter parameter) => new Parameter(parameterNameGenerator.GenerateUniqueParameterName(parameter.ParameterName), parameter.DataType);
         
         IQueryBuilder<TRecord> AddAlwaysFalseWhere()
         {
@@ -234,8 +234,8 @@ namespace Nevermore
         public List<TRecord> ToList(int skip, int take)
         {
             const string rowNumberColumnName = "RowNum";
-            var minRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParametername("_minrow"));
-            var maxRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParametername("_maxrow"));
+            var minRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParameterName("_minrow"));
+            var maxRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParameterName("_maxrow"));
 
             var clonedSelectBuilder = selectBuilder.Clone();
 

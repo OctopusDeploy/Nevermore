@@ -75,7 +75,7 @@ namespace Nevermore
                 new CommandParameterValues(parameterValues) {{parameter.ParameterName, value}});
         }
 
-        public string GenerateUniqueParameterName(string parameterDescription) => parameterNameGenerator.GenerateUniqueParametername(parameterDescription);
+        public string GenerateUniqueParameterName(string parameterDescription) => parameterNameGenerator.GenerateUniqueParameterName(parameterDescription);
 
         public IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
