@@ -17,9 +17,13 @@ namespace Nevermore
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
 
-        public QueryBuilder(TSelectBuilder selectBuilder, IRelationalTransaction transaction,
-            ITableAliasGenerator tableAliasGenerator, IParameterNameGenerator parameterNameGenerator, 
-            CommandParameterValues paramValues, Parameters @params, ParameterDefaults paramDefaults)
+        public QueryBuilder(TSelectBuilder selectBuilder, 
+            IRelationalTransaction transaction,
+            ITableAliasGenerator tableAliasGenerator, 
+            IParameterNameGenerator parameterNameGenerator, 
+            CommandParameterValues paramValues, 
+            Parameters @params, 
+            ParameterDefaults paramDefaults)
         {
             this.selectBuilder = selectBuilder;
             this.transaction = transaction;
@@ -133,7 +137,12 @@ namespace Nevermore
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.IgnoreDefaultOrderBy();
             var subquery = new SubquerySource(clonedSelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
-            return new JoinSourceQueryBuilder<TRecord>(subquery, joinType, source, transaction, tableAliasGenerator, parameterNameGenerator, 
+            return new JoinSourceQueryBuilder<TRecord>(subquery, 
+                joinType, 
+                source, 
+                transaction, 
+                tableAliasGenerator,
+                parameterNameGenerator, 
                 new CommandParameterValues(ParameterValues, parameterValues), 
                 new Parameters(Parameters, parameters),
                 new ParameterDefaults(ParameterDefaults, parameterDefaults));
@@ -145,8 +154,11 @@ namespace Nevermore
             clonedSelectBuilder.IgnoreDefaultOrderBy();
             var unionedSelectBuilder = queryBuilder.GetSelectBuilder();
             unionedSelectBuilder.IgnoreDefaultOrderBy();
-            return new SubquerySourceBuilder<TRecord>(new Union(new [] { clonedSelectBuilder.GenerateSelect(), unionedSelectBuilder.GenerateSelect() }), tableAliasGenerator.GenerateTableAlias(),
-                transaction, tableAliasGenerator, parameterNameGenerator, 
+            return new SubquerySourceBuilder<TRecord>(new Union(new [] { clonedSelectBuilder.GenerateSelect(), unionedSelectBuilder.GenerateSelect() }), 
+                tableAliasGenerator.GenerateTableAlias(),
+                transaction, 
+                tableAliasGenerator, 
+                parameterNameGenerator, 
                 new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues), 
                 new Parameters(Parameters, queryBuilder.Parameters), 
                 new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults));
@@ -156,8 +168,14 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.IgnoreDefaultOrderBy();
-            return new SubquerySourceBuilder<TRecord>(clonedSelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias(), transaction, tableAliasGenerator, parameterNameGenerator, 
-                ParameterValues, Parameters, ParameterDefaults);
+            return new SubquerySourceBuilder<TRecord>(clonedSelectBuilder.GenerateSelect(), 
+                tableAliasGenerator.GenerateTableAlias(), 
+                transaction, 
+                tableAliasGenerator, 
+                parameterNameGenerator, 
+                ParameterValues, 
+                Parameters, 
+                ParameterDefaults);
         }
 
         SubquerySelectBuilder CreateSubqueryBuilder(ISelectBuilder subquerySelectBuilder)
