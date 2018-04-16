@@ -2,7 +2,20 @@
 {
     public interface IBinaryParametersQueryBuilder<TRecord> where TRecord : class
     {
+        /// <summary>
+        /// Provides values for the parameters which were declared in the previous statement
+        /// </summary>
+        /// <param name="startValue">The value of the start value parameter</param>
+        /// <param name="endValue">The value of the end value parameter</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IQueryBuilder<TRecord> ParameterValues(object startValue, object endValue);
+
+        /// <summary>
+        /// Provides default values for the parameters which were declared in the previous statement.
+        /// </summary>
+        /// <param name="defaultStartValue">The default value of the start value parameter</param>
+        /// <param name="defaultEndValue">The default value of the end value parameter</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IQueryBuilder<TRecord> ParameterDefaults(object defaultStartValue, object defaultEndValue);
     }
 
