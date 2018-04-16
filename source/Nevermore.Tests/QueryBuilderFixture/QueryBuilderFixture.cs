@@ -1376,6 +1376,22 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
 
             actual.ShouldBeEquivalentTo(expected);
         }
+
+        [Fact]
+        public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
+        {
+            CreateQueryBuilder<IDocument>("Todo")
+                .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
+                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+        }
+
+        [Fact]
+        public void ShouldThrowIfDifferentNumberOfParameterDefaultsProvided()
+        {
+            CreateQueryBuilder<IDocument>("Todo")
+                .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
+                .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+        }
     }
 
     public class Todos

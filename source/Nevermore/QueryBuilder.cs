@@ -53,16 +53,17 @@ namespace Nevermore
             return new BinaryParametersQueryBuilder<TRecord>(Parameter(startValueParameter).Parameter(endValueParameter), startValueParameter, endValueParameter);
         }
 
-        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames)
+        public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+            IEnumerable<Parameter> parameterNames)
         {
             var parameterNamesList = parameterNames.ToList();
             if (!parameterNamesList.Any())
             {
-                return AddAlwaysFalseWhere();
+                return new ArrayParametersQueryBuilder<TRecord>(AddAlwaysFalseWhere(), parameterNamesList);
             }
             selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList));
             IQueryBuilder<TRecord> builder = this;
-            return parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p));
+            return new ArrayParametersQueryBuilder<TRecord>(parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p)), parameterNamesList);
         }
         
         IQueryBuilder<TRecord> AddAlwaysFalseWhere()

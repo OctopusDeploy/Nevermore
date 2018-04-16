@@ -89,7 +89,7 @@ namespace Nevermore
         /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="parameter">The parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
-        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
         IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="startValueParameter">The first parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <param name="endValueParameter">The second parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
-        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
         IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
 
         /// <summary>
@@ -110,8 +110,8 @@ namespace Nevermore
         /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="parameterNames">The parameters that will be included in the where clause. Requires data types if used as part of a Function or Stored Procedure</param>
-        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
+        /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
+        IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
 
         /// <summary>
         /// Adds an order by clause to the query, where the order by clause will be in the default order (ascending).

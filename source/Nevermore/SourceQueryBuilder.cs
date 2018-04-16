@@ -222,7 +222,7 @@ namespace Nevermore
             return Builder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter);
         }
 
-        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+        public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
             IEnumerable<Parameter> parameterNames)
         {
             return Builder.WhereParameterised(fieldName, operand, parameterNames);

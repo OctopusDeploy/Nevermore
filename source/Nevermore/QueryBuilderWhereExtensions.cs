@@ -210,9 +210,8 @@ namespace Nevermore
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
             var parameters = stringValues.Select((v, i) => new Parameter(queryBuilder.GenerateUniqueParameterName($"{fieldName}{i}"))).ToArray();
-            return stringValues.Zip(parameters, (value, parameter) => new {value, parameter})
-                .Aggregate(queryBuilder.WhereParameterised(fieldName, operand, parameters),
-                    (p, pv) => p.Parameter(pv.parameter, pv.value));
+            return queryBuilder.WhereParameterised(fieldName, operand, parameters)
+                .ParameterValues(stringValues);
         }
 
         /// <summary>
