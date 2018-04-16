@@ -34,31 +34,39 @@ namespace Nevermore
             return this;
         }
 
-        public IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
+        public IUnaryParameterDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand,
+            Parameter parameter)
         {
-            return AddWhereClause(new UnaryWhereClause(new WhereFieldReference(fieldName), operand,
-                parameter.ParameterName));
+            var uniqueParameter = GenerateUniqueParameter(parameter);
+            return new UnaryParameterDeleteQueryBuilder<TRecord>(AddWhereClause(new UnaryWhereClause(new WhereFieldReference(fieldName), operand,
+                uniqueParameter.ParameterName)), uniqueParameter);
         }
 
-        public IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter,
+        public IBinaryParametersDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName,
+            BinarySqlOperand operand, Parameter startValueParameter,
             Parameter endValueParameter)
         {
-            return AddWhereClause(new BinaryWhereClause(new WhereFieldReference(fieldName), operand,
-                startValueParameter.ParameterName, endValueParameter.ParameterName));
+            var uniqueStartParameter = GenerateUniqueParameter(startValueParameter);
+            var uniqueEndParameter = GenerateUniqueParameter(endValueParameter);
+            return new BinaryParametersDeleteQueryBuilder<TRecord>(AddWhereClause(new BinaryWhereClause(new WhereFieldReference(fieldName), operand,
+                uniqueStartParameter.ParameterName, uniqueEndParameter.ParameterName)), uniqueStartParameter, uniqueEndParameter);
         }
 
-        public IDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames)
+        public IArrayParametersDeleteQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+            IEnumerable<Parameter> parameterNames)
         {
-            var parameterNamesList = parameterNames.ToList();
+            var parameterNamesList = parameterNames.Select(GenerateUniqueParameter).ToList();
             if (!parameterNamesList.Any())
             {
-                return AddWhereClause(AlwaysFalseWhereClause());
+                return new ArrayParametersDeleteQueryBuilder<TRecord>(AddWhereClause(AlwaysFalseWhereClause()), parameterNamesList);
             }
 
-            return AddWhereClause(new ArrayWhereClause(new WhereFieldReference(fieldName), operand,
-                parameterNamesList.Select(p => p.ParameterName).ToList()));
+            return new ArrayParametersDeleteQueryBuilder<TRecord>(AddWhereClause(new ArrayWhereClause(new WhereFieldReference(fieldName), operand,
+                parameterNamesList.Select(p => p.ParameterName).ToList())), parameterNamesList);
         }
 
+        Parameter GenerateUniqueParameter(Parameter parameter) => new Parameter(parameterNameGenerator.GenerateUniqueParameterName(parameter.ParameterName), parameter.DataType);
+        
         static CustomWhereClause AlwaysFalseWhereClause()
         {
             return new CustomWhereClause("0 = 1");
@@ -74,8 +82,6 @@ namespace Nevermore
             return new DeleteQueryBuilder<TRecord>(relationalTransaction, parameterNameGenerator, tableName, whereClauses, 
                 new CommandParameterValues(parameterValues) {{parameter.ParameterName, value}});
         }
-
-        public string GenerateUniqueParameterName(string parameterDescription) => parameterNameGenerator.GenerateUniqueParameterName(parameterDescription);
 
         public IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
