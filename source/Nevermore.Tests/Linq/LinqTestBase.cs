@@ -20,23 +20,28 @@ namespace Nevermore.Tests.Query
             public DateTime DateTime { get; set; }
         }
         
-        protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder()
+        protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder(IParameterNameGenerator parameterNameGenerator = null)
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
-            var parameterNameGenerator = Substitute.For<IParameterNameGenerator>();
-            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<string>()).Returns(c => c.Arg<string>());
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
                 new TableSelectBuilder(new SimpleTableSource("Foo")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
-                parameterNameGenerator, 
+                parameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,
                 parameters,
                 new ParameterDefaults()
             );
 
             return (builder, (parameters, captures));
+        }
+
+        static IParameterNameGenerator CreateSubstituteParameterNameGenerator()
+        {
+            var parameterNameGenerator = Substitute.For<IParameterNameGenerator>();
+            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<string>()).Returns(c => c.Arg<string>());
+            return parameterNameGenerator;
         }
     }
 }

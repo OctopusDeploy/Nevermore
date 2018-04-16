@@ -1392,6 +1392,30 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
+
+        [Fact]
+        public void MultipleParametersInLinqQuery()
+        {
+            string actual = null;
+            CommandParameterValues parameters = null;
+            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameterValues>(p => parameters = p));
+
+            CreateQueryBuilder<IDocument>("Customers")
+                .Where(d => d.Name != "Alice" && d.Name != "Bob")
+                .ToList();
+
+            const string expected = @"SELECT *
+FROM dbo.[Customers]
+WHERE ([Name] <> @name_0)
+AND ([Name] <> @name_1)
+ORDER BY [Id]";
+
+            actual.Should().BeEquivalentTo(expected);
+            parameters.Count.ShouldBeEquivalentTo(2);
+            parameters.Should().Contain("name_0", "Alice");
+            parameters.Should().Contain("name_1", "Bob");
+        }
     }
 
     public class Todos
