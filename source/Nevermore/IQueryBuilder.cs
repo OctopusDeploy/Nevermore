@@ -101,7 +101,7 @@ namespace Nevermore
         /// <param name="startValueParameter">The first parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <param name="endValueParameter">The second parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
+        IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
 
         /// <summary>
         /// Adds a parameterised array where clause to the query. This does not add a values for the parameters, and is therefore useful for Functions and Stored Procedures.

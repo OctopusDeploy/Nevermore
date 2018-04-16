@@ -172,8 +172,7 @@ namespace Nevermore
             Parameter startValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("StartValue"));
             Parameter endValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("EndValue"));
             return queryBuilder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter)
-                .Parameter(startValueParameter, startValue)
-                .Parameter(endValueParameter, endValue);
+                .ParameterValues(startValue, endValue);
         }
 
         /// <summary>

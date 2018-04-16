@@ -216,7 +216,8 @@ namespace Nevermore
             return Builder.WhereParameterised(fieldName, operand, parameter);
         }
 
-        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
+        public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
+            Parameter startValueParameter, Parameter endValueParameter)
         {
             return Builder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter);
         }

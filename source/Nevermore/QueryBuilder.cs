@@ -46,10 +46,11 @@ namespace Nevermore
             return new UnaryParameterQueryBuilder<TRecord>(Parameter(parameter), parameter);
         }
 
-        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)
+        public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
+            Parameter startValueParameter, Parameter endValueParameter)
         {
             selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter, endValueParameter));
-            return Parameter(startValueParameter).Parameter(endValueParameter);
+            return new BinaryParametersQueryBuilder<TRecord>(Parameter(startValueParameter).Parameter(endValueParameter), startValueParameter, endValueParameter);
         }
 
         public IQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames)
