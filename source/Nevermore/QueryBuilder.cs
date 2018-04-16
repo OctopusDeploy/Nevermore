@@ -42,21 +42,24 @@ namespace Nevermore
 
         public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter));
-            return new UnaryParameterQueryBuilder<TRecord>(Parameter(parameter), parameter);
+            var uniqueParameter = GenerateUniqueParameter(parameter);
+            selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, uniqueParameter));
+            return new UnaryParameterQueryBuilder<TRecord>(Parameter(uniqueParameter), uniqueParameter);
         }
 
         public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
             Parameter startValueParameter, Parameter endValueParameter)
         {
-            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, startValueParameter, endValueParameter));
-            return new BinaryParametersQueryBuilder<TRecord>(Parameter(startValueParameter).Parameter(endValueParameter), startValueParameter, endValueParameter);
+            var uniqueStartParameter = GenerateUniqueParameter(startValueParameter);
+            var uniqueEndParameter = GenerateUniqueParameter(endValueParameter);
+            selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, uniqueStartParameter, uniqueEndParameter));
+            return new BinaryParametersQueryBuilder<TRecord>(Parameter(uniqueStartParameter).Parameter(uniqueEndParameter), uniqueStartParameter, uniqueEndParameter);
         }
 
         public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
             IEnumerable<Parameter> parameterNames)
         {
-            var parameterNamesList = parameterNames.ToList();
+            var parameterNamesList = parameterNames.Select(GenerateUniqueParameter).ToList();
             if (!parameterNamesList.Any())
             {
                 return new ArrayParametersQueryBuilder<TRecord>(AddAlwaysFalseWhere(), parameterNamesList);
@@ -65,6 +68,8 @@ namespace Nevermore
             IQueryBuilder<TRecord> builder = this;
             return new ArrayParametersQueryBuilder<TRecord>(parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p)), parameterNamesList);
         }
+
+        Parameter GenerateUniqueParameter(Parameter parameter) => new Parameter(parameterNameGenerator.GenerateUniqueParametername(parameter.ParameterName), parameter.DataType);
         
         IQueryBuilder<TRecord> AddAlwaysFalseWhere()
         {
@@ -122,8 +127,6 @@ namespace Nevermore
             paramValues.Add(parameter.ParameterName, value);
             return this;
         }
-
-        public string GenerateUniqueParameterName(string parameterDescription) => parameterNameGenerator.GenerateUniqueParametername(parameterDescription);
 
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
@@ -231,8 +234,8 @@ namespace Nevermore
         public List<TRecord> ToList(int skip, int take)
         {
             const string rowNumberColumnName = "RowNum";
-            var minRowParameter = new Parameter(GenerateUniqueParameterName("_minrow"));
-            var maxRowParameter = new Parameter(GenerateUniqueParameterName("_maxrow"));
+            var minRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParametername("_minrow"));
+            var maxRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParametername("_maxrow"));
 
             var clonedSelectBuilder = selectBuilder.Clone();
 

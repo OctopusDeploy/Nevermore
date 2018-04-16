@@ -151,8 +151,7 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             UnarySqlOperand operand, object value) where TRecord : class
         {
-            var parameter = new Parameter(queryBuilder.GenerateUniqueParameterName(fieldName));
-            return queryBuilder.WhereParameterised(fieldName, operand, parameter)
+            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(fieldName))
                 .ParameterValue(value);
         }
 
@@ -169,9 +168,7 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             BinarySqlOperand operand, object startValue, object endValue) where TRecord : class
         {
-            Parameter startValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("StartValue"));
-            Parameter endValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("EndValue"));
-            return queryBuilder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter)
+            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter("StartValue"), new Parameter("EndValue"))
                 .ParameterValues(startValue, endValue);
         }
 
@@ -188,11 +185,9 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> WhereBetweenOrEqual<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string fieldName, object startValue, object endValue) where TRecord : class
         {
-            Parameter startValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("StartValue"));
-            Parameter endValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("EndValue"));
-            return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, startValueParameter)
+            return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, new Parameter("StartValue"))
                 .ParameterValue(startValue)
-                .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
+                .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, new Parameter("EndValue"))
                 .ParameterValue(endValue);
         }
 
@@ -209,7 +204,7 @@ namespace Nevermore
             ArraySqlOperand operand, IEnumerable values) where TRecord : class
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameters = stringValues.Select((v, i) => new Parameter(queryBuilder.GenerateUniqueParameterName($"{fieldName}{i}"))).ToArray();
+            var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
             return queryBuilder.WhereParameterised(fieldName, operand, parameters)
                 .ParameterValues(stringValues);
         }

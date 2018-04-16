@@ -214,13 +214,6 @@ namespace Nevermore
         IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias, params ColumnFromTable[] partitionByColumns);
 
         /// <summary>
-        /// Generates a unique parameter name for the query.
-        /// </summary>
-        /// <param name="parameterDescription">A description for the parameter, which will form part of the unique parameter name</param>
-        /// <returns>A parameter name that is guaranteed to be unique for the query</returns>
-        string GenerateUniqueParameterName(string parameterDescription);
-
-        /// <summary>
         /// Adds a parameter without a value to the query. 
         /// If this parameter is used as part of a Function or Stored Procedure, a data type must also be provided.
         /// Otherwise, if this forms part of a normal query, use the overload that allows you to additionally provide a value for this parameter.

@@ -283,11 +283,6 @@ namespace Nevermore
             return Builder.AddRowNumberColumn(columnAlias, partitionByColumns);
         }
 
-        public string GenerateUniqueParameterName(string parameterDescription)
-        {
-            return Builder.GenerateUniqueParameterName(parameterDescription);
-        }
-
         public IQueryBuilder<TRecord> Parameter(Parameter parameter)
         {
             return Builder.Parameter(parameter);
