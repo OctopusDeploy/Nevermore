@@ -1027,7 +1027,7 @@ ORDER BY [Title] DESC";
             var parameter = new Parameter("Name", new NVarCharMax());
             var account = CreateQueryBuilder<IDocument>("Account")
                 .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
-                .ParameterDefault(parameter, "ABC")
+                .ParameterDefault("ABC")
                 .Column("Id", "Id");
             var query = CreateQueryBuilder<IDocument>("Orders")
                 .Column("Id", "Id")
@@ -1245,24 +1245,6 @@ ORDER BY [Title] DESC";
         }
 
         [Fact]
-        public void ShouldThrowIfNoParameterDataTypesSuppliedForStoredProc()
-        {
-            var query = CreateQueryBuilder<IDocument>("Deployment")
-                .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
-
-            query.Invoking(q => q.AsStoredProcedure("GetDeployment")).ShouldThrow<Exception>();
-        }
-
-        [Fact]
-        public void ShouldThrowIfNoParameterDataTypesSuppliedForFunction()
-        {
-            var query = CreateQueryBuilder<IDocument>("Deployment")
-                .WhereParameterised("Id", UnarySqlOperand.Equal, new Parameter("DeploymentId"));
-
-            query.Invoking(q => q.AsFunction("GetDeployment")).ShouldThrow<Exception>();
-        }
-
-        [Fact]
         public void ShouldCollectParameterValuesFromSubqueriesInJoin()
         {
             CommandParameterValues parameterValues = null;
@@ -1286,7 +1268,7 @@ ORDER BY [Title] DESC";
             var query = CreateQueryBuilder<IDocument>("Orders")
                 .InnerJoin(CreateQueryBuilder<IDocument>("Customers")
                     .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
-                    .ParameterDefault(parameter, "Bob")
+                    .ParameterDefault("Bob")
                     .Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id");
 

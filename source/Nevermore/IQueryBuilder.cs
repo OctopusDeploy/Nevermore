@@ -90,7 +90,7 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="parameter">The parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);
+        IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);
 
         /// <summary>
         /// Adds a parameterised binary where clause to the query. This does not add a values for the parameters, and is therefore useful for Functions and Stored Procedures.

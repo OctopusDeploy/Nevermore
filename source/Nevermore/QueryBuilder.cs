@@ -40,10 +40,10 @@ namespace Nevermore
             return this;
         }
 
-        public IQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
+        public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
             selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, parameter));
-            return Parameter(parameter);
+            return new UnaryParameterQueryBuilder<TRecord>(Parameter(parameter), parameter);
         }
 
         public IQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter)

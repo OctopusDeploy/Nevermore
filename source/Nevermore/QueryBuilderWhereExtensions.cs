@@ -153,7 +153,7 @@ namespace Nevermore
         {
             var parameter = new Parameter(queryBuilder.GenerateUniqueParameterName(fieldName));
             return queryBuilder.WhereParameterised(fieldName, operand, parameter)
-                .Parameter(parameter, value);
+                .ParameterValue(value);
         }
 
         /// <summary>
@@ -192,9 +192,9 @@ namespace Nevermore
             Parameter startValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("StartValue"));
             Parameter endValueParameter = new Parameter(queryBuilder.GenerateUniqueParameterName("EndValue"));
             return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, startValueParameter)
-                .Parameter(startValueParameter, startValue)
+                .ParameterValue(startValue)
                 .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, endValueParameter)
-                .Parameter(endValueParameter, endValue);
+                .ParameterValue(endValue);
         }
 
         /// <summary>
