@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Contracts;
@@ -156,6 +157,14 @@ WHERE ([Price] > @price_0)
 AND ([Price] < @price_1)");
             values["price_0"].Should().Be(5);
             values["price_1"].Should().Be(10);
+        }
+
+        [Fact]
+        public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
+        {
+            CreateQueryBuilder<IDocument>("Todo")
+                .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
+                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
     }
 }
