@@ -22,10 +22,10 @@ AND ([String] = @string)
 ORDER BY [Id]");
         }
         
-        [Fact(Skip = "Queries where the same property is specified twice in the where clause are not yet supported")]
+        [Fact]
         public void AndWithTheSameProperty()
         {
-            var (builder, _) = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder(new ParameterNameGenerator());
 
             var result = builder.Where(f => f.Int > 2 && f.Int < 4);
 
@@ -33,8 +33,8 @@ ORDER BY [Id]");
                 .Should()
                 .Be(@"SELECT *
 FROM dbo.[Foo]
-WHERE ([Int] < @int)
-AND ([Int] = @int2)
+WHERE ([Int] > @int_0)
+AND ([Int] < @int_1)
 ORDER BY [Id]");
         }
         

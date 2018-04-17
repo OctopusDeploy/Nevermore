@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Linq;
-using Nevermore.AST;
 
 namespace Nevermore
 {
@@ -11,7 +10,7 @@ namespace Nevermore
         {
             var parameter = new Parameter(fieldName);
             return queryBuilder.WhereParameterised(fieldName, operand, parameter)
-                .Parameter(parameter, value);
+                .ParameterValue(value);
         }
 
         public static IDeleteQueryBuilder<TRecord> Where<TRecord>(this IDeleteQueryBuilder<TRecord> queryBuilder,
@@ -21,8 +20,7 @@ namespace Nevermore
             var endParameter = new Parameter("EndValue");
 
             return queryBuilder.WhereParameterised(fieldName, operand, startParameter, endParameter)
-                .Parameter(startParameter, startValue)
-                .Parameter(endParameter, endValue);
+                .ParameterValues(startValue, endValue);
         }
 
         public static IDeleteQueryBuilder<TRecord> Where<TRecord>(this IDeleteQueryBuilder<TRecord> queryBuilder,
@@ -30,9 +28,7 @@ namespace Nevermore
         {
             var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
             var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
-            return stringValues.Zip(parameters, (value, parameter) => new {value, parameter})
-                .Aggregate(queryBuilder.WhereParameterised(fieldName, operand, parameters),
-                    (p, pv) => p.Parameter(pv.parameter, pv.value));
+            return queryBuilder.WhereParameterised(fieldName, operand, parameters).ParameterValues(stringValues);
         }
 
         public static IDeleteQueryBuilder<TRecord> Parameter<TRecord>(this IDeleteQueryBuilder<TRecord> queryBuilder,
