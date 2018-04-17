@@ -37,7 +37,7 @@ namespace Nevermore
 
     public class UniqueParameter : Parameter
     {
-        public UniqueParameter(string parameterName, IDataType dataType) : base(parameterName, dataType)
+        protected UniqueParameter(string parameterName, IDataType dataType) : base(parameterName, dataType)
         {
         }
     }

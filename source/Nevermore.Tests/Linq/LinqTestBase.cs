@@ -40,7 +40,7 @@ namespace Nevermore.Tests.Query
         static IUniqueParameterGenerator CreateSubstituteParameterNameGenerator()
         {
             var parameterNameGenerator = Substitute.For<IUniqueParameterGenerator>();
-            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<Parameter>()).Returns(c => new UniqueParameter(c.Arg<Parameter>().ParameterName, c.Arg<Parameter>().DataType));
+            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<Parameter>()).Returns(c => Substitute.For<UniqueParameter>(c.Arg<Parameter>().ParameterName, c.Arg<Parameter>().DataType));
             return parameterNameGenerator;
         }
     }
