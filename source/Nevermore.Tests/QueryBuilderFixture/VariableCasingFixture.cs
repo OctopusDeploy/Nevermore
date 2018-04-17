@@ -27,7 +27,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         IQueryBuilder<IId> CreateQueryBuilder()
         {
-            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new UniqueParameterGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Fact]

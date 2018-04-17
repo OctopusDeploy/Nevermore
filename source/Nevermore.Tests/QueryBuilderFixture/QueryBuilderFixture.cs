@@ -12,12 +12,12 @@ namespace Nevermore.Tests.QueryBuilderFixture
     public class QueryBuilderFixture
     {
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
-        readonly IUniqueParameterGenerator uniqueParameterGenerator = new UniqueParameterGenerator();
+        readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
         readonly IRelationalTransaction transaction = Substitute.For<IRelationalTransaction>();
         
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Fact]

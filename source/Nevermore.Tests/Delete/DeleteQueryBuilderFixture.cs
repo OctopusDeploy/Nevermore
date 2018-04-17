@@ -19,7 +19,7 @@ namespace Nevermore.Tests.Delete
 
         IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(transaction, new UniqueParameterGenerator(), tableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(transaction, new UniqueParameterNameGenerator(), tableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Fact]

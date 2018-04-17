@@ -28,7 +28,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         IDeleteQueryBuilder<IId> CreateQueryBuilder()
         {
-            return new DeleteQueryBuilder<IId>(transaction, new UniqueParameterGenerator(), "Order", Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<IId>(transaction, new UniqueParameterNameGenerator(), "Order", Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Fact]

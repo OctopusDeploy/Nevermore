@@ -228,7 +228,7 @@ ORDER BY [Id]");
 
         ITableSourceQueryBuilder<IDocument> TableQueryBuilder(string tableName)
         {
-            return new TableSourceQueryBuilder<IDocument>(tableName, transaction, new TableAliasGenerator(), new UniqueParameterGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<IDocument>(tableName, transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
     }
 }
