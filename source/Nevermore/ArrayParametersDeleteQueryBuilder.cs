@@ -17,9 +17,9 @@ namespace Nevermore
     public class ArrayParametersDeleteQueryBuilder<TRecord> : IArrayParametersDeleteQueryBuilder<TRecord> where TRecord : class
     {
         readonly IDeleteQueryBuilder<TRecord> deleteQueryBuilder;
-        readonly IReadOnlyList<Parameter> parameters;
+        readonly IReadOnlyList<UniqueParameter> parameters;
 
-        public ArrayParametersDeleteQueryBuilder(IDeleteQueryBuilder<TRecord> deleteQueryBuilder, IReadOnlyList<Parameter> parameters)
+        public ArrayParametersDeleteQueryBuilder(IDeleteQueryBuilder<TRecord> deleteQueryBuilder, IReadOnlyList<UniqueParameter> parameters)
         {
             this.deleteQueryBuilder = deleteQueryBuilder;
             this.parameters = parameters;

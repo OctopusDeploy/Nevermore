@@ -12,7 +12,7 @@ namespace Nevermore
         readonly TSelectBuilder selectBuilder;
         readonly IRelationalTransaction transaction;
         readonly ITableAliasGenerator tableAliasGenerator;
-        readonly IParameterNameGenerator parameterNameGenerator;
+        readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator;
         readonly CommandParameterValues paramValues;
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
@@ -20,7 +20,7 @@ namespace Nevermore
         public QueryBuilder(TSelectBuilder selectBuilder, 
             IRelationalTransaction transaction,
             ITableAliasGenerator tableAliasGenerator, 
-            IParameterNameGenerator parameterNameGenerator, 
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
             CommandParameterValues paramValues, 
             Parameters @params, 
             ParameterDefaults paramDefaults)
@@ -28,7 +28,7 @@ namespace Nevermore
             this.selectBuilder = selectBuilder;
             this.transaction = transaction;
             this.tableAliasGenerator = tableAliasGenerator;
-            this.parameterNameGenerator = parameterNameGenerator;
+            this.uniqueParameterNameGenerator = uniqueParameterNameGenerator;
             this.paramValues = paramValues;
             this.@params = @params;
             this.paramDefaults = paramDefaults;
@@ -46,7 +46,7 @@ namespace Nevermore
 
         public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            var uniqueParameter = GenerateUniqueParameter(parameter);
+            var uniqueParameter = new UniqueParameter(uniqueParameterNameGenerator, parameter);
             selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, uniqueParameter));
             return new UnaryParameterQueryBuilder<TRecord>(Parameter(uniqueParameter), uniqueParameter);
         }
@@ -54,8 +54,8 @@ namespace Nevermore
         public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
             Parameter startValueParameter, Parameter endValueParameter)
         {
-            var uniqueStartParameter = GenerateUniqueParameter(startValueParameter);
-            var uniqueEndParameter = GenerateUniqueParameter(endValueParameter);
+            var uniqueStartParameter = new UniqueParameter(uniqueParameterNameGenerator, startValueParameter);
+            var uniqueEndParameter = new UniqueParameter(uniqueParameterNameGenerator, endValueParameter);
             selectBuilder.AddWhere(new BinaryWhereParameter(fieldName, operand, uniqueStartParameter, uniqueEndParameter));
             return new BinaryParametersQueryBuilder<TRecord>(Parameter(uniqueStartParameter).Parameter(uniqueEndParameter), uniqueStartParameter, uniqueEndParameter);
         }
@@ -63,7 +63,7 @@ namespace Nevermore
         public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
             IEnumerable<Parameter> parameterNames)
         {
-            var parameterNamesList = parameterNames.Select(GenerateUniqueParameter).ToList();
+            var parameterNamesList = parameterNames.Select(p => new UniqueParameter(uniqueParameterNameGenerator, p)).ToList();
             if (!parameterNamesList.Any())
             {
                 return new ArrayParametersQueryBuilder<TRecord>(AddAlwaysFalseWhere(), parameterNamesList);
@@ -73,8 +73,6 @@ namespace Nevermore
             return new ArrayParametersQueryBuilder<TRecord>(parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p)), parameterNamesList);
         }
 
-        Parameter GenerateUniqueParameter(Parameter parameter) => new Parameter(parameterNameGenerator.GenerateUniqueParameterName(parameter.ParameterName), parameter.DataType);
-        
         IQueryBuilder<TRecord> AddAlwaysFalseWhere()
         {
             return Where("0 = 1");
@@ -94,7 +92,7 @@ namespace Nevermore
 
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
-            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, parameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
+            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
         }
 
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
@@ -142,7 +140,7 @@ namespace Nevermore
                 source, 
                 transaction, 
                 tableAliasGenerator,
-                parameterNameGenerator, 
+                uniqueParameterNameGenerator, 
                 new CommandParameterValues(ParameterValues, parameterValues), 
                 new Parameters(Parameters, parameters),
                 new ParameterDefaults(ParameterDefaults, parameterDefaults));
@@ -158,7 +156,7 @@ namespace Nevermore
                 tableAliasGenerator.GenerateTableAlias(),
                 transaction, 
                 tableAliasGenerator, 
-                parameterNameGenerator, 
+                uniqueParameterNameGenerator, 
                 new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues), 
                 new Parameters(Parameters, queryBuilder.Parameters), 
                 new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults));
@@ -172,7 +170,7 @@ namespace Nevermore
                 tableAliasGenerator.GenerateTableAlias(), 
                 transaction, 
                 tableAliasGenerator, 
-                parameterNameGenerator, 
+                uniqueParameterNameGenerator, 
                 ParameterValues, 
                 Parameters, 
                 ParameterDefaults);
@@ -252,8 +250,8 @@ namespace Nevermore
         public List<TRecord> ToList(int skip, int take)
         {
             const string rowNumberColumnName = "RowNum";
-            var minRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParameterName("_minrow"));
-            var maxRowParameter = new Parameter(parameterNameGenerator.GenerateUniqueParameterName("_maxrow"));
+            var minRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_minrow"));
+            var maxRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_maxrow"));
 
             var clonedSelectBuilder = selectBuilder.Clone();
 

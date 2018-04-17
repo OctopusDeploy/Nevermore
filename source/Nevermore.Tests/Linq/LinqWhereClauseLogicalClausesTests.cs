@@ -25,7 +25,7 @@ ORDER BY [Id]");
         [Fact]
         public void AndWithTheSameProperty()
         {
-            var (builder, _) = NewQueryBuilder(new ParameterNameGenerator());
+            var (builder, _) = NewQueryBuilder(new UniqueParameterNameGenerator());
 
             var result = builder.Where(f => f.Int > 2 && f.Int < 4);
 

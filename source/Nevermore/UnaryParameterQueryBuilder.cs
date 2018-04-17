@@ -20,9 +20,9 @@
     public class UnaryParameterQueryBuilder<TRecord> : IUnaryParameterQueryBuilder<TRecord> where TRecord : class
     {
         readonly IQueryBuilder<TRecord> queryBuilder;
-        readonly Parameter parameter;
+        readonly UniqueParameter parameter;
 
-        public UnaryParameterQueryBuilder(IQueryBuilder<TRecord> queryBuilder, Parameter parameter)
+        public UnaryParameterQueryBuilder(IQueryBuilder<TRecord> queryBuilder, UniqueParameter parameter)
         {
             this.queryBuilder = queryBuilder;
             this.parameter = parameter;

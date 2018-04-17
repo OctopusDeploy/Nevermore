@@ -22,10 +22,10 @@
     public class BinaryParametersQueryBuilder<TRecord> : IBinaryParametersQueryBuilder<TRecord> where TRecord : class
     {
         readonly IQueryBuilder<TRecord> queryBuilder;
-        readonly Parameter startParameter;
-        readonly Parameter endParameter;
+        readonly UniqueParameter startParameter;
+        readonly UniqueParameter endParameter;
 
-        public BinaryParametersQueryBuilder(IQueryBuilder<TRecord> queryBuilder, Parameter startParameter, Parameter endParameter)
+        public BinaryParametersQueryBuilder(IQueryBuilder<TRecord> queryBuilder, UniqueParameter startParameter, UniqueParameter endParameter)
         {
             this.queryBuilder = queryBuilder;
             this.startParameter = startParameter;

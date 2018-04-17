@@ -14,10 +14,10 @@ namespace Nevermore
     public class BinaryParametersDeleteQueryBuilder<TRecord> : IBinaryParametersDeleteQueryBuilder<TRecord> where TRecord : class
     {
         readonly IDeleteQueryBuilder<TRecord> deleteQueryBuilder;
-        readonly Parameter startParameter;
-        readonly Parameter endParameter;
+        readonly UniqueParameter startParameter;
+        readonly UniqueParameter endParameter;
 
-        public BinaryParametersDeleteQueryBuilder(IDeleteQueryBuilder<TRecord> deleteQueryBuilder, Parameter startParameter, Parameter endParameter)
+        public BinaryParametersDeleteQueryBuilder(IDeleteQueryBuilder<TRecord> deleteQueryBuilder, UniqueParameter startParameter, UniqueParameter endParameter)
         {
             this.deleteQueryBuilder = deleteQueryBuilder;
             this.startParameter = startParameter;
