@@ -20,7 +20,7 @@ namespace Nevermore.Tests.Query
             public DateTime DateTime { get; set; }
         }
         
-        protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder(IParameterNameGenerator parameterNameGenerator = null)
+        protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder(IUniqueParameterGenerator uniqueParameterGenerator = null)
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
@@ -28,7 +28,7 @@ namespace Nevermore.Tests.Query
                 new TableSelectBuilder(new SimpleTableSource("Foo")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
-                parameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
+                uniqueParameterGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,
                 parameters,
                 new ParameterDefaults()
@@ -37,10 +37,10 @@ namespace Nevermore.Tests.Query
             return (builder, (parameters, captures));
         }
 
-        static IParameterNameGenerator CreateSubstituteParameterNameGenerator()
+        static IUniqueParameterGenerator CreateSubstituteParameterNameGenerator()
         {
-            var parameterNameGenerator = Substitute.For<IParameterNameGenerator>();
-            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<string>()).Returns(c => c.Arg<string>());
+            var parameterNameGenerator = Substitute.For<IUniqueParameterGenerator>();
+            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<Parameter>()).Returns(c => new UniqueParameter(c.Arg<Parameter>().ParameterName, c.Arg<Parameter>().DataType));
             return parameterNameGenerator;
         }
     }

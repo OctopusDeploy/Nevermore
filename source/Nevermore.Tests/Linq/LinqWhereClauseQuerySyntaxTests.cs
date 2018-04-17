@@ -26,7 +26,7 @@ ORDER BY [Id]");
         [Fact]
         public void MultipleWhereClausesWithTheSameProperty()
         {
-            var (builder, _) = NewQueryBuilder(new ParameterNameGenerator());
+            var (builder, _) = NewQueryBuilder(new UniqueParameterGenerator());
 
             var result = from f in builder
                 where f.Int < 2

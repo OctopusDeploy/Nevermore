@@ -1,16 +1,17 @@
 ﻿namespace Nevermore
 {
-    public interface IParameterNameGenerator
+    public interface IUniqueParameterGenerator
     {
-        string GenerateUniqueParameterName(string parameterDescription);
+        UniqueParameter GenerateUniqueParameterName(Parameter parameter);
     }
 
-    class ParameterNameGenerator : IParameterNameGenerator
+    class UniqueParameterGenerator : IUniqueParameterGenerator
     {
         int parameterCount = 0;
-        public string GenerateUniqueParameterName(string parameterDescription)
+        public UniqueParameter GenerateUniqueParameterName(Parameter parameter)
         {
-            return $"{new Parameter(parameterDescription).ParameterName}_{parameterCount++}";
+            var uniqueParameterName = $"{parameter.ParameterName}_{parameterCount++}";
+            return new UniqueParameter(uniqueParameterName, parameter.DataType);
         }
     }
 }

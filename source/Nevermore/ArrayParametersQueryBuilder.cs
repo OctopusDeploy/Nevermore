@@ -24,9 +24,9 @@ namespace Nevermore
     public class ArrayParametersQueryBuilder<TRecord> : IArrayParametersQueryBuilder<TRecord> where TRecord : class
     {
         readonly IQueryBuilder<TRecord> queryBuilder;
-        readonly IReadOnlyList<Parameter> parameters;
+        readonly IReadOnlyList<UniqueParameter> parameters;
 
-        public ArrayParametersQueryBuilder(IQueryBuilder<TRecord> queryBuilder, IReadOnlyList<Parameter> parameters)
+        public ArrayParametersQueryBuilder(IQueryBuilder<TRecord> queryBuilder, IReadOnlyList<UniqueParameter> parameters)
         {
             this.queryBuilder = queryBuilder;
             this.parameters = parameters;

@@ -34,4 +34,11 @@ namespace Nevermore
         // Data type must be specified if you are creating a stored proc or function, otherwise it is not required
         public IDataType DataType { get; }
     }
+
+    public class UniqueParameter : Parameter
+    {
+        public UniqueParameter(string parameterName, IDataType dataType) : base(parameterName, dataType)
+        {
+        }
+    }
 }

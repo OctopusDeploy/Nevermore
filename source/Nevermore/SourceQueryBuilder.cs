@@ -14,11 +14,11 @@ namespace Nevermore
             string alias, 
             IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator, 
-            IParameterNameGenerator parameterNameGenerator, 
+            IUniqueParameterGenerator uniqueParameterGenerator, 
             CommandParameterValues parameterValues, 
             Parameters parameters, 
             ParameterDefaults parameterDefaults) 
-            : base(relationalTransaction, tableAliasGenerator, parameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
             this.alias = alias;
@@ -36,7 +36,7 @@ namespace Nevermore
                 source, 
                 RelationalTransaction, 
                 TableAliasGenerator, 
-                ParameterNameGenerator, 
+                UniqueParameterGenerator, 
                 new CommandParameterValues(ParamValues, parameterValues), 
                 new Parameters(Params, parameters), 
                 new ParameterDefaults(ParamDefaults, parameterDefaults));
@@ -67,11 +67,11 @@ namespace Nevermore
             IAliasedSelectSource nextJoin, 
             IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator,
-            IParameterNameGenerator parameterNameGenerator,
+            IUniqueParameterGenerator uniqueParameterGenerator,
             CommandParameterValues parameterValues, 
             Parameters parameters, 
             ParameterDefaults parameterDefaults) 
-            : base(relationalTransaction, tableAliasGenerator, parameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.originalSource = originalSource;
             clauses = new List<JoinClause>();
@@ -119,11 +119,11 @@ namespace Nevermore
         public TableSourceQueryBuilder(string tableOrViewName, 
             IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator, 
-            IParameterNameGenerator parameterNameGenerator,
+            IUniqueParameterGenerator uniqueParameterGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
             ParameterDefaults parameterDefaults) 
-            : base(relationalTransaction, tableAliasGenerator, parameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.tableOrViewName = tableOrViewName;
         }
@@ -140,7 +140,7 @@ namespace Nevermore
                 source, 
                 RelationalTransaction, 
                 TableAliasGenerator, 
-                ParameterNameGenerator, 
+                UniqueParameterGenerator, 
                 new CommandParameterValues(ParamValues, parameterValues), 
                 new Parameters(Params, parameters), 
                 new ParameterDefaults(ParamDefaults, parameterDefaults));
@@ -194,21 +194,21 @@ namespace Nevermore
     {
         protected readonly IRelationalTransaction RelationalTransaction;
         protected readonly ITableAliasGenerator TableAliasGenerator;
-        protected readonly IParameterNameGenerator ParameterNameGenerator;
+        protected readonly IUniqueParameterGenerator UniqueParameterGenerator;
         protected readonly CommandParameterValues ParamValues;
         protected readonly Parameters Params;
         protected readonly ParameterDefaults ParamDefaults;
 
         protected SourceQueryBuilder(IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator, 
-            IParameterNameGenerator parameterNameGenerator,
+            IUniqueParameterGenerator uniqueParameterGenerator,
             CommandParameterValues parameterValues, 
             Parameters parameters, 
             ParameterDefaults parameterDefaults)
         {
             RelationalTransaction = relationalTransaction;
             TableAliasGenerator = tableAliasGenerator;
-            ParameterNameGenerator = parameterNameGenerator;
+            UniqueParameterGenerator = uniqueParameterGenerator;
             ParamValues = parameterValues;
             Params = parameters;
             ParamDefaults = parameterDefaults;
@@ -227,7 +227,7 @@ namespace Nevermore
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, ParameterNameGenerator, ParamValues, Params, ParamDefaults);
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, UniqueParameterGenerator, ParamValues, Params, ParamDefaults);
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)

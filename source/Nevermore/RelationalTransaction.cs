@@ -41,7 +41,7 @@ namespace Nevermore
         readonly IRelatedDocumentStore relatedDocumentStore;
         readonly string name;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
-        readonly IParameterNameGenerator parameterNameGenerator = new ParameterNameGenerator();
+        readonly IUniqueParameterGenerator uniqueParameterGenerator = new UniqueParameterGenerator();
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -87,7 +87,7 @@ namespace Nevermore
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class, IId
         {
-            return new DeleteQueryBuilder<TDocument>(this, parameterNameGenerator, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(this, uniqueParameterGenerator, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Pure]
@@ -589,7 +589,7 @@ namespace Nevermore
         [Pure]
         public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, parameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
