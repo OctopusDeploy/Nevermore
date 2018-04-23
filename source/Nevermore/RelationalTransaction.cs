@@ -22,8 +22,6 @@ using Newtonsoft.Json;
 
 namespace Nevermore
 {
-    public interface IDisposableRelationalTransaction : IRelationalTransaction, IDisposable {}
-
     [DebuggerDisplay("{ToString()}")]
     public class RelationalTransaction : IDisposableRelationalTransaction
     {
