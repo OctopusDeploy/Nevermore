@@ -5,7 +5,7 @@ using Nevermore.Contracts;
 
 namespace Nevermore
 {
-    public interface IRelationalTransaction : IDisposable
+    public interface IRelationalTransaction
     {
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., an INSERT or UPDATE query that returns the number of rows, or a
