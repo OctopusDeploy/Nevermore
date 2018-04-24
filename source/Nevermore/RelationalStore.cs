@@ -85,13 +85,13 @@ namespace Nevermore
             keyAllocator.Reset();
         }
 
-        public IDisposableRelationalTransaction BeginTransaction(
+        public IRelationalTransaction BeginTransaction(
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
             return BeginTransaction(IsolationLevel.ReadCommitted, retriableOperation, name);
         }
 
-        public IDisposableRelationalTransaction BeginTransaction(IsolationLevel isolationLevel,
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel,
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
             return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,

@@ -23,7 +23,7 @@ using Newtonsoft.Json;
 namespace Nevermore
 {
     [DebuggerDisplay("{ToString()}")]
-    public class RelationalTransaction : IDisposableRelationalTransaction
+    public class RelationalTransaction : IRelationalTransaction
     {
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransaction>();
