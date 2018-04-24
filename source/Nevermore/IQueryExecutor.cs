@@ -208,12 +208,6 @@ namespace Nevermore
         /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
         void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
-
-        /// <summary>
-        /// Commits the current pending transaction.
-        /// </summary>
-        void Commit();
-
         /// <summary>
         /// Allocate an ID for the specified type. The type must be mapped.
         /// If the mapping specifies a SingletonId, that is returned
