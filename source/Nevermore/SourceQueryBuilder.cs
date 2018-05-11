@@ -100,6 +100,11 @@ namespace Nevermore
             clauses = new List<JoinClause>();
             joinSource = source;
             type = joinType;
+
+            ParamValues.AddRange(parameterValues);
+            Params.AddRange(parameters);
+            ParamDefaults.AddRange(parameterDefaults);
+
             return this;
         }
 
