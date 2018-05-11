@@ -4,7 +4,7 @@ Nevermore allows you to work with SQL Server as if it were a JSON document store
 
 Nevermore has some simple principles:
 
- - C# classes (Order, Customer, etc.) can be defined as documents documents
+ - C# classes (Order, Customer, etc.) can be defined as documents
  - Documents can have have nested properties, lists, etc. - anything that can be serialized as JSON
  - Each document gets its own database table (Orders, Customers, etc.)
  - The document ID is the primary key of the table. Like Raven, it uses Hi-Lo to generate string identifiers ("Order-123")
