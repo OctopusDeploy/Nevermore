@@ -1075,6 +1075,36 @@ ORDER BY [Title] DESC";
         }
 
         [Fact]
+        public void ShouldGenerateWithMultipleLeftHashJoinsSubQueryWithPrameter()
+        {
+            var account = CreateQueryBuilder<IDocument>("Account").Where("Name", UnarySqlOperand.Equal, "Octopus 1");
+            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus 2");
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .LeftHashJoin(account.Subquery())
+                .On("AccountId", JoinOperand.Equal, "Id")
+                .LeftHashJoin(company.Subquery())
+                .On("CompanyId", JoinOperand.Equal, "CompanyId")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
+        public void ShouldGenerateWithMultipleLeftHashJoinsWithTableAndSubQueryWithPrameter()
+        {
+            var account = CreateQueryBuilder<IDocument>("Account");
+            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus");
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .LeftHashJoin(account)
+                .On("AccountId", JoinOperand.Equal, "Id")
+                .LeftHashJoin(company.Subquery())
+                .On("CompanyId", JoinOperand.Equal, "CompanyId")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
         public void ShouldGenerateMultipleJoinTypes()
         {
             var customers = CreateQueryBuilder<Customer>("Customers")
