@@ -101,9 +101,16 @@ namespace Nevermore
             joinSource = source;
             type = joinType;
 
-            ParamValues.AddRange(parameterValues);
-            Params.AddRange(parameters);
-            ParamDefaults.AddRange(parameterDefaults);
+            var commandParameterValues = new CommandParameterValues(ParamValues, parameterValues);
+            var combinedParameters = new Parameters(Params, parameters);
+            var combinedParameterDefaults = new ParameterDefaults(ParamDefaults, parameterDefaults);
+
+            ParamValues.Clear();
+            ParamValues.AddRange(commandParameterValues);
+            Params.Clear();
+            Params.AddRange(combinedParameters);
+            ParamDefaults.Clear();
+            ParamDefaults.AddRange(combinedParameterDefaults);
 
             return this;
         }

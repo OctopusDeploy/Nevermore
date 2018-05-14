@@ -98,6 +98,22 @@ ORDER BY [Id]";
         }
 
         [Fact]
+        public void ShouldGenerateSelectForMultipleJoinsWithParameter()
+        {
+
+            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders").Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
+            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers").Where("Name", UnarySqlOperand.Equal, "Abc");
+            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts").Where("Name", UnarySqlOperand.Equal, "CBA");
+
+            var actual = leftQueryBuilder
+                .InnerJoin(join1QueryBuilder.Subquery()).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(join2QueryBuilder.Subquery()).On("AccountId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
         public void ShouldGenerateSelectForComplicatedSubqueryJoin()
         {
             var orders = CreateQueryBuilder<IDocument>("Orders");
@@ -1051,7 +1067,7 @@ ORDER BY [Title] DESC";
         {
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .LeftHashJoin(account.AsAliasedSource())
+                .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -1067,7 +1083,7 @@ ORDER BY [Title] DESC";
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .InnerJoin(customers.AsType<IDocument>().Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id")
-                .LeftHashJoin(account.AsAliasedSource())
+                .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -1144,7 +1160,7 @@ ORDER BY [Title] DESC";
                 .Alias(deploymentTableAlias)
                 .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
-                .LeftHashJoin(LQuery().Subquery().Alias(l).AsSource())
+                .LeftHashJoin(LQuery().Subquery().Alias(l))
                 .On("Id", JoinOperand.Equal, "Id")
                 .CalculatedColumn("'P'", "CurrentOrPrevious")
                 .Column("Id", "Id")
