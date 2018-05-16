@@ -98,6 +98,22 @@ ORDER BY [Id]";
         }
 
         [Fact]
+        public void ShouldGenerateSelectForMultipleJoinsWithParameter()
+        {
+
+            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders").Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
+            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers").Where("Name", UnarySqlOperand.Equal, "Abc");
+            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts").Where("Name", UnarySqlOperand.Equal, "CBA");
+
+            var actual = leftQueryBuilder
+                .InnerJoin(join1QueryBuilder.Subquery()).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(join2QueryBuilder.Subquery()).On("AccountId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
         public void ShouldGenerateSelectForComplicatedSubqueryJoin()
         {
             var orders = CreateQueryBuilder<IDocument>("Orders");
@@ -1051,8 +1067,38 @@ ORDER BY [Title] DESC";
         {
             var account = CreateQueryBuilder<IDocument>("Account");
             var actual = CreateQueryBuilder<IDocument>("Orders")
-                .LeftHashJoin(account.AsAliasedSource())
+                .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
+        public void ShouldGenerateWithMultipleLeftHashJoinsSubQueryWithPrameter()
+        {
+            var account = CreateQueryBuilder<IDocument>("Account").Where("Name", UnarySqlOperand.Equal, "Octopus 1");
+            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus 2");
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .LeftHashJoin(account.Subquery())
+                .On("AccountId", JoinOperand.Equal, "Id")
+                .LeftHashJoin(company.Subquery())
+                .On("CompanyId", JoinOperand.Equal, "CompanyId")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Fact]
+        public void ShouldGenerateWithMultipleLeftHashJoinsWithTableAndSubQueryWithPrameter()
+        {
+            var account = CreateQueryBuilder<IDocument>("Account");
+            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus");
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .LeftHashJoin(account)
+                .On("AccountId", JoinOperand.Equal, "Id")
+                .LeftHashJoin(company.Subquery())
+                .On("CompanyId", JoinOperand.Equal, "CompanyId")
                 .DebugViewRawQuery();
 
             this.Assent(actual);
@@ -1067,7 +1113,7 @@ ORDER BY [Title] DESC";
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .InnerJoin(customers.AsType<IDocument>().Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id")
-                .LeftHashJoin(account.AsAliasedSource())
+                .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -1144,7 +1190,7 @@ ORDER BY [Title] DESC";
                 .Alias(deploymentTableAlias)
                 .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
-                .LeftHashJoin(LQuery().Subquery().Alias(l).AsSource())
+                .LeftHashJoin(LQuery().Subquery().Alias(l))
                 .On("Id", JoinOperand.Equal, "Id")
                 .CalculatedColumn("'P'", "CurrentOrPrevious")
                 .Column("Id", "Id")
