@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
@@ -66,6 +67,25 @@ namespace Nevermore
                 throw new NotSupportedException("Only method calls that take a single string argument and Enumerable.Contains methods are supported");
             }
 
+            IQueryBuilder<TRecord> HandleMemberExpression(MemberExpression memExpr, bool rhsValue)
+            {
+                if (memExpr.Type == typeof(bool))
+                    return queryBuilder.Where(memExpr.Member.Name, UnarySqlOperand.Equal, rhsValue);
+                        
+                throw new NotSupportedException("Only boolean properties are allowed for where expressions without a comparison operator or method call");
+            }
+
+            if (expr is MemberExpression memExpr2)
+                return HandleMemberExpression(memExpr2, true);
+
+            if (expr is UnaryExpression unaExpr)
+            {
+                if(!(unaExpr.Operand is MemberExpression memExpr3))
+                    throw new NotSupportedException("Only boolean properties are allowed when the ! operator is used, i.e. Where(e => !e.BoolProp)");
+                
+                return HandleMemberExpression(memExpr3, false);
+            }
+            
             throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
 
         }

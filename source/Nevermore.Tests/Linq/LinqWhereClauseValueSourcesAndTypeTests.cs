@@ -99,6 +99,60 @@ ORDER BY [Id]");
         }
         
         [Fact]
+        public void WithBoolean()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => f.Bool);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", true);
+        }
+        
+        [Fact]
+        public void WithNotBoolean()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => !f.Bool);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", false);
+        }
+        
+        [Fact]
+        public void WithBooleanComparison()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => f.Bool == false);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", false);
+        }
+        
+        [Fact]
         public void WithDateTime()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();

@@ -18,6 +18,7 @@ namespace Nevermore.Tests.Query
             public string String { get; set; }
             public Bar Enum { get; set; }
             public DateTime DateTime { get; set; }
+            public bool Bool { get; set; }
         }
         
         protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder(IUniqueParameterNameGenerator uniqueParameterNameGenerator = null)
