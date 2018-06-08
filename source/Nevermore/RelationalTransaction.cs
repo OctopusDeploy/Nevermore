@@ -627,6 +627,7 @@ namespace Nevermore
         [Pure]
         public T ExecuteScalar<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
         {
+            using (new TimedSection(Log, ms => $"Scalar took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
