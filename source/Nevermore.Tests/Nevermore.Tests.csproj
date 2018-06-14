@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <VersionPrefix>1.0.0</VersionPrefix>
     <TargetFrameworks>netcoreapp2.0;net452</TargetFrameworks>
@@ -15,20 +14,20 @@
     <IsPackable>false</IsPackable>
     <WarningsAsErrors />
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
     <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="Assent" Version="0.8.0" />
     <PackageReference Include="NSubstitute" Version="2.0.2" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="TeamCity.VSTest.TestAdapter" Version="1.0.6" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="FluentAssertions" Version="4.19.2" />
     <PackageReference Include="Castle.Core" Version="4.2.1" />
   </ItemGroup>

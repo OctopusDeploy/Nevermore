@@ -17,23 +17,23 @@ namespace Nevermore.Tests.Delete
             transaction = Substitute.For<IRelationalTransaction>();
         }
 
-        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
+        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(Action<Type, Where, CommandParameterValues> executeDelete) where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(transaction, new UniqueParameterNameGenerator(), tableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), executeDelete, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
         [Fact]
         public void ShouldGenerateDelete()
         {
             string actual = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            CreateQueryBuilder<IDocument>("Orders")
+            void ExecuteDelete(Type _, Where where, CommandParameterValues __) => actual = where.GenerateSql().Trim();
+
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("[Price] > 5")
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > 5)");
+            actual.Should().Be(@"WHERE ([Price] > 5)");
         }
 
         [Fact]
@@ -41,15 +41,18 @@ WHERE ([Price] > 5)");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
-
-            CreateQueryBuilder<IDocument>("Orders")
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
+            
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", UnarySqlOperand.GreaterThan, new Parameter("price"))
                 .ParameterValue(5)
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price_0)");
+            actual.Should().Be(@"WHERE ([Price] > @price_0)");
             values["price_0"].Should().Be(5);
         }
 
@@ -58,15 +61,18 @@ WHERE ([Price] > @price_0)");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", BinarySqlOperand.Between, new Parameter("LowerPrice"), new Parameter("UpperPrice"))
                 .ParameterValues(5, 10)
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
+            actual.Should().Be(@"WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
             values["lowerprice_0"].Should().Be(5);
             values["upperprice_1"].Should().Be(10);
         }
@@ -76,15 +82,18 @@ WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", ArraySqlOperand.In, new [] { new Parameter("LowerPrice"), new Parameter("UpperPrice") })
                 .ParameterValues(new object[] {5, 10})
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
+            actual.Should().Be(@"WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
             values["lowerprice_0"].Should().Be(5);
             values["upperprice_1"].Should().Be(10);
         }
@@ -94,14 +103,17 @@ WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price_0)");
+            actual.Should().Be(@"WHERE ([Price] > @price_0)");
             values["price_0"].Should().Be(5);
         }
 
@@ -110,14 +122,17 @@ WHERE ([Price] > @price_0)");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", BinarySqlOperand.Between, 5, 10)
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
+            actual.Should().Be(@"WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
             values["startvalue_0"].Should().Be(5);
             values["endvalue_1"].Should().Be(10);
         }
@@ -127,14 +142,16 @@ WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
-
-            CreateQueryBuilder<IDocument>("Orders")
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", ArraySqlOperand.In, new [] { 5, 10, 15 })
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
+            actual.Should().Be(@"WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
             values["price0_0"].Should().Be("5");
             values["price1_1"].Should().Be("10");
             values["price2_2"].Should().Be("15");
@@ -145,15 +162,17 @@ WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
         {
             string actual = null;
             CommandParameterValues values = null;
-            transaction.ExecuteRawDeleteQuery(Arg.Do<string>(s => actual = s), Arg.Do<CommandParameterValues>(v => values = v));
-
-            CreateQueryBuilder<IDocument>("Orders")
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue)
+            {
+                actual = @where.GenerateSql().Trim();
+                values = cmdValue;
+            }
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Where("Price", UnarySqlOperand.LessThan, 10)
                 .Delete();
 
-            actual.Should().Be(@"DELETE FROM dbo.[Orders]
-WHERE ([Price] > @price_0)
+            actual.Should().Be(@"WHERE ([Price] > @price_0)
 AND ([Price] < @price_1)");
             values["price_0"].Should().Be(5);
             values["price_1"].Should().Be(10);
@@ -162,7 +181,7 @@ AND ([Price] < @price_1)");
         [Fact]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
-            CreateQueryBuilder<IDocument>("Todo")
+            CreateQueryBuilder<IDocument>((t, w, p) => { })
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }

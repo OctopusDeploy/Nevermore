@@ -9,7 +9,6 @@ namespace Nevermore.Tests.QueryBuilderFixture
 {
     public class DeleteQueryVariableCasingFixture
     {
-        private IRelationalTransaction transaction;
         private string query = null;
         private CommandParameterValues parameters = null;
 
@@ -17,18 +16,20 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             query = null;
             parameters = null;
-            transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.ExecuteRawDeleteQuery("", Arg.Any<CommandParameterValues>()))
-                .Do(c =>
-                {
-                    query = c.Arg<string>();
-                    parameters = c.Arg<CommandParameterValues>();
-                });
         }
 
         IDeleteQueryBuilder<IId> CreateQueryBuilder()
         {
-            return new DeleteQueryBuilder<IId>(transaction, new UniqueParameterNameGenerator(), "Order", Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<IId>(
+                new UniqueParameterNameGenerator(),
+                (_, q, p) =>
+                {
+                    query = q.GenerateSql();
+                    parameters = p;
+                }, 
+                Enumerable.Empty<IWhereClause>(), 
+                new CommandParameterValues()
+                );
         }
 
         [Fact]

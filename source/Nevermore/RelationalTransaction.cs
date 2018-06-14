@@ -9,7 +9,6 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading;
-
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
@@ -17,7 +16,7 @@ using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Nevermore.Transient;
-
+using Nevermore.Util;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -27,8 +26,6 @@ namespace Nevermore
     {
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransaction>();
-        static readonly ConcurrentDictionary<DocumentMap, string> InsertStatementTemplates = new ConcurrentDictionary<DocumentMap, string>();
-        static readonly ConcurrentDictionary<DocumentMap, string> UpdateStatementTemplates = new ConcurrentDictionary<DocumentMap, string>();
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation retriableOperation;
@@ -42,6 +39,7 @@ namespace Nevermore
         readonly string name;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
+        readonly DataModificationQueryBuilder dataModificationQueryBuilder;
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -58,7 +56,7 @@ namespace Nevermore
             IKeyAllocator keyAllocator,
             IRelatedDocumentStore relatedDocumentStore,
             string name = null
-            )
+        )
         {
             this.registry = registry;
             this.retriableOperation = retriableOperation;
@@ -70,6 +68,8 @@ namespace Nevermore
             this.name = name ?? Thread.CurrentThread.Name;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
+            
+            dataModificationQueryBuilder = new DataModificationQueryBuilder(mappings, jsonSerializerSettings);
 
             try
             {
@@ -87,7 +87,15 @@ namespace Nevermore
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class, IId
         {
-            return new DeleteQueryBuilder<TDocument>(this, uniqueParameterNameGenerator, mappings.Get(typeof(TDocument)).TableName, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(
+                uniqueParameterNameGenerator,
+                (documentType, where, parameterValues) => DeleteInternal(
+                    dataModificationQueryBuilder.CreateDelete(documentType, where),
+                    parameterValues
+                ), 
+                Enumerable.Empty<IWhereClause>(), 
+                new CommandParameterValues()
+            );
         }
 
         [Pure]
@@ -144,7 +152,8 @@ namespace Nevermore
 
             var items = allIds.Zip(results, Tuple.Create);
             foreach (var pair in items)
-                if (pair.Item2 == null) throw new ResourceNotFoundException(pair.Item1);
+                if (pair.Item2 == null)
+                    throw new ResourceNotFoundException(pair.Item1);
             return results;
         }
 
@@ -170,25 +179,17 @@ namespace Nevermore
 
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
-            var mapping = mappings.Get(instance.GetType());
-            var statement = InsertStatementTemplates.GetOrAdd(mapping, t => string.Format(
-                "INSERT INTO dbo.[{0}] {1} ({2}) values ({3})",
-                tableName ?? mapping.TableName,
-                tableHint ?? "",
-                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] { "Id", "JSON" })),
-                string.Join(", ", mapping.IndexedColumns.Select(c => "@" + c.ColumnName).Union(new[] { "@Id", "@JSON" }))
-                ));
-
-            var parameters = InstanceToParameters(instance, mapping);
-            if (string.IsNullOrWhiteSpace(instance.Id))
-            {
-                parameters["Id"] = string.IsNullOrEmpty(customAssignedId) ? AllocateId(mapping) : customAssignedId;
-            }
-            else if (customAssignedId != null && customAssignedId != instance.Id)
-            {
+            if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
-            }
-
+            
+            var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
+                new[] {instance}, 
+                tableName, 
+                tableHint,
+                m => string.IsNullOrEmpty(customAssignedId) ? AllocateId(m) : customAssignedId,
+                true
+             );
+            
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
             {
@@ -198,7 +199,7 @@ namespace Nevermore
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
 
                     // Copy the assigned Id back onto the document
-                    mapping.IdColumn.ReaderWriter.Write(instance, (string)parameters["Id"]);
+                    mapping.IdColumn.ReaderWriter.Write(instance, (string) parameters["Id"]);
 
                     relatedDocumentStore.PopulateRelatedDocuments(this, instance);
                 }
@@ -220,40 +221,13 @@ namespace Nevermore
             if (!instances.Any())
                 return;
 
-            var mapping = mappings.Get(instances.First().GetType()); // All instances share the same mapping.
-
-            var parameters = new CommandParameterValues();
-            var valueStatements = new List<string>();
-            var instanceCount = 0;
-            foreach (var instance in instances)
-            {
-                var instancePrefix = $"{instanceCount}__";
-                var instanceParameters = InstanceToParameters(instance, mapping, instancePrefix);
-                if (string.IsNullOrWhiteSpace(instance.Id))
-                    instanceParameters[$"{instancePrefix}Id"] = AllocateId(mapping);
-
-                parameters.AddRange(instanceParameters);
-
-                var defaultIndexColumnPlaceholders = new string[] { };
-                if (includeDefaultModelColumns)
-                    defaultIndexColumnPlaceholders = new[] { $"@{instancePrefix}Id", $"@{instancePrefix}JSON" };
-
-                valueStatements.Add($"({string.Join(", ", mapping.IndexedColumns.Select(c => $"@{instancePrefix}{c.ColumnName}").Union(defaultIndexColumnPlaceholders))})");
-
-                instanceCount++;
-            }
-
-            var defaultIndexColumns = new string[] { };
-            if (includeDefaultModelColumns)
-                defaultIndexColumns = new[] { "Id", "JSON" };
-
-            var statement = string.Format(
-                "INSERT INTO dbo.[{0}] {1} ({2}) values {3}",
-                tableName ?? mapping.TableName,
-                tableHint ?? "",
-                string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(defaultIndexColumns)),
-                string.Join(", ", valueStatements)
-                );
+            IReadOnlyList<IId> instanceList = instances.ToArray();
+            var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
+                instanceList, 
+                tableName, 
+                tableHint,
+                AllocateId,
+                includeDefaultModelColumns);
 
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
@@ -262,16 +236,14 @@ namespace Nevermore
                 try
                 {
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
-                    instanceCount = 0;
-                    foreach (var instance in instances)
+                    for(var x = 0; x < instanceList.Count; x++)
                     {
-                        var instancePrefix = $"{instanceCount}__";
+                        var instancePrefix = $"{x}__";
 
                         // Copy the assigned Id back onto the document
-                        mapping.IdColumn.ReaderWriter.Write(instance, (string)parameters[$"{instancePrefix}Id"]);
+                        mapping.IdColumn.ReaderWriter.Write(instanceList[x], (string) parameters[$"{instancePrefix}Id"]);
 
-                        relatedDocumentStore.PopulateRelatedDocuments(this, instance);
-                        instanceCount++;
+                        relatedDocumentStore.PopulateRelatedDocuments(this, instanceList[x]);
                     }
                 }
                 catch (SqlException ex)
@@ -321,17 +293,10 @@ namespace Nevermore
 
         public void Update<TDocument>(TDocument instance, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
-            var mapping = mappings.Get(instance.GetType());
-
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] { "[JSON] = @JSON" }));
-            var statement = UpdateStatementTemplates.GetOrAdd(mapping, t => string.Format(
-                "UPDATE dbo.[{0}] {1} SET {2} WHERE Id = @Id",
-                mapping.TableName,
-                tableHint ?? "",
-                updates));
-
+            var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
+            
             using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, InstanceToParameters(instance, mapping), mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -356,52 +321,26 @@ namespace Nevermore
         // Delete does not require TDocument to implement IId because during recursive document delete we have only objects
         public void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
-            var mapping = mappings.Get(instance.GetType());
-            var id = (string)mapping.IdColumn.ReaderWriter.Read(instance);
-            DeleteInternal(mapping, id, commandTimeoutSeconds);
+            var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete(instance);
+            DeleteInternal(statement, parameterValues, commandTimeoutSeconds);
         }
 
         public void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class, IId
         {
-            var mapping = mappings.Get(typeof(TDocument));
-            DeleteInternal(mapping, id, commandTimeoutSeconds);
+            var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete<TDocument>(id);
+            DeleteInternal(statement, parameterValues, commandTimeoutSeconds);
         }
 
-        public void DeleteInternal(DocumentMap mapping, string id, int? commandTimeoutSeconds)
+        void DeleteInternal(string statement, CommandParameterValues parameterValues, int? commandTimeoutSeconds = null)
         {
-            var statement = $"DELETE from dbo.[{mapping.TableName}] WHERE Id = @Id";
-
             using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, new CommandParameterValues { { "Id", id } }, mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameterValues, commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
                 {
                     // We can retry deletes because deleting something that doesn't exist will silently do nothing
-                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Delete), "Delete " + mapping.TableName);
-                }
-                catch (SqlException ex)
-                {
-                    throw WrapException(command, ex);
-                }
-                catch (Exception ex)
-                {
-                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
-                    throw;
-                }
-            }
-        }
-
-        public void ExecuteRawDeleteQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
-        {
-            using (new TimedSection(Log, ms => $"Executing DELETE query took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
-            {
-                AddCommandTrace(command.CommandText);
-                try
-                {
-                    // We can retry deletes because deleting something that doesn't exist will silently do nothing
-                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Delete), "ExecuteDeleteQuery " + query);
+                    command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Delete), "ExecuteDeleteQuery " + statement);
                 }
                 catch (SqlException ex)
                 {
@@ -516,14 +455,14 @@ namespace Nevermore
                             // and this record is a different sub-type, and should be excluded from the result-set.
                             if (deserialized is T)
                             {
-                                instance = (T)deserialized;
+                                instance = (T) deserialized;
                             }
                             else
                                 continue;
                         }
                         else
                         {
-                            instance = (T)Activator.CreateInstance(instanceType);
+                            instance = (T) Activator.CreateInstance(instanceType);
                         }
 
                         var specificMapping = mappings.Get(instanceType);
@@ -592,37 +531,6 @@ namespace Nevermore
             return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
-        CommandParameterValues InstanceToParameters(object instance, DocumentMap mapping, string prefix = null)
-        {
-            var result = new CommandParameterValues
-            {
-                [$"{prefix}Id"] = mapping.IdColumn.ReaderWriter.Read(instance)
-            };
-
-            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
-
-            result[$"{prefix}JSON"] = JsonConvert.SerializeObject(instance, mType, jsonSerializerSettings);
-
-            foreach (var c in mappings.Get(mType).IndexedColumns)
-            {
-                var value = c.ReaderWriter.Read(instance);
-                if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
-                {
-                    var attemptedLength = ((string)value).Length;
-                    if (attemptedLength > c.MaxLength)
-                    {
-                        throw new StringTooLongException(string.Format("An attempt was made to store {0} characters in the {1}.{2} column, which only allows {3} characters.", attemptedLength, mapping.TableName, c.ColumnName, c.MaxLength));
-                    }
-                }
-                else if (value != null && value != DBNull.Value && value is DateTime && value.Equals(DateTime.MinValue))
-                {
-                    value = SqlDateTime.MinValue.Value;
-                }
-
-                result[$"{prefix}{c.ColumnName}"] = value;
-            }
-            return result;
-        }
 
         [Pure]
         public T ExecuteScalar<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
@@ -634,7 +542,7 @@ namespace Nevermore
                 try
                 {
                     var result = command.ExecuteScalarWithRetry(GetRetryPolicy(RetriableOperation.Select));
-                    return (T)AmazingConverter.Convert(result, typeof(T));
+                    return (T) AmazingConverter.Convert(result, typeof(T));
                 }
                 catch (SqlException ex)
                 {
@@ -699,9 +607,7 @@ namespace Nevermore
             if (retriableOperation == RetriableOperation.None)
                 return RetryPolicy.NoRetry;
 
-            return (retriableOperation & operation) != 0 ?
-                RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() :
-                RetryPolicy.NoRetry;
+            return (retriableOperation & operation) != 0 ? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() : RetryPolicy.NoRetry;
         }
 
         Exception WrapException(IDbCommand command, Exception ex)
@@ -765,7 +671,7 @@ namespace Nevermore
 
                 mapping.IdColumn.ReaderWriter.Write(instance, reader[GetColumnName(prefix, mapping.IdColumn.ColumnName)]);
 
-                return (TResult)instance;
+                return (TResult) instance;
             }
 
             public TColumn Read<TColumn>(Func<IDataReader, TColumn> callback)

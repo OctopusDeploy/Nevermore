@@ -61,15 +61,6 @@ namespace Nevermore
         IEnumerable<TDocument> ExecuteReaderWithProjection<TDocument>(string query, CommandParameterValues args, Func<IProjectionMapper, TDocument> projectionMapper, int? commandTimeoutSeconds = null);
 
         /// <summary>
-        /// Executes a delete query (bypasses the usual OctopusModelDeletionRules checks). Only use this if you are 100% certain you can 
-        /// delete from the given table without worrying about deletion rules.
-        /// </summary>
-        /// <param name="query">The SQL query to execute. Example: <c>DELETE FROM [Event]...</c></param>
-        /// <param name="args">Any arguments to pass to the query as command parameters.</param>
-        /// <param name="commandTimeoutSeconds">A custom timeout in seconds to use for the command instead of the default.</param>
-        void ExecuteRawDeleteQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null);
-
-        /// <summary>
         /// Executes a query that returns no results.
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
