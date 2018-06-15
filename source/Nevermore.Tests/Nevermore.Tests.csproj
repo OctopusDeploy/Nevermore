@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <VersionPrefix>1.0.0</VersionPrefix>
-    <TargetFrameworks>netcoreapp1.1;net452</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.0;net452</TargetFrameworks>
     <AssemblyName>Nevermore.Tests</AssemblyName>
     <PackageId>Nevermore.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -31,14 +31,6 @@
     <PackageReference Include="TeamCity.VSTest.TestAdapter" Version="1.0.6" />
     <PackageReference Include="FluentAssertions" Version="4.19.2" />
     <PackageReference Include="Castle.Core" Version="4.2.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Mapping\" />
   </ItemGroup>
 
 </Project>
