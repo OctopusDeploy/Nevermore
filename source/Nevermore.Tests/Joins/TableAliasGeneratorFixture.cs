@@ -18,7 +18,7 @@ namespace Nevermore.Tests.Joins
             {
                 var actual = target.GenerateTableAlias();
 
-                results.Should().Contain(actual);
+                results.Should().NotContain(actual);
                 results.Add(actual);
             }
         }
