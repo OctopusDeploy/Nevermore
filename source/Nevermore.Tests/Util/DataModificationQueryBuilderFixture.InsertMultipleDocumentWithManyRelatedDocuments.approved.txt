@@ -1,0 +1,23 @@
+INSERT INTO dbo.[TestDocumentWithRelatedDocuments]  (AColumn, Id, JSON) VALUES 
+(@0__AColumn, @0__Id, @0__JSON)
+,(@1__AColumn, @1__Id, @1__JSON)
+,(@2__AColumn, @2__Id, @2__JSON)
+INSERT INTO [RelatedDocuments] ([Id], [RelatedDocumentId]) VALUES
+(@0__Id, @relateddocuments_0)
+,(@0__Id, @relateddocuments_1)
+,(@2__Id, @relateddocuments_2)
+,(@2__Id, @relateddocuments_3)
+
+@0__Id=New-Id-1
+@0__JSON={"Id":null,"AColumn":"Doc1"}
+@0__AColumn=Doc1
+@1__Id=New-Id-2
+@1__JSON={"Id":null,"AColumn":"Doc2"}
+@1__AColumn=Doc2
+@2__Id=New-Id-3
+@2__JSON={"Id":null,"AColumn":"Doc1"}
+@2__AColumn=Doc1
+@relateddocuments_0=Rel-1
+@relateddocuments_1=Rel-2
+@relateddocuments_2=Rel-2
+@relateddocuments_3=Rel-3

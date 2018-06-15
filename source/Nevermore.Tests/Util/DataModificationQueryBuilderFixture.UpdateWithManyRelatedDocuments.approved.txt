@@ -1,0 +1,35 @@
+UPDATE dbo.[TestDocumentWithMultipleRelatedDocuments]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+
+DECLARE @references as TABLE (Reference nvarchar(400))
+
+DELETE FROM @references
+
+INSERT INTO @references VALUES (@relateddocuments_0), (@relateddocuments_1), (@relateddocuments_2), (@relateddocuments_3)
+
+DELETE FROM [RelatedDocuments] WHERE [Id] = @Id
+    AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
+
+INSERT INTO [RelatedDocuments] ([Id], [RelatedDocumentId] )
+SELECT @id, Reference FROM @references t
+WHERE NOT EXISTS (SELECT null FROM [RelatedDocuments] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
+
+DELETE FROM @references
+
+INSERT INTO @references VALUES (@otherrelatedtable_0), (@otherrelatedtable_1)
+
+DELETE FROM [OtherRelatedTable] WHERE [Id] = @Id
+    AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
+
+INSERT INTO [OtherRelatedTable] ([Id], [RelatedDocumentId] )
+SELECT @id, Reference FROM @references t
+WHERE NOT EXISTS (SELECT null FROM [OtherRelatedTable] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
+
+@Id=Doc-1
+@JSON={"Id":"Doc-1","AColumn":"Doc1"}
+@AColumn=Doc1
+@relateddocuments_0=Rel-1
+@relateddocuments_1=Rel-2
+@relateddocuments_2=Rel-2
+@relateddocuments_3=Rel-2
+@otherrelatedtable_0=Rel-3-Other
+@otherrelatedtable_1=Rel-2

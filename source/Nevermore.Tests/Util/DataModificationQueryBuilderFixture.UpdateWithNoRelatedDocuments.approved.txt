@@ -1,0 +1,7 @@
+UPDATE dbo.[TestDocumentWithRelatedDocuments]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+
+DELETE FROM [RelatedDocuments] WHERE [Id] = @Id
+
+@Id=Doc-1
+@JSON={"Id":"Doc-1","AColumn":"AValue"}
+@AColumn=AValue

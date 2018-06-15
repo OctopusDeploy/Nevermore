@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Resources;
 using System.Text;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
@@ -103,9 +104,11 @@ namespace Nevermore.IntegrationTests
             // needed to generate the table
             var mappings = new DocumentMap[]
             {
+                new OrderMap(),
                 new CustomerMap(),
                 new SpecialProductMap(),
-                new LineItemMap()
+                new LineItemMap(),
+                
             };
 
             Mappings.Install(mappings);

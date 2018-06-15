@@ -1,0 +1,9 @@
+INSERT INTO dbo.[TestDocumentWithRelatedDocuments]  (AColumn, Id, JSON) VALUES 
+(@AColumn, @Id, @JSON)
+INSERT INTO [RelatedDocuments] ([Id], [RelatedDocumentId]) VALUES
+(@Id, @relateddocuments_0)
+
+@Id=New-Id
+@JSON={"Id":null,"AColumn":"AValue"}
+@AColumn=AValue
+@relateddocuments_0=Rel-1
