@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Xml.Linq;
+using FluentAssertions;
 using Nevermore.Mapping;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace Nevermore.Tests.Mapping
         [Fact]
         public void CanConvert()
         {
-            Assert.Equal(null, AmazingConverter.Convert(null, typeof (string)));
+            AmazingConverter.Convert(null, typeof(string)).Should().BeNull();
             Assert.Equal(0, AmazingConverter.Convert(null, typeof (int)));
             Assert.Equal(0.0f, AmazingConverter.Convert(0, typeof (float)));
             Assert.Equal(0, AmazingConverter.Convert(0L, typeof (int)));

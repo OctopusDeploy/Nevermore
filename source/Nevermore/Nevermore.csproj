@@ -17,7 +17,7 @@
     <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/OctopusDeploy/Nevermore.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <NoWarn>1701;1702;1705</NoWarn>
+    <WarningsAsErrors />
     <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
   </PropertyGroup>

@@ -19,5 +19,6 @@
     <Version>1.0.0.0</Version>
     <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
+    <WarningsAsErrors/>
   </PropertyGroup>
 </Project>

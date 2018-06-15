@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore;
 using Nevermore.IntegrationTests.Model;
@@ -79,7 +80,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 Assert.True(allProducts.Exists(p => p is DodgyProduct dp && dp.Tax == originalDud.Tax));
 
                 var onlySpecial = trn.TableQuery<SpecialProduct>().ToList();
-                Assert.Equal(1, onlySpecial.Count);
+                onlySpecial.Count.Should().Be(1);
                 Assert.Equal(originalSpecial.BonusMaterial, onlySpecial[0].BonusMaterial);
             }
         }
