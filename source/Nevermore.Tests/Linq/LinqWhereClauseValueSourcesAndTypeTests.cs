@@ -3,7 +3,7 @@ using System.Linq;
 using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
@@ -15,7 +15,7 @@ namespace Nevermore.Tests.Linq
         string BarMethod() => "Bar";
 
         
-        [Fact]
+        [Test]
         public void WithConstant()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -26,7 +26,7 @@ namespace Nevermore.Tests.Linq
         }
 
 
-        [Fact]
+        [Test]
         public void WithLocalVariable()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -38,7 +38,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithField()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -48,7 +48,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithProperty()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -58,7 +58,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithMethod()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -68,7 +68,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithPropertyFromObject()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -80,7 +80,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
         
-        [Fact]
+        [Test]
         public void WithInt()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
@@ -98,7 +98,7 @@ ORDER BY [Id]");
             paramValues.Should().Contain("int", 2);
         }
         
-        [Fact]
+        [Test]
         public void WithBoolean()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
@@ -116,7 +116,7 @@ ORDER BY [Id]");
             paramValues.Should().Contain("bool", true);
         }
         
-        [Fact]
+        [Test]
         public void WithNotBoolean()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
@@ -134,7 +134,7 @@ ORDER BY [Id]");
             paramValues.Should().Contain("bool", false);
         }
         
-        [Fact]
+        [Test]
         public void WithBooleanComparison()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
@@ -152,7 +152,7 @@ ORDER BY [Id]");
             paramValues.Should().Contain("bool", false);
         }
         
-        [Fact]
+        [Test]
         public void WithDateTime()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
@@ -170,7 +170,7 @@ ORDER BY [Id]");
             paramValues.Should().Contain("datetime", new DateTime(2011,1,1,4,5,6));
         }
         
-        [Fact]
+        [Test]
         public void WithEnum()
         {
             var (builder, (parameters, paramValues)) = NewQueryBuilder();

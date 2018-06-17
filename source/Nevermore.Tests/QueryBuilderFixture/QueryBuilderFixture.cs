@@ -5,22 +5,29 @@ using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
     public class QueryBuilderFixture
     {
-        readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
-        readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
+        ITableAliasGenerator tableAliasGenerator;
+        IUniqueParameterNameGenerator uniqueParameterNameGenerator;
         readonly IRelationalTransaction transaction = Substitute.For<IRelationalTransaction>();
+
+        [SetUp]
+        public void SetUp()
+        {
+            tableAliasGenerator = new TableAliasGenerator();
+            uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
+        }
         
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
         {
             return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelect()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -33,10 +40,10 @@ FROM dbo.[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Name]";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectNoOrder()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -48,10 +55,10 @@ FROM dbo.[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectForQueryBuilder()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -63,10 +70,10 @@ FROM dbo.[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectForJoin()
         {
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
@@ -81,7 +88,7 @@ ORDER BY [Id]";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectForMultipleJoins()
         {
 
@@ -97,7 +104,7 @@ ORDER BY [Id]";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {
 
@@ -113,7 +120,7 @@ ORDER BY [Id]";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateSelectForComplicatedSubqueryJoin()
         {
             var orders = CreateQueryBuilder<IDocument>("Orders");
@@ -132,7 +139,7 @@ ORDER BY [Id]";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldSuppressOrderByWhenGeneratingCount()
         {
             string actual = null;
@@ -145,10 +152,10 @@ ORDER BY [Id]";
             var expected = @"SELECT COUNT(*)
 FROM dbo.[Orders]";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateCount()
         {
             string actual = null;
@@ -163,10 +170,10 @@ FROM dbo.[Orders]";
 FROM dbo.[Orders] NOLOCK
 WHERE ([Price] > 5)";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateCountForQueryBuilder()
         {
             string actual = null;
@@ -181,10 +188,10 @@ WHERE ([Price] > 5)";
 FROM dbo.[Orders] NOLOCK
 WHERE ([Price] > 5)";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateCountForJoin()
         {
             string actual = null;
@@ -199,7 +206,7 @@ WHERE ([Price] > 5)";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGeneratePaginate()
         {
             string actual = null;
@@ -213,7 +220,7 @@ WHERE ([Price] > 5)";
         }
 
 
-        [Fact]
+        [Test]
         public void ShouldGeneratePaginateForJoin()
         {
             string actual = null;
@@ -229,7 +236,7 @@ WHERE ([Price] > 5)";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateTop()
         {
             string actual = null;
@@ -245,11 +252,11 @@ FROM dbo.[Orders] NOLOCK
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
-            Assert.Equal(expected, actual);
+            actual.Should().Be(expected);
         }
 
 
-        [Fact]
+        [Test]
         public void ShouldGenerateTopForJoin()
         {
             string actual = null;
@@ -265,7 +272,7 @@ ORDER BY [Id]";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
@@ -285,14 +292,14 @@ ORDER BY [Id]";
 
             var actualParameter1 = parameterValues["jsonPatternSquareBracket"];
             const string expectedParameter1 = "%\"AutoDeployReleaseOverrides\":[[]{\"EnvironmentId\":\"Environments-1\"%";
-            Assert.Equal(actualParameter1, expectedParameter1);
+            actualParameter1.Should().Be(expectedParameter1);
 
             var actualParameter2 = parameterValues["jsonPatternPercentage"];
             const string expectedParameter2 = "%SomeNonExistantField > 5[%]%";
-            Assert.Equal(actualParameter2, expectedParameter2);
+            actualParameter2.Should().Be(expectedParameter2);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
@@ -302,10 +309,10 @@ ORDER BY [Id]";
                 .LikePipedParameter("Name", "Foo|Bar|Baz")
                 .ToList();
 
-            Assert.Equal("%|Foo|Bar|Baz|%", parameterValues["Name"]);
+            parameterValues["Name"].Should().Be("%|Foo|Bar|Baz|%");
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThan()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -324,10 +331,10 @@ WHERE ([Completed] < @completed)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.Equal(2, result);
+            result.Should().Be(2);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -345,10 +352,10 @@ WHERE ([Completed] < @completed_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
 
-            Assert.Equal(2, result);
+            result.Should().Be(2);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -367,10 +374,10 @@ WHERE ([Completed] <= @completed)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.Equal(10, result);
+            result.Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -388,10 +395,10 @@ WHERE ([Completed] <= @completed_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
 
-            Assert.Equal(10, result);
+            result.Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereEquals()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -410,10 +417,10 @@ WHERE ([Title] = @title)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereEqualsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -432,10 +439,10 @@ WHERE ([Title] = @title_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "nevermore"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereNotEquals()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -454,10 +461,10 @@ WHERE ([Title] <> @title)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereNotEqualsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -475,10 +482,10 @@ WHERE ([Title] <> @title_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "nevermore"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThan()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -497,10 +504,10 @@ WHERE ([Completed] > @completed)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.Equal(11, result);
+            result.Should().Be(11);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -518,10 +525,10 @@ WHERE ([Completed] > @completed_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
 
-            Assert.Equal(3, result);
+            result.Should().Be(3);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -540,10 +547,10 @@ WHERE ([Completed] >= @completed)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
-            Assert.Equal(21, result);
+            result.Should().Be(21);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -561,10 +568,10 @@ WHERE ([Completed] >= @completed_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
 
-            Assert.Equal(21, result);
+            result.Should().Be(21);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereContains()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -583,10 +590,10 @@ WHERE ([Title] LIKE @title)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "%nevermore%"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereContainsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -604,10 +611,10 @@ WHERE ([Title] LIKE @title_0)";
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "%nevermore%"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereString()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -629,10 +636,10 @@ WHERE ([Title] IN (@nevermore, @octofront))";
                     cp["nevermore"].ToString() == "nevermore"
                     && cp["octofront"].ToString() == "octofront"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereArray()
         {
             const string expectedSql = @"SELECT *
@@ -646,7 +653,7 @@ ORDER BY [Id]";
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereList()
         {
             var matches = new List<State>
@@ -664,7 +671,7 @@ ORDER BY [Id]";
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereInUsingEmptyList()
         {
             const string expextedSql = @"SELECT *
@@ -679,7 +686,7 @@ ORDER BY [Id]";
         }
 
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -700,10 +707,10 @@ WHERE ([Title] IN (@title0_0, @title1_1))";
                     cp["title0_0"].ToString() == "nevermore"
                     && cp["title1_1"].ToString() == "octofront"));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetween()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -726,10 +733,10 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -749,10 +756,10 @@ WHERE ([Completed] BETWEEN @startvalue_0 AND @endvalue_1)";
                     int.Parse(cp["startvalue_0"].ToString()) == 5 &&
                     int.Parse(cp["endvalue_1"].ToString()) == 10));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -774,10 +781,10 @@ WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
                     int.Parse(cp["startvalue"].ToString()) == 5 &&
                     int.Parse(cp["endvalue"].ToString()) == 10));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
@@ -798,10 +805,10 @@ AND ([Completed] <= @endvalue_1)";
                     int.Parse(cp["startvalue_0"].ToString()) == 5 &&
                     int.Parse(cp["endvalue_1"].ToString()) == 10));
 
-            Assert.Equal(1, result);
+            result.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForOrderBy()
         {
             const string expectedSql = @"SELECT TOP 1 *
@@ -821,10 +828,10 @@ ORDER BY [Title]";
                 Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
             Assert.NotNull(result);
-            Assert.Equal(todoItem, result);
+            result.Should().Be(todoItem);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGetCorrectSqlQueryForOrderByDescending()
         {
             const string expectedSql = @"SELECT TOP 1 *
@@ -844,10 +851,10 @@ ORDER BY [Title] DESC";
                 Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
             Assert.NotNull(result);
-            Assert.Equal(todoItem, result);
+            result.Should().Be(todoItem);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateAliasForTable()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -857,7 +864,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateAliasForSubquery()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -868,7 +875,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateAliasesForSourcesInJoin()
         {
             var accounts = CreateQueryBuilder<IDocument>("Accounts")
@@ -886,7 +893,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateColumnSelection()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -898,7 +905,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateColumnSelectionWithAliases()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -910,7 +917,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateColumnSelectionWithTableAlias()
         {
             const string ordersTableAlias = "ORD";
@@ -924,7 +931,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateColumnSelectionForJoin()
         {
             var accounts = CreateQueryBuilder<IDocument>("Accounts")
@@ -944,7 +951,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateRowNumber()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -955,7 +962,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateRowNumberWithOrderBy()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -966,7 +973,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateRowNumberWithPartitionBy()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -977,7 +984,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateRowNumberWithPartitionByInJoin()
         {
             var account = CreateQueryBuilder<IDocument>("Account");
@@ -991,7 +998,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateRowNumberWithPartitionByInJoinWithCustomAliases()
         {
             var account = CreateQueryBuilder<IDocument>("Account")
@@ -1007,7 +1014,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateUnion()
         {
             var account = CreateQueryBuilder<IDocument>("Account")
@@ -1020,7 +1027,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldCollectParameterValuesFromUnion()
         {
             CommandParameterValues parameterValues = null;
@@ -1037,7 +1044,7 @@ ORDER BY [Title] DESC";
             parameterValues.Should().Contain("Name_0", "ABC");
         }
 
-        [Fact]
+        [Test]
         public void ShouldCollectParametersAndDefaultsFromUnion()
         {
             var parameter = new Parameter("Name", new NVarCharMax());
@@ -1052,7 +1059,7 @@ ORDER BY [Title] DESC";
             this.Assent(query.AsStoredProcedure("ShouldCollectParametersAndDefaultsFromUnion"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateCalculatedColumn()
         {
             var actual = CreateQueryBuilder<IDocument>("Orders")
@@ -1062,7 +1069,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateLeftHashJoin()
         {
             var account = CreateQueryBuilder<IDocument>("Account");
@@ -1074,7 +1081,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateWithMultipleLeftHashJoinsSubQueryWithPrameter()
         {
             var account = CreateQueryBuilder<IDocument>("Account").Where("Name", UnarySqlOperand.Equal, "Octopus 1");
@@ -1089,7 +1096,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateWithMultipleLeftHashJoinsWithTableAndSubQueryWithPrameter()
         {
             var account = CreateQueryBuilder<IDocument>("Account");
@@ -1104,7 +1111,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateMultipleJoinTypes()
         {
             var customers = CreateQueryBuilder<Customer>("Customers")
@@ -1125,7 +1132,7 @@ ORDER BY [Title] DESC";
             public string Name { get; set; }
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateComplexDashboardView()
         {
             const string taskTableAlias = "t";
@@ -1230,7 +1237,7 @@ ORDER BY [Title] DESC";
                 .Where($"NOT (({serverTaskTableAlias}.State = \'Canceled\' OR {serverTaskTableAlias}.State = \'Cancelling\') AND {serverTaskTableAlias}.StartTime IS NULL)");
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateComplexStoredProcedureWithParameters()
         {
             const string eventTableAlias = "Event";
@@ -1256,7 +1263,7 @@ ORDER BY [Title] DESC";
             this.Assent(actual.AsStoredProcedure("LatestSuccessfulDeploymentsToMachine"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateFunctionWithParameters()
         {
             var packagesQuery = CreateQueryBuilder<IDocument>("NuGetPackages")
@@ -1266,7 +1273,7 @@ ORDER BY [Title] DESC";
             this.Assent(packagesQuery.AsFunction("PackagesMatchingId"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateStoredProcWithDefaultValues()
         {
             var packageIdParameter = new Parameter("packageid", new NVarChar(250));
@@ -1278,7 +1285,7 @@ ORDER BY [Title] DESC";
             this.Assent(query.AsStoredProcedure("PackagesMatchingId"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateFunctionWithDefaultValues()
         {
             var packageIdParameter = new Parameter("packageid", new NVarChar(250));
@@ -1290,7 +1297,7 @@ ORDER BY [Title] DESC";
             this.Assent(query.AsFunction("PackagesMatchingId"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldCollectParameterValuesFromSubqueriesInJoin()
         {
             CommandParameterValues parameterValues = null;
@@ -1307,7 +1314,7 @@ ORDER BY [Title] DESC";
             parameterValues.Should().Contain("Name_0", "Bob");
         }
 
-        [Fact]
+        [Test]
         public void ShouldCollectParametersAndDefaultsFromSubqueriesInJoin()
         {
             var parameter = new Parameter("Name", new NVarCharMax());
@@ -1321,7 +1328,7 @@ ORDER BY [Title] DESC";
             this.Assent(query.AsStoredProcedure("ShouldCollectParametersFromSubqueriesInJoin"));
         }
 
-        [Fact]
+        [Test]
         public void ShouldAddPaginatedQueryParameters()
         {
             CommandParameterValues parameterValues = null;
@@ -1349,7 +1356,7 @@ ORDER BY [RowNum]");
             parameterValues["_maxrow_2"].ShouldBeEquivalentTo(30);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateUniqueParameterNames()
         {
             string actual = null;
@@ -1378,7 +1385,7 @@ ORDER BY [Id]";
             actual.ShouldBeEquivalentTo(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateUniqueParameterNamesInJoin()
         {
             string actual = null;
@@ -1423,7 +1430,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
             actual.ShouldBeEquivalentTo(expected);
         }
 
-        [Fact]
+        [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
             CreateQueryBuilder<IDocument>("Todo")
@@ -1431,7 +1438,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
 
-        [Fact]
+        [Test]
         public void ShouldThrowIfDifferentNumberOfParameterDefaultsProvided()
         {
             CreateQueryBuilder<IDocument>("Todo")
@@ -1439,7 +1446,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
                 .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
 
-        [Fact]
+        [Test]
         public void MultipleParametersInLinqQuery()
         {
             string actual = null;

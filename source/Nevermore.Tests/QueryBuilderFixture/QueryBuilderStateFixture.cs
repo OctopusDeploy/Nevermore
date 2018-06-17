@@ -4,7 +4,7 @@ using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -20,7 +20,13 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ExecuteReader<IDocument>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
         }
 
-        [Fact]
+        [SetUp]
+        public void SetUp()
+        {
+            executedQueries.Clear();
+        }
+
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromCount()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -37,7 +43,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromAny()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -54,7 +60,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromTake()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -72,7 +78,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromFirst()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -90,7 +96,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromToListPageinated()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -115,7 +121,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromToListPageinatedWithCount()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -145,7 +151,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromToList()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -163,7 +169,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromStream()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -181,7 +187,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotModifyQueryBuilderStateFromToDictionary()
         {
             var queryBuilder = QueryBuilder("Accounts");
@@ -199,7 +205,7 @@ FROM dbo.[Accounts]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ShouldAddWhereClauseToExistingQueryBuilder()
         {
             transaction.TableQuery<IDocument>().Returns(TableQueryBuilder("Accounts"));

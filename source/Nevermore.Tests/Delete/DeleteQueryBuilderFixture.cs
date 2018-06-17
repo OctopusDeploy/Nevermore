@@ -4,7 +4,7 @@ using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Delete
 {
@@ -22,7 +22,7 @@ namespace Nevermore.Tests.Delete
             return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), executeDelete, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDelete()
         {
             string actual = null;
@@ -36,7 +36,7 @@ namespace Nevermore.Tests.Delete
             actual.Should().Be(@"WHERE ([Price] > 5)");
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithParameterisedUnaryWhereClause()
         {
             string actual = null;
@@ -56,7 +56,7 @@ namespace Nevermore.Tests.Delete
             values["price_0"].Should().Be(5);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithParameterisedBinaryWhereClause()
         {
             string actual = null;
@@ -77,7 +77,7 @@ namespace Nevermore.Tests.Delete
             values["upperprice_1"].Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithParameterisedArrayWhereClause()
         {
             string actual = null;
@@ -98,7 +98,7 @@ namespace Nevermore.Tests.Delete
             values["upperprice_1"].Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithUnaryWhereClause()
         {
             string actual = null;
@@ -117,7 +117,7 @@ namespace Nevermore.Tests.Delete
             values["price_0"].Should().Be(5);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithBinaryWhereClause()
         {
             string actual = null;
@@ -137,7 +137,7 @@ namespace Nevermore.Tests.Delete
             values["endvalue_1"].Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeleteWithArrayWhereClause()
         {
             string actual = null;
@@ -157,7 +157,7 @@ namespace Nevermore.Tests.Delete
             values["price2_2"].Should().Be("15");
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateUniqueParameterNames()
         {
             string actual = null;
@@ -178,7 +178,7 @@ AND ([Price] < @price_1)");
             values["price_1"].Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
             CreateQueryBuilder<IDocument>((t, w, p) => { })

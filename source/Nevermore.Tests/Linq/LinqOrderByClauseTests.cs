@@ -1,12 +1,12 @@
 ﻿using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqOrderByClauseTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void SingleOrderBy()
         {
             var (builder, _) = NewQueryBuilder();
@@ -20,7 +20,7 @@ FROM dbo.[Foo]
 ORDER BY [Int]");
         }
         
-        [Fact]
+        [Test]
         public void SingleOrderByDesc()
         {
             var (builder, _) = NewQueryBuilder();
@@ -34,7 +34,7 @@ FROM dbo.[Foo]
 ORDER BY [Int] DESC");
         }
         
-        [Fact]
+        [Test]
         public void SingleQuerySyntaxOrderBy()
         {
             var (builder, _) = NewQueryBuilder();
@@ -50,7 +50,7 @@ FROM dbo.[Foo]
 ORDER BY [Int]");
         }
         
-        [Fact]
+        [Test]
         public void SingleQuerySyntaxOrderByDesc()
         {
             var (builder, _) = NewQueryBuilder();
@@ -66,7 +66,7 @@ FROM dbo.[Foo]
 ORDER BY [Int] DESC");
         }
         
-        [Fact]
+        [Test]
         public void MultipleOrderBy()
         {
             var (builder, _) = NewQueryBuilder();
@@ -80,7 +80,7 @@ FROM dbo.[Foo]
 ORDER BY [Int], [String]");
         }
         
-        [Fact]
+        [Test]
         public void MultipleOrderByDesc()
         {
             var (builder, _) = NewQueryBuilder();
@@ -94,7 +94,7 @@ FROM dbo.[Foo]
 ORDER BY [Int], [String] DESC");
         }
         
-        [Fact]
+        [Test]
         public void MultipleQuerySyntaxOrderBy()
         {
             var (builder, _) = NewQueryBuilder();
@@ -110,7 +110,7 @@ FROM dbo.[Foo]
 ORDER BY [Int], [String]");
         }
         
-        [Fact]
+        [Test]
         public void MultipleQuerySyntaxOrderByDesc()
         {
             var (builder, _) = NewQueryBuilder();

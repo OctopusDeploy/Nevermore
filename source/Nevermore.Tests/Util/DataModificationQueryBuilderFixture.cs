@@ -7,7 +7,7 @@ using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Util;
 using Newtonsoft.Json;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Util
 {
@@ -30,7 +30,7 @@ namespace Nevermore.Tests.Util
             );
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocument()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
@@ -46,7 +46,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocumentWithDocumentIdAlreadySet()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "SuppliedId"};
@@ -62,7 +62,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocumentWithTableNameAndHints()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
@@ -78,7 +78,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocumentWithNoRelatedDocuments()
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = null};
@@ -94,7 +94,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocumentWithOneRelatedDocument()
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] { "Rel-1"}};
@@ -110,7 +110,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertSingleDocumentWithManyRelatedDocuments()
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {"Rel-1", "Rel-2"}};
@@ -126,7 +126,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertMultipleDocuments()
         {
             var documents = new[]
@@ -147,7 +147,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void InsertMultipleDocumentWithManyRelatedDocuments()
         {
             var documents = new[]
@@ -169,7 +169,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void InsertMultipleDocumentWithMultipleRelatedDocumentsMaps()
         {
             var documents = new[]
@@ -195,7 +195,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 		
-        [Fact]
+        [Test]
         public void Update()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id="Doc-1"};
@@ -208,7 +208,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void UpdateWithHint()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id="Doc-1"};
@@ -221,7 +221,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void UpdateWithNoRelatedDocuments()
         {
             var document = new TestDocumentWithRelatedDocuments
@@ -239,7 +239,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void UpdateWithOneRelatedDocument()
         {
             var document = new TestDocumentWithRelatedDocuments
@@ -257,7 +257,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void UpdateWithManyRelatedDocuments()
         {
             var document = new TestDocumentWithMultipleRelatedDocuments
@@ -277,7 +277,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
-        [Fact]
+        [Test]
         public void DeleteByDocument()
         {
             var document = new TestDocument {Id="Doc-1",};
@@ -286,21 +286,21 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void DeleteById()
         {
             var result = builder.CreateDelete<TestDocument>("Doc-1");
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void DeleteByWhere()
         {
             var result = builder.CreateDelete(typeof(TestDocument), new Where(new UnaryWhereClause(new WhereFieldReference("Foo"), UnarySqlOperand.GreaterThan, "1")));
             this.Assent(result);
         }
         
-        [Fact]
+        [Test]
         public void DeleteByDocumentWithOneRelatedTable()
         {
             var document = new TestDocumentWithRelatedDocuments {Id="Doc-1",};
@@ -309,7 +309,7 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
         
-        [Fact]
+        [Test]
         public void DeleteByDocumentWithManyRelatedTables()
         {
             var result = builder.CreateDelete<TestDocumentWithRelatedDocuments>("Doc-1");

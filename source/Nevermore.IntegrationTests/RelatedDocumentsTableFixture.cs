@@ -6,15 +6,11 @@ using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
+using NUnit.Framework;
 using TestStack.BDDfy;
-using TestStack.BDDfy.Xunit;
-using Xunit;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Nevermore.IntegrationTests
 {
-#pragma warning disable xUnit1013 
     public class RelatedDocumentsTableFixture : FixtureWithRelationalStore
     {
         static readonly IReadOnlyList<(string id, string referencedId)> startingRecords = new[]
@@ -26,11 +22,6 @@ namespace Nevermore.IntegrationTests
 
         string orderId;
         Order loadedOrder;
-
-        public RelatedDocumentsTableFixture(ITestOutputHelper output) : base(output)
-        {
-        }
-
 
         public void GivenRecordsCurrentlyExist()
         {
@@ -140,7 +131,7 @@ namespace Nevermore.IntegrationTests
 
 #pragma warning restore xUnit1013
         
-        [BddfyFact]
+        [Test]
         public void Read()
         {
             this.Given(_ => _.GivenRecordsCurrentlyExist())
@@ -150,7 +141,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [BddfyFact]
+        [Test]
         public void Insert()
         {
             var references = new[] {"Other-1", "Other-2"};
@@ -162,7 +153,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [BddfyFact]
+        [Test]
         public void InsertNullReferences()
         {
             this.Given(_ => _.GivenRecordsCurrentlyExist())
@@ -172,7 +163,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [BddfyFact]
+        [Test]
         public void Update()
         {
             var starting = new[] {"Other-1", "Other-2"};
@@ -186,7 +177,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [BddfyFact]
+        [Test]
         public void UpdateNullReferences()
         {
             var starting = new[] {"Other-1", "Other-2"};
@@ -198,7 +189,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [BddfyFact]
+        [Test]
         public void Delete()
         {
             var references = new[] {"Other-1", "Other-2"};
@@ -210,7 +201,7 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
         
-        [BddfyFact]
+        [Test]
         public void DeleteWithQueryBuilder()
         {
             var references = new[] {"Other-1", "Other-2"};
