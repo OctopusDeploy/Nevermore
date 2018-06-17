@@ -1,12 +1,12 @@
 ﻿using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqWhereClauseComparisonTypeTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void Less()
         {
             var (builder, _) = NewQueryBuilder();
@@ -21,7 +21,7 @@ WHERE ([Int] < @int)
 ORDER BY [Id]");
         }
         
-        [Fact]
+        [Test]
         public void LessOrEqual()
         {
             var (builder, _) = NewQueryBuilder();
@@ -37,7 +37,7 @@ ORDER BY [Id]");
         }
         
         
-        [Fact]
+        [Test]
         public void More()
         {
             var (builder, _) = NewQueryBuilder();
@@ -52,7 +52,7 @@ WHERE ([Int] > @int)
 ORDER BY [Id]");
         }
         
-        [Fact]
+        [Test]
         public void MoreThan()
         {
             var (builder, _) = NewQueryBuilder();
@@ -67,7 +67,7 @@ WHERE ([Int] >= @int)
 ORDER BY [Id]");
         }
         
-        [Fact]
+        [Test]
         public void NotEqual()
         {
             var (builder, _) = NewQueryBuilder();

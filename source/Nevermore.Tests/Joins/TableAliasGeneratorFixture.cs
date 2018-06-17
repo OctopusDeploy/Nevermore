@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Joins
 {
     public class TableAliasGeneratorFixture
     {
-        [Fact]
+        [Test]
         public void ShouldGenerateUniqueAliases()
         {
             var results = new HashSet<string>();
@@ -23,7 +23,7 @@ namespace Nevermore.Tests.Joins
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldGenerateDeterministicAliases()
         {
             var firstGenerator = new TableAliasGenerator();

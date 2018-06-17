@@ -19,13 +19,13 @@
     <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="4.19.2" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
-    <PackageReference Include="xunit" Version="2.3.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="TeamCity.VSTest.TestAdapter" Version="1.0.9" />
+    <PackageReference Include="FluentAssertions" Version="4.19.2" />
     <PackageReference Include="dbup" Version="4.1.0" />
     <PackageReference Include="Castle.Core" Version="4.2.1" />
     <PackageReference Include="TestStack.BDDfy" Version="4.3.2" />
-    <PackageReference Include="TestStack.BDDfy.Xunit" Version="1.0.0" />
   </ItemGroup>
 </Project>

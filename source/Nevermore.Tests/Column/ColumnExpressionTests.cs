@@ -1,13 +1,13 @@
 ﻿using System;
 using FluentAssertions;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Column
 {
     public class ColumnExpressionTests
     {
-        [Fact]
+        [Test]
         public void ColumnExpression()
         {
             var actual = CreateQueryBuilder()
@@ -23,7 +23,7 @@ FROM dbo.[Records]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ColumnExpressionWithColumnAlias()
         {
             var actual = CreateQueryBuilder()
@@ -39,7 +39,7 @@ FROM dbo.[Records]
 ORDER BY [Id]");
         }
 
-        [Fact]
+        [Test]
         public void ColumnExpressionWithColumnAliasAndTableAlias()
         {
             const string tableAlias = "MyTable";

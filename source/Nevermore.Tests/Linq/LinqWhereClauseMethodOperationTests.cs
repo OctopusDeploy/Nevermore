@@ -2,13 +2,13 @@
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqWhereClauseMethodOperationTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void StringContains()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -18,7 +18,7 @@ namespace Nevermore.Tests.Linq
             AssertLikeResult(result, captures, "%Bar%");
         }
 
-        [Fact]
+        [Test]
         public void StartsWith()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -28,7 +28,7 @@ namespace Nevermore.Tests.Linq
             AssertLikeResult(result, captures, "Bar%");
         }
         
-        [Fact]
+        [Test]
         public void EndsWith()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -38,7 +38,7 @@ namespace Nevermore.Tests.Linq
             AssertLikeResult(result, captures, "%Bar");
         }
         
-        [Fact]
+        [Test]
         public void ArrayContains()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -51,7 +51,7 @@ namespace Nevermore.Tests.Linq
 
      
 
-        [Fact]
+        [Test]
         public void IListArrayContains()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -62,7 +62,7 @@ namespace Nevermore.Tests.Linq
             AssertContainsResult(result, captures);
         }
         
-        [Fact]
+        [Test]
         public void IReadOnlyListArrayContains()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -73,7 +73,7 @@ namespace Nevermore.Tests.Linq
             AssertContainsResult(result, captures);
         }
         
-        [Fact]
+        [Test]
         public void ListContains()
         {
             var (builder, captures) = NewQueryBuilder();

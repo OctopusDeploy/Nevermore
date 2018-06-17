@@ -2,19 +2,19 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Text;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
-using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class IntegrationTestDatabase
     {
-        readonly ITestOutputHelper output;
+        readonly TextWriter output = Console.Out;
         readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
         readonly string TestDatabaseName;
         readonly string TestDatabaseConnectionString;
@@ -24,10 +24,8 @@ namespace Nevermore.IntegrationTests
             TransientFaultHandling.InitializeRetryManager();
         }
 
-        public IntegrationTestDatabase(ITestOutputHelper output)
+        public IntegrationTestDatabase()
         {
-            this.output = output;
-
             TestDatabaseName = "Nevermore-IntegrationTests";
 
             var builder = new SqlConnectionStringBuilder(string.Format("Server={0};Database={1};Trusted_connection=true;", SqlInstance, TestDatabaseName))

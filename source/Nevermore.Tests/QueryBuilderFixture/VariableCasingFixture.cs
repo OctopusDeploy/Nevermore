@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Nevermore.Contracts;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -30,7 +30,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
-        [Fact]
+        [Test]
         public void VariablesCasingIsNormalisedForWhere()
         {
             CreateQueryBuilder()
@@ -44,7 +44,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Fact]
+        [Test]
         public void VariablesCasingIsNormalisedForUnaryWhere()
         {
             CreateQueryBuilder()
@@ -56,7 +56,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query.Should().Contain(parameter, "Should contain " + parameter);
         }
 
-        [Fact]
+        [Test]
         public void VariablesCasingIsNormalisedForBinaryWhere()
         {
             CreateQueryBuilder()
@@ -68,7 +68,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Fact]
+        [Test]
         public void VariablesCasingIsNormalisedForArrayWhere()
         {
             CreateQueryBuilder()

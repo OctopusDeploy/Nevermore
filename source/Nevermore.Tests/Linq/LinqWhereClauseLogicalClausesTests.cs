@@ -1,12 +1,12 @@
 ﻿using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqWhereClauseLogicalClausesTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void And()
         {
             var (builder, _) = NewQueryBuilder();
@@ -22,7 +22,7 @@ AND ([String] = @string)
 ORDER BY [Id]");
         }
         
-        [Fact]
+        [Test]
         public void AndWithTheSameProperty()
         {
             var (builder, _) = NewQueryBuilder(new UniqueParameterNameGenerator());

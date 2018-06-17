@@ -3,18 +3,14 @@ using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore;
 using Nevermore.IntegrationTests.Model;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
 {
     public class LoadFixture : FixtureWithRelationalStore
     {
-        public LoadFixture(ITestOutputHelper output) : base(output)
-        {
-        }
 
-        [Fact]
+        [Test]
         public void LoadWithSingleId()
         {
             using (var trn = Store.BeginTransaction())
@@ -23,7 +19,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        [Fact]
+        [Test]
         public void LoadWithMultipleIds()
         {
             using (var trn = Store.BeginTransaction())
@@ -32,7 +28,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        [Fact]
+        [Test]
         public void LoadWithMoreThan2100Ids()
         {
             using (var trn = Store.BeginTransaction())
@@ -41,7 +37,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        [Fact]
+        [Test]
         public void LoadStreamWithMoreThan2100Ids()
         {
             using (var trn = Store.BeginTransaction())
@@ -50,7 +46,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        [Fact]
+        [Test]
         public void StoreAndLoadInheritedTypes()
         {
             using (var trn = Store.BeginTransaction())
@@ -81,7 +77,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var onlySpecial = trn.TableQuery<SpecialProduct>().ToList();
                 onlySpecial.Count.Should().Be(1);
-                Assert.Equal(originalSpecial.BonusMaterial, onlySpecial[0].BonusMaterial);
+                onlySpecial[0].BonusMaterial.Should().Be(originalSpecial.BonusMaterial);
             }
         }
     }

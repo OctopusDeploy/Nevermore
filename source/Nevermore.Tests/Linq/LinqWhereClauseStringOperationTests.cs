@@ -1,13 +1,13 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqWhereClauseStringOperationTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void StringContains()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -17,7 +17,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures, "%Bar%");
         }
 
-        [Fact]
+        [Test]
         public void StartsWith()
         {
             var (builder, captures) = NewQueryBuilder();
@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures, "Bar%");
         }
         
-        [Fact]
+        [Test]
         public void EndsWith()
         {
             var (builder, captures) = NewQueryBuilder();
