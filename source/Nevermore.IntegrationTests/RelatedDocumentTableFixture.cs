@@ -11,7 +11,7 @@ using TestStack.BDDfy;
 
 namespace Nevermore.IntegrationTests
 {
-    public class RelatedDocumentsTableFixture : FixtureWithRelationalStore
+    public class RelatedDocumentTableFixture : FixtureWithRelationalStore
     {
         static readonly IReadOnlyList<RelatedDocumentRow> StartingRecords = new[]
         {
@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 foreach (var item in StartingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentTable}')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentTable}')");
 
                 trn.Commit();
             }
@@ -59,7 +59,7 @@ namespace Nevermore.IntegrationTests
             {
                 trn.ExecuteNonQuery($"INSERT INTO [Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
                 foreach (var reference in referenceIds)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
 
                 trn.Commit();
             }
@@ -256,7 +256,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 return trn.ExecuteReaderWithProjection(
-                        $"SELECT * FROM [{DocumentMap.DefaultRelatedDocumentsTableName}]",
+                        $"SELECT * FROM [{DocumentMap.DefaultRelatedDocumentTableName}]",
                         new CommandParameterValues(),
                         m => m.Read(Callback())
                     )

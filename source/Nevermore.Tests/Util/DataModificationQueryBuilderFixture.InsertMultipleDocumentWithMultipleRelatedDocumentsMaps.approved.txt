@@ -1,10 +1,10 @@
 INSERT INTO dbo.[TestDocument]  (AColumn, Id, JSON) VALUES 
 (@AColumn, @Id, @JSON)
-INSERT INTO [RelatedDocuments] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
-(@Id, 'TestDocument', @relateddocuments_0, 'OtherTbl')
-,(@Id, 'TestDocument', @relateddocuments_1, 'OtherTbl')
-,(@Id, 'TestDocument', @relateddocuments_2, 'OtherTbl')
-,(@Id, 'TestDocument', @relateddocuments_3, 'OtherTbl')
+INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
+(@Id, 'TestDocument', @relateddocument_0, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocument_1, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocument_2, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocument_3, 'OtherTbl')
 INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
 (@Id, 'TestDocument', @otherrelatedtable_0, 'OtherTbl')
 ,(@Id, 'TestDocument', @otherrelatedtable_1, 'OtherTbl')
@@ -12,9 +12,9 @@ INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDoc
 @Id=New-Id-1
 @JSON={"Id":null,"AColumn":"Doc1"}
 @AColumn=Doc1
-@relateddocuments_0=Rel-1
-@relateddocuments_1=Rel-2
-@relateddocuments_2=Rel-2
-@relateddocuments_3=Rel-2
+@relateddocument_0=Rel-1
+@relateddocument_1=Rel-2
+@relateddocument_2=Rel-2
+@relateddocument_3=Rel-2
 @otherrelatedtable_0=Rel-3-Other
 @otherrelatedtable_1=Rel-2

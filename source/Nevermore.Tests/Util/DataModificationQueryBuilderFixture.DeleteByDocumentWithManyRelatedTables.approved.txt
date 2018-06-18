@@ -5,7 +5,7 @@ SELECT [Id]
 FROM [TestDocument]
 WHERE [Id] = @Id
 
-DELETE FROM [RelatedDocuments] WHERE [Id] in (SELECT Id FROM @Ids)
+DELETE FROM [RelatedDocument] WHERE [Id] in (SELECT Id FROM @Ids)
 DELETE FROM [TestDocument] WHERE [Id] in (SELECT Id FROM @Ids)
 
 @Id=Doc-1

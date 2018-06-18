@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
             return column;
         }
 
-        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentsTableName)
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentTableName)
         {
             var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
             RelatedDocumentsMappings.Add(mapping);
@@ -87,7 +87,7 @@ namespace Nevermore.Mapping
 
     public abstract class DocumentMap
     {
-        public const string DefaultRelatedDocumentsTableName = "RelatedDocuments";
+        public const string DefaultRelatedDocumentTableName = "RelatedDocument";
         
         protected DocumentMap()
         {
