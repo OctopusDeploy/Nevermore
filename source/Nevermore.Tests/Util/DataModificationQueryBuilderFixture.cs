@@ -79,6 +79,22 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
+        
+        [Test]
+        public void InsertWithoutDefaultColumns()
+        {
+            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
+
+            var result = builder.CreateInsert(
+                new[] {document},
+                null,
+                null,
+                map => "New-Id",
+                false
+            );
+
+            this.Assent(Format(result));
+        }
 
         [Test]
         public void InsertSingleDocumentWithNoRelatedDocuments()
@@ -222,7 +238,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-
+  
         [Test]
         public void UpdateWithNoRelatedDocuments()
         {

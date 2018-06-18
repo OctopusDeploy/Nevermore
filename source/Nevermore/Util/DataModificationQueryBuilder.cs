@@ -84,13 +84,15 @@ namespace Nevermore.Util
             return (statement, parameters);
         }
 
-        public string CreateDelete(Type documentType, Where where) 
+        public string CreateDelete(Type documentType, Where where)
             => CreateDelete(mappings.Get(documentType), where.GenerateSql());
 
-        string CreateDelete(DocumentMap mapping, string whereClause) {
+        string CreateDelete(DocumentMap mapping, string whereClause)
+        {
             if (!mapping.RelatedDocumentsMappings.Any())
-                return  $"DELETE FROM [{mapping.TableName}] {whereClause}";;
-            
+                return $"DELETE FROM [{mapping.TableName}] {whereClause}";
+            ;
+
             var sb = new StringBuilder();
             sb.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
             sb.AppendLine();
@@ -99,10 +101,10 @@ namespace Nevermore.Util
             sb.AppendLine($"FROM [{mapping.TableName}]");
             sb.AppendLine(whereClause);
             sb.AppendLine();
-                
+
             foreach (var relMap in mapping.RelatedDocumentsMappings)
                 sb.AppendLine($"DELETE FROM [{relMap.TableName}] WHERE [{relMap.IdColumnName}] in (SELECT Id FROM @Ids)");
-            
+
             sb.AppendLine($"DELETE FROM [{mapping.TableName}] WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
 
             return sb.ToString();
@@ -121,20 +123,19 @@ namespace Nevermore.Util
 
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
-            var columnName = string.Join(", ", mapping.IndexedColumns.Select(c => c.ColumnName).Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName}));
+            var columns = mapping.IndexedColumns.Select(c => c.ColumnName);
+            if (includeDefaultModelColumns)
+                columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName});
+            var columnNames = string.Join(", ", columns);
 
             var actionalTableName = tableName ?? mapping.TableName;
 
-            sb.AppendLine($"INSERT INTO dbo.[{actionalTableName}] {tableHint} ({columnName}) VALUES ");
+            sb.AppendLine($"INSERT INTO dbo.[{actionalTableName}] {tableHint} ({columnNames}) VALUES ");
 
 
             void Append(string prefix)
             {
-                var columnNames = mapping.IndexedColumns.Select(c => c.ColumnName);
-                if (includeDefaultModelColumns)
-                    columnNames = columnNames.Concat(new[] { mapping.IdColumn.ColumnName, "JSON" });
-
-                var columnVariableNames = string.Join(", ", columnNames.Select(c => $"@{prefix}{c}"));
+                var columnVariableNames = string.Join(", ", columns.Select(c => $"@{prefix}{c}"));
                 sb.AppendLine($"({columnVariableNames})");
             }
 
@@ -298,7 +299,7 @@ namespace Nevermore.Util
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by m.TableName
                 into g
-                let related  = (
+                let related = (
                     from m in g
                     from i in documentAndIds
                     from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
