@@ -1,13 +1,13 @@
-INSERT INTO dbo.[TestDocumentWithMultipleRelatedDocuments]  (AColumn, Id, JSON) VALUES 
+INSERT INTO dbo.[TestDocument]  (AColumn, Id, JSON) VALUES 
 (@AColumn, @Id, @JSON)
-INSERT INTO [RelatedDocuments] ([Id], [RelatedDocumentId]) VALUES
-(@Id, @relateddocuments_0)
-,(@Id, @relateddocuments_1)
-,(@Id, @relateddocuments_2)
-,(@Id, @relateddocuments_3)
-INSERT INTO [OtherRelatedTable] ([Id], [RelatedDocumentId]) VALUES
-(@Id, @otherrelatedtable_0)
-,(@Id, @otherrelatedtable_1)
+INSERT INTO [RelatedDocuments] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
+(@Id, 'TestDocument', @relateddocuments_0, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocuments_1, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocuments_2, 'OtherTbl')
+,(@Id, 'TestDocument', @relateddocuments_3, 'OtherTbl')
+INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
+(@Id, 'TestDocument', @otherrelatedtable_0, 'OtherTbl')
+,(@Id, 'TestDocument', @otherrelatedtable_1, 'OtherTbl')
 
 @Id=New-Id-1
 @JSON={"Id":null,"AColumn":"Doc1"}

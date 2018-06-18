@@ -6,7 +6,7 @@ namespace Nevermore.IntegrationTests.Model
     {
         public OrderMap()
         {
-            RelatedDocuments(o => o.RelatedDocumentIds);
+            RelatedDocuments(o => o.RelatedDocuments);
         }
     }
 }

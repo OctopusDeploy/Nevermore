@@ -2,10 +2,10 @@ DECLARE @Ids as TABLE (Id nvarchar(400))
 
 INSERT INTO @Ids
 SELECT [Id]
-FROM [TestDocumentWithRelatedDocuments]
+FROM [TestDocument]
 WHERE [Id] = @Id
 
 DELETE FROM [RelatedDocuments] WHERE [Id] in (SELECT Id FROM @Ids)
-DELETE FROM [TestDocumentWithRelatedDocuments] WHERE [Id] in (SELECT Id FROM @Ids)
+DELETE FROM [TestDocument] WHERE [Id] in (SELECT Id FROM @Ids)
 
 @Id=Doc-1

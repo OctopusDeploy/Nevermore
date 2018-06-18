@@ -13,11 +13,29 @@ namespace Nevermore.IntegrationTests
 {
     public class RelatedDocumentsTableFixture : FixtureWithRelationalStore
     {
-        static readonly IReadOnlyList<(string id, string referencedId)> startingRecords = new[]
+        static readonly IReadOnlyList<RelatedDocumentRow> StartingRecords = new[]
         {
-            ("Parent-1", "Child-1"),
-            ("Parent-1", "Child-2"),
-            ("Parent-2", "Child-1"),
+            new RelatedDocumentRow
+            {
+                Id = "ExistingOrder-1",
+                Table = "Order",
+                RelatedDocumentId = "Product-1",
+                RelatedDocumentTable = "Product"
+            },
+            new RelatedDocumentRow
+            {
+                Id = "ExistingOrder-1",
+                Table = "Order",
+                RelatedDocumentId = "Product-2",
+                RelatedDocumentTable = "Product"
+            },
+            new RelatedDocumentRow
+            {
+                Id = "ExistingOrder-2",
+                Table = "Order",
+                RelatedDocumentId = "Product-1",
+                RelatedDocumentTable = "Product"
+            }
         };
 
         string orderId;
@@ -27,8 +45,8 @@ namespace Nevermore.IntegrationTests
         {
             using (var trn = Store.BeginTransaction())
             {
-                foreach (var item in startingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{item.id}', '{item.referencedId}')");
+                foreach (var item in StartingRecords)
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentTable}')");
 
                 trn.Commit();
             }
@@ -41,13 +59,13 @@ namespace Nevermore.IntegrationTests
             {
                 trn.ExecuteNonQuery($"INSERT INTO [Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
                 foreach (var reference in referenceIds)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{orderId}', '{reference}')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentsTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
 
                 trn.Commit();
             }
 
             // Check that went well
-            GetReferencesFromDb().Should().Contain((orderId, referenceIds[0]));
+            GetReferencesFromDb().Should().Contain(r => r.Id == orderId && r.RelatedDocumentId == referenceIds[0]);
         }
 
         public void WhenTheOrderIsRead()
@@ -58,7 +76,8 @@ namespace Nevermore.IntegrationTests
 
         public void WhenANewOrderIsInsertedReferencing(string[] referenceIds)
         {
-            var order = new Order(referenceIds);
+            var references = referenceIds?.Select(id => (id, typeof(Product)));
+            var order = new Order(references);
             using (var trn = Store.BeginTransaction())
             {
                 trn.Insert(order);
@@ -71,7 +90,8 @@ namespace Nevermore.IntegrationTests
 
         public void WhenTheOrderIsUpdatedReferencing(string[] referenceIds)
         {
-            var order = new Order(referenceIds) {Id = orderId};
+            var references = referenceIds?.Select(id => (id, typeof(Product)));
+            var order = new Order(references) {Id = orderId};
             using (var trn = Store.BeginTransaction())
             {
                 trn.Update(order);
@@ -104,7 +124,13 @@ namespace Nevermore.IntegrationTests
         public void ThenTheTableContainsTheNewReferencesTo(string[] referenceIds)
         {
             var references = GetReferencesFromDb();
-            var expected = referenceIds.Select(r => (orderId, r));
+            var expected = referenceIds.Select(r => new RelatedDocumentRow()
+            {
+                Id = orderId,
+                Table = "Order",
+                RelatedDocumentId = r,
+                RelatedDocumentTable = "Product"
+            });
             references.Should().Contain(expected);
         }
 
@@ -114,28 +140,28 @@ namespace Nevermore.IntegrationTests
         public void AndThenThereAreNoReferencesForThatOrderOtherThan(string[] referenceIds)
         {
             var references = GetReferencesFromDb();
-            var expected = referenceIds.Select(r => (id: orderId, referencedId: r));
-            references.Except(expected)
+            references
+                .Where(r => r.Id != orderId && !referenceIds.Contains(r.RelatedDocumentId))
                 .Should()
-                .NotContain(r => r.id == orderId);
+                .NotContain(r => r.Id == orderId);
         }
 
         public void AndThenTheOtherReferencesWereNotChanged()
         {
             var references = GetReferencesFromDb();
-            references.Should().Contain(startingRecords);
+            references.Should().Contain(StartingRecords);
         }
 
         public void ThenTheLoadedOrderIsNotNull()
             => loadedOrder.Should().NotBeNull();
 
 #pragma warning restore xUnit1013
-        
+
         [Test]
         public void Read()
         {
             this.Given(_ => _.GivenRecordsCurrentlyExist())
-                .And(_ => _.AndGivenAnOrderReferencing(new[] {"Other-1", "Other-2"}))
+                .And(_ => _.AndGivenAnOrderReferencing(new[] {"Product-1", "Product-2"}))
                 .When(_ => _.WhenTheOrderIsRead())
                 .Then(_ => _.ThenTheLoadedOrderIsNotNull())
                 .BDDfy();
@@ -144,7 +170,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void Insert()
         {
-            var references = new[] {"Other-1", "Other-2"};
+            var references = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .When(_ => _.WhenANewOrderIsInsertedReferencing(references))
                 .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(references))
@@ -166,8 +192,8 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void Update()
         {
-            var starting = new[] {"Other-1", "Other-2"};
-            var updated = new[] {"Other-2", "Other-3"};
+            var starting = new[] {"Product-1", "Product-2"};
+            var updated = new[] {"Product-2", "Product-3"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(starting))
                 .When(_ => _.WhenTheOrderIsUpdatedReferencing(updated))
@@ -180,7 +206,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void UpdateNullReferences()
         {
-            var starting = new[] {"Other-1", "Other-2"};
+            var starting = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(starting))
                 .When(_ => _.WhenTheOrderIsUpdatedReferencing(null))
@@ -192,7 +218,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void Delete()
         {
-            var references = new[] {"Other-1", "Other-2"};
+            var references = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(references))
                 .When(_ => _.WhenTheOrderIsDeleted())
@@ -200,11 +226,11 @@ namespace Nevermore.IntegrationTests
                 .And(_ => _.AndThenTheOtherReferencesWereNotChanged())
                 .BDDfy();
         }
-        
+
         [Test]
         public void DeleteWithQueryBuilder()
         {
-            var references = new[] {"Other-1", "Other-2"};
+            var references = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(references))
                 .When(_ => _.WhenTheOrderIsDeletedUsingTheQueryBuilder())
@@ -213,23 +239,68 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        (string id, string referencedId)[] GetReferencesFromDb()
+        RelatedDocumentRow[] GetReferencesFromDb()
         {
             var map = new OrderMap().RelatedDocumentsMappings.First();
 
-            Func<IDataReader, (string id, string referencedId)> Callback()
+            Func<IDataReader, RelatedDocumentRow> Callback()
                 => reader
-                    => ((string) reader[map.IdColumnName], (string) reader[map.RelatedDocumentIdColumnName]);
+                    => new RelatedDocumentRow
+                    {
+                        Id = (string) reader[map.IdColumnName],
+                        Table = (string) reader[map.IdTableColumnName],
+                        RelatedDocumentId = (string) reader[map.RelatedDocumentIdColumnName],
+                        RelatedDocumentTable = (string) reader[map.RelatedDocumentTableColumnName],
+                    };
 
             using (var trn = Store.BeginTransaction())
             {
-                return trn.ExecuteReaderWithProjection<(string id, string referencedId)>(
+                return trn.ExecuteReaderWithProjection(
                         $"SELECT * FROM [{DocumentMap.DefaultRelatedDocumentsTableName}]",
                         new CommandParameterValues(),
                         m => m.Read(Callback())
                     )
                     .ToArray();
             }
+        }
+
+        public class RelatedDocumentRow : IEquatable<RelatedDocumentRow>
+        {
+            public string Id { get; set; }
+            public string Table { get; set; }
+            public string RelatedDocumentId { get; set; }
+            public string RelatedDocumentTable { get; set; }
+
+            public bool Equals(RelatedDocumentRow other)
+            {
+                if (ReferenceEquals(null, other)) return false;
+                if (ReferenceEquals(this, other)) return true;
+                var eq = string.Equals(Id, other.Id) && string.Equals(Table, other.Table) && string.Equals(RelatedDocumentId, other.RelatedDocumentId) && string.Equals(RelatedDocumentTable, other.RelatedDocumentTable);
+                return eq;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != this.GetType()) return false;
+                return Equals((RelatedDocumentRow) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = Id.GetHashCode();
+                    hashCode = (hashCode * 397) ^ Table.GetHashCode();
+                    hashCode = (hashCode * 397) ^ RelatedDocumentId.GetHashCode();
+                    hashCode = (hashCode * 397) ^ RelatedDocumentTable.GetHashCode();
+                    return hashCode;
+                }
+            }
+            
+            public static bool operator ==(RelatedDocumentRow left, RelatedDocumentRow right) => Equals(left, right);
+            public static bool operator !=(RelatedDocumentRow left, RelatedDocumentRow right) => !Equals(left, right);
         }
     }
 }

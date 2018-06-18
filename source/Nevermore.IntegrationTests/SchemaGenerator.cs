@@ -34,7 +34,12 @@ namespace Nevermore.IntegrationTests
             {
                 var refTblName = referencedDocumentMap.TableName;
                 result.AppendLine($"IF NOT EXISTS (SELECT name from sys.tables WHERE name = '{refTblName}')");
-                result.AppendLine($"    CREATE TABLE [{refTblName}] ({referencedDocumentMap.IdColumnName} nvarchar(50) NOT NULL, {referencedDocumentMap.RelatedDocumentIdColumnName} nvarchar(50) NOT NULL)");
+                result.AppendLine($"    CREATE TABLE [{refTblName}] (");
+                result.AppendLine($"        [{referencedDocumentMap.IdColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.IdTableColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentIdColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentTableColumnName}] nvarchar(50) NOT NULL ");
+                result.AppendLine("    )");
             }
         }
 

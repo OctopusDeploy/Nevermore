@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
@@ -11,14 +13,14 @@ namespace Nevermore.IntegrationTests.Model
             
         }
 
-        public Order(IReadOnlyList<string> relatedDocumentIds)
+        public Order(IEnumerable<(string, Type)> relatedDocuments)
         {
-            RelatedDocumentIds = relatedDocumentIds;
+            RelatedDocuments = relatedDocuments?.ToArray();
         }
         
         public string Id { get; set; }
         public string Name { get; set; }
 
-        public IEnumerable<string> RelatedDocumentIds { get; }
+        public IEnumerable<(string, Type)> RelatedDocuments { get; }
     }
 }

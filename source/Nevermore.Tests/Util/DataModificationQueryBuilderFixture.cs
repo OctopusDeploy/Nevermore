@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Assent;
@@ -22,7 +23,8 @@ namespace Nevermore.Tests.Util
             {
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
-                new TestDocumentWithMultipleRelatedDocumentsMap()
+                new TestDocumentWithMultipleRelatedDocumentsMap(),
+                new OtherMap()
             });
             builder = new DataModificationQueryBuilder(
                 mappings,
@@ -35,7 +37,7 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
 
-            var result =  builder.CreateInsert(
+            var result = builder.CreateInsert(
                 new[] {document},
                 null,
                 null,
@@ -51,7 +53,7 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "SuppliedId"};
 
-            var result =  builder.CreateInsert(
+            var result = builder.CreateInsert(
                 new[] {document},
                 null,
                 null,
@@ -67,7 +69,7 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
 
-            var result =  builder.CreateInsert(
+            var result = builder.CreateInsert(
                 new[] {document},
                 "AltTableName",
                 "WITH (NOLOCK)",
@@ -97,7 +99,7 @@ namespace Nevermore.Tests.Util
         [Test]
         public void InsertSingleDocumentWithOneRelatedDocument()
         {
-            var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] { "Rel-1"}};
+            var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {("Rel-1", typeof(Other))}};
 
             var result = builder.CreateInsert(
                 new[] {document},
@@ -113,7 +115,7 @@ namespace Nevermore.Tests.Util
         [Test]
         public void InsertSingleDocumentWithManyRelatedDocuments()
         {
-            var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {"Rel-1", "Rel-2"}};
+            var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))}};
 
             var result = builder.CreateInsert(
                 new[] {document},
@@ -136,7 +138,7 @@ namespace Nevermore.Tests.Util
             };
 
             int n = 0;
-            var result =  builder.CreateInsert(
+            var result = builder.CreateInsert(
                 documents,
                 null,
                 null,
@@ -152,9 +154,9 @@ namespace Nevermore.Tests.Util
         {
             var documents = new[]
             {
-                new TestDocumentWithRelatedDocuments {AColumn = "Doc1", RelatedDocumentIds = new[] {"Rel-1", "Rel-2"}},
+                new TestDocumentWithRelatedDocuments {AColumn = "Doc1", RelatedDocumentIds = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))}},
                 new TestDocumentWithRelatedDocuments {AColumn = "Doc2", RelatedDocumentIds = null},
-                new TestDocumentWithRelatedDocuments {AColumn = "Doc1", RelatedDocumentIds = new[] {"Rel-2", "Rel-3"}}
+                new TestDocumentWithRelatedDocuments {AColumn = "Doc1", RelatedDocumentIds = new[] {("Rel-2", typeof(Other)), ("Rel-3", typeof(Other))}}
             };
 
             int n = 0;
@@ -168,7 +170,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void InsertMultipleDocumentWithMultipleRelatedDocumentsMaps()
         {
@@ -176,10 +178,10 @@ namespace Nevermore.Tests.Util
             {
                 new TestDocumentWithMultipleRelatedDocuments
                 {
-                    AColumn = "Doc1", 
-                    RelatedDocumentIds1 = new[] {"Rel-1", "Rel-2"},
-                    RelatedDocumentIds2 = new[] {"Rel-2", "Rel-2"},
-                    RelatedDocumentIds3 = new[] {"Rel-3-Other", "Rel-2"}
+                    AColumn = "Doc1",
+                    RelatedDocumentIds1 = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))},
+                    RelatedDocumentIds2 = new[] {("Rel-2", typeof(Other)), ("Rel-2", typeof(Other))},
+                    RelatedDocumentIds3 = new[] {("Rel-3-Other", typeof(Other)), ("Rel-2", typeof(Other))}
                 },
             };
 
@@ -194,11 +196,11 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-		
+
         [Test]
         public void Update()
         {
-            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id="Doc-1"};
+            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1"};
 
             var result = builder.CreateUpdate(
                 document,
@@ -211,24 +213,24 @@ namespace Nevermore.Tests.Util
         [Test]
         public void UpdateWithHint()
         {
-            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id="Doc-1"};
+            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1"};
 
-            var result =  builder.CreateUpdate(
+            var result = builder.CreateUpdate(
                 document,
                 "WITH (NO LOCK)"
             );
-            
+
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void UpdateWithNoRelatedDocuments()
         {
             var document = new TestDocumentWithRelatedDocuments
             {
-                AColumn = "AValue", 
-                Id="Doc-1",
-                RelatedDocumentIds = new string[0]
+                AColumn = "AValue",
+                Id = "Doc-1",
+                RelatedDocumentIds = new (string, Type)[0]
             };
 
             var result = builder.CreateUpdate(
@@ -238,15 +240,15 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void UpdateWithOneRelatedDocument()
         {
             var document = new TestDocumentWithRelatedDocuments
             {
-                AColumn = "AValue", 
-                Id="Doc-1",
-                RelatedDocumentIds = new[] { "Rel-1"}
+                AColumn = "AValue",
+                Id = "Doc-1",
+                RelatedDocumentIds = new[] {("Rel-1", typeof(Other))}
             };
 
             var result = builder.CreateUpdate(
@@ -256,7 +258,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void UpdateWithManyRelatedDocuments()
         {
@@ -264,9 +266,9 @@ namespace Nevermore.Tests.Util
             {
                 Id = "Doc-1",
                 AColumn = "Doc1",
-                RelatedDocumentIds1 = new[] {"Rel-1", "Rel-2"},
-                RelatedDocumentIds2 = new[] {"Rel-2", "Rel-2"},
-                RelatedDocumentIds3 = new[] {"Rel-3-Other", "Rel-2"}
+                RelatedDocumentIds1 = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))},
+                RelatedDocumentIds2 = new[] {("Rel-2", typeof(Other)), ("Rel-2", typeof(Other))},
+                RelatedDocumentIds3 = new[] {("Rel-3-Other", typeof(Other)), ("Rel-2", typeof(Other))}
             };
 
             var result = builder.CreateUpdate(
@@ -280,47 +282,47 @@ namespace Nevermore.Tests.Util
         [Test]
         public void DeleteByDocument()
         {
-            var document = new TestDocument {Id="Doc-1",};
+            var document = new TestDocument {Id = "Doc-1",};
             var result = builder.CreateDelete(document);
-            
+
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void DeleteById()
         {
             var result = builder.CreateDelete<TestDocument>("Doc-1");
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void DeleteByWhere()
         {
             var result = builder.CreateDelete(typeof(TestDocument), new Where(new UnaryWhereClause(new WhereFieldReference("Foo"), UnarySqlOperand.GreaterThan, "1")));
             this.Assent(result);
         }
-        
+
         [Test]
         public void DeleteByDocumentWithOneRelatedTable()
         {
-            var document = new TestDocumentWithRelatedDocuments {Id="Doc-1",};
+            var document = new TestDocumentWithRelatedDocuments {Id = "Doc-1",};
             var result = builder.CreateDelete(document);
-            
+
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void DeleteByDocumentWithManyRelatedTables()
         {
             var result = builder.CreateDelete<TestDocumentWithRelatedDocuments>("Doc-1");
-            
+
             this.Assent(Format(result));
         }
 
 
         string Format((DocumentMap, string statement, CommandParameterValues parameterValues) result)
             => Format((result.statement, result.parameterValues));
-        
+
         string Format((string statement, CommandParameterValues parameterValues) result)
         {
             var recievedParameterValues = result.parameterValues.Select(v => $"@{v.Key}={v.Value}");
@@ -339,28 +341,36 @@ namespace Nevermore.Tests.Util
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
+
             [JsonIgnore]
-            public IEnumerable<string> RelatedDocumentIds { get; set; }
+            public IEnumerable<(string, Type)> RelatedDocumentIds { get; set; }
         }
 
         class TestDocumentWithMultipleRelatedDocuments : IId
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
-            
+
             [JsonIgnore]
-            public IEnumerable<string> RelatedDocumentIds1 { get; set; }
+            public IEnumerable<(string, Type)> RelatedDocumentIds1 { get; set; }
+
             [JsonIgnore]
-            public IEnumerable<string> RelatedDocumentIds2 { get; set; }
+            public IEnumerable<(string, Type)> RelatedDocumentIds2 { get; set; }
+
             [JsonIgnore]
-            public IEnumerable<string> RelatedDocumentIds3 { get; set; }
+            public IEnumerable<(string, Type)> RelatedDocumentIds3 { get; set; }
         }
 
+
+        class Other
+        {
+        }
 
         class TestDocumentMap : DocumentMap<TestDocument>
         {
             public TestDocumentMap()
             {
+                TableName = "TestDocument";
                 Column(t => t.AColumn);
             }
         }
@@ -369,6 +379,7 @@ namespace Nevermore.Tests.Util
         {
             public TestDocumentWithRelatedDocumentsMap()
             {
+                TableName = "TestDocument";
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds);
             }
@@ -378,10 +389,19 @@ namespace Nevermore.Tests.Util
         {
             public TestDocumentWithMultipleRelatedDocumentsMap()
             {
+                TableName = "TestDocument";
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds1);
                 RelatedDocuments(t => t.RelatedDocumentIds2);
                 RelatedDocuments(t => t.RelatedDocumentIds3, "OtherRelatedTable");
+            }
+        }
+
+        class OtherMap : DocumentMap<Other>
+        {
+            public OtherMap()
+            {
+                TableName = "OtherTbl";
             }
         }
     }
