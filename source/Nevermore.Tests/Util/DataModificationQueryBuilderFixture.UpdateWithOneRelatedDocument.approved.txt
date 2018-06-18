@@ -4,12 +4,12 @@ DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(4
 
 DELETE FROM @references
 
-INSERT INTO @references VALUES (@relateddocument_0, 'OtherTbl')
+INSERT INTO @references VALUES (@relateddocument_0, 'Other')
 
 DELETE FROM [RelatedDocument] WHERE [Id] = @Id
     AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
 
-INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+INSERT INTO [RelatedDocument] ([Id], [Type], [RelatedDocumentId], [RelatedDocumentType])
 SELECT @id, 'TestDocument', Reference, ReferenceTable FROM @references t
 WHERE NOT EXISTS (SELECT null FROM [RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
 

@@ -18,23 +18,23 @@ namespace Nevermore.IntegrationTests
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-1",
-                Table = "Order",
+                Type = "Order",
                 RelatedDocumentId = "Product-1",
-                RelatedDocumentTable = "Product"
+                RelatedDocumentType = "Product"
             },
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-1",
-                Table = "Order",
+                Type = "Order",
                 RelatedDocumentId = "Product-2",
-                RelatedDocumentTable = "Product"
+                RelatedDocumentType = "Product"
             },
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-2",
-                Table = "Order",
+                Type = "Order",
                 RelatedDocumentId = "Product-1",
-                RelatedDocumentTable = "Product"
+                RelatedDocumentType = "Product"
             }
         };
 
@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 foreach (var item in StartingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentTable}')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Type}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
 
                 trn.Commit();
             }
@@ -127,9 +127,9 @@ namespace Nevermore.IntegrationTests
             var expected = referenceIds.Select(r => new RelatedDocumentRow()
             {
                 Id = orderId,
-                Table = "Order",
+                Type = "Order",
                 RelatedDocumentId = r,
-                RelatedDocumentTable = "Product"
+                RelatedDocumentType = "Product"
             });
             references.Should().Contain(expected);
         }
@@ -248,9 +248,9 @@ namespace Nevermore.IntegrationTests
                     => new RelatedDocumentRow
                     {
                         Id = (string) reader[map.IdColumnName],
-                        Table = (string) reader[map.IdTableColumnName],
+                        Type = (string) reader[map.IdTypeColumnName],
                         RelatedDocumentId = (string) reader[map.RelatedDocumentIdColumnName],
-                        RelatedDocumentTable = (string) reader[map.RelatedDocumentTableColumnName],
+                        RelatedDocumentType = (string) reader[map.RelatedDocumentTypeColumnName],
                     };
 
             using (var trn = Store.BeginTransaction())
@@ -267,15 +267,15 @@ namespace Nevermore.IntegrationTests
         public class RelatedDocumentRow : IEquatable<RelatedDocumentRow>
         {
             public string Id { get; set; }
-            public string Table { get; set; }
+            public string Type { get; set; }
             public string RelatedDocumentId { get; set; }
-            public string RelatedDocumentTable { get; set; }
+            public string RelatedDocumentType { get; set; }
 
             public bool Equals(RelatedDocumentRow other)
             {
                 if (ReferenceEquals(null, other)) return false;
                 if (ReferenceEquals(this, other)) return true;
-                var eq = string.Equals(Id, other.Id) && string.Equals(Table, other.Table) && string.Equals(RelatedDocumentId, other.RelatedDocumentId) && string.Equals(RelatedDocumentTable, other.RelatedDocumentTable);
+                var eq = string.Equals(Id, other.Id) && string.Equals(Type, other.Type) && string.Equals(RelatedDocumentId, other.RelatedDocumentId) && string.Equals(RelatedDocumentType, other.RelatedDocumentType);
                 return eq;
             }
 
@@ -292,9 +292,9 @@ namespace Nevermore.IntegrationTests
                 unchecked
                 {
                     var hashCode = Id.GetHashCode();
-                    hashCode = (hashCode * 397) ^ Table.GetHashCode();
+                    hashCode = (hashCode * 397) ^ Type.GetHashCode();
                     hashCode = (hashCode * 397) ^ RelatedDocumentId.GetHashCode();
-                    hashCode = (hashCode * 397) ^ RelatedDocumentTable.GetHashCode();
+                    hashCode = (hashCode * 397) ^ RelatedDocumentType.GetHashCode();
                     return hashCode;
                 }
             }

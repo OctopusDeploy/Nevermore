@@ -1,7 +1,7 @@
 INSERT INTO dbo.[TestDocument]  (AColumn, Id, JSON) VALUES 
 (@AColumn, @Id, @JSON)
-INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
-(@Id, 'TestDocument', @relateddocument_0, 'OtherTbl')
+INSERT INTO [RelatedDocument] ([Id], [Type], [RelatedDocumentId], [RelatedDocumentType]) VALUES
+(@Id, 'TestDocument', @relateddocument_0, 'Other')
 
 @Id=New-Id
 @JSON={"Id":null,"AColumn":"AValue"}

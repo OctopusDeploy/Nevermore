@@ -17,9 +17,9 @@ namespace Nevermore.Mapping
 
         public string TableName { get; }
         public string IdColumnName => "Id";
-        public string IdTableColumnName => "Table";
+        public string IdTypeColumnName => "Type";
         public string RelatedDocumentIdColumnName => "RelatedDocumentId";
-        public string RelatedDocumentTableColumnName => "RelatedDocumentTable";
+        public string RelatedDocumentTypeColumnName => "RelatedDocumentType";
 
         public IPropertyReaderWriter<IEnumerable<(string id, Type type)>> ReaderWriter { get; }
     }
