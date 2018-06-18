@@ -132,6 +132,36 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void ShouldInsertOneRecordWithInsertMany()
+        {
+            var product = new Product {Name = "Talking Elmo", Price = 100};
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                transaction.InsertMany(null, new[] {product}, true, null);
+                transaction.Commit();
+            }
+
+            product.Id.Should().Be("Products-1");
+        }
+        
+        [Test]
+        public void ShouldInsertManyRecordsWithInsertMany()
+        {
+            var product1 = new Product {Name = "Talking Elmo", Price = 100};
+            var product2 = new Product {Name = "Talking Elmo", Price = 100};
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                transaction.InsertMany(null,new[] {product1, product2},true,null);
+                transaction.Commit();
+            }
+
+            product1.Id.Should().Be("Products-1");
+            product2.Id.Should().Be("Products-2");
+        }
+
+        [Test]
         public void ShouldShowNiceErrorIfFieldsAreTooLong()
         {
             // SQL normally thows "String or binary data would be truncated. The statement has been terminated."

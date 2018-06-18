@@ -238,10 +238,10 @@ namespace Nevermore
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
                     for(var x = 0; x < instanceList.Count; x++)
                     {
-                        var instancePrefix = $"{x}__";
+                        var idVariableName = instanceList.Count == 1 ? "Id" : $"{x}__Id";
 
                         // Copy the assigned Id back onto the document
-                        mapping.IdColumn.ReaderWriter.Write(instanceList[x], (string) parameters[$"{instancePrefix}Id"]);
+                        mapping.IdColumn.ReaderWriter.Write(instanceList[x], (string) parameters[idVariableName]);
 
                         relatedDocumentStore.PopulateRelatedDocuments(this, instanceList[x]);
                     }
