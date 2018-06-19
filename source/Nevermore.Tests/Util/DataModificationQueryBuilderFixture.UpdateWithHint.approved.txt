@@ -1,0 +1,4 @@
+UPDATE dbo.[TestDocument] WITH (NO LOCK) SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+@Id=Doc-1
+@JSON={"Id":"Doc-1","AColumn":"AValue","NotMapped":"NonMappedValue"}
+@AColumn=AValue

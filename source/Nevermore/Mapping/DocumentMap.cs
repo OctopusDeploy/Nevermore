@@ -46,6 +46,13 @@ namespace Nevermore.Mapping
             return column;
         }
 
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentTableName)
+        {
+            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
+            RelatedDocumentsMappings.Add(mapping);
+            return mapping;
+        }
+
         static PropertyInfo GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
         {
             var member = propertyLambda.Body as MemberExpression;
@@ -80,11 +87,14 @@ namespace Nevermore.Mapping
 
     public abstract class DocumentMap
     {
+        public const string DefaultRelatedDocumentTableName = "RelatedDocument";
+        
         protected DocumentMap()
         {
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             InstanceTypeResolver = new StandardTypeResolver(this);
+            RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
 
         public string TableName { get; protected set; }
@@ -99,6 +109,8 @@ namespace Nevermore.Mapping
         /// </summary>
         public List<ColumnMapping> IndexedColumns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
+        public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
+        
         public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)

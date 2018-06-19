@@ -27,6 +27,15 @@ namespace Nevermore.Mapping
             return mappings.TryGetValue(type, out map);
         }
 
+        public DocumentMap Get(object instance)
+        {
+            var mapping = Get(instance.GetType());
+            
+            // Make sure we got the right one if the mapping defines a different resolver
+            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
+            return Get(mType);
+        }
+        
         public DocumentMap Get(Type type)
         {
             DocumentMap mapping = null;
@@ -42,7 +51,7 @@ namespace Nevermore.Mapping
             {
                 throw new KeyNotFoundException(string.Format("A mapping for the type '{0}' has not been defined", type.Name));
             }
-
+            
             return mapping;
         }
     }
