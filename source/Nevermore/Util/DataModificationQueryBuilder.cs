@@ -273,7 +273,7 @@ namespace Nevermore.Util
                     sb.AppendLine();
 
                     sb.AppendLine($"INSERT INTO [{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                    sb.AppendLine($"SELECT @id, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
+                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
                     sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
 
 
