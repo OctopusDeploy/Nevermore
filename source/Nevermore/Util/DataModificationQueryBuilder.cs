@@ -70,18 +70,27 @@ namespace Nevermore.Util
         {
             var mapping = mappings.Get(document.GetType());
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
-            var statement = CreateDelete(mapping, $"WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
-            var parameters = new CommandParameterValues {{IdVariableName, id}};
-            return (statement, parameters);
+            return CreateDeleteById(mapping, id);
         }
 
         public (string statement, CommandParameterValues parameterValues) CreateDelete<TDocument>(string id)
             where TDocument : class, IId
         {
             var mapping = mappings.Get(typeof(TDocument));
-            var statement = CreateDelete(mapping, $"WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
+            return CreateDeleteById(mapping, id);
+        }
+
+        static (string statement, CommandParameterValues parameterValues) CreateDeleteById(DocumentMap mapping, string id)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
+
+            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
+                sb.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
+
             var parameters = new CommandParameterValues {{IdVariableName, id}};
-            return (statement, parameters);
+            return (sb.ToString(), parameters);
         }
 
         public string CreateDelete(Type documentType, Where where)
@@ -98,14 +107,14 @@ namespace Nevermore.Util
             sb.AppendLine();
             sb.AppendLine("INSERT INTO @Ids");
             sb.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
-            sb.AppendLine($"FROM [{mapping.TableName}]");
+            sb.AppendLine($"FROM [{mapping.TableName}] WITH (ROWLOCK)");
             sb.AppendLine(whereClause);
             sb.AppendLine();
 
-            foreach (var relMap in mapping.RelatedDocumentsMappings)
-                sb.AppendLine($"DELETE FROM [{relMap.TableName}] WHERE [{relMap.IdColumnName}] in (SELECT Id FROM @Ids)");
+            sb.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
 
-            sb.AppendLine($"DELETE FROM [{mapping.TableName}] WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
+            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
+                sb.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
 
             return sb.ToString();
         }

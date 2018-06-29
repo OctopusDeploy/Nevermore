@@ -330,7 +330,7 @@ namespace Nevermore.Tests.Util
         [Test]
         public void DeleteByDocumentWithManyRelatedTables()
         {
-            var result = builder.CreateDelete<TestDocumentWithRelatedDocuments>("Doc-1");
+            var result = builder.CreateDelete<TestDocumentWithMultipleRelatedDocuments>("Doc-1");
 
             this.Assent(Format(result));
         }

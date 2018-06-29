@@ -1,11 +1,5 @@
-DECLARE @Ids as TABLE (Id nvarchar(400))
-
-INSERT INTO @Ids
-SELECT [Id]
-FROM [TestDocumentTbl]
-WHERE [Id] = @Id
-
-DELETE FROM [RelatedDocument] WHERE [Id] in (SELECT Id FROM @Ids)
-DELETE FROM [TestDocumentTbl] WHERE [Id] in (SELECT Id FROM @Ids)
+DELETE FROM [TestDocumentTbl] WITH (ROWLOCK) WHERE [Id] = @Id
+DELETE FROM [RelatedDocument] WITH (ROWLOCK) WHERE [Id] = @Id
+DELETE FROM [OtherRelatedTable] WITH (ROWLOCK) WHERE [Id] = @Id
 
 @Id=Doc-1
