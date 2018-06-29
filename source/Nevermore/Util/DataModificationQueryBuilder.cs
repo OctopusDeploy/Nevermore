@@ -305,7 +305,7 @@ namespace Nevermore.Util
                     from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
                     let relatedTableName = mappings.Get(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
-                ).ToArray()
+                ).Distinct().ToArray()
                 select new RelatedDocumentTableData
                 {
                     TableName = g.Key,

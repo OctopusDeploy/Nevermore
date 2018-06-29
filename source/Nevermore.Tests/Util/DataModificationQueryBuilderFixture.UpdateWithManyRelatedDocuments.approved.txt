@@ -4,7 +4,7 @@ DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(4
 
 DELETE FROM @references
 
-INSERT INTO @references VALUES (@relateddocument_0, 'OtherTbl'), (@relateddocument_1, 'OtherTbl'), (@relateddocument_2, 'OtherTbl'), (@relateddocument_3, 'OtherTbl')
+INSERT INTO @references VALUES (@relateddocument_0, 'OtherTbl'), (@relateddocument_1, 'OtherTbl')
 
 DELETE FROM [RelatedDocument] WHERE [Id] = @Id
     AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
@@ -29,7 +29,5 @@ WHERE NOT EXISTS (SELECT null FROM [OtherRelatedTable] r WHERE r.[Id] = @Id AND 
 @AColumn=Doc1
 @relateddocument_0=Rel-1
 @relateddocument_1=Rel-2
-@relateddocument_2=Rel-2
-@relateddocument_3=Rel-2
 @otherrelatedtable_0=Rel-3-Other
 @otherrelatedtable_1=Rel-2

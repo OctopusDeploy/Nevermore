@@ -3,8 +3,6 @@ INSERT INTO dbo.[TestDocumentTbl]  (AColumn, Id, JSON) VALUES
 INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
 (@Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')
 ,(@Id, 'TestDocumentTbl', @relateddocument_1, 'OtherTbl')
-,(@Id, 'TestDocumentTbl', @relateddocument_2, 'OtherTbl')
-,(@Id, 'TestDocumentTbl', @relateddocument_3, 'OtherTbl')
 INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
 (@Id, 'TestDocumentTbl', @otherrelatedtable_0, 'OtherTbl')
 ,(@Id, 'TestDocumentTbl', @otherrelatedtable_1, 'OtherTbl')
@@ -14,7 +12,5 @@ INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDoc
 @AColumn=Doc1
 @relateddocument_0=Rel-1
 @relateddocument_1=Rel-2
-@relateddocument_2=Rel-2
-@relateddocument_3=Rel-2
 @otherrelatedtable_0=Rel-3-Other
 @otherrelatedtable_1=Rel-2
