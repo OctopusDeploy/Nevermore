@@ -1,2 +1,2 @@
-DELETE FROM [TestDocument] WHERE [Id] = @Id
+DELETE FROM [TestDocumentTbl] WHERE [Id] = @Id
 @Id=Doc-1

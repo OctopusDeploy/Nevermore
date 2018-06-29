@@ -128,9 +128,9 @@ namespace Nevermore.Util
                 columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName});
             var columnNames = string.Join(", ", columns);
 
-            var actionalTableName = tableName ?? mapping.TableName;
+            var actualTableName = tableName ?? mapping.TableName;
 
-            sb.AppendLine($"INSERT INTO dbo.[{actionalTableName}] {tableHint} ({columnNames}) VALUES ");
+            sb.AppendLine($"INSERT INTO dbo.[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
 
 
             void Append(string prefix)
@@ -225,13 +225,13 @@ namespace Nevermore.Util
                 {
                     var parentIdVariable = related[x].parentIdVariable;
                     var relatedDocumentId = related[x].relatedDocumentId;
-                    var relatedDocumentType = related[x].relatedDocumentType;
+                    var relatedTableName = related[x].relatedTableName;
 
                     var relatedVariableName = relatedVariablePrefix + x;
                     parameters.Add(relatedVariableName, relatedDocumentId);
                     if (x > 0)
                         sb.Append(",");
-                    sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedDocumentType}')");
+                    sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
                 }
             }
         }
@@ -263,7 +263,7 @@ namespace Nevermore.Util
                     sb.AppendLine("DELETE FROM @references");
                     sb.AppendLine();
 
-                    var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedDocumentType}')");
+                    var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')");
                     sb.Append("INSERT INTO @references VALUES ");
                     sb.AppendLine(string.Join(", ", valueBlocks));
                     sb.AppendLine();
@@ -303,15 +303,16 @@ namespace Nevermore.Util
                     from m in g
                     from i in documentAndIds
                     from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
-                    select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedDocumentType: relId.type.Name)
+                    let relatedTableName = mappings.Get(relId.type).TableName
+                    select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
                 ).ToArray()
                 select new RelatedDocumentTableData
                 {
                     TableName = g.Key,
                     IdColumnName = g.Select(m => m.IdColumnName).Distinct().Single(),
-                    IdTableColumnName = g.Select(m => m.IdTypeColumnName).Distinct().Single(),
+                    IdTableColumnName = g.Select(m => m.IdTableColumnName).Distinct().Single(),
                     RelatedDocumentIdColumnName = g.Select(m => m.RelatedDocumentIdColumnName).Distinct().Single(),
-                    RelatedDocumentTableColumnName = g.Select(m => m.RelatedDocumentTypeColumnName).Distinct().Single(),
+                    RelatedDocumentTableColumnName = g.Select(m => m.RelatedDocumentTableColumnName).Distinct().Single(),
                     Related = related
                 };
             return groupedByTable.ToArray();
@@ -323,7 +324,7 @@ namespace Nevermore.Util
             public string TableName { get; set; }
             public string IdColumnName { get; set; }
             public string RelatedDocumentIdColumnName { get; set; }
-            public (string parentIdVariable, string relatedDocumentId, string relatedDocumentType)[] Related { get; set; }
+            public (string parentIdVariable, string relatedDocumentId, string relatedTableName)[] Related { get; set; }
             public string IdTableColumnName { get; set; }
             public string RelatedDocumentTableColumnName { get; set; }
         }

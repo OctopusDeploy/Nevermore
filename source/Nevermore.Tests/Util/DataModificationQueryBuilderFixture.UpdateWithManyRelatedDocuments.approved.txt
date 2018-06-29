@@ -1,27 +1,27 @@
-UPDATE dbo.[TestDocument]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+UPDATE dbo.[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
 
 DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))
 
 DELETE FROM @references
 
-INSERT INTO @references VALUES (@relateddocument_0, 'Other'), (@relateddocument_1, 'Other'), (@relateddocument_2, 'Other'), (@relateddocument_3, 'Other')
+INSERT INTO @references VALUES (@relateddocument_0, 'OtherTbl'), (@relateddocument_1, 'OtherTbl'), (@relateddocument_2, 'OtherTbl'), (@relateddocument_3, 'OtherTbl')
 
 DELETE FROM [RelatedDocument] WHERE [Id] = @Id
     AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
 
-INSERT INTO [RelatedDocument] ([Id], [Type], [RelatedDocumentId], [RelatedDocumentType])
-SELECT @Id, 'TestDocument', Reference, ReferenceTable FROM @references t
+INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+SELECT @Id, 'TestDocumentTbl', Reference, ReferenceTable FROM @references t
 WHERE NOT EXISTS (SELECT null FROM [RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
 
 DELETE FROM @references
 
-INSERT INTO @references VALUES (@otherrelatedtable_0, 'Other'), (@otherrelatedtable_1, 'Other')
+INSERT INTO @references VALUES (@otherrelatedtable_0, 'OtherTbl'), (@otherrelatedtable_1, 'OtherTbl')
 
 DELETE FROM [OtherRelatedTable] WHERE [Id] = @Id
     AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
 
-INSERT INTO [OtherRelatedTable] ([Id], [Type], [RelatedDocumentId], [RelatedDocumentType])
-SELECT @Id, 'TestDocument', Reference, ReferenceTable FROM @references t
+INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+SELECT @Id, 'TestDocumentTbl', Reference, ReferenceTable FROM @references t
 WHERE NOT EXISTS (SELECT null FROM [OtherRelatedTable] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
 
 @Id=Doc-1
