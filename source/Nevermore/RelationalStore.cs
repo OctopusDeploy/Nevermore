@@ -79,6 +79,8 @@ namespace Nevermore
         public int MaxPoolSize => registry.Value.MaxPoolSize;
 
         public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
+        public DocumentMap GetMappingFor(Type type) => mappings.Get(type);
+        public DocumentMap GetMappingFor<T>() => mappings.Get(typeof(T));
 
         public void Reset()
         {
