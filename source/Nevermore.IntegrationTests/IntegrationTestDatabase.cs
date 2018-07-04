@@ -77,7 +77,9 @@ namespace Nevermore.IntegrationTests
                 new ProductMap<Product>(),
                 new SpecialProductMap(),
                 new ProductToTestSerializationMap(),
-                new LineItemMap()
+                new LineItemMap(),
+                new MachineMap(),
+                new MachineToTestSerializationMap()
             });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
@@ -99,6 +101,7 @@ namespace Nevermore.IntegrationTests
             };
             jsonSerializerSettings.Converters.Add(new ProductConverter(Mappings));
             jsonSerializerSettings.Converters.Add(new BrandConverter(Mappings));
+            jsonSerializerSettings.Converters.Add(new EndpointConverter());
 
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, jsonSerializerSettings, new EmptyRelatedDocumentStore());
         }
@@ -122,7 +125,8 @@ namespace Nevermore.IntegrationTests
                 new CustomerMap(),
                 new SpecialProductMap(),
                 new LineItemMap(),
-                new BrandMap()
+                new BrandMap(),
+                new MachineMap()
             };
 
             Mappings.Install(mappings);

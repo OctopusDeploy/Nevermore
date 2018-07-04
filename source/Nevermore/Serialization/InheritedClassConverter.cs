@@ -12,7 +12,7 @@ namespace Nevermore.Serialization
     {
         readonly RelationalMappings relationalMappings;
 
-        protected InheritedClassConverter(RelationalMappings relationalMappings)
+        protected InheritedClassConverter(RelationalMappings relationalMappings = null)
         {
             this.relationalMappings = relationalMappings;
         }
@@ -21,14 +21,15 @@ namespace Nevermore.Serialization
         {
             writer.WriteStartObject();
 
-            var documentType = value.GetType().GetTypeInfo();
+            DocumentMap map = null;
+            relationalMappings?.TryGet(value.GetType(), out map);
 
-            var map = relationalMappings.Get(documentType);
+            var documentType = value.GetType().GetTypeInfo();
 
             foreach (var property in documentType
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
                 .Where(p => p.Name == TypeDesignatingPropertyName || 
-                            (p.CanRead && p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name))))
+                            (p.CanRead && (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name))))))
             {
                 writer.WritePropertyName(property.Name);
                 serializer.Serialize(writer, property.GetValue(value, null));
@@ -107,7 +108,7 @@ namespace Nevermore.Serialization
 
     public abstract class InheritedClassConverter<TModel> : InheritedClassConverter<TModel, string>
     {
-        protected InheritedClassConverter(RelationalMappings relationalMappings) : base(relationalMappings)
+        protected InheritedClassConverter(RelationalMappings relationalMappings = null) : base(relationalMappings)
         {
         }
 

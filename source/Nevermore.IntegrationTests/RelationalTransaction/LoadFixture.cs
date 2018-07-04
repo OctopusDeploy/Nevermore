@@ -202,5 +202,43 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 allBrands.Single(x => x.Name == "Brand A").Should().BeOfType<BrandA>();
             }
         }
+
+        [Test]
+        public void StoreStringInheritedTypesThatArePropertiesSerializeCorrectly()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var machineA = new Machine { Name = "Machine A", Description = "Details for Machine A.", Endpoint = new PassiveTentacleEndpoint { Name = "Quiet tentacle" }};
+                var machineB = new Machine { Name = "Machine B", Description = "Details for Machine B.", Endpoint = new ActiveTentacleEndpoint { Name = "Noisy tentacle" } };
+
+                trn.Insert(machineA);
+                trn.Insert(machineB);
+                trn.Commit();
+
+                var allMachines = trn.TableQuery<MachineToTestSerialization>().ToList();
+
+                allMachines.SingleOrDefault(x => x.Name == "Machine A").Should().NotBeNull("Didn't retrieve BrandA");
+                allMachines.Single(x => x.Name == "Machine A").JSON.Should().Be("{\"Description\":\"Details for Machine A.\",\"Endpoint\":{\"Type\":\"PassiveTentacle\",\"Name\":\"Quiet tentacle\"}}");
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadStringInheritedTypesThatAreProperties()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var machineA = new Machine { Name = "Machine A", Description = "Details for Machine A.", Endpoint = new PassiveTentacleEndpoint { Name = "Quiet tentacle" }};
+                var machineB = new Machine { Name = "Machine B", Description = "Details for Machine B.", Endpoint = new ActiveTentacleEndpoint { Name = "Noisy tentacle" } };
+
+                trn.Insert(machineA);
+                trn.Insert(machineB);
+                trn.Commit();
+
+                var allMachines = trn.TableQuery<Machine>().ToList();
+
+                allMachines.SingleOrDefault(x => x.Name == "Machine A").Should().NotBeNull("Didn't retrieve Machine A");
+                allMachines.Single(x => x.Name == "Machine A").Endpoint.Should().BeOfType<PassiveTentacleEndpoint>();
+            }
+        }
     }
 }
