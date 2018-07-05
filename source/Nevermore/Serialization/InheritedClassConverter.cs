@@ -10,11 +10,11 @@ namespace Nevermore.Serialization
 {
     public abstract class InheritedClassConverter<TDocument, TDiscriminator> : JsonConverter
     {
-        readonly RelationalMappings relationalMappings;
+        protected readonly RelationalMappings RelationalMappings;
 
         protected InheritedClassConverter(RelationalMappings relationalMappings = null)
         {
-            this.relationalMappings = relationalMappings;
+            RelationalMappings = relationalMappings;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
@@ -22,7 +22,7 @@ namespace Nevermore.Serialization
             writer.WriteStartObject();
 
             DocumentMap map = null;
-            relationalMappings?.TryGet(value.GetType(), out map);
+            RelationalMappings?.TryGet(value.GetType(), out map);
 
             var documentType = value.GetType().GetTypeInfo();
 
@@ -74,8 +74,7 @@ namespace Nevermore.Serialization
             }
 
             var args = ctor.GetParameters().Select(p =>
-                jo.GetValue(char.ToUpper(p.Name[0]) + p.Name.Substring(1))
-                    .ToObject(p.ParameterType, serializer)).ToArray();
+                jo.GetValue(char.ToUpper(p.Name[0]) + p.Name.Substring(1))?.ToObject(p.ParameterType, serializer)).ToArray();
             var instance = ctor.Invoke(args);
             foreach (var prop in typeInfo
                 .GetProperties(BindingFlags.Public | BindingFlags.SetProperty | BindingFlags.Instance)
