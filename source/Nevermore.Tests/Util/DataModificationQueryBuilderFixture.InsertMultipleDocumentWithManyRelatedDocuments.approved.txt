@@ -1,12 +1,12 @@
-INSERT INTO dbo.[TestDocument]  (AColumn, Id, JSON) VALUES 
+INSERT INTO dbo.[TestDocumentTbl]  (AColumn, Id, JSON) VALUES 
 (@0__AColumn, @0__Id, @0__JSON)
 ,(@1__AColumn, @1__Id, @1__JSON)
 ,(@2__AColumn, @2__Id, @2__JSON)
-INSERT INTO [RelatedDocument] ([Id], [Type], [RelatedDocumentId], [RelatedDocumentType]) VALUES
-(@0__Id, 'TestDocument', @relateddocument_0, 'Other')
-,(@0__Id, 'TestDocument', @relateddocument_1, 'Other')
-,(@2__Id, 'TestDocument', @relateddocument_2, 'Other')
-,(@2__Id, 'TestDocument', @relateddocument_3, 'Other')
+INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
+(@0__Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')
+,(@0__Id, 'TestDocumentTbl', @relateddocument_1, 'OtherTbl')
+,(@2__Id, 'TestDocumentTbl', @relateddocument_2, 'OtherTbl')
+,(@2__Id, 'TestDocumentTbl', @relateddocument_3, 'OtherTbl')
 
 @0__Id=New-Id-1
 @0__JSON={"Id":null,"AColumn":"Doc1"}

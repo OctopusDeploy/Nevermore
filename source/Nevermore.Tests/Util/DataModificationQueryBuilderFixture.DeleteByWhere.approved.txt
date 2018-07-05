@@ -1,2 +1,2 @@
-DELETE FROM [TestDocument] 
+DELETE FROM [TestDocumentTbl] 
 WHERE [Foo] > @1

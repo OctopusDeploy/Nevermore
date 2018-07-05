@@ -330,7 +330,7 @@ namespace Nevermore.Tests.Util
         [Test]
         public void DeleteByDocumentWithManyRelatedTables()
         {
-            var result = builder.CreateDelete<TestDocumentWithRelatedDocuments>("Doc-1");
+            var result = builder.CreateDelete<TestDocumentWithMultipleRelatedDocuments>("Doc-1");
 
             this.Assent(Format(result));
         }
@@ -386,7 +386,7 @@ namespace Nevermore.Tests.Util
         {
             public TestDocumentMap()
             {
-                TableName = "TestDocument";
+                TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
             }
         }
@@ -395,7 +395,7 @@ namespace Nevermore.Tests.Util
         {
             public TestDocumentWithRelatedDocumentsMap()
             {
-                TableName = "TestDocument";
+                TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds);
             }
@@ -405,7 +405,7 @@ namespace Nevermore.Tests.Util
         {
             public TestDocumentWithMultipleRelatedDocumentsMap()
             {
-                TableName = "TestDocument";
+                TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds1);
                 RelatedDocuments(t => t.RelatedDocumentIds2);
