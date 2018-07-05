@@ -67,7 +67,12 @@ namespace Nevermore.Serialization
                 typeInfo = GetTypeInfoFromDerivedType(derivedType);
             }
 
-            var ctor = typeInfo.GetConstructors(BindingFlags.Public | BindingFlags.Instance).Single();
+            var ctor = typeInfo.GetConstructors(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault();
+            if (ctor == null)
+            {
+                throw new Exception($"Type {typeInfo.Name} must have a public constructor");
+            }
+
             var args = ctor.GetParameters().Select(p =>
                 jo.GetValue(char.ToUpper(p.Name[0]) + p.Name.Substring(1))
                     .ToObject(p.ParameterType, serializer)).ToArray();
