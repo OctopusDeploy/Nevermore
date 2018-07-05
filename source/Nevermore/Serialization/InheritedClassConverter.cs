@@ -120,7 +120,7 @@ namespace Nevermore.Serialization
         {
             if (!DerivedTypeMappings.ContainsKey(derivedType))
             {
-                throw new Exception($"Unable to determine type to deserialize. {TypeDesignatingPropertyName} does not map to a known type");
+                throw new Exception($"Unable to determine type to deserialize. {TypeDesignatingPropertyName} `{derivedType}` does not map to a known type");
             }
 
             var typeInfo = DerivedTypeMappings[derivedType].GetTypeInfo();
