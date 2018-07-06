@@ -43,9 +43,9 @@ namespace Nevermore.Serialization
             writer.WriteEndObject();
         }
 
-        protected virtual object GetPropertyValue(PropertyInfo property, object value)
+        protected virtual object GetPropertyValue(PropertyInfo property, object instance)
         {
-            return property.GetValue(value, null);
+            return property.GetValue(instance, null);
         }
 
         protected virtual Type DefaultType { get; } = null;
