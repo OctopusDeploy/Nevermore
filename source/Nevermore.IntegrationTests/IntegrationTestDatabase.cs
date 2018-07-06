@@ -71,9 +71,15 @@ namespace Nevermore.IntegrationTests
             Mappings.Install(new List<DocumentMap>()
             {
                 new CustomerMap(),
+                new CustomerToTestSerializationMap(),
+                new BrandMap(),
+                new BrandToTestSerializationMap(),
                 new ProductMap<Product>(),
                 new SpecialProductMap(),
-                new LineItemMap()
+                new ProductToTestSerializationMap(),
+                new LineItemMap(),
+                new MachineMap(),
+                new MachineToTestSerializationMap()
             });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
@@ -84,7 +90,20 @@ namespace Nevermore.IntegrationTests
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
 
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(){ TypeNameHandling = TypeNameHandling.Auto }, new EmptyRelatedDocumentStore());
+
+            var contractResolver = new RelationalJsonContractResolver(Mappings);
+
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                TypeNameHandling = TypeNameHandling.Auto,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+            };
+            jsonSerializerSettings.Converters.Add(new ProductConverter(Mappings));
+            jsonSerializerSettings.Converters.Add(new BrandConverter(Mappings));
+            jsonSerializerSettings.Converters.Add(new EndpointConverter());
+
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, jsonSerializerSettings, new EmptyRelatedDocumentStore());
         }
 
         void InstallSchema()
@@ -106,7 +125,8 @@ namespace Nevermore.IntegrationTests
                 new CustomerMap(),
                 new SpecialProductMap(),
                 new LineItemMap(),
-                
+                new BrandMap(),
+                new MachineMap()
             };
 
             Mappings.Install(mappings);
