@@ -33,7 +33,7 @@ namespace Nevermore.Serialization
             foreach (var property in documentType
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
                 .Where(p => p.Name != TypeDesignatingPropertyName &&
-                            p.CanRead && 
+                            p.CanRead && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null &&
                             (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name)))))
             {
                 writer.WritePropertyName(property.Name);
@@ -83,7 +83,7 @@ namespace Nevermore.Serialization
             var instance = ctor.Invoke(args);
             foreach (var prop in typeInfo
                 .GetProperties(BindingFlags.Public | BindingFlags.SetProperty | BindingFlags.Instance)
-                .Where(p => p.CanWrite))
+                .Where(p => p.CanWrite && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null))
             {
                 var val = jo.GetValue(prop.Name);
                 if (val != null)
