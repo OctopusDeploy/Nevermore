@@ -13,13 +13,6 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
-        protected ColumnMapping TypeDiscriminatorColumn<T>(Expression<Func<TDocument, T>> property, Dictionary<T, Type> typeBuilder) where T : struct
-        {
-            var col = this.Column(property);
-            InstanceTypeResolver = new SubTypedResolver<TDocument, T>(col, typeBuilder);
-            return col;
-        }
-
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
         {
             var column = new ColumnMapping(GetPropertyInfo(property));

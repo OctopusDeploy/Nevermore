@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -465,7 +463,7 @@ namespace Nevermore
                             instance = (T) Activator.CreateInstance(instanceType);
                         }
 
-                        var specificMapping = mappings.Get(instanceType);
+                        var specificMapping = mappings.Get(instance.GetType());
                         var columnIndexes = specificMapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
 
                         foreach (var index in columnIndexes)
@@ -664,7 +662,7 @@ namespace Nevermore
                 var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
 
                 var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
-                foreach (var column in mappings.Get(instanceType).IndexedColumns)
+                foreach (var column in mappings.Get(instance.GetType()).IndexedColumns)
                 {
                     column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
                 }

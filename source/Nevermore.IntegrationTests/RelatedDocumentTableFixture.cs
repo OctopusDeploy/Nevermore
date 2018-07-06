@@ -18,21 +18,21 @@ namespace Nevermore.IntegrationTests
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-1",
-                Type = "Order",
+                Table = "Order",
                 RelatedDocumentId = "Product-1",
                 RelatedDocumentType = "Product"
             },
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-1",
-                Type = "Order",
+                Table = "Order",
                 RelatedDocumentId = "Product-2",
                 RelatedDocumentType = "Product"
             },
             new RelatedDocumentRow
             {
                 Id = "ExistingOrder-2",
-                Type = "Order",
+                Table = "Order",
                 RelatedDocumentId = "Product-1",
                 RelatedDocumentType = "Product"
             }
@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 foreach (var item in StartingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Type}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
 
                 trn.Commit();
             }
@@ -127,7 +127,7 @@ namespace Nevermore.IntegrationTests
             var expected = referenceIds.Select(r => new RelatedDocumentRow()
             {
                 Id = orderId,
-                Type = "Order",
+                Table = "Order",
                 RelatedDocumentId = r,
                 RelatedDocumentType = "Product"
             });
@@ -248,9 +248,9 @@ namespace Nevermore.IntegrationTests
                     => new RelatedDocumentRow
                     {
                         Id = (string) reader[map.IdColumnName],
-                        Type = (string) reader[map.IdTypeColumnName],
+                        Table = (string) reader[map.IdTableColumnName],
                         RelatedDocumentId = (string) reader[map.RelatedDocumentIdColumnName],
-                        RelatedDocumentType = (string) reader[map.RelatedDocumentTypeColumnName],
+                        RelatedDocumentType = (string) reader[map.RelatedDocumentTableColumnName],
                     };
 
             using (var trn = Store.BeginTransaction())
@@ -267,7 +267,7 @@ namespace Nevermore.IntegrationTests
         public class RelatedDocumentRow : IEquatable<RelatedDocumentRow>
         {
             public string Id { get; set; }
-            public string Type { get; set; }
+            public string Table { get; set; }
             public string RelatedDocumentId { get; set; }
             public string RelatedDocumentType { get; set; }
 
@@ -275,7 +275,7 @@ namespace Nevermore.IntegrationTests
             {
                 if (ReferenceEquals(null, other)) return false;
                 if (ReferenceEquals(this, other)) return true;
-                var eq = string.Equals(Id, other.Id) && string.Equals(Type, other.Type) && string.Equals(RelatedDocumentId, other.RelatedDocumentId) && string.Equals(RelatedDocumentType, other.RelatedDocumentType);
+                var eq = string.Equals(Id, other.Id) && string.Equals(Table, other.Table) && string.Equals(RelatedDocumentId, other.RelatedDocumentId) && string.Equals(RelatedDocumentType, other.RelatedDocumentType);
                 return eq;
             }
 
@@ -292,7 +292,7 @@ namespace Nevermore.IntegrationTests
                 unchecked
                 {
                     var hashCode = Id.GetHashCode();
-                    hashCode = (hashCode * 397) ^ Type.GetHashCode();
+                    hashCode = (hashCode * 397) ^ Table.GetHashCode();
                     hashCode = (hashCode * 397) ^ RelatedDocumentId.GetHashCode();
                     hashCode = (hashCode * 397) ^ RelatedDocumentType.GetHashCode();
                     return hashCode;
