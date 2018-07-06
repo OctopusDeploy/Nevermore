@@ -85,7 +85,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Normal", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Price\":11.1,\"Type\":0}");
+                special.JSON.Should().Be("{\"Type\":0,\"Price\":11.1}");
             }
         }
 
@@ -117,7 +117,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Special", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Price\":11.1,\"Type\":1}");
+                special.JSON.Should().Be("{\"Type\":1,\"Price\":11.1}");
             }
         }
 
