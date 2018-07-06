@@ -26,22 +26,27 @@ namespace Nevermore.Serialization
 
             var documentType = value.GetType().GetTypeInfo();
 
+            // Always write the designating property first
+            writer.WritePropertyName(TypeDesignatingPropertyName);
+            serializer.Serialize(writer, documentType.GetProperty(TypeDesignatingPropertyName)?.GetValue(value, null));
+
             foreach (var property in documentType
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
-                .Where(p => p.Name == TypeDesignatingPropertyName ||
-                            (p.CanRead && (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name))))))
+                .Where(p => p.Name != TypeDesignatingPropertyName &&
+                            p.CanRead && 
+                            (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name)))))
             {
                 writer.WritePropertyName(property.Name);
-                serializer.Serialize(writer, property.GetValue(value, null));
+                serializer.Serialize(writer, GetPropertyValue(property, value));
             }
-
-            WriteTypeProperty(writer, value, serializer);
 
             writer.WriteEndObject();
         }
 
-        protected virtual void WriteTypeProperty(JsonWriter writer, object value, JsonSerializer serializer)
-        { }
+        protected virtual object GetPropertyValue(PropertyInfo property, object value)
+        {
+            return property.GetValue(value, null);
+        }
 
         protected virtual Type DefaultType { get; } = null;
 
@@ -82,9 +87,17 @@ namespace Nevermore.Serialization
             {
                 var val = jo.GetValue(prop.Name);
                 if (val != null)
-                    prop.SetValue(instance, val.ToObject(prop.PropertyType, serializer), null);
+                {
+                    var value = val.ToObject(prop.PropertyType, serializer);
+                    SetPropertyValue(prop, instance, value);
+                }
             }
             return instance;
+        }
+
+        protected virtual void SetPropertyValue(PropertyInfo prop, object instance, object value)
+        {
+            prop.SetValue(instance, value, null);
         }
 
         protected abstract TypeInfo GetTypeInfoFromDerivedType(string derivedType);
