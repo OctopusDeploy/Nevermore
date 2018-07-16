@@ -13,6 +13,6 @@ namespace Nevermore
 
         IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
 
-        void Delete();
+        void Delete(int? commandTimeoutSeconds = null);
     }
 }

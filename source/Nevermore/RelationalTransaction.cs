@@ -87,9 +87,10 @@ namespace Nevermore
         {
             return new DeleteQueryBuilder<TDocument>(
                 uniqueParameterNameGenerator,
-                (documentType, where, parameterValues) => DeleteInternal(
+                (documentType, where, parameterValues, commandTimeoutSeconds) => DeleteInternal(
                     dataModificationQueryBuilder.CreateDelete(documentType, where),
-                    parameterValues
+                    parameterValues, 
+                    commandTimeoutSeconds
                 ), 
                 Enumerable.Empty<IWhereClause>(), 
                 new CommandParameterValues()
