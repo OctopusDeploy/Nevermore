@@ -22,7 +22,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             return new DeleteQueryBuilder<IId>(
                 new UniqueParameterNameGenerator(),
-                (_, q, p) =>
+                (_, q, p, __) =>
                 {
                     query = q.GenerateSql();
                     parameters = p;

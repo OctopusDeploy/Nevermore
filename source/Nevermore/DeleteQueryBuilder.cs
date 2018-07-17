@@ -11,13 +11,13 @@ namespace Nevermore
     internal class DeleteQueryBuilder<TRecord> : IDeleteQueryBuilder<TRecord> where TRecord : class
     {
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator;
-        readonly Action<Type, Where, CommandParameterValues> executeDelete;
+        readonly Action<Type, Where, CommandParameterValues, int?> executeDelete;
         readonly IEnumerable<IWhereClause> whereClauses;
         readonly CommandParameterValues parameterValues;
 
         public DeleteQueryBuilder(
             IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
-            Action<Type, Where, CommandParameterValues> executeDelete, 
+            Action<Type, Where, CommandParameterValues, int?> executeDelete, 
             IEnumerable<IWhereClause> whereClauses, 
             CommandParameterValues parameterValues)
         {
@@ -97,12 +97,12 @@ namespace Nevermore
             return new DeleteQueryBuilder<TNewRecord>(uniqueParameterNameGenerator, executeDelete, whereClauses, parameterValues);
         }
 
-        public void Delete()
+        public void Delete(int? commandTimeoutSeconds = null)
         {
             var whereClausesList = whereClauses.ToList();
             var where = whereClausesList.Any() ? new Where(new AndClause(whereClausesList)) : new Where();
 
-            executeDelete(typeof(TRecord), where, parameterValues);
+            executeDelete(typeof(TRecord), where, parameterValues, commandTimeoutSeconds);
         }
     }
 }
