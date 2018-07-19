@@ -97,65 +97,6 @@ namespace Nevermore
             );
         }
 
-        [Pure]
-        public T Load<T>(string id) where T : class, IId
-        {
-            return TableQuery<T>()
-                .Where("[Id] = @id")
-                .Parameter("id", id)
-                .First();
-        }
-
-        [Pure]
-        public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
-        {
-            var blocks = ids
-                .Distinct()
-                .Select((id, index) => (id: id, index: index))
-                .GroupBy(x => x.index / 500, y => y.id)
-                .ToArray();
-
-            foreach (var block in blocks)
-            {
-                var results = TableQuery<T>()
-                    .Where("[Id] IN @ids")
-                    .Parameter("ids", block.ToArray())
-                    .Stream();
-
-                foreach (var result in results)
-                    yield return result;
-            }
-        }
-
-        [Pure]
-        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
-            => LoadStream<T>(ids).ToArray();
-
-        [Pure]
-        public T LoadRequired<T>(string id) where T : class, IId
-        {
-            var result = Load<T>(id);
-            if (result == null)
-                throw new ResourceNotFoundException(id);
-            return result;
-        }
-
-        [Pure]
-        public T[] LoadRequired<T>(IEnumerable<string> ids) where T : class, IId
-        {
-            var allIds = ids.ToArray();
-            var results = TableQuery<T>()
-                .Where("[Id] IN @ids")
-                .Parameter("ids", allIds)
-                .Stream().ToArray();
-
-            var items = allIds.Zip(results, Tuple.Create);
-            foreach (var pair in items)
-                if (pair.Item2 == null)
-                    throw new ResourceNotFoundException(pair.Item1);
-            return results;
-        }
-
         public void Insert<TDocument>(TDocument instance) where TDocument : class, IId
         {
             Insert(null, instance, null);
