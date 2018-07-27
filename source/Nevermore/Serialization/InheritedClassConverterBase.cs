@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Nevermore.Mapping;
+using Nevermore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -11,6 +13,8 @@ namespace Nevermore.Serialization
     public abstract class InheritedClassConverterBase<TDocument, TDiscriminator> : JsonConverter
     {
         protected readonly RelationalMappings RelationalMappings;
+        readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> unmappedReadablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
+        readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> writeablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
 
         protected InheritedClassConverterBase(RelationalMappings relationalMappings = null)
         {
@@ -30,11 +34,8 @@ namespace Nevermore.Serialization
             writer.WritePropertyName(TypeDesignatingPropertyName);
             serializer.Serialize(writer, documentType.GetProperty(TypeDesignatingPropertyName)?.GetValue(value, null));
 
-            foreach (var property in documentType
-                .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
-                .Where(p => p.Name != TypeDesignatingPropertyName &&
-                            p.CanRead && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null &&
-                            (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name)))))
+            var properties = unmappedReadablePropertiesCache.GetOrAdd(documentType, t => GetUnmappedReadableProperties(t, map));
+            foreach (var property in properties)
             {
                 writer.WritePropertyName(property.Name);
                 serializer.Serialize(writer, GetPropertyValue(property, value));
@@ -42,6 +43,15 @@ namespace Nevermore.Serialization
 
             writer.WriteEndObject();
         }
+        
+                
+        IReadOnlyList<PropertyInfo> GetUnmappedReadableProperties(TypeInfo documentType, DocumentMap map)
+            => documentType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
+                .Where(p => p.Name != TypeDesignatingPropertyName &&
+                            p.CanRead && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null &&
+                            (map == null || (p.Name != map.IdColumn.Property.Name && map.IndexedColumns.All(c => p.Name != c.Property.Name))))
+                .ToArray();
+
 
         protected virtual object GetPropertyValue(PropertyInfo property, object instance)
         {
@@ -81,9 +91,9 @@ namespace Nevermore.Serialization
             var args = ctor.GetParameters().Select(p =>
                 jo.GetValue(char.ToUpper(p.Name[0]) + p.Name.Substring(1))?.ToObject(p.ParameterType, serializer)).ToArray();
             var instance = ctor.Invoke(args);
-            foreach (var prop in typeInfo
-                .GetProperties(BindingFlags.Public | BindingFlags.SetProperty | BindingFlags.Instance)
-                .Where(p => p.CanWrite && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null))
+            
+            var properties = writeablePropertiesCache.GetOrAdd(typeInfo, GetWritableProperties);
+            foreach (var prop in properties)
             {
                 var val = jo.GetValue(prop.Name);
                 if (val != null)
@@ -94,6 +104,14 @@ namespace Nevermore.Serialization
             }
             return instance;
         }
+
+        IReadOnlyList<PropertyInfo> GetWritableProperties(TypeInfo type)
+            => type
+                .GetProperties(BindingFlags.Public | BindingFlags.SetProperty | BindingFlags.Instance)
+                .Where(p => p.CanWrite && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null)
+                .ToArray();
+
+        
 
         protected virtual void SetPropertyValue(PropertyInfo prop, object instance, object value)
         {
