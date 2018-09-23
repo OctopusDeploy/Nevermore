@@ -105,13 +105,13 @@ Task("Publish")
 {
     
 	NuGetPush($"{artifactsDir}Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
-		ApiKey = EnvironmentVariable("MyGetApiKey")
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 
 	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
-		ApiKey = EnvironmentVariable("MyGetApiKey")
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 	
     if (gitVersionInfo.PreReleaseTag == "")
