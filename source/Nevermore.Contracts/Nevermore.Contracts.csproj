@@ -8,6 +8,7 @@
     <PackageId>Nevermore.Contracts</PackageId>
     <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/OctopusDeploy/Nevermore</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/OctopusDeploy/Nevermore/blob/master/LICENSE.txt</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/OctopusDeploy/Nevermore.git</RepositoryUrl>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
