@@ -313,6 +313,88 @@ ORDER BY [Id]";
         }
 
         [Test]
+        public void ShouldGetCorrectSqlQueryForAnyWithResults()
+        {
+            const string expectedSql = @"IF EXISTS(SELECT *
+FROM dbo.[Todos]
+WHERE ([Completed] < @completed))
+    SELECT 1
+ELSE
+    SELECT 0";
+
+            transaction.ClearReceivedCalls();
+
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
+                .Returns(1);
+
+            var result = CreateQueryBuilder<Todos>("Todos")
+                .Where("[Completed] < @completed")
+                .Parameter("completed", 5)
+                .Any();
+
+            transaction.Received(1).ExecuteScalar<int>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+
+            result.Should().Be(true);
+        }
+
+        [Test]
+        public void ShouldGetCorrectSqlQueryForAnyWithNoResults()
+        {
+            const string expectedSql = @"IF EXISTS(SELECT *
+FROM dbo.[Todos]
+WHERE ([Completed] < @completed))
+    SELECT 1
+ELSE
+    SELECT 0";
+
+            transaction.ClearReceivedCalls();
+
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
+                .Returns(0);
+
+            var result = CreateQueryBuilder<Todos>("Todos")
+                .Where("[Completed] < @completed")
+                .Parameter("completed", 5)
+                .Any();
+
+            transaction.Received(1).ExecuteScalar<int>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+
+            result.Should().Be(false);
+        }
+
+        [Test]
+        public void ShouldGetCorrectSqlQueryForAnyIgnoreOrderBy()
+        {
+            const string expectedSql = @"IF EXISTS(SELECT *
+FROM dbo.[Todos]
+WHERE ([Completed] < @completed))
+    SELECT 1
+ELSE
+    SELECT 0";
+
+            transaction.ClearReceivedCalls();
+
+            transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
+                .Returns(0);
+
+            var result = CreateQueryBuilder<Todos>("Todos")
+                .Where("[Completed] < @completed")
+                .Parameter("completed", 5)
+                .OrderBy("Completed")
+                .Any();
+
+            transaction.Received(1).ExecuteScalar<int>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+
+            result.Should().Be(false);
+        }
+
+        [Test]
         public void ShouldGetCorrectSqlQueryForWhereLessThan()
         {
             const string expectedSql = @"SELECT COUNT(*)

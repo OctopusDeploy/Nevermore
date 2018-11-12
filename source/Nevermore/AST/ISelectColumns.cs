@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Nevermore.AST
@@ -38,6 +39,14 @@ namespace Nevermore.AST
 
         public bool AggregatesRows => false;
         public string GenerateSql() => $"{column.GenerateSql()} AS [{columnAlias}]";
+        public override string ToString() => GenerateSql();
+    }
+
+    public class SelectExistsSource : ISelectColumns
+    {
+        public bool AggregatesRows => true;
+        public string GenerateSql() => "*";
+        
         public override string ToString() => GenerateSql();
     }
 

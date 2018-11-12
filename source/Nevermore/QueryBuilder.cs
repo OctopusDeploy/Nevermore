@@ -229,7 +229,11 @@ namespace Nevermore
         [Pure]
         public bool Any()
         {
-            return Count() != 0;
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddColumnSelection(new SelectExistsSource());
+            var result = transaction.ExecuteScalar<int>(new ExistsSelectBuilder(clonedSelectBuilder).GenerateSelect().GenerateSql(), paramValues);
+
+            return result != 0;
         }
 
         [Pure]
