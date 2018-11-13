@@ -318,9 +318,9 @@ ORDER BY [Id]";
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT 1
+    SELECT true_0
 ELSE
-    SELECT 0";
+    SELECT false_1";
 
             transaction.ClearReceivedCalls();
 
@@ -334,7 +334,9 @@ ELSE
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => (int)cp["completed"] == 5
+                                                     && (int) cp["true_0"] == 1
+                                                     && (int) cp["false_1"] == 0));
 
             result.Should().Be(true);
         }
@@ -345,9 +347,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT 1
+    SELECT true_0
 ELSE
-    SELECT 0";
+    SELECT false_1";
 
             transaction.ClearReceivedCalls();
 
@@ -361,7 +363,9 @@ ELSE
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => (int)cp["completed"] == 5
+                                                     && (int) cp["true_0"] == 1
+                                                     && (int) cp["false_1"] == 0));
 
             result.Should().Be(false);
         }
@@ -372,9 +376,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT 1
+    SELECT true_0
 ELSE
-    SELECT 0";
+    SELECT false_1";
 
             transaction.ClearReceivedCalls();
 
@@ -389,7 +393,9 @@ ELSE
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => (int) cp["completed"] == 5
+                                                     && (int) cp["true_0"] == 1
+                                                     && (int) cp["false_1"] == 0));
 
             result.Should().Be(false);
         }

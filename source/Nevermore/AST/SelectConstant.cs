@@ -2,16 +2,16 @@
 {
     public class SelectConstant : ISelect 
     {
-        readonly string constant;
+        readonly Parameter parameter;
 
-        public SelectConstant(string constant)
+        public SelectConstant(Parameter parameter)
         {
-            this.constant = constant;
+            this.parameter = parameter;
         }
 
         public string GenerateSql()
         {
-            return $"SELECT {constant}";
+            return $"SELECT {parameter.ParameterName}";
         }
     }
 }

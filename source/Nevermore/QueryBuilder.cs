@@ -229,13 +229,33 @@ namespace Nevermore
         [Pure]
         public bool Any()
         {
-            var clonedSelectBuilder = selectBuilder.Clone();
-            clonedSelectBuilder.RemoveOrderBys();
-            clonedSelectBuilder.IgnoreDefaultOrderBy();
-            var query = new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelect()), new SelectConstant("1"), new SelectConstant("0")).GenerateSql();
-            var result = transaction.ExecuteScalar<int>(query, paramValues);
+            const int trueValue = 1;
+            const int falseValue = 0;
+            var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
+            var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
-            return result != 0;
+            var result = transaction.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues());
+
+            return result != falseValue;
+
+            CommandParameterValues CreateParameterValues()
+            {
+                return new CommandParameterValues(paramValues)
+                {
+                    {trueParameter.ParameterName, trueValue}, 
+                    {falseParameter.ParameterName, falseValue}
+                };
+            }
+
+            IExpression CreateQuery()
+            {
+                var clonedSelectBuilder = selectBuilder.Clone();
+                clonedSelectBuilder.RemoveOrderBys();
+                clonedSelectBuilder.IgnoreDefaultOrderBy();
+                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelect()), 
+                    new SelectConstant(trueParameter), 
+                    new SelectConstant(falseParameter));
+            }
         }
 
         [Pure]
