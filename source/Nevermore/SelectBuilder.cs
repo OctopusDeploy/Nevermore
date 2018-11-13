@@ -106,91 +106,6 @@ namespace Nevermore
         }
     }
 
-    public class ExistsSelectBuilder: ISelectBuilder
-    {
-        readonly ISelectBuilder selectBuilder;
-
-        public ExistsSelectBuilder(ISelectBuilder selectBuilder)
-        {
-            this.selectBuilder = selectBuilder;
-        }
-
-        public void AddTop(int top)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddOrder(string fieldName, bool @descending)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void IgnoreDefaultOrderBy()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddWhere(UnaryWhereParameter whereParams)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddWhere(BinaryWhereParameter whereParams)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddWhere(ArrayWhereParameter whereParams)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddWhere(string whereClause)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddColumn(string columnName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddColumn(string columnName, string columnAlias)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddColumnSelection(ISelectColumns columnSelection)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddRowNumberColumn(string alias, IReadOnlyList<Column> partitionBys)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddRowNumberColumn(string alias, IReadOnlyList<TableColumn> partitionBys)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddDefaultColumnSelection()
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISelect GenerateSelect()
-        {
-            return new Exists(selectBuilder);
-        }
-
-        public ISelectBuilder Clone()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
     {
         public SubquerySelectBuilder(ISubquerySource @from) 
@@ -252,6 +167,11 @@ namespace Nevermore
         protected abstract ISelectColumns DefaultSelect { get; }
 
         protected abstract IEnumerable<OrderByField> GetDefaultOrderByFields();
+
+        public void RemoveOrderBys()
+        {
+            OrderByClauses.Clear();
+        }
 
         public ISelect GenerateSelect()
         {

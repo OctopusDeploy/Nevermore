@@ -86,7 +86,7 @@ namespace Nevermore
 
         public IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias)
         {
-            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(expression), columnAlias));
+            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(new CustomExpression(expression)), columnAlias));
             return this;
         }
 
@@ -230,8 +230,10 @@ namespace Nevermore
         public bool Any()
         {
             var clonedSelectBuilder = selectBuilder.Clone();
-            clonedSelectBuilder.AddColumnSelection(new SelectExistsSource());
-            var result = transaction.ExecuteScalar<int>(new ExistsSelectBuilder(clonedSelectBuilder).GenerateSelect().GenerateSql(), paramValues);
+            clonedSelectBuilder.RemoveOrderBys();
+            clonedSelectBuilder.IgnoreDefaultOrderBy();
+            var query = new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelect()), new SelectConstant("1"), new SelectConstant("0")).GenerateSql();
+            var result = transaction.ExecuteScalar<int>(query, paramValues);
 
             return result != 0;
         }

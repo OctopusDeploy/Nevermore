@@ -6,15 +6,15 @@
 
     public class CalculatedColumn : IColumn
     {
-        readonly string expression;
+        readonly IExpression expression;
 
-        public CalculatedColumn(string expression)
+        public CalculatedColumn(IExpression expression)
         {
             this.expression = expression;
         }
 
         public bool AggregatesRows => false;
-        public string GenerateSql() => $"{expression}";
+        public string GenerateSql() => $"{expression.GenerateSql()}";
         public override string ToString() => GenerateSql();
     }
 
