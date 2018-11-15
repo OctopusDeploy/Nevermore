@@ -52,9 +52,9 @@ ORDER BY [Id]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
 FROM dbo.[Accounts])
-    SELECT 1
+    SELECT @true_0
 ELSE
-    SELECT 0");
+    SELECT @false_1");
 
             queryBuilder.ToList();
 

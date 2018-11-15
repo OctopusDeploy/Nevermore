@@ -11,7 +11,7 @@
 
         public string GenerateSql()
         {
-            return $"SELECT {parameter.ParameterName}";
+            return $"SELECT @{parameter.ParameterName}";
         }
     }
 }
