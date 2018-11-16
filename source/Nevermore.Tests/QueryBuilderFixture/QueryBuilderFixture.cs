@@ -318,9 +318,9 @@ ORDER BY [Id]";
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT true_0
+    SELECT @true_0
 ELSE
-    SELECT false_1";
+    SELECT @false_1";
 
             transaction.ClearReceivedCalls();
 
@@ -347,9 +347,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT true_0
+    SELECT @true_0
 ELSE
-    SELECT false_1";
+    SELECT @false_1";
 
             transaction.ClearReceivedCalls();
 
@@ -376,9 +376,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT true_0
+    SELECT @true_0
 ELSE
-    SELECT false_1";
+    SELECT @false_1";
 
             transaction.ClearReceivedCalls();
 
