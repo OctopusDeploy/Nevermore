@@ -50,8 +50,11 @@ ORDER BY [Id]");
 
             queryBuilder.Any();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT COUNT(*)
-FROM dbo.[Accounts]");
+            LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
+FROM dbo.[Accounts])
+    SELECT @true_0
+ELSE
+    SELECT @false_1");
 
             queryBuilder.ToList();
 

@@ -19,6 +19,7 @@ namespace Nevermore
         void AddRowNumberColumn(string alias, IReadOnlyList<Column> partitionBys);
         void AddRowNumberColumn(string alias, IReadOnlyList<TableColumn> partitionBys);
         void AddDefaultColumnSelection();
+        void RemoveOrderBys();
         ISelect GenerateSelect();
 
         ISelectBuilder Clone();

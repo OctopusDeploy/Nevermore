@@ -168,6 +168,11 @@ namespace Nevermore
 
         protected abstract IEnumerable<OrderByField> GetDefaultOrderByFields();
 
+        public void RemoveOrderBys()
+        {
+            OrderByClauses.Clear();
+        }
+
         public ISelect GenerateSelect()
         {
             return new Select(RowSelection, GetColumnSelection(), From, GetWhere() ?? new Where(), GetOrderBy());
