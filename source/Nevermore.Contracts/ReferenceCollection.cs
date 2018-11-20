@@ -19,7 +19,7 @@ namespace Nevermore.Contracts
         }
 
         public ReferenceCollection(IEnumerable<string> values)
-            : base(values, StringComparer.OrdinalIgnoreCase)
+            : base(values ?? new string[0], StringComparer.OrdinalIgnoreCase)
         {
         }
 
