@@ -1,0 +1,15 @@
+SELECT *
+FROM (
+    SELECT *
+    FROM (
+        SELECT [Id] AS [Id]
+        FROM dbo.[Orders]
+        UNION
+        SELECT [Id] AS [Id]
+        FROM dbo.[Account]
+    ) ALIAS_GENERATED_1
+    UNION
+    SELECT [Id] AS [Id]
+    FROM dbo.[Customers]
+) ALIAS_GENERATED_2
+ORDER BY ALIAS_GENERATED_2.[Id]

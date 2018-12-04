@@ -1116,6 +1116,20 @@ ORDER BY [Title] DESC";
         }
 
         [Test]
+        public void ShouldGenerateMultipleUnionsWithoutNesting()
+        {
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .Column("Id", "Id")
+                .Union(CreateQueryBuilder<IDocument>("Account")
+                    .Column("Id", "Id"))
+                .Union(CreateQueryBuilder<IDocument>("Customers")
+                    .Column("Id", "Id"))
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
         public void ShouldCollectParameterValuesFromUnion()
         {
             CommandParameterValues parameterValues = null;
