@@ -7,19 +7,17 @@ namespace Nevermore
 {
     public class JoinSelectBuilder : SelectBuilderBase<JoinedSource>
     {
-        public JoinSelectBuilder(JoinedSource @from) : this(@from, new List<IWhereClause>(), new List<OrderByField>())
+        protected override JoinedSource From { get; }
+
+        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<OrderByField>())
         {
         }
 
-        JoinSelectBuilder(JoinedSource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses) 
-            : base(@from, whereClauses, orderByClauses)
+        JoinSelectBuilder(JoinedSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
+            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
         {
-        }
-
-        JoinSelectBuilder(JoinedSource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
-            ISelectColumns columnSelection, IRowSelection rowSelection) 
-            : base(@from, whereClauses, orderByClauses, columnSelection, rowSelection)
-        {
+            From = from;
         }
 
         protected override ISelectColumns DefaultSelect => new SelectAllFrom(From.Source.Alias);
@@ -75,24 +73,20 @@ namespace Nevermore
 
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        public TableSelectBuilder(ITableSource @from) 
-            : this(@from, new List<IWhereClause>(), new List<OrderByField>())
+        public TableSelectBuilder(ITableSource from) 
+            : this(from, new List<IWhereClause>(), new List<OrderByField>())
         {
         }
 
         TableSelectBuilder(ITableSource from, List<IWhereClause> whereClauses,
-            List<OrderByField> orderByClauses)
-            : base(from, whereClauses, orderByClauses)
+            List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
+            IRowSelection rowSelection = null)
+            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
         {
+            From = from;
         }
 
-        TableSelectBuilder(ITableSource from, List<IWhereClause> whereClauses,
-            List<OrderByField> orderByClauses, ISelectColumns columnSelection, 
-            IRowSelection rowSelection)
-            : base(from, whereClauses, orderByClauses, columnSelection, rowSelection)
-        {
-        }
-
+        protected override ITableSource From { get; }
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
@@ -108,22 +102,19 @@ namespace Nevermore
 
     public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
     {
-        public SubquerySelectBuilder(ISubquerySource @from) 
-            : this(@from, new List<IWhereClause>(), new List<OrderByField>())
+        public SubquerySelectBuilder(ISubquerySource from) 
+            : this(from, new List<IWhereClause>(), new List<OrderByField>())
         {
         }
 
-        SubquerySelectBuilder(ISubquerySource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses) 
-            : base(@from, whereClauses, orderByClauses)
+        SubquerySelectBuilder(ISubquerySource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
+            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
         {
+            From = from;
         }
 
-        SubquerySelectBuilder(ISubquerySource @from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
-            ISelectColumns columnSelection, IRowSelection rowSelection) 
-            : base(@from, whereClauses, orderByClauses, columnSelection, rowSelection)
-        {
-        }
-
+        protected override ISubquerySource From { get; }
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
@@ -147,17 +138,16 @@ namespace Nevermore
 
     public abstract class SelectBuilderBase<TSource> : ISelectBuilder where TSource : ISelectSource
     {
-        protected readonly TSource From;
+        protected abstract TSource From { get; }
         protected readonly List<OrderByField> OrderByClauses;
         protected readonly List<IWhereClause> WhereClauses;
         protected ISelectColumns ColumnSelection;
         protected IRowSelection RowSelection;
 
-        protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        protected SelectBuilderBase(List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null,
             IRowSelection rowSelection = null)
         {
-            From = from;
             WhereClauses = whereClauses;
             OrderByClauses = orderByClauses;
             this.RowSelection = rowSelection;
