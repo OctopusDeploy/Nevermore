@@ -131,6 +131,14 @@ namespace Nevermore
             yield return new OrderByField(new TableColumn(new Column("Id"), From.Alias));
         }
 
+        public override ISelect GenerateSelectWithoutDefaultOrderBy()
+        {
+            var hasNoConfiguration = !OrderByClauses.Any() && !WhereClauses.Any() &&
+                    ColumnSelection == null && RowSelection == null;
+
+            return hasNoConfiguration ? From.InnerSelect : base.GenerateSelectWithoutDefaultOrderBy();
+        }
+
         public override ISelectBuilder Clone()
         {
             return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
@@ -145,14 +153,9 @@ namespace Nevermore
         protected ISelectColumns ColumnSelection;
         protected IRowSelection RowSelection;
 
-        protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses)
-            :this(from, whereClauses, orderByClauses, null, new AllRows())
-        {
-        }
-
         protected SelectBuilderBase(TSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
-            ISelectColumns columnSelection,
-            IRowSelection rowSelection)
+            ISelectColumns columnSelection = null,
+            IRowSelection rowSelection = null)
         {
             From = from;
             WhereClauses = whereClauses;
@@ -175,14 +178,14 @@ namespace Nevermore
             return GenerateSelectInner(GetDefaultOrderBy);
         }
 
-        public ISelect GenerateSelectWithoutDefaultOrderBy()
+        public virtual ISelect GenerateSelectWithoutDefaultOrderBy()
         {
             return GenerateSelectInner(() => null);
         }
 
         ISelect GenerateSelectInner(Func<OrderBy> getDefaultOrderBy)
         {
-            return new Select(RowSelection, GetColumnSelection(), From, GetWhere() ?? new Where(), GetOrderBy(getDefaultOrderBy));
+            return new Select(GetRowSelection(), GetColumnSelection(), From, GetWhere() ?? new Where(), GetOrderBy(getDefaultOrderBy));
         }
 
         public abstract ISelectBuilder Clone();
@@ -286,5 +289,7 @@ namespace Nevermore
         }
 
         ISelectColumns GetColumnSelection() => ColumnSelection ?? DefaultSelect;
+
+        IRowSelection GetRowSelection() => RowSelection ?? new AllRows();
     }
 }

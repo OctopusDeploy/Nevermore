@@ -2,25 +2,25 @@
 {
     public interface ISubquerySource : IAliasedSelectSource
     {
+        ISelect InnerSelect { get; }
     }
 
     public class SubquerySource : ISubquerySource
     {
-        readonly ISelect source;
-
         public SubquerySource(ISelect select, string alias)
         {
             Alias = alias;
-            source = select;
+            InnerSelect = select;
         }
 
         public string Alias { get; }
+        public ISelect InnerSelect { get; }
 
         public string GenerateSql()
         {
             var alias = string.IsNullOrEmpty(Alias) ? string.Empty : $" {Alias}";
             return $@"(
-{Format.IndentLines(source.GenerateSql())}
+{Format.IndentLines(InnerSelect.GenerateSql())}
 ){alias}";
         }
 
