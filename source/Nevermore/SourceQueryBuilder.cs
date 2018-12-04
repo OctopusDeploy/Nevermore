@@ -11,7 +11,6 @@ namespace Nevermore
         string alias;
 
         public SubquerySourceBuilder(ISelect select, 
-            string alias, 
             IRelationalTransaction relationalTransaction, 
             ITableAliasGenerator tableAliasGenerator, 
             IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
@@ -21,12 +20,11 @@ namespace Nevermore
             : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
-            this.alias = alias;
         }
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            return new SubquerySelectBuilder(AsSource());
+            return new SubquerySelectBuilder(select, alias, TableAliasGenerator);
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
@@ -44,7 +42,7 @@ namespace Nevermore
 
         public ISubquerySource AsSource()
         {
-            return new SubquerySource(select, alias);
+            return new SubquerySource(select, alias ?? TableAliasGenerator.GenerateTableAlias());
         }
 
         public ISubquerySourceBuilder<TRecord> Alias(string subqueryAlias)
