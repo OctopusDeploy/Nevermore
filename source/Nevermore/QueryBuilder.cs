@@ -132,9 +132,7 @@ namespace Nevermore
 
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            var clonedSelectBuilder = selectBuilder.Clone();
-            clonedSelectBuilder.IgnoreDefaultOrderBy();
-            var subquery = new SubquerySource(clonedSelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
+            var subquery = new SubquerySource(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias());
             return new JoinSourceQueryBuilder<TRecord>(subquery, 
                 joinType, 
                 source, 
@@ -148,11 +146,7 @@ namespace Nevermore
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
-            var clonedSelectBuilder = selectBuilder.Clone();
-            clonedSelectBuilder.IgnoreDefaultOrderBy();
-            var unionedSelectBuilder = queryBuilder.GetSelectBuilder();
-            unionedSelectBuilder.IgnoreDefaultOrderBy();
-            return new SubquerySourceBuilder<TRecord>(new Union(new [] { clonedSelectBuilder.GenerateSelect(), unionedSelectBuilder.GenerateSelect() }), 
+            return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }), 
                 tableAliasGenerator.GenerateTableAlias(),
                 transaction, 
                 tableAliasGenerator, 
@@ -164,9 +158,7 @@ namespace Nevermore
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            var clonedSelectBuilder = selectBuilder.Clone();
-            clonedSelectBuilder.IgnoreDefaultOrderBy();
-            return new SubquerySourceBuilder<TRecord>(clonedSelectBuilder.GenerateSelect(), 
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), 
                 tableAliasGenerator.GenerateTableAlias(), 
                 transaction, 
                 tableAliasGenerator, 
@@ -178,8 +170,7 @@ namespace Nevermore
 
         SubquerySelectBuilder CreateSubqueryBuilder(ISelectBuilder subquerySelectBuilder)
         {
-            subquerySelectBuilder.IgnoreDefaultOrderBy();
-            return new SubquerySelectBuilder(new SubquerySource(subquerySelectBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias()));
+            return new SubquerySelectBuilder(new SubquerySource(subquerySelectBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias()));
         }
 
         public ISelectBuilder GetSelectBuilder()
@@ -251,8 +242,7 @@ namespace Nevermore
             {
                 var clonedSelectBuilder = selectBuilder.Clone();
                 clonedSelectBuilder.RemoveOrderBys();
-                clonedSelectBuilder.IgnoreDefaultOrderBy();
-                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelect()), 
+                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()), 
                     new SelectConstant(trueParameter), 
                     new SelectConstant(falseParameter));
             }
