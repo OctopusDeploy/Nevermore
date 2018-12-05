@@ -1571,6 +1571,18 @@ ORDER BY [Id]";
             parameters.Should().Contain("name_0", "Alice");
             parameters.Should().Contain("name_1", "Bob");
         }
+
+        [Test]
+        public void ShouldGenerateSubqueryWhenThereAreNoCustomizations()
+        {
+            var subquerySql = CreateQueryBuilder<IDocument>("Accounts")
+                .Subquery()
+                .GetSelectBuilder()
+                .GenerateSelectWithoutDefaultOrderBy()
+                .GenerateSql();
+
+            this.Assent(subquerySql);
+        }
     }
 
     public class Todos
