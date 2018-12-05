@@ -99,19 +99,21 @@ namespace Nevermore
             return new TableSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
-
-    public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
+    
+    public class UnionSelectBuilder : SelectBuilderBase<ISubquerySource>
     {
         readonly ISelect innerSelect;
         string customAlias;
         readonly ITableAliasGenerator tableAliasGenerator;
 
-        public SubquerySelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator) 
+        public UnionSelectBuilder(ISelect innerSelect, 
+            string customAlias, 
+            ITableAliasGenerator tableAliasGenerator) 
             : this(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(), new List<OrderByField>())
         {
         }
 
-        SubquerySelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        UnionSelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
             : base(whereClauses, orderByClauses, columnSelection, rowSelection)
         {
@@ -121,6 +123,14 @@ namespace Nevermore
         }
 
         protected override ISubquerySource From => new SubquerySource(innerSelect, GetAlias());
+
+        public override ISelect GenerateSelectWithoutDefaultOrderBy()
+        {
+            var hasNoConfiguration = customAlias == null && !OrderByClauses.Any() && !WhereClauses.Any() &&
+                                     ColumnSelection == null && RowSelection == null;
+
+            return hasNoConfiguration ? innerSelect : base.GenerateSelectWithoutDefaultOrderBy();
+        }
 
         string GetAlias()
         {
@@ -132,24 +142,44 @@ namespace Nevermore
             return customAlias;
         }
 
-        protected override ISelectColumns DefaultSelect => new SelectAllSource();
-
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
             yield return new OrderByField(new TableColumn(new Column("Id"), GetAlias()));
         }
 
-        public override ISelect GenerateSelectWithoutDefaultOrderBy()
-        {
-            var hasNoConfiguration = customAlias == null && !OrderByClauses.Any() && !WhereClauses.Any() &&
-                    ColumnSelection == null && RowSelection == null;
+        protected override ISelectColumns DefaultSelect => new SelectAllSource();
 
-            return hasNoConfiguration ? innerSelect : base.GenerateSelectWithoutDefaultOrderBy();
+        public override ISelectBuilder Clone()
+        {
+            return new UnionSelectBuilder(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+        }
+    }
+
+    public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
+    {
+        public SubquerySelectBuilder(ISubquerySource from) 
+            : this(from, new List<IWhereClause>(), new List<OrderByField>())
+        {
+        }
+        
+        SubquerySelectBuilder(ISubquerySource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+            ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
+            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
+        {
+            From = @from;
+        }
+
+        protected override ISubquerySource From { get; }
+        protected override ISelectColumns DefaultSelect => new SelectAllSource();
+
+        protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
+        {
+            yield return new OrderByField(new TableColumn(new Column("Id"), From.Alias));
         }
 
         public override ISelectBuilder Clone()
         {
-            return new SubquerySelectBuilder(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
 

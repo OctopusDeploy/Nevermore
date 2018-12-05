@@ -5,6 +5,60 @@ using Nevermore.AST;
 
 namespace Nevermore
 {
+    // A union statement is built like a subquery.
+    // This is because if you add other configuration (order by, where, column selection etc), then the inner query needs to be in a subquery
+    // However, if you don't add any other customizations, then the subquery is redundant and we don't need a subquery at all
+    // This avoids heavily nested subqueries when unioning multiple statements.
+    //
+    // This behaviour is different to normal subquery building, 
+    // because if the consumer explicitly asks for a subquery, it would be too presumptuous of us to not create a subquery for them under some circumstances
+    public class UnionSourceBuilder<TRecord> : SourceQueryBuilder<TRecord>, ISubquerySourceBuilder<TRecord> where TRecord : class
+    {
+        readonly ISelect select;
+        string alias;
+
+        public UnionSourceBuilder(ISelect select, 
+            IRelationalTransaction relationalTransaction, 
+            ITableAliasGenerator tableAliasGenerator, 
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
+            CommandParameterValues parameterValues, 
+            Parameters parameters, 
+            ParameterDefaults parameterDefaults) 
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+        {
+            this.select = select;
+        }
+
+        protected override ISelectBuilder CreateSelectBuilder()
+        {
+            return new UnionSelectBuilder(select, alias, TableAliasGenerator);
+        }
+
+        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        {
+            return new JoinSourceQueryBuilder<TRecord>(AsSource(), 
+                joinType,
+                source, 
+                RelationalTransaction, 
+                TableAliasGenerator, 
+                UniqueParameterNameGenerator, 
+                new CommandParameterValues(ParamValues, parameterValues), 
+                new Parameters(Params, parameters), 
+                new ParameterDefaults(ParamDefaults, parameterDefaults));
+        }
+
+        public ISubquerySource AsSource()
+        {
+            return new SubquerySource(select, alias ?? TableAliasGenerator.GenerateTableAlias());
+        }
+
+        public ISubquerySourceBuilder<TRecord> Alias(string subqueryAlias)
+        {
+            alias = subqueryAlias;
+            return this;
+        }
+    }
+
     public class SubquerySourceBuilder<TRecord> : SourceQueryBuilder<TRecord>, ISubquerySourceBuilder<TRecord> where TRecord : class
     {
         readonly ISelect select;
@@ -24,7 +78,7 @@ namespace Nevermore
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            return new SubquerySelectBuilder(select, alias, TableAliasGenerator);
+            return new SubquerySelectBuilder(AsSource());
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
@@ -42,7 +96,11 @@ namespace Nevermore
 
         public ISubquerySource AsSource()
         {
-            return new SubquerySource(select, alias ?? TableAliasGenerator.GenerateTableAlias());
+            if (string.IsNullOrEmpty(alias))
+            {
+                Alias(TableAliasGenerator.GenerateTableAlias());
+            } 
+            return new SubquerySource(select, alias);
         }
 
         public ISubquerySourceBuilder<TRecord> Alias(string subqueryAlias)

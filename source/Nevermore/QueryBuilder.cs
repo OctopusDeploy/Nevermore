@@ -146,7 +146,7 @@ namespace Nevermore
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
-            return new SubquerySourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }), 
+            return new UnionSourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }), 
                 transaction, 
                 tableAliasGenerator, 
                 uniqueParameterNameGenerator, 
@@ -168,7 +168,7 @@ namespace Nevermore
 
         SubquerySelectBuilder CreateSubqueryBuilder(ISelectBuilder subquerySelectBuilder)
         {
-            return new SubquerySelectBuilder(subquerySelectBuilder.GenerateSelectWithoutDefaultOrderBy(), null, tableAliasGenerator);
+            return new SubquerySelectBuilder(new SubquerySource(subquerySelectBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias()));
         }
 
         public ISelectBuilder GetSelectBuilder()
