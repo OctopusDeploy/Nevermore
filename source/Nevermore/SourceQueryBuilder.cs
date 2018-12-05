@@ -49,7 +49,11 @@ namespace Nevermore
 
         public ISubquerySource AsSource()
         {
-            return new SubquerySource(select, alias ?? TableAliasGenerator.GenerateTableAlias());
+            if (string.IsNullOrEmpty(alias))
+            {
+                Alias(TableAliasGenerator.GenerateTableAlias());
+            }
+            return new SubquerySource(select, alias);
         }
 
         public ISubquerySourceBuilder<TRecord> Alias(string subqueryAlias)
