@@ -1116,6 +1116,20 @@ ORDER BY [Title] DESC";
         }
 
         [Test]
+        public void ShouldGenerateMultipleUnionsWithoutNesting()
+        {
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .Column("Id", "Id")
+                .Union(CreateQueryBuilder<IDocument>("Account")
+                    .Column("Id", "Id"))
+                .Union(CreateQueryBuilder<IDocument>("Customers")
+                    .Column("Id", "Id"))
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
         public void ShouldCollectParameterValuesFromUnion()
         {
             CommandParameterValues parameterValues = null;
@@ -1556,6 +1570,18 @@ ORDER BY [Id]";
             parameters.Count.ShouldBeEquivalentTo(2);
             parameters.Should().Contain("name_0", "Alice");
             parameters.Should().Contain("name_1", "Bob");
+        }
+
+        [Test]
+        public void ShouldGenerateSubqueryWhenThereAreNoCustomizations()
+        {
+            var subquerySql = CreateQueryBuilder<IDocument>("Accounts")
+                .Subquery()
+                .GetSelectBuilder()
+                .GenerateSelectWithoutDefaultOrderBy()
+                .GenerateSql();
+
+            this.Assent(subquerySql);
         }
     }
 

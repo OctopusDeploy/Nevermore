@@ -8,7 +8,6 @@ namespace Nevermore
         void AddTop(int top);
 
         void AddOrder(string fieldName, bool descending);
-        void IgnoreDefaultOrderBy();
         void AddWhere(UnaryWhereParameter whereParams);
         void AddWhere(BinaryWhereParameter whereParams);
         void AddWhere(ArrayWhereParameter whereParams);
@@ -21,6 +20,7 @@ namespace Nevermore
         void AddDefaultColumnSelection();
         void RemoveOrderBys();
         ISelect GenerateSelect();
+        ISelect GenerateSelectWithoutDefaultOrderBy();
 
         ISelectBuilder Clone();
     }
