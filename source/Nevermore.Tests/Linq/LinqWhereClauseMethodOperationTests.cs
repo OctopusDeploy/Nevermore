@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Linq
 
             AssertLikeResult(result, captures, "Bar%");
         }
-        
+
         [Test]
         public void EndsWith()
         {
@@ -37,7 +37,7 @@ namespace Nevermore.Tests.Linq
 
             AssertLikeResult(result, captures, "%Bar");
         }
-        
+
         [Test]
         public void ArrayContains()
         {
@@ -61,7 +61,7 @@ namespace Nevermore.Tests.Linq
 
             AssertContainsResult(result, captures);
         }
-        
+
         [Test]
         public void IReadOnlyListArrayContains()
         {
@@ -72,7 +72,7 @@ namespace Nevermore.Tests.Linq
 
             AssertContainsResult(result, captures);
         }
-        
+
         [Test]
         public void ListContains()
         {
@@ -84,7 +84,26 @@ namespace Nevermore.Tests.Linq
             AssertContainsResult(result, captures);
         }
 
-        
+        [Test]
+        public void StringListContains()
+        {
+            var (builder, (_, paramValues)) = NewQueryBuilder();
+
+            var values = new List<string> {"a", "B", "3"};
+            var result = builder.Where(b => values.Contains(b.String));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] IN (@string0, @string1, @string2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("string0", "a");
+            paramValues.Should().Contain("string1", "B");
+            paramValues.Should().Contain("string2", "3");
+        }
+
         static void AssertLikeResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures, string expected)
         {
             var (parameters, paramValues) = captures;
@@ -98,7 +117,7 @@ ORDER BY [Id]");
             parameters.Single().ParameterName.Should().Be("string");
             paramValues.Should().Contain("string", expected);
         }
-        
+
         static void AssertContainsResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures)
         {
             var (_, paramValues) = captures;

@@ -58,7 +58,7 @@ namespace Nevermore
 
             if (expr is MethodCallExpression methExpr)
             {
-                if(methExpr.Arguments.Count == 1 && methExpr.Arguments[0].Type == typeof(string))
+                if(methExpr.Arguments.Count == 1 && methExpr.Method.DeclaringType == typeof(string))
                     return AddStringMethodFromExpression(queryBuilder, methExpr);
                 
                 if(methExpr.Method.Name == "Contains")
