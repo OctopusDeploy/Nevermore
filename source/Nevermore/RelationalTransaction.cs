@@ -461,7 +461,7 @@ namespace Nevermore
                         }
                         else
                         {
-                            instance = (T) Activator.CreateInstance(instanceType);
+                            instance = (T) Activator.CreateInstance(instanceType, true);
                         }
 
                         var specificMapping = mappings.Get(instance.GetType());
