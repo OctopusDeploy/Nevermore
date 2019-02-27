@@ -23,6 +23,7 @@ namespace Nevermore
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         private readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
+        readonly ObjectInitialisationOptions objectInitialisationOptions;
 
         public RelationalStore(
             string connectionString,
@@ -31,7 +32,8 @@ namespace Nevermore
             RelationalMappings mappings,
             JsonSerializerSettings jsonSettings,
             IRelatedDocumentStore relatedDocumentStore,
-            int keyBlockSize = 20)
+            int keyBlockSize = 20,
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None)
             : this(
                 () => connectionString,
                 applicationName,
@@ -39,7 +41,8 @@ namespace Nevermore
                 mappings,
                 jsonSettings,
                 relatedDocumentStore,
-                keyBlockSize
+                keyBlockSize,
+                objectInitialisationOptions
             )
         {
 
@@ -55,6 +58,7 @@ namespace Nevermore
         /// <param name="jsonSettings"></param>
         /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
         /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
+        /// <param name="objectInitialisationOptions"></param>
         public RelationalStore(
             Func<string> connectionString,
             string applicationName,
@@ -62,7 +66,8 @@ namespace Nevermore
             RelationalMappings mappings,
             JsonSerializerSettings jsonSettings,
             IRelatedDocumentStore relatedDocumentStore,
-            int keyBlockSize = 20)
+            int keyBlockSize = 20,
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None)
         {
             this.registry = new Lazy<RelationalTransactionRegistry>(
                 () => SetConnectionStringOptions(connectionString(), applicationName)
@@ -73,6 +78,7 @@ namespace Nevermore
 
             this.jsonSettings = jsonSettings;
             this.relatedDocumentStore = relatedDocumentStore;
+            this.objectInitialisationOptions = objectInitialisationOptions;
         }
 
         public string ConnectionString => registry.Value.ConnectionString;
@@ -97,7 +103,7 @@ namespace Nevermore
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
             return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,
-                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name);
+                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName)

@@ -38,6 +38,7 @@ namespace Nevermore
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
         readonly DataModificationQueryBuilder dataModificationQueryBuilder;
+        readonly ObjectInitialisationOptions objectInitialisationOptions;
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -53,7 +54,8 @@ namespace Nevermore
             RelationalMappings mappings,
             IKeyAllocator keyAllocator,
             IRelatedDocumentStore relatedDocumentStore,
-            string name = null
+            string name = null,
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None
         )
         {
             this.registry = registry;
@@ -461,7 +463,7 @@ namespace Nevermore
                         }
                         else
                         {
-                            instance = (T) Activator.CreateInstance(instanceType, true);
+                            instance = (T) Activator.CreateInstance(instanceType, objectInitialisationOptions.HasFlag(ObjectInitialisationOptions.UseNonPublicConstructors));
                         }
 
                         var specificMapping = mappings.Get(instance.GetType());
