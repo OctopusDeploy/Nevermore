@@ -66,6 +66,7 @@ namespace Nevermore
             this.keyAllocator = keyAllocator;
             this.relatedDocumentStore = relatedDocumentStore;
             this.name = name ?? Thread.CurrentThread.Name;
+            this.objectInitialisationOptions = objectInitialisationOptions;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
             
