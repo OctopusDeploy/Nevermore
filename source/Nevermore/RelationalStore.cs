@@ -111,7 +111,6 @@ namespace Nevermore
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 MultipleActiveResultSets = true,
-                Pooling = true,
                 ApplicationName = applicationName,
             };
 
