@@ -530,6 +530,11 @@ namespace Nevermore
             return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
+        [Pure]
+        public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class, IId
+        {
+            return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+        }
 
         [Pure]
         public T ExecuteScalar<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
