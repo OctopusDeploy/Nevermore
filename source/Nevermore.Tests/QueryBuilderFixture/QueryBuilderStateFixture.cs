@@ -39,8 +39,7 @@ FROM dbo.[Accounts]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -59,8 +58,7 @@ ELSE
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -77,8 +75,7 @@ ORDER BY [Id]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -95,8 +92,7 @@ ORDER BY [Id]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -120,8 +116,7 @@ ORDER BY [RowNum]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -150,8 +145,7 @@ ORDER BY [RowNum]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
         }
 
         [Test]
@@ -162,8 +156,7 @@ ORDER BY [Id]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
 
             queryBuilder.Take(1);
 
@@ -180,8 +173,7 @@ ORDER BY [Id]");
             queryBuilder.Stream();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
 
             queryBuilder.Take(1);
 
@@ -198,8 +190,7 @@ ORDER BY [Id]");
             queryBuilder.ToDictionary(d => d.Id);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-ORDER BY [Id]");
+FROM dbo.[Accounts]");
 
             queryBuilder.Take(1);
 
@@ -221,8 +212,7 @@ ORDER BY [Id]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM dbo.[Accounts]
-WHERE ([Id] = @id_0)
-ORDER BY [Id]");
+WHERE ([Id] = @id_0)");
         }
 
         string LastExecutedQuery() => executedQueries.Last();

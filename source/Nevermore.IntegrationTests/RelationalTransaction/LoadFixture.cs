@@ -265,7 +265,6 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Commit();
 
                 var productSubtotalQuery =    @"SELECT
-                                                    Id,
                                                     ProductId,
                                                     ProductName,
                                                     Subtotal
