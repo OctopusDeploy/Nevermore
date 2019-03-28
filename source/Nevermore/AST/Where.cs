@@ -129,7 +129,7 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
             this.parameterName = parameterName;
         }
 
-        public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} {parameterName}";
+        public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} @{parameterName}";
         public override string ToString() => GenerateSql();
 
         string GetQueryOperandSql()
