@@ -311,6 +311,10 @@ namespace Nevermore
         {
             return Builder.WhereParameterised(fieldName, operand, parameter);
         }
+        
+        public IQueryBuilder<TRecord> WhereNull(string fieldName) => Builder.WhereNull(fieldName);
+        
+        public IQueryBuilder<TRecord> WhereNotNull(string fieldName) => Builder.WhereNotNull(fieldName);
 
         public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
             Parameter startValueParameter, Parameter endValueParameter)

@@ -10,6 +10,7 @@ namespace Nevermore.IntegrationTests.Model
         {
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
+            Column(m => m.Nickname).Nullable();
             Column(m => m.Roles);
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
         }
@@ -20,6 +21,8 @@ namespace Nevermore.IntegrationTests.Model
         public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
+        public string Nickname { get; set; }
         public ReferenceCollection Roles { get; private set; }
 
         public string JSON { get; set; }
@@ -33,6 +36,7 @@ namespace Nevermore.IntegrationTests.Model
 
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
+            Column(m => m.Nickname).Nullable();
             Column(m => m.Roles);
             Column(m => m.JSON);
         }

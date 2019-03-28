@@ -112,6 +112,9 @@ namespace Nevermore
         /// <param name="parameterNames">The parameters that will be included in the where clause. Requires data types if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
         IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
+        
+        IQueryBuilder<TRecord> WhereNull(string fieldName);
+        IQueryBuilder<TRecord> WhereNotNull(string fieldName);
 
         /// <summary>
         /// Adds an order by clause to the query, where the order by clause will be in the default order (ascending).

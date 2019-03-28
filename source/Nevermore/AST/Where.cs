@@ -155,4 +155,20 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
             }
         }
     }
+
+    public class IsNullClause : IWhereClause
+    {
+        readonly IWhereFieldReference whereFieldReference;
+        readonly bool not;
+
+        public IsNullClause(IWhereFieldReference whereFieldReference, bool not = false)
+        {
+            this.whereFieldReference = whereFieldReference;
+            this.not = not;
+        }
+
+        string NotPart => not ? " not " : " ";
+
+        public string GenerateSql() => $"{whereFieldReference.GenerateSql()} is{NotPart}null";
+    }
 }
