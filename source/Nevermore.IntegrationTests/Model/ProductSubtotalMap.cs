@@ -6,6 +6,7 @@ namespace Nevermore.IntegrationTests.Model
     {
         public ProductSubtotalMap()
         {
+            Column(m => m.Id);
             Column(m => m.ProductId);
             Column(m => m.ProductName);
             Column(m => m.Subtotal);

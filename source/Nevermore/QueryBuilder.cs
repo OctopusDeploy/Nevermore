@@ -212,7 +212,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
-            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues);
+            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues);
         }
 
         [Pure]
@@ -302,7 +302,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues);
+            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues);
         }
 
         [Pure]
@@ -318,7 +318,7 @@ namespace Nevermore
         [Pure]
         public string DebugViewRawQuery()
         {
-            return selectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql();
+            return selectBuilder.GenerateSelect().GenerateSql();
         }
     }
 }

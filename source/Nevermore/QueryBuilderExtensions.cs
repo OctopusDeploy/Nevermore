@@ -25,7 +25,7 @@ namespace Nevermore
         /// <returns>A plain SQL string representing a create view query</returns>
         public static string AsView<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string viewName) where TRecord : class
         {
-            return new View(queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy(), viewName).GenerateSql();
+            return new View(queryBuilder.GetSelectBuilder().GenerateSelect(), viewName).GenerateSql();
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Nevermore
         /// <returns>A plain SQL string representing a create function query</returns>
         public static string AsFunction<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string functionName) where TRecord : class
         {
-            return new Function(queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, functionName).GenerateSql();
+            return new Function(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, functionName).GenerateSql();
         }
     }
 }

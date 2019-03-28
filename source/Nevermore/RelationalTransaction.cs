@@ -531,7 +531,7 @@ namespace Nevermore
         }
 
         [Pure]
-        public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class
+        public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class, IId
         {
             return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }

@@ -1563,7 +1563,8 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
             const string expected = @"SELECT *
 FROM dbo.[Customers]
 WHERE ([Name] <> @name_0)
-AND ([Name] <> @name_1)";
+AND ([Name] <> @name_1)
+ORDER BY [Id]";
 
             actual.Should().BeEquivalentTo(expected);
             parameters.Count.ShouldBeEquivalentTo(2);

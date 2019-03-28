@@ -82,7 +82,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT COUNT(*) FROM...</c></param>
         /// <returns>A builder to further customize the query.</returns>
-        ISubquerySourceBuilder<TDocument> RawSqlQuery<TDocument>(string query) where TDocument : class;
+        ISubquerySourceBuilder<TDocument> RawSqlQuery<TDocument>(string query) where TDocument : class, IId;
 
         /// <summary>
         /// Creates a deletion query for a strongly typed document.
