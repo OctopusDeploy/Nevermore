@@ -146,7 +146,7 @@ namespace Nevermore
             var fieldName = property.Name;
             
             if (value == null && new[] {UnarySqlOperand.Equal, UnarySqlOperand.NotEqual}.Contains(operand))
-                return queryBuilder.WhereNull(fieldName, operand == UnarySqlOperand.NotEqual);
+                return operand == UnarySqlOperand.NotEqual ? queryBuilder.WhereNotNull(fieldName) : queryBuilder.WhereNull(fieldName);
             return queryBuilder.Where(fieldName, operand, value);
         }
         

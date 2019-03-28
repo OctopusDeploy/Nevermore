@@ -44,9 +44,15 @@ namespace Nevermore
             return this;
         }
 
-        public IQueryBuilder<TRecord> WhereNull(string fieldName, bool not)
+        public IQueryBuilder<TRecord> WhereNull(string fieldName)
         {
-            selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, not));
+            selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, false));
+            return this;
+        }
+        
+        public IQueryBuilder<TRecord> WhereNotNull(string fieldName)
+        {
+            selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, true));
             return this;
         }
 

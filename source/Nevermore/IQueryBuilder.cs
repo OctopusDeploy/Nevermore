@@ -113,7 +113,8 @@ namespace Nevermore
         /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
         IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
         
-        IQueryBuilder<TRecord> WhereNull(string fieldName, bool not);
+        IQueryBuilder<TRecord> WhereNull(string fieldName);
+        IQueryBuilder<TRecord> WhereNotNull(string fieldName);
 
         /// <summary>
         /// Adds an order by clause to the query, where the order by clause will be in the default order (ascending).
