@@ -1,12 +1,24 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
 {
     public class LoadFixture : FixtureWithRelationalStore
     {
+        public override void SetUp()
+        {
+            base.SetUp();
+
+            Mappings.Install(
+                new DocumentMap[]
+                {
+                    new ProductSubtotalMap()
+                }
+            );
+        }
 
         [Test]
         public void LoadWithSingleId()
@@ -22,7 +34,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.Load<Product>(new[] {"A", "B"});
+                trn.Load<Product>(new[] { "A", "B" });
             }
         }
 
@@ -43,7 +55,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
             }
         }
-        
+
         [Test]
         public void StoreNonInheritedTypesSerializesCorrectly()
         {
@@ -238,6 +250,71 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 allMachines.SingleOrDefault(x => x.Name == "Machine A").Should().NotBeNull("Didn't retrieve Machine A");
                 allMachines.Single(x => x.Name == "Machine A").Endpoint.Should().BeOfType<PassiveTentacleEndpoint>();
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadFromParameterizedRawSql()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                InsertProductAndLineItems("Unicorn Hair", 2m, trn, 1);         // subtotal: $2 of Unicorn Hair
+                InsertProductAndLineItems("Unicorn Poop", 3m, trn, 2, 3);      // subtotal: $15 of Unicorn Poop
+                InsertProductAndLineItems("Unicorn Dust", 1m, trn, 2, 1, 7);   // subtotal: $10 of Unicorn Dust
+                InsertProductAndLineItems("Fairy Bread", 10m, trn, 4);         // subtotal: $40 of Fairy Bread
+                trn.Commit();
+
+                var productSubtotalQuery =    @"SELECT
+                                                    Id,
+                                                    ProductId,
+                                                    ProductName,
+                                                    Subtotal
+                                                FROM (
+                                                    SELECT 
+                                                        CAST(NEWID() AS nvarchar(36)) Id,
+                                                        p.ProductId,
+                                                        p.ProductName,
+                                                        SUM(p.Price * l.Quantity) Subtotal
+                                                    FROM (
+                                                        SELECT
+                                                            ProductId,
+                                                            CAST(JSON_VALUE([JSON], '$.Quantity') AS int) Quantity
+                                                        FROM LineItem
+                                                    ) l
+                                                    INNER JOIN (
+                                                    SELECT 
+                                                        Id ProductId,
+                                                        [Name] ProductName,
+                                                        CAST(JSON_VALUE([JSON], '$.Price') AS decimal) Price
+                                                        FROM Product
+                                                    ) p ON p.ProductId = l.ProductId
+                                                    GROUP BY p.ProductId, p.ProductName
+                                                ) p3
+                                                WHERE Subtotal >= @MinimumSubtotal";
+
+                var doubleDigitUnicornProductSubtotals = trn.RawSqlQuery<ProductSubtotal>(productSubtotalQuery)
+                    .Where(s => s.ProductName.Contains("Unicorn"))
+                    .Parameter("MinimumSubtotal", 10)
+                    .ToList();
+
+                doubleDigitUnicornProductSubtotals.Should().HaveCount(2);
+                doubleDigitUnicornProductSubtotals.Should().ContainSingle(s => s.ProductName == "Unicorn Poop").Which.Subtotal.Should().Be(15m);
+                doubleDigitUnicornProductSubtotals.Should().ContainSingle(s => s.ProductName == "Unicorn Dust").Which.Subtotal.Should().Be(10m);
+            }
+        }
+
+        void InsertProductAndLineItems(string productName, decimal productPrice, IRelationalTransaction trn, params int[] quantities)
+        {
+            var product = new Product
+            {
+                Name = productName,
+                Price = productPrice
+            };
+            trn.Insert(product);
+            foreach (var quantity in quantities)
+            {
+                var lineItem = new LineItem { ProductId = product.Id, Name = "Some line item", Quantity = quantity };
+                trn.Insert(lineItem);
             }
         }
     }
