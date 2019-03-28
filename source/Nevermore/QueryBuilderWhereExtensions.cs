@@ -39,6 +39,8 @@ namespace Nevermore
                 {
                     case ExpressionType.Equal:
                         return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.Equal, binExpr);
+                    case ExpressionType.NotEqual:
+                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.NotEqual, binExpr);
                     case ExpressionType.GreaterThan:
                         return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.GreaterThan, binExpr);
                     case ExpressionType.GreaterThanOrEqual:
@@ -47,8 +49,6 @@ namespace Nevermore
                         return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThan, binExpr);
                     case ExpressionType.LessThanOrEqual:
                         return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.LessThanOrEqual, binExpr);
-                    case ExpressionType.NotEqual:
-                        return AddUnaryWhereClauseFromExpression(queryBuilder, UnarySqlOperand.NotEqual, binExpr);
                     case ExpressionType.AndAlso:
                         return AddLogicalAndOperatorWhereClauses(queryBuilder, binExpr);
                     default:
@@ -144,6 +144,9 @@ namespace Nevermore
 
             var value = GetValueFromExpression(binaryExpression.Right, property.PropertyType);
             var fieldName = property.Name;
+            
+            if (value == null && new[] {UnarySqlOperand.Equal, UnarySqlOperand.NotEqual}.Contains(operand))
+                return queryBuilder.WhereNull(fieldName, operand == UnarySqlOperand.NotEqual);
             return queryBuilder.Where(fieldName, operand, value);
         }
         
@@ -171,8 +174,7 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             UnarySqlOperand operand, object value) where TRecord : class
         {
-            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(fieldName))
-                .ParameterValue(value);
+            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(fieldName)).ParameterValue(value);
         }
 
         /// <summary>

@@ -44,6 +44,12 @@ namespace Nevermore
             return this;
         }
 
+        public IQueryBuilder<TRecord> WhereNull(string fieldName, bool not)
+        {
+            selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, not));
+            return this;
+        }
+
         public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
             var uniqueParameter = new UniqueParameter(uniqueParameterNameGenerator, parameter);

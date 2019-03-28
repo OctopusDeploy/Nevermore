@@ -277,6 +277,11 @@ namespace Nevermore
             WhereClauses.Add(new ArrayWhereClause(new WhereFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterNames));
         }
 
+        public virtual void AddWhere(IsNullWhereParameter isNull)
+        {
+            WhereClauses.Add(new IsNullClause(new WhereFieldReference(isNull.FieldName), isNull.Not));
+        }
+
         public void AddWhere(string whereClause)
         {
             WhereClauses.Add(new CustomWhereClause(whereClause));

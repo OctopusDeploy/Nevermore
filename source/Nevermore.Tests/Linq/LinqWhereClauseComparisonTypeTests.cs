@@ -81,6 +81,23 @@ FROM dbo.[Foo]
 WHERE ([Int] <> @int)
 ORDER BY [Id]");
         }
-        
+
+        [Test]
+        public void IsNull()
+        {
+            NewQueryBuilder().builder.Where(f => f.String == null).DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] is null)
+ORDER BY [Id]");
+            
+            NewQueryBuilder().builder.Where(f => f.String != null).DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] is not null)
+ORDER BY [Id]");
+        }
     }
 }
