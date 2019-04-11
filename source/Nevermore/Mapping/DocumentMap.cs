@@ -27,7 +27,7 @@ namespace Nevermore.Mapping
             return column;
         }
 
-        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false)
+        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false, bool readOnly = false)
         {
             var column = new ColumnMapping(name, databaseType, new DelegateReaderWriter<TDocument, TProperty>(reader, writer));
             IndexedColumns.Add(column);
@@ -36,6 +36,7 @@ namespace Nevermore.Mapping
                 column.MaxLength = maxLength.Value;
             }
             column.IsNullable = nullable;
+            column.IsReadOnly = readOnly;
             return column;
         }
 

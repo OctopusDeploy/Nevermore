@@ -4,6 +4,6 @@ INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocum
 (@Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')
 
 @Id=New-Id
-@JSON={"Id":null,"AColumn":"AValue"}
+@JSON={}
 @AColumn=AValue
 @relateddocument_0=Rel-1

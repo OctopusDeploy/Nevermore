@@ -2,5 +2,5 @@ INSERT INTO dbo.[TestDocumentTbl]  (AColumn) VALUES
 (@AColumn)
 
 @Id=New-Id
-@JSON={"Id":null,"AColumn":"AValue","NotMapped":"NonMappedValue"}
+@JSON={"NotMapped":"NonMappedValue"}
 @AColumn=AValue

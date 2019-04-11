@@ -21,7 +21,7 @@ namespace Nevermore.Mapping
         DbType? dbType;
         int maxLength;
 
-        public ColumnMapping(string columnName, DbType dbType, IPropertyReaderWriter<object> readerWriter)
+        public ColumnMapping(string columnName, DbType dbType, IPropertyReaderWriter<object> readerWriter, bool readOnly = false)
         {
             if (columnName == null)
                 throw new ArgumentNullException("columnName");
@@ -31,6 +31,7 @@ namespace Nevermore.Mapping
             this.dbType = dbType;
             ColumnName = columnName;
             ReaderWriter = readerWriter;
+            IsReadOnly = readOnly;
         }
 
         public ColumnMapping(PropertyInfo property)
@@ -103,6 +104,7 @@ namespace Nevermore.Mapping
 
         public PropertyInfo Property { get; private set; }
         public IPropertyReaderWriter<object> ReaderWriter { get; set; }
+        public bool IsReadOnly { get; set; }
 
         public ColumnMapping Nullable()
         {
@@ -113,6 +115,12 @@ namespace Nevermore.Mapping
         public ColumnMapping WithMaxLength(int max)
         {
             maxLength = max;
+            return this;
+        }
+
+        public ColumnMapping ReadOnly()
+        {
+            IsReadOnly = true;
             return this;
         }
     }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Assent;
+using Assent.Reporters;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
@@ -28,7 +30,10 @@ namespace Nevermore.Tests.Util
             });
             builder = new DataModificationQueryBuilder(
                 mappings,
-                new JsonSerializerSettings()
+                new JsonSerializerSettings
+                {
+                    ContractResolver = new RelationalJsonContractResolver(mappings)
+                }
             );
         }
 
@@ -143,7 +148,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-
+        
         [Test]
         public void InsertMultipleDocuments()
         {
@@ -210,6 +215,17 @@ namespace Nevermore.Tests.Util
                 true
             );
 
+            this.Assent(Format(result));
+        }
+
+        [Test]
+        public void InsertDocumentWithReadOnlyColumn()
+        {
+            int n = 0;
+            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", ReadOnly = "Value"};
+            
+            var result = builder.CreateInsert(new [] { document }, null, null, map => $"New-Id-{++n}", true);
+            
             this.Assent(Format(result));
         }
 
@@ -351,6 +367,7 @@ namespace Nevermore.Tests.Util
             public string Id { get; set; }
             public string AColumn { get; set; }
             public string NotMapped { get; set; }
+            public string ReadOnly { get; set; }
         }
 
         class TestDocumentWithRelatedDocuments : IId
@@ -388,6 +405,7 @@ namespace Nevermore.Tests.Util
             {
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
+                Column(t => t.ReadOnly).ReadOnly();
             }
         }
 
