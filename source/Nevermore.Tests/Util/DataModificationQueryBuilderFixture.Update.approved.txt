@@ -1,4 +1,4 @@
 UPDATE dbo.[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
 @Id=Doc-1
-@JSON={"Id":"Doc-1","AColumn":"AValue","NotMapped":"NonMappedValue"}
+@JSON={"NotMapped":"NonMappedValue"}
 @AColumn=AValue

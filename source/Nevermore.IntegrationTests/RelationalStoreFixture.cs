@@ -198,5 +198,18 @@ namespace Nevermore.IntegrationTests
                 ex.Message.Should().Be("Customers must have a unique name");
             }
         }
+
+        [Test]
+        public void ShouldHandleRowVersionColumn()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer1); // customer has a RowVersion column, but would have an error when inserting if the ReadOnly mapping was ignored
+                var dbCustomer = transaction.TableQuery<Customer>().Where(c => c.Id == customer1.Id).ToList().Single();
+                dbCustomer.RowVersion.Length.Should().Be(8);
+                dbCustomer.RowVersion.All(v => v == 0).Should().BeFalse();
+            }
+        }
     }
 }

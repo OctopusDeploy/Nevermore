@@ -8,7 +8,7 @@ INSERT INTO [OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDoc
 ,(@Id, 'TestDocumentTbl', @otherrelatedtable_1, 'OtherTbl')
 
 @Id=New-Id-1
-@JSON={"Id":null,"AColumn":"Doc1"}
+@JSON={}
 @AColumn=Doc1
 @relateddocument_0=Rel-1
 @relateddocument_1=Rel-2

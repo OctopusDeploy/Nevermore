@@ -14,7 +14,7 @@ namespace Nevermore.IntegrationTests
             result.AppendLine("CREATE TABLE [" + tableName + "] (");
             result.AppendFormat("  [Id] NVARCHAR(50) NOT NULL CONSTRAINT [PK_{0}_Id] PRIMARY KEY CLUSTERED, ", tableName).AppendLine();
 
-            foreach (var column in mapping.IndexedColumns)
+            foreach (var column in mapping.WritableIndexedColumns())
             {
                 result.AppendFormat("  [{0}] {1} {2}, ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), column.IsNullable ? "NULL" : "NOT NULL").AppendLine();
             }

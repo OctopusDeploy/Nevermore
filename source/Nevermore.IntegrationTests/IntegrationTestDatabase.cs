@@ -140,6 +140,8 @@ namespace Nevermore.IntegrationTests
 
                 transaction.ExecuteScalar<int>(output.ToString());
 
+                transaction.ExecuteScalar<int>($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
+
                 transaction.Commit();
             }
         }

@@ -14,6 +14,6 @@ SELECT @Id, 'TestDocumentTbl', Reference, ReferenceTable FROM @references t
 WHERE NOT EXISTS (SELECT null FROM [RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
 
 @Id=Doc-1
-@JSON={"Id":"Doc-1","AColumn":"AValue"}
+@JSON={}
 @AColumn=AValue
 @relateddocument_0=Rel-1

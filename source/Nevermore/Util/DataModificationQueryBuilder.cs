@@ -51,7 +51,8 @@ namespace Nevermore.Util
         {
             var mapping = mappings.Get(document.GetType());
 
-            var updates = string.Join(", ", mapping.IndexedColumns.Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] {$"[JSON] = @{JsonVariableName}"}));
+            var updates = string.Join(", ", mapping.WritableIndexedColumns()
+                .Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] {$"[JSON] = @{JsonVariableName}"}));
             var statement = $"UPDATE dbo.[{mapping.TableName}] {tableHint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}";
 
             var parameters = GetDocumentParameters(
@@ -132,9 +133,9 @@ namespace Nevermore.Util
 
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
-            var columns = mapping.IndexedColumns.Select(c => c.ColumnName);
+            var columns = mapping.WritableIndexedColumns().Select(c => c.ColumnName).ToList();
             if (includeDefaultModelColumns)
-                columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName});
+                columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName}).ToList();
             var columnNames = string.Join(", ", columns);
 
             var actualTableName = tableName ?? mapping.TableName;
@@ -192,7 +193,7 @@ namespace Nevermore.Util
 
             result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, jsonSerializerSettings);
 
-            foreach (var c in mapping.IndexedColumns)
+            foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.ReaderWriter.Read(document);
                 if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
@@ -337,5 +338,11 @@ namespace Nevermore.Util
             public string IdTableColumnName { get; set; }
             public string RelatedDocumentTableColumnName { get; set; }
         }
+    }
+    
+    internal static class DataModificationQueryBuilderExtensions
+    {
+        public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
+            doc.IndexedColumns.Where(c => !c.IsReadOnly);
     }
 }
