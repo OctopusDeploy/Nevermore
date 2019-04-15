@@ -200,7 +200,7 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void ShouldHanldeRowVersionColumn()
+        public void ShouldHandleRowVersionColumn()
         {
             using (var transaction = Store.BeginTransaction())
             {
