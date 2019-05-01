@@ -136,7 +136,7 @@ namespace Nevermore.Util
             var columns = mapping.WritableIndexedColumns().Select(c => c.ColumnName).ToList();
             if (includeDefaultModelColumns)
                 columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName}).ToList();
-            var columnNames = string.Join(", ", columns);
+            var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
             var actualTableName = tableName ?? mapping.TableName;
 
