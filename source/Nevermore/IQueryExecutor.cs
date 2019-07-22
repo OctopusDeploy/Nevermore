@@ -23,10 +23,11 @@ namespace Nevermore
         /// </summary>
         /// <param name="query">The SQL query to execute. Example: <c>SELECT DISTINCT ProjectId FROM Release...</c></param>
         /// <param name="readerCallback">
-        /// A callback that will be invoked with the SQL data reader. The reader will be disposed
-        /// after the callback returns.
+        ///     A callback that will be invoked with the SQL data reader. The reader will be disposed
+        ///     after the callback returns.
         /// </param>
-        void ExecuteReader(string query, Action<IDataReader> readerCallback);
+        /// <param name="commandTimeoutSeconds"></param>
+        void ExecuteReader(string query, Action<IDataReader> readerCallback, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns a data reader, and allows you to manually read the fields.
@@ -34,10 +35,11 @@ namespace Nevermore
         /// <param name="query">The SQL query to execute. Example: <c>SELECT DISTINCT ProjectId FROM Release...</c></param>
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="readerCallback">
-        /// A callback that will be invoked with the SQL data reader. The reader will be disposed
-        /// after the callback returns.
+        ///     A callback that will be invoked with the SQL data reader. The reader will be disposed
+        ///     after the callback returns.
         /// </param>
-        void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback);
+        /// <param name="commandTimeoutSeconds"></param>
+        void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback, int? commandTimeoutSeconds = null);
 
         /// <summary>
         /// Executes a query that returns strongly typed documents.
@@ -141,7 +143,8 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
-        void Insert<TDocument>(TDocument instance) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds"></param>
+        void Insert<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
@@ -150,7 +153,8 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="tableName">The name of the table to insert the document into.</param>
         /// <param name="instance">The document instance to insert.</param>
-        void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds"></param>
+        void Insert<TDocument>(string tableName, TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. Uses a specific ID rather than
@@ -159,7 +163,8 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="customAssignedId">The ID to assign to the document.</param>
-        void Insert<TDocument>(TDocument instance, string customAssignedId) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds"></param>
+        void Insert<TDocument>(TDocument instance, string customAssignedId, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. Uses a specific ID rather than automatically generating one.
@@ -180,7 +185,8 @@ namespace Nevermore
         /// <param name="instances">The document instances to insert (will be formed into a multiple VALUES for a single SQL INSERT.</param>
         /// <param name="includeDefaultModelColumns">Whether to include the Id and Json columns in the mapping (can disable for certain tables that do not use Json - like the EventRelatedDocument table etc).</param>
         /// <param name="tableHint">The table hint to use for the insert (useful when we need a table lock on insert).</param>
-        void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances, bool includeDefaultModelColumns, string tableHint = null) where TDocument : class, IId;
+        /// <param name="commandTimeoutSeconds"></param>
+        void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances, bool includeDefaultModelColumns, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId;
 
         /// <summary>
         /// Updates an existing document in the database.

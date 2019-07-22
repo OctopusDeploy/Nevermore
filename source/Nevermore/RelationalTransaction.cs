@@ -159,24 +159,28 @@ namespace Nevermore
             return results;
         }
 
-        public void Insert<TDocument>(TDocument instance) where TDocument : class, IId
+        public void Insert<TDocument>(TDocument instance, int? commandTimeoutSeconds = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, null);
+            Insert(null, instance, null, commandTimeoutSeconds: commandTimeoutSeconds);
         }
 
-        public void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class, IId
+        public void Insert<TDocument>(string tableName, TDocument instance, int? commandTimeoutSeconds = null)
+            where TDocument : class, IId
         {
-            Insert(tableName, instance, null);
+            Insert(tableName, instance, null, commandTimeoutSeconds: commandTimeoutSeconds);
         }
 
-        public void Insert<TDocument>(TDocument instance, string customAssignedId) where TDocument : class, IId
+        public void Insert<TDocument>(TDocument instance, string customAssignedId, int? commandTimeoutSeconds = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, customAssignedId);
+            Insert(null, instance, customAssignedId, commandTimeoutSeconds: commandTimeoutSeconds);
         }
 
-        public void InsertWithHint<TDocument>(TDocument instance, string tableHint) where TDocument : class, IId
+        public void InsertWithHint<TDocument>(TDocument instance, string tableHint, int? commandTimeoutSeconds = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, null, tableHint);
+            Insert(null, instance, null, tableHint, commandTimeoutSeconds);
         }
 
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
@@ -218,7 +222,9 @@ namespace Nevermore
             }
         }
 
-        public void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances, bool includeDefaultModelColumns = true, string tableHint = null) where TDocument : class, IId
+        public void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances,
+            bool includeDefaultModelColumns = true, string tableHint = null, int? commandTimeoutSeconds = null)
+            where TDocument : class, IId
         {
             if (!instances.Any())
                 return;
@@ -232,7 +238,7 @@ namespace Nevermore
                 includeDefaultModelColumns);
 
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -571,20 +577,29 @@ namespace Nevermore
             }
         }
 
-        public void ExecuteReader(string query, Action<IDataReader> readerCallback)
+        public void ExecuteReader(string query, Action<IDataReader> readerCallback, int? commandTimeoutSeconds = null)
         {
-            ExecuteReader(query, null, readerCallback);
+            ExecuteReader(query, null, readerCallback, commandTimeoutSeconds);
         }
 
-        public void ExecuteReader(string query, object args, Action<IDataReader> readerCallback)
+        public void ExecuteReader(
+            string query,
+            object args,
+            Action<IDataReader> readerCallback,
+            int? commandTimeoutSeconds = null)
         {
-            ExecuteReader(query, new CommandParameterValues(args), readerCallback);
+            ExecuteReader(query, new CommandParameterValues(args), readerCallback, commandTimeoutSeconds);
         }
 
-        public void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback)
+        public void ExecuteReader(
+            string query,
+            CommandParameterValues args,
+            Action<IDataReader> readerCallback,
+            int? commandTimeoutSeconds = null)
         {
             using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args,
+                commandTimeoutSeconds: commandTimeoutSeconds))
             {
                 AddCommandTrace(command.CommandText);
                 try
