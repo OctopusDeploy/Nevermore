@@ -517,8 +517,16 @@ namespace Nevermore
 
         IEnumerable<T> Stream<T>(IDbCommand command, Func<IProjectionMapper, T> projectionMapper)
         {
+            long msUntilFirstRecord = -1;
+
+            using (var timedSection = new TimedSection(Log,
+                ms =>
+                    $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}",
+                300))
             using (var reader = command.ExecuteReaderWithRetry())
             {
+                msUntilFirstRecord = timedSection.ElapsedMilliseconds;
+
                 var mapper = new ProjectionMapper(reader, jsonSerializerSettings, mappings);
                 while (reader.Read())
                 {
@@ -575,6 +583,7 @@ namespace Nevermore
 
         public void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback)
         {
+            using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {query}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
             {
                 AddCommandTrace(command.CommandText);
