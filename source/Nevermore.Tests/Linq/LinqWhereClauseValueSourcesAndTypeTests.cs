@@ -210,6 +210,26 @@ ORDER BY [Id]");
             parameters.Single().ParameterName.Should().Be("enum");
             paramValues.Should().Contain("enum", Bar.A);
         }
+        
+        [Test]
+        public void WithEnumContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new[] {Bar.A, Bar.B};
+            
+            var result = builder.Where(f => input.Contains(f.Enum));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] IN (@enum0, @enum1))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("enum0", "A");
+            paramValues.Should().Contain("enum1", "B");
+        }
     
         static void AssertResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures)
         {

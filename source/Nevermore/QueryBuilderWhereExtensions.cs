@@ -16,7 +16,7 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder</param>
         /// <param name="expression">The expression that will be converted into a where clause in the query</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression) 
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression)
             where TRecord : class => queryBuilder.Where((string) GetValueFromExpression(expression.Body, typeof(string)));
 
         /// <summary>
@@ -26,11 +26,11 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder</param>
         /// <param name="predicate">A predicate which will be converted into a where clause in the query</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate) 
+        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate)
             where TRecord : class => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
 
-        
-        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, Expression expr) 
+
+        static IQueryBuilder<TRecord> AddWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, Expression expr)
             where TRecord : class
         {
             if (expr is BinaryExpression binExpr)
@@ -58,12 +58,12 @@ namespace Nevermore
 
             if (expr is MethodCallExpression methExpr)
             {
-                if(methExpr.Arguments.Count == 1 && methExpr.Method.DeclaringType == typeof(string))
+                if (methExpr.Arguments.Count == 1 && methExpr.Method.DeclaringType == typeof(string))
                     return AddStringMethodFromExpression(queryBuilder, methExpr);
-                
-                if(methExpr.Method.Name == "Contains")
+
+                if (methExpr.Method.Name == "Contains")
                     return AddContainsFromExpression(queryBuilder, methExpr);
-                
+
                 throw new NotSupportedException("Only method calls that take a single string argument and Enumerable.Contains methods are supported");
             }
 
@@ -71,7 +71,7 @@ namespace Nevermore
             {
                 if (memExpr.Type == typeof(bool))
                     return queryBuilder.Where(memExpr.Member.Name, UnarySqlOperand.Equal, rhsValue);
-                        
+
                 throw new NotSupportedException("Only boolean properties are allowed for where expressions without a comparison operator or method call");
             }
 
@@ -80,14 +80,13 @@ namespace Nevermore
 
             if (expr is UnaryExpression unaExpr)
             {
-                if(!(unaExpr.Operand is MemberExpression memExpr3))
+                if (!(unaExpr.Operand is MemberExpression memExpr3))
                     throw new NotSupportedException("Only boolean properties are allowed when the ! operator is used, i.e. Where(e => !e.BoolProp)");
-                
+
                 return HandleMemberExpression(memExpr3, false);
             }
-            
-            throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
 
+            throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
         }
 
         static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
@@ -97,7 +96,7 @@ namespace Nevermore
 
             return queryBuilder.Where(property.Name, ArraySqlOperand.In, value);
         }
-        
+
 
         static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
         {
@@ -136,20 +135,20 @@ namespace Nevermore
             throw new NotSupportedException(
                 $"The left hand side of the predicate must be a property accessor (PropertyExpression or UnaryExpression). It is a {expression.GetType()}.");
         }
-        
-        static IQueryBuilder<TRecord> AddUnaryWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, UnarySqlOperand operand, BinaryExpression binaryExpression) 
+
+        static IQueryBuilder<TRecord> AddUnaryWhereClauseFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, UnarySqlOperand operand, BinaryExpression binaryExpression)
             where TRecord : class
         {
             var property = GetProperty(binaryExpression.Left);
 
             var value = GetValueFromExpression(binaryExpression.Right, property.PropertyType);
             var fieldName = property.Name;
-            
+
             if (value == null && new[] {UnarySqlOperand.Equal, UnarySqlOperand.NotEqual}.Contains(operand))
                 return operand == UnarySqlOperand.Equal ? queryBuilder.WhereNull(fieldName) : queryBuilder.WhereNotNull(fieldName);
             return queryBuilder.Where(fieldName, operand, value);
         }
-        
+
         static object GetValueFromExpression(Expression expression, Type resultType)
         {
             object result;
@@ -165,9 +164,12 @@ namespace Nevermore
                 result = getterLambda.Compile()();
             }
 
-            return resultType.GetTypeInfo().IsEnum
-                ? Enum.ToObject(resultType, result)
-                : result;
+            if (resultType.GetTypeInfo().IsEnum &&
+                result != null &&
+                result.GetType().GetTypeInfo().IsPrimitive)
+                return Enum.ToObject(resultType, result);
+            
+            return result;
         }
 
         /// <summary>
