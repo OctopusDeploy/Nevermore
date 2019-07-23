@@ -152,14 +152,22 @@ namespace Nevermore
         
         static object GetValueFromExpression(Expression expression, Type resultType)
         {
-            if (expression is ConstantExpression constExpr)
-                return resultType.GetTypeInfo().IsEnum
-                    ? Enum.ToObject(resultType, constExpr.Value)
-                    : constExpr.Value;
+            object result;
 
-            var objectMember = Expression.Convert(expression, typeof(object));
-            var getterLambda = Expression.Lambda<Func<object>>(objectMember);
-            return getterLambda.Compile()();
+            if (expression is ConstantExpression constExpr)
+            {
+                result = constExpr.Value;
+            }
+            else
+            {
+                var objectMember = Expression.Convert(expression, typeof(object));
+                var getterLambda = Expression.Lambda<Func<object>>(objectMember);
+                result = getterLambda.Compile()();
+            }
+
+            return resultType.GetTypeInfo().IsEnum
+                ? Enum.ToObject(resultType, result)
+                : result;
         }
 
         /// <summary>

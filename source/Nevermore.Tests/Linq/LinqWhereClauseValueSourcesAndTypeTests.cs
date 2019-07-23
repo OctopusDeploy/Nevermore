@@ -188,6 +188,28 @@ ORDER BY [Id]");
             paramValues.Should().Contain("enum", Bar.A);
         }
         
+        [Test]
+        public void WithEnumFromAProperty()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new
+            {
+                Enum = Bar.A
+            };
+            
+            var result = builder.Where(f => f.Enum == input.Enum);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] = @enum)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("enum");
+            paramValues.Should().Contain("enum", Bar.A);
+        }
     
         static void AssertResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures)
         {
