@@ -1,0 +1,12 @@
+CREATE PROCEDURE dbo.[PackagesMatchingId]
+(
+    @packageid NVARCHAR(250) = ''
+)
+AS
+BEGIN (
+    SELECT *
+    FROM dbo.[NuGetPackages]
+    WHERE ((@packageid is '') or (PackageId = @packageid))
+    ORDER BY [Id]
+)
+END

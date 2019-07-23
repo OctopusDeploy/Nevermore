@@ -1,0 +1,2 @@
+DELETE FROM [TestDocumentTbl] 
+WHERE [Foo] > @1

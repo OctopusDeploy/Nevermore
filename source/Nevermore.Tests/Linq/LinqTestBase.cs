@@ -1,5 +1,5 @@
 ﻿using System;
-using Nevermore.Joins;
+using Nevermore.AST;
 using NSubstitute;
 
 namespace Nevermore.Tests.Query
@@ -18,16 +18,31 @@ namespace Nevermore.Tests.Query
             public string String { get; set; }
             public Bar Enum { get; set; }
             public DateTime DateTime { get; set; }
+            public bool Bool { get; set; }
         }
         
-        protected static IQueryBuilder<Foo> NewQueryBuilder()
+        protected static (IQueryBuilder<Foo> builder, (Parameters parameters, CommandParameterValues paramValues)) NewQueryBuilder(IUniqueParameterNameGenerator uniqueParameterNameGenerator = null)
         {
-            var builder = new QueryBuilder<Foo>(
+            var parameters = new Parameters();
+            var captures = new CommandParameterValues();
+            var builder = new QueryBuilder<Foo, TableSelectBuilder>(
+                new TableSelectBuilder(new SimpleTableSource("Foo")),
                 Substitute.For<IRelationalTransaction>(),
-                "Foo"                
+                new TableAliasGenerator(),
+                uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
+                captures,
+                parameters,
+                new ParameterDefaults()
             );
 
-            return builder;
+            return (builder, (parameters, captures));
+        }
+
+        static IUniqueParameterNameGenerator CreateSubstituteParameterNameGenerator()
+        {
+            var parameterNameGenerator = Substitute.For<IUniqueParameterNameGenerator>();
+            parameterNameGenerator.GenerateUniqueParameterName(Arg.Any<string>()).Returns(c => c.Arg<string>());
+            return parameterNameGenerator;
         }
     }
 }

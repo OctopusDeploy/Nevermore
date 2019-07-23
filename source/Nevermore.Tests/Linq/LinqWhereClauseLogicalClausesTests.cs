@@ -1,33 +1,41 @@
 ﻿using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqWhereClauseLogicalClausesTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void And()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.Where(f => f.Int < 2 && f.String == "bar");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([String] = @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] < @int)
+AND ([String] = @string)
+ORDER BY [Id]");
         }
         
-        [Fact(Skip = "Queries where the same property is specified twice in the where clause are not yet supported")]
+        [Test]
         public void AndWithTheSameProperty()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder(new UniqueParameterNameGenerator());
 
             var result = builder.Where(f => f.Int > 2 && f.Int < 4);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] < @int) AND ([Int] = @int2) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] > @int_0)
+AND ([Int] < @int_1)
+ORDER BY [Id]");
         }
         
     }

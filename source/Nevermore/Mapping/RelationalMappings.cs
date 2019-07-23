@@ -24,11 +24,6 @@ namespace Nevermore.Mapping
 
         public bool TryGet(Type type, out DocumentMap map)
         {
-            return mappings.TryGetValue(type, out map);
-        }
-
-        public DocumentMap Get(Type type)
-        {
             DocumentMap mapping = null;
 
             // Walk up the inheritance chain until we find a mapping
@@ -38,11 +33,27 @@ namespace Nevermore.Mapping
                 currentType = currentType.GetTypeInfo().BaseType;
             }
 
-            if (mapping == null)
+            map = mapping;
+
+            return mapping != null;
+        }
+
+        public DocumentMap Get(object instance)
+        {
+            var mapping = Get(instance.GetType());
+            
+            // Make sure we got the right one if the mapping defines a different resolver
+            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
+            return Get(mType);
+        }
+        
+        public DocumentMap Get(Type type)
+        {
+            if (!TryGet(type, out var mapping))
             {
                 throw new KeyNotFoundException(string.Format("A mapping for the type '{0}' has not been defined", type.Name));
             }
-
+            
             return mapping;
         }
     }

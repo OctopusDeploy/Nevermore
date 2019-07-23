@@ -1,17 +1,18 @@
 using System;
 using Nevermore.Mapping;
 using Nevermore.Contracts;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
     public abstract class FixtureWithRelationalStore
     {
-        readonly IntegrationTestDatabase integrationTestDatabase;
+        IntegrationTestDatabase integrationTestDatabase;
 
-        protected FixtureWithRelationalStore(ITestOutputHelper output)
+        [SetUp]
+        public virtual void SetUp()
         {
-            integrationTestDatabase = new IntegrationTestDatabase(output);
+            integrationTestDatabase = new IntegrationTestDatabase();
 
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"DELETE FROM ?\"");
@@ -25,7 +26,7 @@ namespace Nevermore.IntegrationTests
 
         public int CountOf<T>() where T : class, IId
         {
-            return InTransaction(s => s.Query<T>().Count());
+            return InTransaction(s => s.TableQuery<T>().Count());
         }
 
         public void StoreAll<T>(params T[] items) where T : class, IId

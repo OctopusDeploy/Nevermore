@@ -1,0 +1,6 @@
+INSERT INTO dbo.[TestDocumentTbl]  ([AColumn], [Id], [JSON]) VALUES 
+(@AColumn, @Id, @JSON)
+
+@Id=New-Id
+@JSON={}
+@AColumn=AValue

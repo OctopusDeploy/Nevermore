@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using Nevermore.Mapping;
+using Nevermore.Util;
 
 namespace Nevermore.IntegrationTests
 {
@@ -13,7 +14,7 @@ namespace Nevermore.IntegrationTests
             result.AppendLine("CREATE TABLE [" + tableName + "] (");
             result.AppendFormat("  [Id] NVARCHAR(50) NOT NULL CONSTRAINT [PK_{0}_Id] PRIMARY KEY CLUSTERED, ", tableName).AppendLine();
 
-            foreach (var column in mapping.IndexedColumns)
+            foreach (var column in mapping.WritableIndexedColumns())
             {
                 result.AppendFormat("  [{0}] {1} {2}, ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), column.IsNullable ? "NULL" : "NOT NULL").AppendLine();
             }
@@ -27,6 +28,18 @@ namespace Nevermore.IntegrationTests
                 result.AppendFormat("ALTER TABLE [{0}] ADD CONSTRAINT [UQ_{1}] UNIQUE({2})", tableName,
                     unique.ConstraintName,
                     string.Join(", ", unique.Columns.Select(ix => "[" + ix + "]"))).AppendLine();
+            }
+
+            foreach (var referencedDocumentMap in mapping.RelatedDocumentsMappings)
+            {
+                var refTblName = referencedDocumentMap.TableName;
+                result.AppendLine($"IF NOT EXISTS (SELECT name from sys.tables WHERE name = '{refTblName}')");
+                result.AppendLine($"    CREATE TABLE [{refTblName}] (");
+                result.AppendLine($"        [{referencedDocumentMap.IdColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.IdTableColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentIdColumnName}] nvarchar(50) NOT NULL,");
+                result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentTableColumnName}] nvarchar(50) NOT NULL ");
+                result.AppendLine("    )");
             }
         }
 

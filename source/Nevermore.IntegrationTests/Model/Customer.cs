@@ -18,5 +18,6 @@ namespace Nevermore.IntegrationTests.Model
         public int[] LuckyNumbers { get; set; }
         public string ApiKey { get; set; }
         public string[] Passphrases { get; set; }
+        public byte[] RowVersion { get; set; }
     }
 }

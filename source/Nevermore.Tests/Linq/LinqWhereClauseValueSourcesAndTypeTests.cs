@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
+using Nevermore.AST;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
@@ -14,125 +15,192 @@ namespace Nevermore.Tests.Linq
         string BarMethod() => "Bar";
 
         
-        [Fact]
+        [Test]
         public void WithConstant()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var result = builder.Where(f => f.String == "Bar");
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
 
 
-        [Fact]
+        [Test]
         public void WithLocalVariable()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var bar = "Bar";
 
             var result = builder.Where(f => f.String == bar);
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithField()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var result = builder.Where(f => f.String == barField);
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithProperty()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var result = builder.Where(f => f.String == BarProperty);
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithMethod()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var result = builder.Where(f => f.String == BarMethod());
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
 
-        [Fact]
+        [Test]
         public void WithPropertyFromObject()
         {
-            var builder = NewQueryBuilder();
+            var (builder, captures) = NewQueryBuilder();
 
             var obj = new Foo {String = "Bar"};
 
             var result = builder.Where(f => f.String == obj.String);
 
-            AssertResult(result);
+            AssertResult(result, captures);
         }
         
-        [Fact]
+        [Test]
         public void WithInt()
         {
-            var builder = NewQueryBuilder();
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
 
             var result = builder.Where(f => f.Int == 2);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Int] = @int) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Int] = @int)
+ORDER BY [Id]");
 
-            builder.QueryGenerator.QueryParameters.Single().Key.Should().Be("int");
-            builder.QueryGenerator.QueryParameters.Should().Contain("int", 2);
+            parameters.Single().ParameterName.Should().Be("int");
+            paramValues.Should().Contain("int", 2);
         }
         
-        [Fact]
+        [Test]
+        public void WithBoolean()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => f.Bool);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", true);
+        }
+        
+        [Test]
+        public void WithNotBoolean()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => !f.Bool);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", false);
+        }
+        
+        [Test]
+        public void WithBooleanComparison()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => f.Bool == false);
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Bool] = @bool)
+ORDER BY [Id]");
+
+            parameters.Single().ParameterName.Should().Be("bool");
+            paramValues.Should().Contain("bool", false);
+        }
+        
+        [Test]
         public void WithDateTime()
         {
-            var builder = NewQueryBuilder();
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
 
             var result = builder.Where(f => f.DateTime == new DateTime(2011,1,1,4,5,6));
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([DateTime] = @datetime) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([DateTime] = @datetime)
+ORDER BY [Id]");
 
-            builder.QueryGenerator.QueryParameters.Single().Key.Should().Be("datetime");
-            builder.QueryGenerator.QueryParameters.Should().Contain("datetime", new DateTime(2011,1,1,4,5,6));
+            parameters.Single().ParameterName.Should().Be("datetime");
+            paramValues.Should().Contain("datetime", new DateTime(2011,1,1,4,5,6));
         }
         
-        [Fact]
+        [Test]
         public void WithEnum()
         {
-            var builder = NewQueryBuilder();
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
 
             var result = builder.Where(f => f.Enum == Bar.A);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([Enum] = @enum) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] = @enum)
+ORDER BY [Id]");
 
-            builder.QueryGenerator.QueryParameters.Single().Key.Should().Be("enum");
-            builder.QueryGenerator.QueryParameters.Should().Contain("enum", Bar.A);
+            parameters.Single().ParameterName.Should().Be("enum");
+            paramValues.Should().Contain("enum", Bar.A);
         }
         
     
-        static void AssertResult(IQueryBuilder<Foo> result)
+        static void AssertResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures)
         {
+            var (parameters, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] WHERE ([String] = @string) ORDER BY [Id]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([String] = @string)
+ORDER BY [Id]");
 
-            result.QueryGenerator.QueryParameters.Single().Key.Should().Be("string");
-            result.QueryGenerator.QueryParameters.Should().Contain("string", "Bar");
+            parameters.Single().ParameterName.Should().Be("string");
+            paramValues.Should().Contain("string", "Bar");
         }
     }
 }

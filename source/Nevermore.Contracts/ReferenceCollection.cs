@@ -9,20 +9,18 @@ namespace Nevermore.Contracts
     public class ReferenceCollection : HashSet<string>, IReadOnlyCollection<string>
     {
         public ReferenceCollection()
-            : base((IEqualityComparer<string>) StringComparer.OrdinalIgnoreCase)
+            : base(StringComparer.OrdinalIgnoreCase)
         {
         }
 
         public ReferenceCollection(string singleValue)
-            : this()
+            : this(new[] { singleValue })
         {
-            ReplaceAll(new[] { singleValue });
         }
 
         public ReferenceCollection(IEnumerable<string> values)
-            : this()
+            : base(values ?? new string[0], StringComparer.OrdinalIgnoreCase)
         {
-            ReplaceAll(values);
         }
 
         public void ReplaceAll(IEnumerable<string> newItems)

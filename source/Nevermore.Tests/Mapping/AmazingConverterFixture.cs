@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Xml.Linq;
+using FluentAssertions;
 using Nevermore.Mapping;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Mapping
 {
     public class AmazingConverterFixture
     {
-        [Fact]
+        [Test]
         public void CanConvert()
         {
-            Assert.Equal(null, AmazingConverter.Convert(null, typeof (string)));
-            Assert.Equal(0, AmazingConverter.Convert(null, typeof (int)));
-            Assert.Equal(0.0f, AmazingConverter.Convert(0, typeof (float)));
-            Assert.Equal(0, AmazingConverter.Convert(0L, typeof (int)));
-            Assert.Equal("0", AmazingConverter.Convert(0, typeof (string)));
-            Assert.Equal(DateTime.MinValue, AmazingConverter.Convert(null, typeof (DateTime)));
-            Assert.Equal(35, AmazingConverter.Convert("35", typeof (int)));
-            Assert.Equal((XName)"button", AmazingConverter.Convert("button", typeof (XName)));
+            AmazingConverter.Convert(null, typeof(string)).Should().BeNull();
+            AmazingConverter.Convert(null, typeof (int)).Should().Be(0);
+            AmazingConverter.Convert(0, typeof (float)).Should().Be(0.0f);
+            AmazingConverter.Convert(0L, typeof (int)).Should().Be(0);
+            AmazingConverter.Convert(0, typeof (string)).Should().Be("0");
+            AmazingConverter.Convert(null, typeof (DateTime)).Should().Be(DateTime.MinValue);
+            AmazingConverter.Convert("35", typeof (int)).Should().Be(35);
+            AmazingConverter.Convert("button", typeof (XName)).Should().Be((XName)"button");
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Nevermore.Mapping
             return column;
         }
 
-        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false)
+        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false, bool readOnly = false)
         {
             var column = new ColumnMapping(name, databaseType, new DelegateReaderWriter<TDocument, TProperty>(reader, writer));
             IndexedColumns.Add(column);
@@ -36,7 +36,15 @@ namespace Nevermore.Mapping
                 column.MaxLength = maxLength.Value;
             }
             column.IsNullable = nullable;
+            column.IsReadOnly = readOnly;
             return column;
+        }
+
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentTableName)
+        {
+            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
+            RelatedDocumentsMappings.Add(mapping);
+            return mapping;
         }
 
         static PropertyInfo GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
@@ -73,22 +81,30 @@ namespace Nevermore.Mapping
 
     public abstract class DocumentMap
     {
+        public const string DefaultRelatedDocumentTableName = "RelatedDocument";
+        
         protected DocumentMap()
         {
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
+            InstanceTypeResolver = new StandardTypeResolver(this);
+            RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
 
         public string TableName { get; protected set; }
         public string IdPrefix { get; protected set; }
         public bool IsProjection { get; protected set; }
         public Type Type { get; protected set; }
+        public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
+
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
         /// </summary>
         public List<ColumnMapping> IndexedColumns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
+        public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
+        
         public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)

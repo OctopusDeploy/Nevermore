@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Text;
+using Nevermore.Mapping;
 
 namespace Nevermore
 {
@@ -11,5 +12,7 @@ namespace Nevermore
         IRelationalTransaction BeginTransaction(RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null);
         IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null);
         void WriteCurrentTransactions(StringBuilder sb);
+        DocumentMap GetMappingFor<T>();
+        DocumentMap GetMappingFor(Type type);
     }
 }

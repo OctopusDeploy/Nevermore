@@ -1,0 +1,10 @@
+INSERT INTO dbo.[TestDocumentTbl]  ([AColumn], [Id], [JSON]) VALUES 
+(@0__AColumn, @0__Id, @0__JSON)
+,(@1__AColumn, @1__Id, @1__JSON)
+
+@0__Id=New-Id-1
+@0__JSON={"NotMapped":"NonMappedValue"}
+@0__AColumn=AValue1
+@1__Id=New-Id-2
+@1__JSON={"NotMapped":"NonMappedValue"}
+@1__AColumn=AValue2

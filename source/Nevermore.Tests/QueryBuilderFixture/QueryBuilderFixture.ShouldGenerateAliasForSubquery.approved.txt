@@ -1,0 +1,6 @@
+SELECT *
+FROM (
+    SELECT *
+    FROM dbo.[Orders]
+) ORD
+ORDER BY ORD.[Id]

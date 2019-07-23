@@ -1,39 +1,43 @@
 ﻿using FluentAssertions;
 using Nevermore.Tests.Query;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq
 {
     public class LinqOrderByClauseTests : LinqTestBase
     {
-        [Fact]
+        [Test]
         public void SingleOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
-        [Fact]
+        [Test]
         public void SingleOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderByDescending(f => f.Int);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
-        [Fact]
+        [Test]
         public void SingleQuerySyntaxOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int
@@ -41,13 +45,15 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int]");
         }
         
-        [Fact]
+        [Test]
         public void SingleQuerySyntaxOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int descending 
@@ -55,37 +61,43 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int] DESC");
         }
         
-        [Fact]
+        [Test]
         public void MultipleOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int).ThenBy(f => f.String);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
-        [Fact]
+        [Test]
         public void MultipleOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = builder.OrderBy(f => f.Int).ThenByDescending(f => f.String);
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
         
-        [Fact]
+        [Test]
         public void MultipleQuerySyntaxOrderBy()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int, b.String
@@ -93,13 +105,15 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String]");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String]");
         }
         
-        [Fact]
+        [Test]
         public void MultipleQuerySyntaxOrderByDesc()
         {
-            var builder = NewQueryBuilder();
+            var (builder, _) = NewQueryBuilder();
 
             var result = from b in builder
                 orderby b.Int, b.String descending 
@@ -107,7 +121,9 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be("SELECT * FROM dbo.[Foo] ORDER BY [Int], [String] DESC");
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+ORDER BY [Int], [String] DESC");
         }
     }
 }

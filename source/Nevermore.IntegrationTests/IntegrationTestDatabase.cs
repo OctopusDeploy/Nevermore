@@ -2,20 +2,21 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Resources;
+using System.IO;
 using System.Text;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
-using Xunit.Abstractions;
 
 namespace Nevermore.IntegrationTests
 {
     public class IntegrationTestDatabase
     {
-        readonly ITestOutputHelper output;
-        readonly string SqlInstance = "(local)\\SQLEXPRESS,1433";
+        readonly TextWriter output = Console.Out;
+        readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)\\SQLEXPRESS,1433";
         readonly string TestDatabaseName;
         readonly string TestDatabaseConnectionString;
 
@@ -24,10 +25,8 @@ namespace Nevermore.IntegrationTests
             TransientFaultHandling.InitializeRetryManager();
         }
 
-        public IntegrationTestDatabase(ITestOutputHelper output)
+        public IntegrationTestDatabase()
         {
-            this.output = output;
-
             TestDatabaseName = "Nevermore-IntegrationTests";
 
             var builder = new SqlConnectionStringBuilder(string.Format("Server={0};Database={1};Trusted_connection=true;", SqlInstance, TestDatabaseName))
@@ -68,11 +67,19 @@ namespace Nevermore.IntegrationTests
         void InitializeStore()
         {
             Mappings = new RelationalMappings();
+
             Mappings.Install(new List<DocumentMap>()
             {
                 new CustomerMap(),
-                new ProductMap(),
-                new LineItemMap()
+                new CustomerToTestSerializationMap(),
+                new BrandMap(),
+                new BrandToTestSerializationMap(),
+                new ProductMap<Product>(),
+                new SpecialProductMap(),
+                new ProductToTestSerializationMap(),
+                new LineItemMap(),
+                new MachineMap(),
+                new MachineToTestSerializationMap()
             });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
@@ -83,7 +90,20 @@ namespace Nevermore.IntegrationTests
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
                 : new SqlCommandFactory();
 
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, new JsonSerializerSettings(), new EmptyRelatedDocumentStore());
+
+            var contractResolver = new RelationalJsonContractResolver(Mappings);
+
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                TypeNameHandling = TypeNameHandling.Auto,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+            };
+            jsonSerializerSettings.Converters.Add(new ProductConverter(Mappings));
+            jsonSerializerSettings.Converters.Add(new BrandConverter(Mappings));
+            jsonSerializerSettings.Converters.Add(new EndpointConverter());
+
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, jsonSerializerSettings, new EmptyRelatedDocumentStore());
         }
 
         void InstallSchema()
@@ -95,11 +115,18 @@ namespace Nevermore.IntegrationTests
             var output = new StringBuilder();
             SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
 
+            // needed for products, but not to generate the table
+            Mappings.Install(new List<DocumentMap>() { new ProductMap<Product>() });
+
+            // needed to generate the table
             var mappings = new DocumentMap[]
             {
+                new OrderMap(),
                 new CustomerMap(),
-                new ProductMap(),
-                new LineItemMap()
+                new SpecialProductMap(),
+                new LineItemMap(),
+                new BrandMap(),
+                new MachineMap()
             };
 
             Mappings.Install(mappings);
@@ -112,6 +139,8 @@ namespace Nevermore.IntegrationTests
                     SchemaGenerator.WriteTableSchema(map, null, output);
 
                 transaction.ExecuteScalar<int>(output.ToString());
+
+                transaction.ExecuteScalar<int>($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
 
                 transaction.Commit();
             }

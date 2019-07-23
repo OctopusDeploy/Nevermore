@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Nevermore.Contracts;
 using NSubstitute;
-using Xunit;
+using NUnit.Framework;
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -10,25 +10,30 @@ namespace Nevermore.Tests.QueryBuilderFixture
     {
         private IRelationalTransaction transaction;
         private string query = null;
-        private CommandParameters parameters = null;
+        private CommandParameterValues parameters = null;
 
         public VariableCasingFixture()
         {
             query = null;
             parameters = null;
             transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameters>()))
+            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameterValues>()))
                 .Do(c =>
                 {
                     query = c.Arg<string>();
-                    parameters = c.Arg<CommandParameters>();
+                    parameters = c.Arg<CommandParameterValues>();
                 });
         }
 
-        [Fact]
+        IQueryBuilder<IId> CreateQueryBuilder()
+        {
+            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+        }
+
+        [Test]
         public void VariablesCasingIsNormalisedForWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
+            CreateQueryBuilder()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
@@ -39,11 +44,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Fact]
-        public void VariablesCasingIsNormalisedForWhereSingleParam()
+        [Test]
+        public void VariablesCasingIsNormalisedForUnaryWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.GreaterThan, "Bar")
+            CreateQueryBuilder()
+                .Where("fOo", UnarySqlOperand.GreaterThan, "Bar")
                 .ToList();
 
             parameters.Count.Should().Be(1);
@@ -51,11 +56,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query.Should().Contain(parameter, "Should contain " + parameter);
         }
 
-        [Fact]
-        public void VariablesCasingIsNormalisedForWhereTwoParam()
+        [Test]
+        public void VariablesCasingIsNormalisedForBinaryWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.Between, 1, 2)
+            CreateQueryBuilder()
+                .Where("fOo", BinarySqlOperand.Between, 1, 2)
                 .ToList();
 
             parameters.Count.Should().Be(2);
@@ -63,23 +68,11 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
         }
 
-        [Fact]
-        public void VariablesCasingIsNormalisedForWhereParamArray()
+        [Test]
+        public void VariablesCasingIsNormalisedForArrayWhere()
         {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.Contains, new[] { 1, 2, 3 })
-                .ToList();
-
-            parameters.Count.Should().Be(1);
-            var parameter = "@" + parameters.Keys.Single();
-            query.Should().Contain(parameter, "Should contain " + parameter);
-        }
-
-        [Fact]
-        public void VariablesCasingIsNormalisedForWhereIn()
-        {
-            new QueryBuilder<IId>(transaction, "Order")
-                .Where("fOo", SqlOperand.In, new[] { "BaR", "BaZ" })
+            CreateQueryBuilder()
+                .Where("fOo", ArraySqlOperand.In, new[] { "BaR", "BaZ" })
                 .ToList();
 
             parameters.Count.Should().Be(2);
