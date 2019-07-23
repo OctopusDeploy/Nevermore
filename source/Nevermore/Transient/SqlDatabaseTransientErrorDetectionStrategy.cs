@@ -13,7 +13,7 @@ namespace Nevermore.Transient
 
         static readonly int[] SimpleTransientErrorCodes = {
             // Details https://docs.microsoft.com/en-us/azure/sql-database/sql-database-develop-error-messages#database-connection-errors-transient-errors-and-other-temporary-errors
-            // Copied from https://github.com/aspnet/EntityFrameworkCore/blob/dev/src/EFCore.SqlServer/Storage/Internal/SqlServerTransientExceptionDetector.cs
+            // Copied from https://github.com/aspnet/EntityFrameworkCore/blob/10e553acc2/src/EFCore.SqlServer/Storage/Internal/SqlServerTransientExceptionDetector.cs
             // SQL Error Code: 49920
             // Cannot process request. Too many operations in progress for subscription "%ld".
             // The service is busy processing multiple requests for this subscription.
