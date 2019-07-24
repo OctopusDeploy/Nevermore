@@ -302,6 +302,11 @@ namespace Nevermore
             return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults);
         }
 
+        public IQueryBuilder<TRecord> WithTimeout(TimeSpan commandTimeout)
+        {
+            return Builder.WithTimeout(commandTimeout);
+        }
+
         public IQueryBuilder<TRecord> Where(string whereClause)
         {
             return Builder.Where(whereClause);

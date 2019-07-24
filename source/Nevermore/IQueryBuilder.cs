@@ -76,6 +76,13 @@ namespace Nevermore
     public interface IQueryBuilder<TRecord> where TRecord : class
     {
         /// <summary>
+        /// Sets the command timeout for the query execution
+        /// </summary>
+        /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IQueryBuilder<TRecord> WithTimeout(TimeSpan commandTimeout);
+
+        /// <summary>
         /// Adds a custom where expression to the query. Avoid using this as it is difficult to refactor. Prefer using Where methods from <see cref="QueryBuilderWhereExtensions" />
         /// </summary>
         /// <param name="whereClause">Where clause expression that will be inserted directly into the resulting SQL string</param>
