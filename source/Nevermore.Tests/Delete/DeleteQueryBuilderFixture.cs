@@ -17,7 +17,7 @@ namespace Nevermore.Tests.Delete
             transaction = Substitute.For<IRelationalTransaction>();
         }
 
-        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(Action<Type, Where, CommandParameterValues, int?> executeDelete) where TDocument : class
+        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(Action<Type, Where, CommandParameterValues, TimeSpan?> executeDelete) where TDocument : class
         {
             return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), executeDelete, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
         }
@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
 
-            void ExecuteDelete(Type _, Where where, CommandParameterValues __, int? ___) => actual = where.GenerateSql().Trim();
+            void ExecuteDelete(Type _, Where where, CommandParameterValues __, TimeSpan? ___) => actual = where.GenerateSql().Trim();
 
             CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("[Price] > 5")
@@ -41,7 +41,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -61,7 +61,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -82,7 +82,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -103,7 +103,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -122,7 +122,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -142,7 +142,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
@@ -162,7 +162,7 @@ namespace Nevermore.Tests.Delete
         {
             string actual = null;
             CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, int? ___)
+            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
             {
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;

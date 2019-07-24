@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Nevermore
@@ -13,6 +14,6 @@ namespace Nevermore
 
         IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
 
-        void Delete(int? commandTimeoutSeconds = null);
+        void Delete(TimeSpan? commandTimeout = null);
     }
 }
