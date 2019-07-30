@@ -35,7 +35,7 @@ namespace Nevermore
             this.paramDefaults = paramDefaults;
         }
 
-        public IQueryBuilder<TRecord> WithTimeout(TimeSpan commandTimeout)
+        public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)
         {
             this.commandTimeout = commandTimeout;
             return this;

@@ -73,14 +73,14 @@ namespace Nevermore
         IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField);
     }
 
-    public interface IQueryBuilder<TRecord> where TRecord : class
+    public interface IQueryBuilder<TRecord> : ICompleteQuery<TRecord> where TRecord : class
     {
         /// <summary>
         /// Sets the command timeout for execution of the query
         /// </summary>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> WithTimeout(TimeSpan commandTimeout);
+        ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout);
 
         /// <summary>
         /// Adds a custom where expression to the query. Avoid using this as it is difficult to refactor. Prefer using Where methods from <see cref="QueryBuilderWhereExtensions" />
@@ -275,75 +275,7 @@ namespace Nevermore
         /// </summary>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         ISubquerySourceBuilder<TRecord> Subquery(); 
-
-        /// <summary>
-        /// Executes the query, and counts the number of rows.
-        /// Any order by clauses will be ignored
-        /// </summary>
-        /// <returns>The number of rows in the result set</returns>
-        int Count();
-
-        /// <summary>
-        /// Executes the query and determines if there are any rows
-        /// </summary>
-        /// <returns>Returns true if there are any rows in the result set, otherwise false</returns>
-        bool Any();
-
-        /// <summary>
-        /// Executes the query and retuns the first row
-        /// </summary>
-        /// <returns>The first row in the result set</returns>
-        TRecord First();
-
-        /// <summary>
-        ///  Executes the query and returns the specified number of rows
-        /// </summary>
-        /// <param name="take">The number of rows to return</param>
-        /// <returns>The specified number of rows from the start of the result set</returns>
-        IEnumerable<TRecord> Take(int take);
-
-        /// <summary>
-        /// Executes the query and returns the specified number of rows, after first skipping a specified number of rows.
-        /// The rows are completely enumerated and stored in a List in memory.
-        /// </summary>
-        /// <param name="skip">The number of rows to skip before starting to return rows</param>
-        /// <param name="take">The number of rows to return</param>
-        /// <returns>The specified number of rows taken from the result set, after first skipping the specified number of rows</returns>
-        List<TRecord> ToList(int skip, int take);
-
-        /// <summary>
-        /// Executes the query and returns the specified number of rows, after first skipping a specified number of rows.
-        /// Additionally executes the query a second time to determine the total number of available rows.
-        /// The rows are completely enumerated and stored in a List in memory.
-        /// </summary>
-        /// <param name="skip">The number of rows to skip before starting to return rows</param>
-        /// <param name="take">The number of rows to return</param>
-        /// <param name="totalResults">The total number of available rows</param>
-        /// <returns>The specified number of rows taken from the result set, after first skipping the specified number of rows</returns>
-        List<TRecord> ToList(int skip, int take, out int totalResults);
-
-        /// <summary>
-        /// Executes the query and returns all of the rows. 
-        /// The rows are completely enumerated and stored in a List in memory.
-        /// </summary>
-        /// <returns>All of the rows from the result set</returns>
-        List<TRecord> ToList();
-
-        /// <summary>
-        /// Executes the query and streams the rows.
-        /// The rows are not enumerated up front and are not all stored in memory at the same time.
-        /// This is useful when executing an unbounded query that will produce a large result set.
-        /// </summary>
-        /// <returns>An IEnumerable that can be used to enumerate through all of the rows in the result set</returns>
-        IEnumerable<TRecord> Stream();
-
-        /// <summary>
-        /// Executes the query and converts the result to dictionary.
-        /// </summary>
-        /// <param name="keySelector">Defines how to select a key for the dictionary from a row</param>
-        /// <returns>A dictionary that maps the specified keys to rows from the result set</returns>
-        IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector);
-
+    
         /// <summary>
         /// Used internally. Can also be used for testing, debugging, and for extension methods. Avoid using directly
         /// </summary>
