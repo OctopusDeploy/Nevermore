@@ -90,10 +90,10 @@ namespace Nevermore
         {
             return new DeleteQueryBuilder<TDocument>(
                 uniqueParameterNameGenerator,
-                (documentType, where, parameterValues, commandTimeoutSeconds) => DeleteInternal(
+                (documentType, where, parameterValues, commandTimeout) => DeleteInternal(
                     dataModificationQueryBuilder.CreateDelete(documentType, where),
                     parameterValues, 
-                    commandTimeoutSeconds
+                    commandTimeout
                 ), 
                 Enumerable.Empty<IWhereClause>(), 
                 new CommandParameterValues()
@@ -159,27 +159,31 @@ namespace Nevermore
             return results;
         }
 
-        public void Insert<TDocument>(TDocument instance) where TDocument : class, IId
+        public void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, null);
+            Insert(null, instance, null, commandTimeout: commandTimeout);
         }
 
-        public void Insert<TDocument>(string tableName, TDocument instance) where TDocument : class, IId
+        public void Insert<TDocument>(string tableName, TDocument instance, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert(tableName, instance, null);
+            Insert(tableName, instance, null, commandTimeout: commandTimeout);
         }
 
-        public void Insert<TDocument>(TDocument instance, string customAssignedId) where TDocument : class, IId
+        public void Insert<TDocument>(TDocument instance, string customAssignedId, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, customAssignedId);
+            Insert(null, instance, customAssignedId, commandTimeout: commandTimeout);
         }
 
-        public void InsertWithHint<TDocument>(TDocument instance, string tableHint) where TDocument : class, IId
+        public void InsertWithHint<TDocument>(TDocument instance, string tableHint, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert(null, instance, null, tableHint);
+            Insert(null, instance, null, tableHint, commandTimeout);
         }
 
-        public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
+        public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
@@ -193,7 +197,7 @@ namespace Nevermore
              );
             
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -218,7 +222,9 @@ namespace Nevermore
             }
         }
 
-        public void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances, bool includeDefaultModelColumns = true, string tableHint = null) where TDocument : class, IId
+        public void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances,
+            bool includeDefaultModelColumns = true, string tableHint = null, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
             if (!instances.Any())
                 return;
@@ -232,7 +238,7 @@ namespace Nevermore
                 includeDefaultModelColumns);
 
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -293,12 +299,12 @@ namespace Nevermore
             return $"{idPrefix}-{key}";
         }
 
-        public void Update<TDocument>(TDocument instance, string tableHint = null, int? commandTimeoutSeconds = null) where TDocument : class, IId
+        public void Update<TDocument>(TDocument instance, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
             
             using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -321,22 +327,22 @@ namespace Nevermore
         }
 
         // Delete does not require TDocument to implement IId because during recursive document delete we have only objects
-        public void Delete<TDocument>(TDocument instance, int? commandTimeoutSeconds = null) where TDocument : class, IId
+        public void Delete<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete(instance);
-            DeleteInternal(statement, parameterValues, commandTimeoutSeconds);
+            DeleteInternal(statement, parameterValues, commandTimeout);
         }
 
-        public void DeleteById<TDocument>(string id, int? commandTimeoutSeconds = null) where TDocument : class, IId
+        public void DeleteById<TDocument>(string id, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete<TDocument>(id);
-            DeleteInternal(statement, parameterValues, commandTimeoutSeconds);
+            DeleteInternal(statement, parameterValues, commandTimeout);
         }
 
-        void DeleteInternal(string statement, CommandParameterValues parameterValues, int? commandTimeoutSeconds = null)
+        void DeleteInternal(string statement, CommandParameterValues parameterValues, TimeSpan? commandTimeout = null)
         {
             using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameterValues, commandTimeoutSeconds: commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameterValues, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -357,10 +363,10 @@ namespace Nevermore
         }
 
 
-        public int ExecuteNonQuery(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
+        public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -381,11 +387,11 @@ namespace Nevermore
 
 
         [Pure]
-        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
+        public IEnumerable<T> ExecuteReader<T>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             var mapping = mappings.Get(typeof(T));
 
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping, commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 return Stream<T>(command, mapping);
@@ -393,9 +399,9 @@ namespace Nevermore
         }
 
         [Pure]
-        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameterValues args, Func<IProjectionMapper, T> projectionMapper, int? commandTimeoutSeconds = null)
+        public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameterValues args, Func<IProjectionMapper, T> projectionMapper, TimeSpan? commandTimeout = null)
         {
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -517,8 +523,16 @@ namespace Nevermore
 
         IEnumerable<T> Stream<T>(IDbCommand command, Func<IProjectionMapper, T> projectionMapper)
         {
+            long msUntilFirstRecord = -1;
+
+            using (var timedSection = new TimedSection(Log,
+                ms =>
+                    $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}",
+                300))
             using (var reader = command.ExecuteReaderWithRetry())
             {
+                msUntilFirstRecord = timedSection.ElapsedMilliseconds;
+
                 var mapper = new ProjectionMapper(reader, jsonSerializerSettings, mappings);
                 while (reader.Read())
                 {
@@ -540,10 +554,10 @@ namespace Nevermore
         }
 
         [Pure]
-        public T ExecuteScalar<T>(string query, CommandParameterValues args, int? commandTimeoutSeconds = null)
+        public T ExecuteScalar<T>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             using (new TimedSection(Log, ms => $"Scalar took {ms}ms in transaction '{name}': {query}", 300))
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeoutSeconds: commandTimeoutSeconds))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
@@ -563,19 +577,29 @@ namespace Nevermore
             }
         }
 
-        public void ExecuteReader(string query, Action<IDataReader> readerCallback)
+        public void ExecuteReader(string query, Action<IDataReader> readerCallback, TimeSpan? commandTimeout = null)
         {
-            ExecuteReader(query, null, readerCallback);
+            ExecuteReader(query, null, readerCallback, commandTimeout);
         }
 
-        public void ExecuteReader(string query, object args, Action<IDataReader> readerCallback)
+        public void ExecuteReader(
+            string query,
+            object args,
+            Action<IDataReader> readerCallback,
+            TimeSpan? commandTimeout = null)
         {
-            ExecuteReader(query, new CommandParameterValues(args), readerCallback);
+            ExecuteReader(query, new CommandParameterValues(args), readerCallback, commandTimeout);
         }
 
-        public void ExecuteReader(string query, CommandParameterValues args, Action<IDataReader> readerCallback)
+        public void ExecuteReader(
+            string query,
+            CommandParameterValues args,
+            Action<IDataReader> readerCallback,
+            TimeSpan? commandTimeout = null)
         {
-            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args))
+            using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {query}", 300))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args,
+                commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try

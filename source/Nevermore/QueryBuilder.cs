@@ -16,7 +16,8 @@ namespace Nevermore
         readonly CommandParameterValues paramValues;
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
-
+        TimeSpan? commandTimeout;
+        
         public QueryBuilder(TSelectBuilder selectBuilder, 
             IRelationalTransaction transaction,
             ITableAliasGenerator tableAliasGenerator, 
@@ -32,6 +33,12 @@ namespace Nevermore
             this.paramValues = paramValues;
             this.@params = @params;
             this.paramDefaults = paramDefaults;
+        }
+
+        public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)
+        {
+            this.commandTimeout = commandTimeout;
+            return this;
         }
 
         public IQueryBuilder<TRecord> Where(string whereClause)
@@ -224,7 +231,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
-            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues);
+            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
@@ -235,7 +242,7 @@ namespace Nevermore
             var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
-            var result = transaction.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues());
+            var result = transaction.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), commandTimeout);
 
             return result != falseValue;
 
@@ -269,7 +276,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
-            return transaction.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues);
+            return transaction.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
@@ -295,7 +302,7 @@ namespace Nevermore
                 {maxRowParameter.ParameterName, take + skip}
             };
 
-            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues).ToList();
+            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
         }
 
         [Pure]
@@ -314,7 +321,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues);
+            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
