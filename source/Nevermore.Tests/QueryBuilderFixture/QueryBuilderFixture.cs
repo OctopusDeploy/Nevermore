@@ -974,7 +974,7 @@ ORDER BY [Title] DESC";
                 .Alias("ORD")
                 .InnerJoin(accounts)
                 .On("AccountId", JoinOperand.Equal, "Id")
-                .Where("Id", UnarySqlOperand.Equal, 1)
+                .Where("Id", UnarySqlOperand.Equal, 12)
                 .OrderBy("Name")
                 .DebugViewRawQuery();
 
@@ -1045,6 +1045,62 @@ ORDER BY [Title] DESC";
             var actual = CreateQueryBuilder<IDocument>("Orders")
                 .AddRowNumberColumn("ROWNUM")
                 .OrderBy("ROWNUM")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateOptions()
+        {
+            var actual = CreateQueryBuilder<IDocument>("Orders")
+                .OrderBy("ROWNUM")
+                //.Option("RECOMPILE")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+        
+        [Test]
+        public void Replace_Release_LatestByProjectChannel()
+        {
+            var actual = CreateQueryBuilder<IDocument>("Release")
+                .AllColumns()
+                .OrderByDescending("Assembled")
+                .AddRowNumberColumn("RowNum", "SpaceId", "ProjectId", "ChannelId")
+                .Subquery()
+                .Alias("rs")
+                .Where("RowNum", UnarySqlOperand.Equal, 1)
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+        
+        
+        [Test]
+        public void Replace_LatestSuccessfulDeployments()
+        {
+            var eventTableAlias = "[Event]";
+            
+            var eventRelatedDocuments = CreateQueryBuilder<IDocument>("EventRelatedDocument").Alias("[EventRelatedDocument]");
+            var eventJoin = CreateQueryBuilder<IDocument>("Event").Alias(eventTableAlias);
+            
+            var actual = CreateQueryBuilder<IDocument>("Deployment")
+                .Alias("[Deployment]")
+                
+                .InnerJoin(eventRelatedDocuments)
+                    .On("Id", JoinOperand.Equal, "RelatedDocumentId")
+                
+                .InnerJoin(eventJoin)
+                    .On("EventId", JoinOperand.Equal, "Id")
+                
+                .AllColumns()
+                .OrderByDescending($"[{eventTableAlias}].[Occurred]")
+                .Where("[Event].Category = \'DeploymentSucceeded\'")
+                .AddRowNumberColumn("Rank", "EnvironmentId", "ProjectId", "TenantId")
+                .Subquery()
+                .Alias("d")
+                .Where("Rank", UnarySqlOperand.Equal, 1)
                 .DebugViewRawQuery();
 
             this.Assent(actual);
