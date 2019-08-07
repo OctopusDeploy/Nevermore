@@ -1,0 +1,13 @@
+SELECT *
+FROM (
+    SELECT deployments.*,
+    ROW_NUMBER() OVER (PARTITION BY deployments.[EnvironmentId], deployments.[ProjectId], deployments.[TenantId] ORDER BY e.[occurred] DESC) AS Rank
+    FROM dbo.[Deployment] deployments
+    INNER JOIN dbo.[EventRelatedDocument] eventRelatedDocuments
+    ON deployments.[Id] = eventRelatedDocuments.[RelatedDocumentId]
+    INNER JOIN dbo.[Event] e
+    ON eventRelatedDocuments.[EventId] = e.[Id]
+    WHERE (e.category = 'DeploymentSucceeded')
+) d
+WHERE ([Rank] = @rank_0)
+ORDER BY d.[Id]

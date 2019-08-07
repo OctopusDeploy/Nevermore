@@ -200,11 +200,22 @@ namespace Nevermore
             selectBuilder.AddOrder(fieldName, false);
             return this;
         }
-
+        
+        public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
+        {
+            selectBuilder.AddOrder(fieldName, tableAlias, true);
+            return this;
+        }
 
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
             selectBuilder.AddOrder(fieldName, true);
+            return this;
+        }
+        
+        public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName, string tableAlias)
+        {
+            selectBuilder.AddOrder(fieldName, tableAlias, true);
             return this;
         }
 

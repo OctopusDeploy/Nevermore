@@ -260,6 +260,11 @@ namespace Nevermore
         {
             OrderByClauses.Add(new OrderByField(new Column(fieldName), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
         }
+        
+        public virtual void AddOrder(string fieldName, string tableAlias, bool @descending)
+        {
+            OrderByClauses.Add(new OrderByField(new TableColumn(new Column(fieldName), tableAlias), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
+        }
 
         public virtual void AddWhere(UnaryWhereParameter whereParams)
         {

@@ -8,6 +8,7 @@ namespace Nevermore
         void AddTop(int top);
 
         void AddOrder(string fieldName, bool descending);
+        void AddOrder(string fieldName, string tableAlias, bool descending);
         void AddWhere(UnaryWhereParameter whereParams);
         void AddWhere(BinaryWhereParameter whereParams);
         void AddWhere(ArrayWhereParameter whereParams);

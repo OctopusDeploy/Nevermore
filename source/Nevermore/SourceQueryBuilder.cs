@@ -343,10 +343,20 @@ namespace Nevermore
         {
             return Builder.OrderBy(fieldName);
         }
-
+        
+        public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
+        {
+            return Builder.OrderBy(fieldName, tableAlias);
+        }
+        
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
             return Builder.OrderByDescending(fieldName);
+        }
+
+        public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName, string tableAlias)
+        {
+            return Builder.OrderByDescending(fieldName, tableAlias);
         }
 
         public IQueryBuilder<TRecord> Column(string name)
