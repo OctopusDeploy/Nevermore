@@ -104,6 +104,7 @@ namespace Nevermore
             {
                 Alias(TableAliasGenerator.GenerateTableAlias());
             } 
+
             return new SubquerySource(select, alias);
         }
 
@@ -177,7 +178,7 @@ namespace Nevermore
 
         public IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField)
         {
-            var newClause = new JoinClause(leftField, operand, rightField);
+            var newClause = new JoinClause(originalSource.Alias, leftField, operand, joinSource.Alias, rightField);
             clauses.Add(newClause);
             return this;
         }
