@@ -121,6 +121,7 @@ namespace Nevermore
         readonly List<Join> intermediateJoins = new List<Join>();
         JoinType type;
         IAliasedSelectSource joinSource;
+        IAliasedSelectSource prevJoinSource = null;
         List<JoinClause> clauses;
 
         public JoinSourceQueryBuilder(IAliasedSelectSource originalSource, 
@@ -159,6 +160,7 @@ namespace Nevermore
 
             intermediateJoins.Add(new Join(clauses.ToList(), joinSource, type));
             clauses = new List<JoinClause>();
+            prevJoinSource = joinSource;
             joinSource = source;
             type = joinType;
 
@@ -181,6 +183,18 @@ namespace Nevermore
             var newClause = new JoinClause(originalSource.Alias, leftField, operand, joinSource.Alias, rightField);
             clauses.Add(newClause);
             return this;
+        }
+        
+        public IJoinSourceQueryBuilder<TRecord> On(string leftTableAlias, string leftField, JoinOperand operand, string rightField)
+        {
+            var newClause = new JoinClause(leftTableAlias, leftField, operand, joinSource.Alias, rightField);
+            clauses.Add(newClause);
+            return this;
+        }
+        
+        public IJoinSourceQueryBuilder<TRecord> NestedOn(string leftField, JoinOperand operand, string rightField)
+        {
+            return On((prevJoinSource ?? joinSource).Alias, leftField, operand, rightField);
         }
     }
 

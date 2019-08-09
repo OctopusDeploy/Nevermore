@@ -105,6 +105,24 @@ ORDER BY [Id]";
         }
 
         [Test]
+        public void ShouldGenerateSelectForNestedJoins()
+        {
+
+            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders");
+            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers");
+            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts");
+
+            var actual = leftQueryBuilder
+                .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(join2QueryBuilder)
+                    .NestedOn("AccountId", JoinOperand.Equal, "Id")
+                    .On("AccountId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+        
+        [Test]
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {
 

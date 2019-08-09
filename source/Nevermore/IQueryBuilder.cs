@@ -71,6 +71,24 @@ namespace Nevermore
         /// <param name="rightField">The column from the right side of the join to use in the join condition</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField);
+        
+        /// <summary>
+        /// Adds a join condition (ON expression) to a join. At least one join condition must be added for each join.
+        /// </summary>
+        /// <param name="leftField">The column from the left side of the join to use in the join condition</param>
+        /// <param name="operand">The operator to use in the join condition</param>
+        /// <param name="rightField">The column from the right side of the join to use in the join condition</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IJoinSourceQueryBuilder<TRecord> On(string leftTableAlias, string leftField, JoinOperand operand, string rightField);
+        
+        /// <summary>
+        /// Adds a join condition (ON expression) to a join. At least one join condition must be added for each join.
+        /// </summary>
+        /// <param name="leftField">The column from the left side of the join to use in the join condition</param>
+        /// <param name="operand">The operator to use in the join condition</param>
+        /// <param name="rightField">The column from the right side of the join to use in the join condition</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IJoinSourceQueryBuilder<TRecord> NestedOn(string leftField, JoinOperand operand, string rightField);
     }
 
     public interface IQueryBuilder<TRecord> : ICompleteQuery<TRecord> where TRecord : class
