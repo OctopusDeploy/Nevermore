@@ -86,7 +86,7 @@ ORDER BY [Id]");
         {
             var queryBuilder = QueryBuilder("Accounts");
 
-            queryBuilder.First();
+            queryBuilder.FirstOrDefault();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
 FROM dbo.[Accounts]

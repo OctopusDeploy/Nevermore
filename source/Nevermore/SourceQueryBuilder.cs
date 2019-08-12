@@ -447,7 +447,12 @@ namespace Nevermore
 
         public TRecord First()
         {
-            return Builder.First();
+            return Builder.FirstOrDefault();
+        }
+
+        public TRecord FirstOrDefault()
+        {
+            return Builder.FirstOrDefault();
         }
 
         public IEnumerable<TRecord> Take(int take)

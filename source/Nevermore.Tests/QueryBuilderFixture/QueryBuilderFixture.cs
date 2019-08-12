@@ -927,7 +927,7 @@ ORDER BY [Title]";
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
                 .OrderBy("Title")
-                .First();
+                .FirstOrDefault();
 
             transaction.Received(1).ExecuteReader<TodoItem>(
                 Arg.Is(expectedSql),
@@ -950,7 +950,7 @@ ORDER BY [Title] DESC";
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
                 .OrderByDescending("Title")
-                .First();
+                .FirstOrDefault();
 
             transaction.Received(1).ExecuteReader<TodoItem>(
                 Arg.Is(expectedSql),
@@ -1538,7 +1538,7 @@ ORDER BY [RowNum]");
                 .Where("AddedDate", UnarySqlOperand.GreaterThan, earlyDate)
                 .Where("AddedDate", UnarySqlOperand.LessThan, laterDate);
 
-            query.First();
+            query.FirstOrDefault();
 
             const string expected = @"SELECT TOP 1 *
 FROM dbo.[Todos]
@@ -1574,7 +1574,7 @@ ORDER BY [Id]";
                 .InnerJoin(orders.Subquery())
                 .On("Id", JoinOperand.Equal, "CustomerId");
 
-            query.First();
+            query.FirstOrDefault();
 
             const string expected =
                 @"SELECT TOP 1 ALIAS_GENERATED_2.*

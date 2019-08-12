@@ -106,7 +106,7 @@ namespace Nevermore
             return TableQuery<T>()
                 .Where("[Id] = @id")
                 .Parameter("id", id)
-                .First();
+                .FirstOrDefault();
         }
 
         [Pure]
