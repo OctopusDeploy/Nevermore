@@ -1067,6 +1067,54 @@ ORDER BY [Title] DESC";
 
             this.Assent(actual);
         }
+        
+        [Test]
+        public void Replace_Release_LatestByProjectChannel()
+        {
+            var actual = CreateQueryBuilder<IDocument>("Release")
+                .AllColumns()
+                .OrderByDescending("Assembled")
+                .AddRowNumberColumn("RowNum", "SpaceId", "ProjectId", "ChannelId")
+                .Subquery()
+                .Alias("rs")
+                .Where("RowNum", UnarySqlOperand.Equal, 1)
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+        
+        [Test]
+        public void Replace_LatestSuccessfulDeployments()
+        {
+            const string eventAlias = "e";
+            const string eventRelatedDocumentAlias = "eventRelatedDocuments";
+
+            const string eventOccurred = "occurred";
+            const string eventCategory = "category";
+
+            var eventRelatedDocuments = CreateQueryBuilder<IDocument>("EventRelatedDocument").Alias(eventRelatedDocumentAlias);
+            var eventJoin = CreateQueryBuilder<IDocument>("Event").Alias(eventAlias);
+
+            var actual = CreateQueryBuilder<IDocument>("Deployment")
+                .Alias("deployments")
+                
+                .InnerJoin(eventRelatedDocuments)
+                .On("Id", JoinOperand.Equal, "RelatedDocumentId")
+
+                .InnerJoin(eventJoin)
+                .On(eventRelatedDocumentAlias, "EventId", JoinOperand.Equal, "Id")
+
+                .AllColumns()
+                .OrderByDescending(eventOccurred, eventAlias)
+                .AddRowNumberColumn("Rank", "EnvironmentId", "ProjectId", "TenantId")
+                .Where($"{eventAlias}.{eventCategory} = \'DeploymentSucceeded\'")
+                .Subquery()
+                .Alias("d")
+                .Where("Rank", UnarySqlOperand.Equal, 1)
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
 
         [Test]
         public void ShouldGenerateRowNumberWithOrderBy()

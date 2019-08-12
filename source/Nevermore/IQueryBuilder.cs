@@ -140,6 +140,15 @@ namespace Nevermore
         /// <param name="fieldName">The column that the query should be ordered by</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IOrderedQueryBuilder<TRecord> OrderBy(string fieldName);
+        
+        /// <summary>
+        /// Adds an order by clause to the query using a table alias, where the order by clause will be in the default order (ascending).
+        /// If no order by clauses are added to the query, the query will be ordered by the Id column in ascending order.
+        /// </summary>
+        /// <param name="fieldName">The column that the query should be ordered by</param>
+        /// <param name="tableAlias">The alias for where the column exists</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias);
 
         /// <summary>
         /// Adds an order by clause to the query, where the order by clause will be in descending order.
@@ -148,6 +157,15 @@ namespace Nevermore
         /// <param name="fieldName">The column that the query should be ordered by</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName);
+        
+        /// <summary>
+        /// Adds an order by clause to the query using a table alias, where the order by clause will be in descending order.
+        /// If no order by clauses are explicitly added to the query, the query will be ordered by the Id column in ascending order.
+        /// </summary>
+        /// <param name="fieldName">The column that the query should be ordered by</param>
+        /// <param name="tableAlias">The alias for where the column exists</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName, string tableAlias);
 
         /// <summary>
         /// Adds a column to the column selection for the query.
