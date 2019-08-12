@@ -105,6 +105,24 @@ ORDER BY [Id]";
         }
 
         [Test]
+        public void ShouldGenerateSelectForChainedJoins()
+        {
+
+            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders").Alias("Orders");
+            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers").Alias("Customers");
+            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts").Alias("Accounts");
+
+            var actual = leftQueryBuilder
+                .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
+                .InnerJoin(join2QueryBuilder)
+                    .On("Customers", "Id", JoinOperand.Equal, "CustomerId")
+                    .On("AccountId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+        
+        [Test]
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {
 

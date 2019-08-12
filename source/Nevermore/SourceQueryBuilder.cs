@@ -178,7 +178,12 @@ namespace Nevermore
 
         public IJoinSourceQueryBuilder<TRecord> On(string leftField, JoinOperand operand, string rightField)
         {
-            var newClause = new JoinClause(originalSource.Alias, leftField, operand, joinSource.Alias, rightField);
+            return On(originalSource.Alias, leftField, operand, rightField);
+        }
+        
+        public IJoinSourceQueryBuilder<TRecord> On(string leftTableAlias, string leftField, JoinOperand operand, string rightField)
+        {
+            var newClause = new JoinClause(leftTableAlias, leftField, operand, joinSource.Alias, rightField);
             clauses.Add(newClause);
             return this;
         }
