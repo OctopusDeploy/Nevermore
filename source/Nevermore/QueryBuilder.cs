@@ -203,7 +203,7 @@ namespace Nevermore
         
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
         {
-            selectBuilder.AddOrder(fieldName, tableAlias, true);
+            selectBuilder.AddOrder(fieldName, tableAlias, false);
             return this;
         }
 
