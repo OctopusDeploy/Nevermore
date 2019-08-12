@@ -9,10 +9,10 @@ namespace Nevermore.Tests.Joins
         [Test]
         public void ShouldReturnEqualsString()
         {
-            var target = new JoinClause("FieldA", JoinOperand.Equal, "FieldB");
+            var target = new JoinClause("t1", "FieldA", JoinOperand.Equal, "t2","FieldB");
 
             const string expected = "t1.[FieldA] = t2.[FieldB]";
-            var actual = target.GenerateSql("t1", "t2");
+            var actual = target.GenerateSql();
 
             actual.Should().Be(expected);
         }

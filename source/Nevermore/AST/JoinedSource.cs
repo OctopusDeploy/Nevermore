@@ -18,7 +18,7 @@ namespace Nevermore.AST
 
         public string GenerateSql()
         {
-            var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql(Source.Alias)));
+            var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql()));
             return string.Join("\r\n", sourceParts);
         }
         
@@ -39,15 +39,15 @@ namespace Nevermore.AST
             this.type = type;
         }
 
-        public string GenerateSql(string leftSourceAlias)
+        public string GenerateSql()
         {
             var separator = @"
 AND ";
             return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}
-ON {string.Join(separator, clauses.Select(c => c.GenerateSql(leftSourceAlias, source.Alias)))}";
+ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
         }
 
-        string DebugSql() => GenerateSql("leftSource");
+        string DebugSql() => GenerateSql();
 
         string GenerateJoinTypeSql(JoinType joinType)
         {
@@ -77,23 +77,27 @@ ON {string.Join(separator, clauses.Select(c => c.GenerateSql(leftSourceAlias, so
     [DebuggerDisplay("{" + nameof(DebugSql) + "()}")]
     public class JoinClause
     {
+        readonly string leftTableAlias;
         readonly string leftFieldName;
         readonly JoinOperand operand;
+        readonly string rightTableAlias;
         readonly string rightFieldName;
 
-        public JoinClause(string leftFieldName, JoinOperand operand, string rightFieldName)
+        public JoinClause(string leftTableAlias, string leftFieldName, JoinOperand operand, string rightTableAlias, string rightFieldName)
         {
+            this.leftTableAlias = leftTableAlias;
             this.leftFieldName = leftFieldName;
             this.operand = operand;
+            this.rightTableAlias = rightTableAlias;
             this.rightFieldName = rightFieldName;
         }
 
-        public string GenerateSql(string leftTableAlias, string rightTableAlias)
+        public string GenerateSql()
         {
             return $"{leftTableAlias}.[{leftFieldName}] {GetQueryOperand()} {rightTableAlias}.[{rightFieldName}]";
         }
 
-        string DebugSql() => GenerateSql("leftSource", "rightSource");
+        string DebugSql() => GenerateSql();
 
         string GetQueryOperand()
         {
