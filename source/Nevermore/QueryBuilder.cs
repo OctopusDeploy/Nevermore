@@ -279,6 +279,12 @@ namespace Nevermore
         [Pure]
         public TRecord First()
         {
+            return FirstOrDefault();
+        }
+
+        [Pure]
+        public TRecord FirstOrDefault()
+        {
             return Take(1).FirstOrDefault();
         }
 

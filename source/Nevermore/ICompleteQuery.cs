@@ -18,11 +18,13 @@ namespace Nevermore
         /// <returns>Returns true if there are any rows in the result set, otherwise false</returns>
         bool Any();
 
-        /// <summary>
-        /// Executes the query and retuns the first row
-        /// </summary>
-        /// <returns>The first row in the result set</returns>
+        [Obsolete("First returns the first row, or null if there are no rows. To make your code easier to read, use FirstOrDefault instead.")]
         TRecord First();
+        
+        /// <summary>
+        /// Executes the query and returns the first row, or null if there are no rows 
+        /// </summary>
+        TRecord FirstOrDefault();
 
         /// <summary>
         ///  Executes the query and returns the specified number of rows
