@@ -18,7 +18,7 @@ namespace Nevermore
         /// <returns>Returns true if there are any rows in the result set, otherwise false</returns>
         bool Any();
 
-        [Obsolete("Use FirstOrDefault instead")]
+        [Obsolete("First returns the first row, or null if there are no rows. To make your code easier to read, use FirstOrDefault instead.")]
         TRecord First();
         
         /// <summary>
