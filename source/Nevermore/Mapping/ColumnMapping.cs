@@ -123,5 +123,11 @@ namespace Nevermore.Mapping
             IsReadOnly = true;
             return this;
         }
+        
+        public ColumnMapping WithCustomName(string columnName)
+        {
+            ColumnName = columnName;
+            return this;
+        }
     }
 }
