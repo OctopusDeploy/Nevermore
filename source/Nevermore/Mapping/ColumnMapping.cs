@@ -124,7 +124,7 @@ namespace Nevermore.Mapping
             return this;
         }
         
-        public ColumnMapping WithCustomColumnName(string columnName)
+        public ColumnMapping WithColumnName(string columnName)
         {
             ColumnName = columnName;
             return this;
