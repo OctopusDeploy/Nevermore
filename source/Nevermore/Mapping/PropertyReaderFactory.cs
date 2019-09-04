@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using JetBrains.Annotations;
 
 namespace Nevermore.Mapping
 {
@@ -71,9 +72,10 @@ namespace Nevermore.Mapping
             where TReturn : TCast
         {
             readonly Func<TInput, TReturn> caller;
-            readonly Action<TInput, TReturn> writer;
 
-            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
+            [CanBeNull] readonly Action<TInput, TReturn> writer;
+
+            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, [CanBeNull] Action<TInput, TReturn> writer)
             {
                 this.caller = caller;
                 this.writer = writer;
@@ -86,8 +88,12 @@ namespace Nevermore.Mapping
 
             public void Write(object target, TCast value)
             {
-                var returnble = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
-                writer((TInput)target, returnble);
+                if (writer == null)
+                {
+                    throw new InvalidOperationException("Cannot write to a property without a setter");
+                }
+                var returnable = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
+                writer((TInput)target, returnable);
             }
         }
 
