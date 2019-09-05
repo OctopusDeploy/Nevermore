@@ -29,7 +29,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj" />
-    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

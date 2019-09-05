@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
-using JetBrains.Annotations;
 
 namespace Nevermore.Mapping
 {
@@ -72,10 +71,9 @@ namespace Nevermore.Mapping
             where TReturn : TCast
         {
             readonly Func<TInput, TReturn> caller;
+            readonly Action<TInput, TReturn> writer;
 
-            [CanBeNull] readonly Action<TInput, TReturn> writer;
-
-            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, [CanBeNull] Action<TInput, TReturn> writer)
+            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
             {
                 this.caller = caller;
                 this.writer = writer;
