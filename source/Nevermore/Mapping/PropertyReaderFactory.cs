@@ -86,8 +86,12 @@ namespace Nevermore.Mapping
 
             public void Write(object target, TCast value)
             {
-                var returnble = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
-                writer((TInput)target, returnble);
+                if (writer == null)
+                {
+                    throw new InvalidOperationException("Cannot write to a property without a setter");
+                }
+                var returnable = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
+                writer((TInput)target, returnable);
             }
         }
 
