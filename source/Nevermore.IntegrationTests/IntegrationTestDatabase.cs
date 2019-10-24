@@ -79,7 +79,8 @@ namespace Nevermore.IntegrationTests
                 new ProductToTestSerializationMap(),
                 new LineItemMap(),
                 new MachineMap(),
-                new MachineToTestSerializationMap()
+                new MachineToTestSerializationMap(),
+                new FeedMap()
             });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
@@ -126,7 +127,8 @@ namespace Nevermore.IntegrationTests
                 new SpecialProductMap(),
                 new LineItemMap(),
                 new BrandMap(),
-                new MachineMap()
+                new MachineMap(),
+                new FeedMap()
             };
 
             Mappings.Install(mappings);

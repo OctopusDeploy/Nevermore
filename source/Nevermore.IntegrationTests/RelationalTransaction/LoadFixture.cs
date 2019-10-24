@@ -255,6 +255,45 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         }
 
         [Test]
+        public void StoreCustomInheritedTypesThatArePropertiesSerializeCorrectly()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var builtInFeed = new BuiltInFeed {Name = "BuiltIn"};
+                var nugetFeed = new NuGetFeed {Name = "NuGet"};
+
+                trn.Insert(builtInFeed);
+                trn.Insert(nugetFeed);
+                trn.Commit();
+
+                var allFeeds = trn.TableQuery<Feed>().ToList();
+
+                allFeeds.SingleOrDefault(x => x.Name == "BuiltIn").Should().NotBeNull("Didn't retrieve BuiltIn feed");
+            }
+        }
+
+        [Test]
+        public void QueryCustomInheritedTypesThatArePropertiesSerializeCorrectly()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var builtInFeed = new BuiltInFeed {Name = "BuiltIn"};
+                var nugetFeed = new NuGetFeed {Name = "NuGet"};
+
+                trn.Insert(builtInFeed);
+                trn.Insert(nugetFeed);
+                trn.Commit();
+
+                var queryBuilder = trn.TableQuery<Feed>().Where(f => f.FeedType == FeedType.BuiltIn);
+
+                var feed = queryBuilder.FirstOrDefault() as BuiltInFeed;
+
+                feed.Should().NotBeNull();
+                feed.Name.Should().Be("BuiltIn");
+            }
+        }
+
+        [Test]
         public void StoreAndLoadFromParameterizedRawSql()
         {
             using (var trn = Store.BeginTransaction())
