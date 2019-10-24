@@ -1,5 +1,7 @@
-using System.Data;
+using System;
+using System.Collections.Generic;
 using Nevermore.Mapping;
+using Nevermore.Serialization;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -10,7 +12,20 @@ namespace Nevermore.IntegrationTests.Model
             IdColumn.MaxLength = 210;
 
             Column(m => m.Name);
-            VirtualColumn(nameof(Feed.FeedType), DbType.String, m => m.FeedType.Name);
+            Column(m => m.FeedType);
         }
     }
+    
+    public class FeedConverter : InheritedClassByExtensibleEnumConverter<Feed, FeedType>
+    {
+        readonly Dictionary<string, Type> derivedTypeMappings = new Dictionary<string, Type>
+        {
+            {FeedType.BuiltIn.Name, typeof(BuiltInFeed)},
+            {FeedType.NuGet.Name, typeof(NuGetFeed)}
+        };
+
+        protected override IDictionary<string, Type> DerivedTypeMappings => derivedTypeMappings;
+        protected override string TypeDesignatingPropertyName => nameof(Feed.FeedType);
+    }
+
 }

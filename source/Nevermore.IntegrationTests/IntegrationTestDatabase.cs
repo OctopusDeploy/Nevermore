@@ -9,6 +9,7 @@ using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Nevermore.Serialization;
 using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests
@@ -103,6 +104,8 @@ namespace Nevermore.IntegrationTests
             jsonSerializerSettings.Converters.Add(new ProductConverter(Mappings));
             jsonSerializerSettings.Converters.Add(new BrandConverter(Mappings));
             jsonSerializerSettings.Converters.Add(new EndpointConverter());
+            jsonSerializerSettings.Converters.Add(new FeedConverter());
+            jsonSerializerSettings.Converters.Add(new FeedTypeConverter());
 
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, jsonSerializerSettings, new EmptyRelatedDocumentStore());
         }

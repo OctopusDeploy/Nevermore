@@ -67,6 +67,13 @@ namespace Nevermore.Mapping
                 DbType = DbType.String;
             }
 
+            if (typeof(ExtensibleEnum).GetTypeInfo().IsAssignableFrom(property.PropertyType))
+            {
+                MaxLength = DefaultMaxEnumLength;
+                DbType = DbType.String;
+                ReaderWriter = new ExtensibleEnumReaderWriter(ReaderWriter);
+            }
+
             if (property.PropertyType == typeof(ReferenceCollection))
             {
                 DbType = DbType.String;

@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Nevermore.AST;
+using Nevermore.Contracts;
 
 namespace Nevermore
 {
@@ -147,8 +146,8 @@ namespace Nevermore
 
         public IQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
-            if (value.GetType().GetTypeInfo().IsClass && !(value is string) && !(value is IEnumerable))
-                paramValues.Add(parameter.ParameterName, value.ToString());
+            if (value is ExtensibleEnum v)
+                paramValues.Add(parameter.ParameterName, v.Name);
             else
                 paramValues.Add(parameter.ParameterName, value);
             return this;

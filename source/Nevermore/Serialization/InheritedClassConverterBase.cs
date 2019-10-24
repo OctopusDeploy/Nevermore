@@ -78,7 +78,15 @@ namespace Nevermore.Serialization
             }
             else
             {
-                var derivedType = designatingProperty.ToObject<string>();
+                string derivedType;
+                if (designatingProperty.Type is JTokenType.Object)
+                {
+                    derivedType = GetDesignatingValue(designatingProperty);
+                }
+                else
+                {
+                    derivedType = designatingProperty.ToObject<string>();
+                }
                 typeInfo = GetTypeInfoFromDerivedType(derivedType);
             }
 
@@ -118,6 +126,11 @@ namespace Nevermore.Serialization
             prop.SetValue(instance, value, null);
         }
 
+        protected virtual string GetDesignatingValue(JToken designatingProperty)
+        {
+            throw new Exception($"{this.GetType().Name} is using an object as a designating property but has not override GetDesignatingValue to map the value");
+        }
+        
         protected abstract TypeInfo GetTypeInfoFromDerivedType(string derivedType);
 
         public override bool CanConvert(Type objectType)

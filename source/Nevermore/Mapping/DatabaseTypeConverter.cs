@@ -54,7 +54,8 @@ namespace Nevermore.Mapping
 
         public static DbType AsDbType(Type propertyType)
         {
-            if (propertyType.GetTypeInfo().IsEnum)
+            if (propertyType.GetTypeInfo().IsEnum ||
+                typeof(ExtensibleEnum).GetTypeInfo().IsAssignableFrom(propertyType))
             {
                 return DbType.String;
             }
@@ -63,7 +64,7 @@ namespace Nevermore.Mapping
             {
                 return DbType.String;
             }
-
+            
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);
