@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Nevermore.Contracts;
 using Newtonsoft.Json;
 
@@ -38,7 +39,7 @@ namespace Nevermore.Serialization
         
         public override bool CanConvert(Type objectType)
         {
-            return objectType is T;
+            return typeof(T).GetTypeInfo().IsAssignableFrom(objectType);
         }
     }
 }

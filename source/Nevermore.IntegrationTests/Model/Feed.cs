@@ -7,7 +7,7 @@ namespace Nevermore.IntegrationTests.Model
         public string Id { get; protected set; }
         public string Name { get; set; }
         
-        public FeedType FeedType { get; set; }        
+        public FeedType FeedType { get; protected set; }        
     }
 
     public class NuGetFeed : Feed
