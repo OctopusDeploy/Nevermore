@@ -79,7 +79,7 @@ namespace Nevermore.Serialization
             else
             {
                 string derivedType;
-                if (designatingProperty.Type is JTokenType.Object)
+                if (designatingProperty.Type == JTokenType.Object)
                 {
                     derivedType = GetDesignatingValue(designatingProperty);
                 }
