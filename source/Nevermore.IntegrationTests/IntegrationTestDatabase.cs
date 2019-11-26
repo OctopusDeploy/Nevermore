@@ -17,6 +17,8 @@ namespace Nevermore.IntegrationTests
     {
         readonly TextWriter output = Console.Out;
         readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)\\SQLEXPRESS,1433";
+        readonly string Username = Environment.GetEnvironmentVariable("NevermoreTestUsername");
+        readonly string Password = Environment.GetEnvironmentVariable("NevermoreTestPassword");
         readonly string TestDatabaseName;
         readonly string TestDatabaseConnectionString;
 
@@ -28,11 +30,16 @@ namespace Nevermore.IntegrationTests
         public IntegrationTestDatabase()
         {
             TestDatabaseName = "Nevermore-IntegrationTests";
-
-            var builder = new SqlConnectionStringBuilder(string.Format("Server={0};Database={1};Trusted_connection=true;", SqlInstance, TestDatabaseName))
+            
+            var builder = new SqlConnectionStringBuilder($"Server={SqlInstance};Database={TestDatabaseName};{(Username == null ? "Trusted_connection=true;" : string.Empty)}")
             {
-                ApplicationName = TestDatabaseName
+                ApplicationName = TestDatabaseName,
             };
+            if (Username != null)
+            {
+                builder.UserID = Username;
+                builder.Password = Password;
+            }
             TestDatabaseConnectionString = builder.ToString();
 
             DropDatabase();
