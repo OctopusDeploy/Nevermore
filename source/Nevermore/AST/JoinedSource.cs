@@ -19,7 +19,7 @@ namespace Nevermore.AST
         public string GenerateSql()
         {
             var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql()));
-            return string.Join("\r\n", sourceParts);
+            return string.Join(Environment.NewLine, sourceParts);
         }
         
         public override string ToString() => GenerateSql();
