@@ -1,6 +1,10 @@
 using System;
 using System.Data;
+#if NETFRAMEWORK
 using System.Data.SqlClient;
+#else
+using Microsoft.Data.SqlClient;
+#endif
 using System.Reflection;
 using System.Text;
 using Nevermore.Mapping;

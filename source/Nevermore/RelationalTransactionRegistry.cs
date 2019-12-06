@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+#if NETFRAMEWORK
 using System.Data.SqlClient;
+#else
+using Microsoft.Data.SqlClient;
+#endif
 using System.Linq;
 using System.Text;
 using Nevermore.Diagnositcs;
