@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests
@@ -21,7 +22,7 @@ namespace Nevermore.IntegrationTests
 
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(TypedString);
+            return typeof(TimeSpan).GetTypeInfo().IsAssignableFrom(objectType);
         }
     }
 }

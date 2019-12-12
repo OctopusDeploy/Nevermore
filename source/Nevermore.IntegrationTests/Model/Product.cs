@@ -2,9 +2,16 @@ using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Product : IDocument
+    public class ProductId : TypedString
     {
-        public string Id { get; set; }
+        public ProductId(string value) : base(value)
+        {
+        }
+    }
+
+    public class Product : IDocument<ProductId>
+    {
+        public ProductId Id { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
 

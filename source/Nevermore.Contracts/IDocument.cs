@@ -1,10 +1,10 @@
 ﻿namespace Nevermore.Contracts
 {
-    public interface IDocument<out T> : IId<T>, INamed
+    public interface IDocument<out TId> : IId<TId>, INamed
     {
     }
 
-    public interface IDocument : IDocument<string>
+    public interface IDocument : IDocument<string>, IId
     {
     }
 }
