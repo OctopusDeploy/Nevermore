@@ -1,7 +1,12 @@
 ﻿namespace Nevermore.Contracts
 {
-    public interface IId
+    /// <typeparam name="T">Please use something that serializes to/from a string</typeparam>
+    public interface IId<out T>
     {
-        string Id { get; }
+        T Id { get; }
+    }
+
+    public interface IId : IId<string>
+    {
     }
 }
