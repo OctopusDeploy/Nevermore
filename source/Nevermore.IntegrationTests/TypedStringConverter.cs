@@ -22,7 +22,7 @@ namespace Nevermore.IntegrationTests
 
         public override bool CanConvert(Type objectType)
         {
-            return typeof(TimeSpan).GetTypeInfo().IsAssignableFrom(objectType);
+            return typeof(TypedString).IsAssignableFrom(objectType);
         }
     }
 }
