@@ -117,7 +117,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents as a lazy loaded stream.</returns>
-        IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
+        IEnumerable<TDocument> LoadStream<TDocument, TId>(IEnumerable<TId> ids) where TDocument : class, IId<TId> where TId : IIdWrapper;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -125,7 +125,8 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        TDocument LoadRequired<TDocument>(string id) where TDocument : class, IId;
+        TDocument LoadRequired<TDocument, TId>(TId id) where TDocument : class, IId<TId> where TId : IIdWrapper;
+        TDocument LoadRequired2<TDocument, TId>(TId id) where TDocument : class, IId<TId> where TId : IIdWrapper;
 
         /// <summary>
         /// Loads a set of documents by their ID's. If any of the documents are not found, a
@@ -144,7 +145,8 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
-        void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId;
+        void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId<IIdWrapper>;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
