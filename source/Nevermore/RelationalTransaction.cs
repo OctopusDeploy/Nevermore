@@ -105,16 +105,16 @@ namespace Nevermore
         }
 
         [Pure]
-        public T Load<T, TId>(TId id) where T : class, IId<TId>
+        public T Load<T>(string id) where T : class, IId
         {
-            return TableQuery<T, TId>()
+            return TableQuery<T>()
                 .Where("[Id] = @id")
                 .Parameter("id", id)
                 .FirstOrDefault();
         }
 
         [Pure]
-        public IEnumerable<T> LoadStream<T, TId>(IEnumerable<TId> ids) where T : class, IId<TId>
+        public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
         {
             var blocks = ids
                 .Distinct()
@@ -124,7 +124,7 @@ namespace Nevermore
 
             foreach (var block in blocks)
             {
-                var results = TableQuery<T, TId>()
+                var results = TableQuery<T>()
                     .Where("[Id] IN @ids")
                     .Parameter("ids", block.ToArray())
                     .Stream();
@@ -135,23 +135,23 @@ namespace Nevermore
         }
 
         [Pure]
-        public T[] Load<T, TId>(IEnumerable<TId> ids) where T : class, IId<TId>
-            => LoadStream<T, TId>(ids).ToArray();
+        public T[] Load<T>(IEnumerable<string> ids) where T : class, IId
+            => LoadStream<T>(ids).ToArray();
 
         [Pure]
-        public T LoadRequired<T, TId>(TId id) where T : class, IId<TId>
+        public T LoadRequired<T>(string id) where T : class, IId
         {
-            var result = Load<T, TId>(id);
+            var result = Load<T>(id);
             if (result == null)
-                throw new ResourceNotFoundException(id.ToString());
+                throw new ResourceNotFoundException(id);
             return result;
         }
 
         [Pure]
-        public T[] LoadRequired<T, TId>(IEnumerable<string> ids) where T : class, IId, IId<TId>
+        public T[] LoadRequired<T>(IEnumerable<string> ids) where T : class, IId
         {
             var allIds = ids.ToArray();
-            var results = TableQuery<T, TId>()
+            var results = TableQuery<T>()
                 .Where("[Id] IN @ids")
                 .Parameter("ids", allIds)
                 .Stream().ToArray();
@@ -163,30 +163,31 @@ namespace Nevermore
             return results;
         }
 
-        public void Insert<TDocument, TId>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId<TId> where TId : class
+        public void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert<TDocument, TId>(null, instance, null, commandTimeout: commandTimeout);
+            Insert(null, instance, null, commandTimeout: commandTimeout);
         }
 
-        public void Insert<TDocument, TId>(string tableName, TDocument instance, TimeSpan? commandTimeout = null)
-            where TDocument : class, IId<TId> where TId : class
+        public void Insert<TDocument>(string tableName, TDocument instance, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert<TDocument, TId>(tableName, instance, null, commandTimeout: commandTimeout);
+            Insert(tableName, instance, null, commandTimeout: commandTimeout);
         }
 
-        public void Insert<TDocument, TId>(TDocument instance, TId customAssignedId, TimeSpan? commandTimeout = null)
-            where TDocument : class, IId<TId>
+        public void Insert<TDocument>(TDocument instance, string customAssignedId, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert<TDocument, TId>(null, instance, customAssignedId, commandTimeout: commandTimeout);
+            Insert(null, instance, customAssignedId, commandTimeout: commandTimeout);
         }
 
-        public void InsertWithHint<TDocument, TId>(TDocument instance, string tableHint, TimeSpan? commandTimeout = null)
-            where TDocument : class, IId<TId> where TId : class
+        public void InsertWithHint<TDocument>(TDocument instance, string tableHint, TimeSpan? commandTimeout = null)
+            where TDocument : class, IId
         {
-            Insert<TDocument, TId>(null, instance, null, tableHint, commandTimeout);
+            Insert(null, instance, null, tableHint, commandTimeout);
         }
 
-        public void Insert<TDocument, TId>(string tableName, TDocument instance, TId customAssignedId, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId<TId>
+        public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
@@ -228,7 +229,7 @@ namespace Nevermore
 
         public void InsertMany<TDocument>(string tableName, IReadOnlyCollection<TDocument> instances,
             bool includeDefaultModelColumns = true, string tableHint = null, TimeSpan? commandTimeout = null)
-            where TDocument : class, IId<TId>
+            where TDocument : class, IId
         {
             if (!instances.Any())
                 return;
@@ -303,7 +304,7 @@ namespace Nevermore
             return $"{idPrefix}-{key}";
         }
 
-        public void Update<TDocument>(TDocument instance, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId<TId>
+        public void Update<TDocument>(TDocument instance, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
             
@@ -331,13 +332,13 @@ namespace Nevermore
         }
 
         // Delete does not require TDocument to implement IId because during recursive document delete we have only objects
-        public void Delete<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId<TId>
+        public void Delete<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete(instance);
             DeleteInternal(statement, parameterValues, commandTimeout);
         }
 
-        public void DeleteById<TDocument>(string id, TimeSpan? commandTimeout = null) where TDocument : class, IId<TId>
+        public void DeleteById<TDocument>(string id, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (statement, parameterValues) = dataModificationQueryBuilder.CreateDelete<TDocument>(id);
             DeleteInternal(statement, parameterValues, commandTimeout);
@@ -546,13 +547,13 @@ namespace Nevermore
         }
 
         [Pure]
-        public ITableSourceQueryBuilder<T> TableQuery<T, TId>() where T : class, IId<TId>
+        public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
             return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Pure]
-        public ISubquerySourceBuilder<T> RawSqlQuery<T, TId>(string query) where T : class, IId<TId>
+        public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class, IId
         {
             return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
