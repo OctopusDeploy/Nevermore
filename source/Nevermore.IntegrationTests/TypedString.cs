@@ -1,10 +1,11 @@
 using System;
+using Nevermore.Contracts;
 using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests
 {
     [JsonConverter(typeof(TypedStringConverter))]
-    public abstract class TypedString : IEquatable<TypedString>
+    public abstract class TypedString : IEquatable<TypedString>, IIdWrapper
     {
         protected TypedString(string value)
         {
