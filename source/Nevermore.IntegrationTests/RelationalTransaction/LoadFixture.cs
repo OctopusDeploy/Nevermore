@@ -88,8 +88,8 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var originalNormal = new Product()
                 {
                     Name = "Unicorn Dust",
-                    Id = "UD-01",
-                    Price = 11.1m,
+                    Id = new ProductId("UD-01"),
+                    Price = 11.1m
                 };
 
                 trn.Insert(originalNormal);
@@ -111,13 +111,13 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 {
                     Name = "Unicorn Dust",
                     BonusMaterial = "Directors Commentary",
-                    Id = "UD-01",
+                    Id = new ProductId("UD-01"),
                     Price = 11.1m,
                 };
 
                 var originalDud = new DodgyProduct()
                 {
-                    Id = "DO-01",
+                    Id = new ProductId("DO-01"),
                     Name = "Something",
                     Price = 12.3m,
                     Tax = 15m
@@ -142,7 +142,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var originalNormal = new Product
                 {
                     Name = "Norm",
-                    Id = "NL-01",
+                    Id = new ProductId("NL-01"),
                     Price = 15.5m
                 };
 
@@ -150,13 +150,13 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 {
                     Name = "Unicorn Dust",
                     BonusMaterial = "Directors Commentary",
-                    Id = "UD-01",
+                    Id = new ProductId("UD-01"),
                     Price = 11.1m
                 };
 
                 var originalDud = new DodgyProduct
                 {
-                    Id = "DO-01",
+                    Id = new ProductId("DO-01"),
                     Name = "Something",
                     Price = 12.3m,
                     Tax = 15m
