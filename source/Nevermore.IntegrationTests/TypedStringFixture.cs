@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests
             executor = null;
 
             var productId = new ProductId("le product");
-            executor.LoadRequired2<Product, ProductId>(productId);
+            executor.LoadRequired<Product, ProductId>(productId);
             LoadWrapped2(productId);
 
             Product product = null;
@@ -25,7 +25,7 @@ namespace Nevermore.IntegrationTests
         TDocument LoadWrapped<TDocument>(IIdWrapper id) where TDocument : class, IId<IIdWrapper>
         {
             //Only places that you are providing just the ID needs the generic arguments
-            var doc = executor.LoadRequired2<TDocument, IIdWrapper>(id);
+            var doc = executor.LoadRequired<TDocument, IIdWrapper>(id);
 
             return doc;
         }
@@ -33,7 +33,7 @@ namespace Nevermore.IntegrationTests
         //This lets us get away from having to specify the generic arguments by coupling the ID to the document (maybe yuck?)
         TDocument LoadWrapped2<TDocument>(IIdWrapperCoupledToDocument<TDocument> id) where TDocument : class, IId<IIdWrapper>
         {
-            var doc = executor.LoadRequired2<TDocument, IIdWrapper>(id);
+            var doc = executor.LoadRequired<TDocument, IIdWrapper>(id);
 
             return doc;
         }

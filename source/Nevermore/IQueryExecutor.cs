@@ -100,6 +100,7 @@ namespace Nevermore
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
         TDocument Load<TDocument>(string id) where TDocument : class, IId;
+        TDocument Load<TDocument, TId>(TId id) where TDocument : class, IId<IIdWrapper> where TId : IIdWrapper;
 
         /// <summary>
         /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -125,8 +126,8 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        TDocument LoadRequired<TDocument, TId>(TId id) where TDocument : class, IId<TId> where TId : IIdWrapper;
-        TDocument LoadRequired2<TDocument, TId>(TId id) where TDocument : class, IId<TId> where TId : IIdWrapper;
+        TDocument LoadRequired<TDocument>(string id) where TDocument : class, IId;
+        TDocument LoadRequired<TDocument, TId>(TId id) where TDocument : class, IId<TId>, IId<IIdWrapper> where TId : IIdWrapper;
 
         /// <summary>
         /// Loads a set of documents by their ID's. If any of the documents are not found, a
