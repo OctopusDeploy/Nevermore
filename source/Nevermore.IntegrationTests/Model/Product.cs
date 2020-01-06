@@ -24,7 +24,7 @@ namespace Nevermore.IntegrationTests.Model
 
         public ProductType Type { get; set; } = ProductType.Normal;
 
-        string IId.Id => Id.Value;
+        string IId.Id => Id?.Value;
     }
 
     public enum ProductType

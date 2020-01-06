@@ -229,7 +229,6 @@ namespace Nevermore
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
 
                     // Copy the assigned Id back onto the document
-                    // TODO: NOSHIP: check this uses the implicit conversion
                     mapping.IdColumn.ReaderWriter.Write(instance, (string) parameters["Id"]);
 
                     relatedDocumentStore.PopulateRelatedDocuments(this, instance);

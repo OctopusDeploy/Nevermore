@@ -142,7 +142,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Commit();
             }
 
-            product.Id.Should().Be("Products-1");
+            product.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-1");
         }
         
         [Test]
@@ -157,8 +157,8 @@ namespace Nevermore.IntegrationTests
                 transaction.Commit();
             }
 
-            product1.Id.Should().Be("Products-1");
-            product2.Id.Should().Be("Products-2");
+            product1.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-1");
+            product2.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-2");
         }
 
         [Test]
