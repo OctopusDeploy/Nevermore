@@ -117,7 +117,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <returns>The documents as a lazy loaded stream.</returns>
-        IEnumerable<TDocument> LoadStream<TDocument, TId>(IEnumerable<TId> ids) where TDocument : class, IId<TId> where TId : IIdWrapper;
+        IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class, IId;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -145,8 +145,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
-        void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null)
-            where TDocument : class, IId<IIdWrapper>;
+        void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
