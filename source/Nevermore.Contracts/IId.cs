@@ -14,13 +14,4 @@
     {
         string Value { get; }
     }
-
-    public interface IIdWrapperCoupledToDocument<T> : IIdWrapper
-    {
-    }
-
-    public class LegacyStringId : IIdWrapper
-    {
-        public string Value { get; }
-    }
 }

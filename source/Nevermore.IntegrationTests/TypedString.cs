@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace Nevermore.IntegrationTests
 {
     [JsonConverter(typeof(TypedStringConverter))]
-    public abstract class TypedString : IEquatable<TypedString>, IIdWrapper
+    public abstract class TypedString : IEquatable<TypedString>
     {
         protected TypedString(string value)
         {

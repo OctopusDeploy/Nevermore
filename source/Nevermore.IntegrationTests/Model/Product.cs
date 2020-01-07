@@ -2,7 +2,7 @@ using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductId : TypedString, IIdWrapperCoupledToDocument<Product>
+    public class ProductId : TypedString, IIdWrapper
     {
         public ProductId(string value) : base(value)
         {
