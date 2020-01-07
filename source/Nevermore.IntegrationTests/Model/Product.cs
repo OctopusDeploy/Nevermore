@@ -1,4 +1,5 @@
 using Nevermore.Contracts;
+using Nevermore.TypedStrings;
 
 namespace Nevermore.IntegrationTests.Model
 {

@@ -1,8 +1,7 @@
 using System;
-using System.Reflection;
 using Newtonsoft.Json;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.TypedStrings
 {
     public class TypedStringConverter : JsonConverter
     {

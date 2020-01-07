@@ -1,8 +1,7 @@
 using System;
-using Nevermore.Contracts;
 using Newtonsoft.Json;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.TypedStrings
 {
     [JsonConverter(typeof(TypedStringConverter))]
     public abstract class TypedString : IEquatable<TypedString>
