@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nevermore.Contracts;
-using Nevermore.TypedStrings;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
 
-    public class Order : IDocument<OrderId>, IId
+    public class Order : IDocument
     {
         public Order()
         {
@@ -19,17 +18,9 @@ namespace Nevermore.IntegrationTests.Model
             RelatedDocuments = relatedDocuments?.ToArray();
         }
         
-        public OrderId Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
 
         public IEnumerable<(string, Type)> RelatedDocuments { get; }
-        string IId.Id => Id?.Value;
-    }
-
-    public class OrderId : TypedString, IIdWrapper
-    {
-        public OrderId(string value) : base(value)
-        {
-        }
     }
 }

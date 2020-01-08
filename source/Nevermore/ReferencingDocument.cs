@@ -3,7 +3,6 @@ using Nevermore.Contracts;
 
 namespace Nevermore
 {
-    // TODO: NOSHIP: move to OctopusDeploy/OctopusDeploy
     public class ReferencingDocument : IEquatable<ReferencingDocument>
     {
         public string DocumentId { get; set; }

@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.Legacy.Model;
 using Nevermore.Mapping;
 using NUnit.Framework;
 using TestStack.BDDfy;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.Legacy
 {
     public class RelatedDocumentTableFixture : FixtureWithRelationalStore
     {
@@ -38,7 +37,7 @@ namespace Nevermore.IntegrationTests
             }
         };
 
-        OrderId orderId;
+        string orderId;
         Order loadedOrder;
 
         public void GivenRecordsCurrentlyExist()
@@ -54,7 +53,7 @@ namespace Nevermore.IntegrationTests
 
         public void AndGivenAnOrderReferencing(string[] referenceIds)
         {
-            orderId = new OrderId("Order-1");
+            orderId = "Order-1";
             using (var trn = Store.BeginTransaction())
             {
                 trn.ExecuteNonQuery($"INSERT INTO [Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
@@ -71,7 +70,7 @@ namespace Nevermore.IntegrationTests
         public void WhenTheOrderIsRead()
         {
             using (var trn = Store.BeginTransaction())
-                loadedOrder = trn.Load<Order, OrderId>(orderId);
+                loadedOrder = trn.Load<Order>(orderId);
         }
 
         public void WhenANewOrderIsInsertedReferencing(string[] referenceIds)

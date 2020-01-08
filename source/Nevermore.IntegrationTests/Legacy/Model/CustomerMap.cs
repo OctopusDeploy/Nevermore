@@ -1,9 +1,7 @@
-using System.Data;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.TypedStrings;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
     public class CustomerMap : DocumentMap<Customer>
     {
@@ -18,23 +16,15 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class CustomerToTestSerialization : IId<CustomerToTestSerializationId>, IId
+    public class CustomerToTestSerialization : IId
     {
-        public CustomerToTestSerializationId Id { get; set; }
+        public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
         public string Nickname { get; set; }
         public ReferenceCollection Roles { get; private set; }
         public string JSON { get; set; }
-        string IId.Id => Id?.Value;
-    }
-
-    public class CustomerToTestSerializationId: TypedString, IIdWrapper
-    {
-        public CustomerToTestSerializationId(string value) : base(value)
-        {
-        }
     }
 
     public class CustomerToTestSerializationMap : DocumentMap<CustomerToTestSerialization>

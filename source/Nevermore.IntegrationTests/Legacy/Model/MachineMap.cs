@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
-using Nevermore.TypedStrings;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
     public class MachineMap : DocumentMap<Machine>
     {
@@ -27,20 +26,12 @@ namespace Nevermore.IntegrationTests.Model
         protected override string TypeDesignatingPropertyName => "Type";
     }
 
-    public class MachineToTestSerialization : IDocument<MachineToTestSerializationId>, IId
+    public class MachineToTestSerialization : IDocument
     {
-        public MachineToTestSerializationId Id { get; protected set; }
+        public string Id { get; protected set; }
         public string Name { get; set; }
 
         public string JSON { get; set; }
-        string IId.Id => Id?.Value;
-    }
-
-    public class MachineToTestSerializationId : TypedString, IIdWrapper
-    {
-        public MachineToTestSerializationId(string value) : base(value)
-        {
-        }
     }
 
     public class MachineToTestSerializationMap : DocumentMap<MachineToTestSerialization>

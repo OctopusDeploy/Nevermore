@@ -1,12 +1,21 @@
 using Nevermore.Contracts;
+using Nevermore.TypedStrings;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductSubtotal : IId
+    public class ProductSubtotal : IId<ProductSubtotalId>, IId
     {
-        public string Id { get; set; }
+        public ProductSubtotalId Id { get; set; }
         public string ProductId { get; set; }
         public string ProductName { get; set; }
         public decimal Subtotal { get; set; }
+        string IId.Id => Id?.Value;
+    }
+
+    public class ProductSubtotalId : TypedString, IIdWrapper
+    {
+        public ProductSubtotalId(string value) : base(value)
+        {
+        }
     }
 }

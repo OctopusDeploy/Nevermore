@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
-using Nevermore.TypedStrings;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
     public class ProductMap<TProduct> : DocumentMap<TProduct> where TProduct : Product
     {
@@ -25,21 +24,13 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class ProductToTestSerialization : IDocument<ProductToTestSerializationId>, IId
+    public class ProductToTestSerialization : IDocument
     {
-        public ProductToTestSerializationId Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
      
         public string Type { get; set; }
         public string JSON { get; set; }
-        string IId.Id => Id?.Value;
-    }
-
-    public class ProductToTestSerializationId : TypedString, IIdWrapper
-    {
-        public ProductToTestSerializationId(string value) : base(value)
-        {
-        }
     }
 
     public class ProductToTestSerializationMap : DocumentMap<ProductToTestSerialization>

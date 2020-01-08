@@ -1,26 +1,15 @@
 ﻿using Nevermore.Contracts;
-using Nevermore.TypedStrings;
-using Newtonsoft.Json;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
-    public abstract class Brand : IDocument<BrandId>, IId
+    public abstract class Brand : IDocument
     {
-        public BrandId Id { get; protected set; }
+        public string Id { get; protected set; }
         public string Name { get; set; }
 
         public abstract string Type { get; }
 
         public string Description { get; set; }
-
-        string IId.Id => Id?.Value;
-    }
-
-    public class BrandId : TypedString, IIdWrapper
-    {
-        public BrandId(string value) : base(value)
-        {
-        }
     }
 
     public class BrandA : Brand

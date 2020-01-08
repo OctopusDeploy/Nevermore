@@ -1,10 +1,10 @@
 ﻿using System.Linq;
 using FluentAssertions;
-using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.Legacy.Model;
 using Nevermore.Mapping;
 using NUnit.Framework;
 
-namespace Nevermore.IntegrationTests.RelationalTransaction
+namespace Nevermore.IntegrationTests.Legacy.RelationalTransaction
 {
     public class LoadFixture : FixtureWithRelationalStore
     {
@@ -66,7 +66,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                     FirstName = "Bob",
                     LastName = "Tester",
                     Nickname = "Bob the builder",
-                    Id = new CustomerId("Customers-01")
+                    Id = "Customers-01"
                 };
 
                 trn.Insert<Customer>(customer);
@@ -88,8 +88,8 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var originalNormal = new Product()
                 {
                     Name = "Unicorn Dust",
-                    Id = new ProductId("UD-01"),
-                    Price = 11.1m
+                    Id = "UD-01",
+                    Price = 11.1m,
                 };
 
                 trn.Insert(originalNormal);
@@ -111,13 +111,13 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 {
                     Name = "Unicorn Dust",
                     BonusMaterial = "Directors Commentary",
-                    Id = new ProductId("UD-01"),
+                    Id = "UD-01",
                     Price = 11.1m,
                 };
 
                 var originalDud = new DodgyProduct()
                 {
-                    Id = new ProductId("DO-01"),
+                    Id = "DO-01",
                     Name = "Something",
                     Price = 12.3m,
                     Tax = 15m
@@ -142,7 +142,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var originalNormal = new Product
                 {
                     Name = "Norm",
-                    Id = new ProductId("NL-01"),
+                    Id = "NL-01",
                     Price = 15.5m
                 };
 
@@ -150,13 +150,13 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 {
                     Name = "Unicorn Dust",
                     BonusMaterial = "Directors Commentary",
-                    Id = new ProductId("UD-01"),
+                    Id = "UD-01",
                     Price = 11.1m
                 };
 
                 var originalDud = new DodgyProduct
                 {
-                    Id = new ProductId("DO-01"),
+                    Id = "DO-01",
                     Name = "Something",
                     Price = 12.3m,
                     Tax = 15m

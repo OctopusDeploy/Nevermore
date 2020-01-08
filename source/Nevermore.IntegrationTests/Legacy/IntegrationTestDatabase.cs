@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Resources;
 using System.IO;
 using System.Text;
 using Nevermore.IntegrationTests.Chaos;
-using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.Legacy.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.Legacy
 {
     public class IntegrationTestDatabase
     {

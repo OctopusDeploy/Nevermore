@@ -1,24 +1,14 @@
 using Nevermore.Contracts;
-using Nevermore.TypedStrings;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.IntegrationTests.Legacy.Model
 {
-    public class ProductId : TypedString, IIdWrapper
+    public class Product : IDocument
     {
-        public ProductId(string value) : base(value)
-        {
-        }
-    }
-
-    public class Product : IDocument<ProductId>, IDocument
-    {
-        public ProductId Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
 
         public ProductType Type { get; set; } = ProductType.Normal;
-
-        string IId.Id => Id?.Value;
     }
 
     public enum ProductType

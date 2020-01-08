@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.Legacy.Model;
 using NUnit.Framework;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.Legacy
 {
     public class RelationalStoreFixture : FixtureWithRelationalStore
     {
@@ -14,7 +14,7 @@ namespace Nevermore.IntegrationTests
             // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {Id = new CustomerId("Customers-Alice"), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {Id = "Customers-Alice", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
                 var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"web-server", "app-server"}};
                 var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
@@ -22,7 +22,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer3, "Customers-Chazza");
 
                 customer1.Id.Should().Be("Customers-Alice");
-                customer2.Id.Should().BeOfType<CustomerId>().Which.Value.Should().StartWith("Customers-");
+                customer2.Id.Should().StartWith("Customers-");
                 customer3.Id.Should().Be("Customers-Chazza");
 
                 transaction.Commit();
@@ -105,8 +105,8 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                transaction.Insert(new Product {Name = "Talking Elmo", Price = 100}, new ProductId("product-1"));
-                transaction.Insert(new SpecialProduct() {Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, new ProductId("product-2"));
+                transaction.Insert(new Product {Name = "Talking Elmo", Price = 100}, "product-1");
+                transaction.Insert(new SpecialProduct() {Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, "product-2");
 
                 transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = 10});
                 transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = 10});
@@ -142,7 +142,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Commit();
             }
 
-            product.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-1");
+            product.Id.Should().Be("Products-1");
         }
         
         [Test]
@@ -157,8 +157,8 @@ namespace Nevermore.IntegrationTests
                 transaction.Commit();
             }
 
-            product1.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-1");
-            product2.Id.Should().BeOfType<ProductId>().Which.Value.Should().Be("Products-2");
+            product1.Id.Should().Be("Products-1");
+            product2.Id.Should().Be("Products-2");
         }
 
         [Test]
