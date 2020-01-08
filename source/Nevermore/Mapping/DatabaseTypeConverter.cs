@@ -64,6 +64,11 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
+            if (typeof(IIdWrapper).IsAssignableFrom(propertyType))
+            {
+                return DbType.String;
+            }
+
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);
