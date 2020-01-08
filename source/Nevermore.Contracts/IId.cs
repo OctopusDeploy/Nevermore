@@ -10,6 +10,10 @@
         TId Id { get; }
     }
 
+    /// <summary>
+    /// Implementations must have a constructor that takes a single string value
+    /// <see cref="Nevermore.Mapping.AmazingConverter"/>
+    /// </summary>
     public interface IIdWrapper
     {
         string Value { get; }
