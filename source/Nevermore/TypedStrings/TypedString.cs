@@ -13,7 +13,7 @@ namespace Nevermore.TypedStrings
 
         public string Value { get; }
 
-        public static implicit operator string(TypedString typedString) => typedString.Value;
+        public static implicit operator string(TypedString typedString) => typedString?.Value;
 
         public override string ToString()
         {

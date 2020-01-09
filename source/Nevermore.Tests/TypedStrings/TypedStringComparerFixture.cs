@@ -5,10 +5,10 @@ using FluentAssertions;
 using Nevermore.TypedStrings;
 using NUnit.Framework;
 
-namespace Nevermore.IntegrationTests.TypedStrings
+namespace Nevermore.Tests.TypedStrings
 {
     [TestFixture]
-    public class TypedStringEqualityComparerFixture
+    public class TypedStringComparerFixture
     {
         [Test]
         public void ToDictionary_KeysWithDifferentCaseOrdinal_DoesNotThrow()
