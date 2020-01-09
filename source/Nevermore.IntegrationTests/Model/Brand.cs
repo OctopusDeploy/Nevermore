@@ -1,6 +1,5 @@
 ﻿using Nevermore.Contracts;
-using Nevermore.TypedStrings;
-using Newtonsoft.Json;
+using TinyTypes.TypedStrings;
 
 namespace Nevermore.IntegrationTests.Model
 {

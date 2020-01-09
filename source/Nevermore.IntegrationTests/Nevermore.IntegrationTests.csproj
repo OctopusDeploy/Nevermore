@@ -31,5 +31,6 @@
     <PackageReference Include="dbup" Version="4.1.0" />
     <PackageReference Include="Castle.Core" Version="4.2.1" />
     <PackageReference Include="TestStack.BDDfy" Version="4.3.2" />
+    <PackageReference Include="TinyTypes" Version="0.1.0-roy-typed-string0008" />
   </ItemGroup>
 </Project>

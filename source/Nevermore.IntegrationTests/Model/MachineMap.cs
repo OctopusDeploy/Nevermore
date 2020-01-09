@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
-using Nevermore.TypedStrings;
+using TinyTypes.TypedStrings;
 
 namespace Nevermore.IntegrationTests.Model
 {

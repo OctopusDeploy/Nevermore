@@ -5,10 +5,10 @@ using Assent;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.TypedStrings;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using TinyTypes.TypedStrings;
 
 namespace Nevermore.Tests.Util
 {

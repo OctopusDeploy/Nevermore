@@ -1,7 +1,6 @@
-using System.Data;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.TypedStrings;
+using TinyTypes.TypedStrings;
 
 namespace Nevermore.IntegrationTests.Model
 {
