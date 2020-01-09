@@ -10,6 +10,7 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Nevermore.Contracts;
 using Nevermore.Mapping;
 
 namespace Nevermore
@@ -79,6 +80,12 @@ namespace Nevermore
             if (value == null)
             {
                 command.Parameters.Add(new SqlParameter(name, DBNull.Value));
+                return;
+            }
+
+            if (value is IIdWrapper idWrapper)
+            {
+                ContributeParameter(command, name, idWrapper.Value, mapping);
                 return;
             }
 
