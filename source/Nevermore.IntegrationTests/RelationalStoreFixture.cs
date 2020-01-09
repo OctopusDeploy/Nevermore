@@ -21,9 +21,9 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, "Customers-Chazza");
 
-                customer1.Id.Should().Be("Customers-Alice");
+                customer1.Id.Should().BeOfType<CustomerId>().Which.Value.Should().Be("Customers-Alice");
                 customer2.Id.Should().BeOfType<CustomerId>().Which.Value.Should().StartWith("Customers-");
-                customer3.Id.Should().Be("Customers-Chazza");
+                customer3.Id.Should().BeOfType<CustomerId>().Which.Value.Should().Be("Customers-Chazza");
 
                 transaction.Commit();
             }
