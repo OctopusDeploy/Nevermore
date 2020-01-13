@@ -108,9 +108,9 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(new Product {Name = "Talking Elmo", Price = 100}, new ProductId("product-1"));
                 transaction.Insert(new SpecialProduct() {Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, new ProductId("product-2"));
 
-                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = 10});
-                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = 10});
-                transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20});
+                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = new Quantity(10)});
+                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = new Quantity(10)});
+                transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = new Quantity(20)});
 
                 transaction.Commit();
             }

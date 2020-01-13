@@ -1,9 +1,9 @@
 using Nevermore.Contracts;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductId : TypedString, IIdWrapper
+    public class ProductId : CaseSensitiveTypedString, IIdWrapper
     {
         public ProductId(string value) : base(value)
         {

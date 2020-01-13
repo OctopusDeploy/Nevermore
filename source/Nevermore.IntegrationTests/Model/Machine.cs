@@ -1,5 +1,5 @@
 ﻿using Nevermore.Contracts;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Model
         string IId.Id => Id?.Value;
     }
 
-    public class MachineId: TypedString, IIdWrapper
+    public class MachineId: CaseSensitiveTypedString, IIdWrapper
     {
         public MachineId(string value) : base(value)
         {

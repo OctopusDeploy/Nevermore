@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -36,7 +36,7 @@ namespace Nevermore.IntegrationTests.Model
         string IId.Id => Id?.Value;
     }
 
-    public class MachineToTestSerializationId : TypedString, IIdWrapper
+    public class MachineToTestSerializationId : CaseSensitiveTypedString, IIdWrapper
     {
         public MachineToTestSerializationId(string value) : base(value)
         {

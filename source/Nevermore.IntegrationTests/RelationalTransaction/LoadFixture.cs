@@ -314,7 +314,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             trn.Insert(product);
             foreach (var quantity in quantities)
             {
-                var lineItem = new LineItem { ProductId = product.Id, Name = "Some line item", Quantity = quantity };
+                var lineItem = new LineItem { ProductId = product.Id, Name = "Some line item", Quantity = new Quantity(quantity) };
                 trn.Insert(lineItem);
             }
         }

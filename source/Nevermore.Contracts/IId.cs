@@ -14,8 +14,7 @@
     /// Implementations must have a constructor that takes a single string value
     /// <see cref="Nevermore.Mapping.AmazingConverter"/>
     /// </summary>
-    public interface IIdWrapper
+    public interface IIdWrapper : ITinyType<string>
     {
-        string Value { get; }
     }
 }

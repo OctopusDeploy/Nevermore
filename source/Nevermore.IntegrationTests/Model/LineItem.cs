@@ -1,6 +1,6 @@
 ﻿using System;
 using Nevermore.Contracts;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -10,11 +10,18 @@ namespace Nevermore.IntegrationTests.Model
         public string Name { get; set; }
         public DateTime PurchaseDate { get; set; }
         public string ProductId { get; set; }
-        public int Quantity { get; set; }
+        public Quantity Quantity { get; set; }
         string IId.Id => Id?.Value;
     }
 
-    public class LineItemId : TypedString, IIdWrapper
+    public class Quantity : TypedInt, Contracts.ITinyType<int>
+    {
+        public Quantity(int value) : base(value)
+        {
+        }
+    }
+
+    public class LineItemId : CaseSensitiveTypedString, IIdWrapper
     {
         public LineItemId(string value) : base(value)
         {

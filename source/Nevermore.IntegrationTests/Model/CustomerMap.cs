@@ -1,6 +1,6 @@
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -29,7 +29,7 @@ namespace Nevermore.IntegrationTests.Model
         string IId.Id => Id?.Value;
     }
 
-    public class CustomerToTestSerializationId: TypedString, IIdWrapper
+    public class CustomerToTestSerializationId: CaseSensitiveTypedString, IIdWrapper
     {
         public CustomerToTestSerializationId(string value) : base(value)
         {

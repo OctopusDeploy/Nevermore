@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nevermore.Contracts;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -26,7 +26,7 @@ namespace Nevermore.IntegrationTests.Model
         string IId.Id => Id?.Value;
     }
 
-    public class OrderId : TypedString, IIdWrapper
+    public class OrderId : CaseSensitiveTypedString, IIdWrapper
     {
         public OrderId(string value) : base(value)
         {

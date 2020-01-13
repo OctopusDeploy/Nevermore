@@ -83,9 +83,9 @@ namespace Nevermore
                 return;
             }
 
-            if (value is IIdWrapper idWrapper)
+            if (value is ITinyType<object> tinyType)
             {
-                ContributeParameter(command, name, idWrapper.Value, mapping);
+                ContributeParameter(command, name, tinyType.Value, mapping);
                 return;
             }
 

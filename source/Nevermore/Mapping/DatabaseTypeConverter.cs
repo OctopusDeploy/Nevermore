@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Reflection;
 using Nevermore.Contracts;
 
@@ -52,6 +53,11 @@ namespace Nevermore.Mapping
             TypeMap[typeof (object)] = DbType.Object;
         }
 
+        public static void SetMapping(Type propertyType, DbType dbType)
+        {
+            TypeMap[propertyType] = dbType;
+        }
+
         public static DbType AsDbType(Type propertyType)
         {
             if (propertyType.GetTypeInfo().IsEnum)
@@ -64,15 +70,25 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
-            if (typeof(IIdWrapper).IsAssignableFrom(propertyType))
+            if (typeof(ITinyType<object>).IsAssignableFrom(propertyType))
             {
-                return DbType.String;
+                var innerType = GetTinyTypeInnerType(propertyType);
+                return AsDbType(innerType);
             }
 
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);
             return result;
+        }
+
+        static Type GetTinyTypeInnerType(Type propertyType)
+        {
+            var tinyTypeInterface = propertyType
+                .GetInterfaces()
+                .Single(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ITinyType<>));
+
+            return tinyTypeInterface.GenericTypeArguments.Single();
         }
     }
 }
