@@ -8,7 +8,7 @@ using Nevermore.Mapping;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using TinyTypes.TypedStrings;
+using Octopus.TinyTypes;
 
 namespace Nevermore.Tests.Util
 {
@@ -369,7 +369,7 @@ namespace Nevermore.Tests.Util
             string IId.Id => Id?.Value;
         }
 
-        class TestDocumentId : TypedString, IIdWrapper
+        class TestDocumentId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentId(string value) : base(value)
             {
@@ -387,7 +387,7 @@ namespace Nevermore.Tests.Util
             string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithRelatedDocumentsId : TypedString, IIdWrapper
+        class TestDocumentWithRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentWithRelatedDocumentsId(string value) : base(value)
             {
@@ -411,7 +411,7 @@ namespace Nevermore.Tests.Util
             string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithMultipleRelatedDocumentsId : TypedString, IIdWrapper
+        class TestDocumentWithMultipleRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentWithMultipleRelatedDocumentsId(string value) : base(value)
             {
