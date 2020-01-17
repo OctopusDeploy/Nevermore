@@ -108,16 +108,19 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(new Product {Name = "Talking Elmo", Price = 100}, new ProductId("product-1"));
                 transaction.Insert(new SpecialProduct() {Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, new ProductId("product-2"));
 
-                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = new Quantity(10)});
+                var lineItem = new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = new Quantity(10)};
+                transaction.Insert(lineItem);
                 transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = new Quantity(10)});
                 transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = new Quantity(20)});
 
                 transaction.Commit();
+
+                var reloaded = transaction.Load<LineItem>(lineItem.Id);
             }
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.BonusMaterial as prod_bonusmaterial, prod.JSON as prod_json, prod.Type as prod_type from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
+                var lines = transaction.ExecuteReaderWithProjection("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.Quantity as line_quantity, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.BonusMaterial as prod_bonusmaterial, prod.JSON as prod_json, prod.Type as prod_type from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")

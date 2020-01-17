@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Nevermore.Contracts;
+using Nevermore.Util;
 
 namespace Nevermore.Mapping
 {
@@ -89,13 +90,13 @@ namespace Nevermore.Mapping
                 return source.ToString();
             }
 
+            if (targetType.GetTinyTypeInterface() != null)
+                return Activator.CreateInstance(targetType, source);
+
             var s = source as string;
 
             if (s != null && targetType == typeof(Uri))
                 return new Uri(s);
-
-            if (s != null && typeof(IIdWrapper).IsAssignableFrom(targetType))
-                return Activator.CreateInstance(targetType, source);
 
             // Hope and pray
             return source;

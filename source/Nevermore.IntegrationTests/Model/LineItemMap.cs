@@ -9,6 +9,7 @@ namespace Nevermore.IntegrationTests.Model
             Column(m => m.Name);
             Column(m => m.ProductId);
             Column(m => m.PurchaseDate);
+            Column(m => m.Quantity);
         }
     }
 }

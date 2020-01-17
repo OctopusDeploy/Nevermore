@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using Nevermore.Contracts;
+using Nevermore.Util;
 
 namespace Nevermore.Mapping
 {
@@ -70,9 +71,10 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
-            if (typeof(ITinyType<object>).IsAssignableFrom(propertyType))
+            var tinyTypeInterface = propertyType.GetTinyTypeInterface();
+            if (tinyTypeInterface != null)
             {
-                var innerType = GetTinyTypeInnerType(propertyType);
+                var innerType = GetTinyTypeInnerType(tinyTypeInterface);
                 return AsDbType(innerType);
             }
 
@@ -82,12 +84,8 @@ namespace Nevermore.Mapping
             return result;
         }
 
-        static Type GetTinyTypeInnerType(Type propertyType)
+        static Type GetTinyTypeInnerType(Type tinyTypeInterface)
         {
-            var tinyTypeInterface = propertyType
-                .GetInterfaces()
-                .Single(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ITinyType<>));
-
             return tinyTypeInterface.GenericTypeArguments.Single();
         }
     }

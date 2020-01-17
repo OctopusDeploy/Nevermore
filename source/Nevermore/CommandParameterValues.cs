@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
+using Nevermore.Util;
 
 namespace Nevermore
 {
@@ -83,9 +84,10 @@ namespace Nevermore
                 return;
             }
 
-            if (value is ITinyType<object> tinyType)
+            var tinyTypeInterface = value.GetType().GetTinyTypeInterface();
+            if (tinyTypeInterface != null)
             {
-                ContributeParameter(command, name, tinyType.Value, mapping);
+                ContributeParameter(command, name, tinyTypeInterface.GetTinyTypeValue(value), mapping);
                 return;
             }
 

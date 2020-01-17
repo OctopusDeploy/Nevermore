@@ -279,7 +279,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                                                     FROM (
                                                         SELECT
                                                             ProductId,
-                                                            CAST(JSON_VALUE([JSON], '$.Quantity') AS int) Quantity
+                                                            Quantity
                                                         FROM LineItem
                                                     ) l
                                                     INNER JOIN (
