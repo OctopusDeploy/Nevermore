@@ -1,5 +1,9 @@
 using System;
+#if NETFRAMEWORK
 using System.Data.SqlClient;
+#else
+using Microsoft.Data.SqlClient;
+#endif
 using System.Linq;
 using Nevermore.Diagnositcs;
 using Nevermore.Transient.Throttling;
