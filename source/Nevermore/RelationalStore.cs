@@ -108,10 +108,10 @@ namespace Nevermore
             this.enableMarsByDefault = enableMarsByDefault;
         }
 
-        public string ConnectionString => registry.Value.ConnectionString;
-        public int MaxPoolSize => registry.Value.MaxPoolSize;
+        public string ConnectionString => SelectRegistry().ConnectionString;
+        public int MaxPoolSize => SelectRegistry().MaxPoolSize;
 
-        public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
+        public void WriteCurrentTransactions(StringBuilder sb) => SelectRegistry().WriteCurrentTransactions(sb);
         public DocumentMap GetMappingFor(Type type) => mappings.Get(type);
         public DocumentMap GetMappingFor<T>() => mappings.Get(typeof(T));
 
@@ -130,14 +130,14 @@ namespace Nevermore
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null, bool? enableMars = null)
         {
             var registryToUse = SelectRegistry(enableMars);
-            return new RelationalTransaction(registryToUse.Value, retriableOperation, isolationLevel, sqlCommandFactory,
+            return new RelationalTransaction(registryToUse, retriableOperation, isolationLevel, sqlCommandFactory,
                 jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
-        Lazy<RelationalTransactionRegistry> SelectRegistry(bool? enableMars)
+        RelationalTransactionRegistry SelectRegistry(bool? enableMars = null)
         {
-            if (enableMars == null) return enableMarsByDefault ? registryWithMarsOn : registry;
-            return enableMars == true ? registryWithMarsOn : registry;
+            if (enableMars == null) return enableMarsByDefault ? registryWithMarsOn.Value : registry.Value;
+            return enableMars == true ? registryWithMarsOn.Value : registry.Value;
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)
