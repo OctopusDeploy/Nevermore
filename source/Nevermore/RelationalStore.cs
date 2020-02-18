@@ -29,7 +29,7 @@ namespace Nevermore
         private readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
         readonly ObjectInitialisationOptions objectInitialisationOptions;
-        readonly bool setMarsAsDefault;
+        readonly bool enableMarsByDefault;
 
         /// <summary>
         ///
@@ -42,7 +42,7 @@ namespace Nevermore
         /// <param name="relatedDocumentStore"></param>
         /// <param name="keyBlockSize"></param>
         /// <param name="objectInitialisationOptions"></param>
-        /// <param name="setMarsAsDefault">MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15</param>
+        /// <param name="enableMarsByDefault">MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15</param>
         public RelationalStore(
             string connectionString,
             string applicationName,
@@ -52,7 +52,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
-            bool setMarsAsDefault = true)
+            bool enableMarsByDefault = true)
             : this(
                 () => connectionString,
                 applicationName,
@@ -62,7 +62,7 @@ namespace Nevermore
                 relatedDocumentStore,
                 keyBlockSize,
                 objectInitialisationOptions,
-                setMarsAsDefault
+                enableMarsByDefault
             )
         {
 
@@ -88,7 +88,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
-            bool setMarsAsDefault = true)
+            bool enableMarsByDefault = true)
         {
             this.registry = new Lazy<RelationalTransactionRegistry>(
                 () => SetConnectionStringOptions(connectionString(), applicationName, false)
@@ -105,7 +105,7 @@ namespace Nevermore
             this.jsonSettings = jsonSettings;
             this.relatedDocumentStore = relatedDocumentStore;
             this.objectInitialisationOptions = objectInitialisationOptions;
-            this.setMarsAsDefault = setMarsAsDefault;
+            this.enableMarsByDefault = enableMarsByDefault;
         }
 
         public string ConnectionString => registry.Value.ConnectionString;
@@ -136,7 +136,7 @@ namespace Nevermore
 
         Lazy<RelationalTransactionRegistry> SelectRegistry(bool? enableMars)
         {
-            if (enableMars == null) return setMarsAsDefault ? registryWithMarsOn : registry;
+            if (enableMars == null) return enableMarsByDefault ? registryWithMarsOn : registry;
             return enableMars == true ? registryWithMarsOn : registry;
         }
 
