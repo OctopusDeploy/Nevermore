@@ -21,12 +21,12 @@ namespace Nevermore
         public const int DefaultConnectRetryCount = 3;
         public const int DefaultConnectRetryInterval = 10;
 
-        private readonly ISqlCommandFactory sqlCommandFactory;
+        readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly Lazy<RelationalTransactionRegistry> registryWithMarsOn;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
-        private readonly IRelatedDocumentStore relatedDocumentStore;
+        readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
         readonly ObjectInitialisationOptions objectInitialisationOptions;
         readonly bool enableMarsByDefault;
@@ -79,6 +79,7 @@ namespace Nevermore
         /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
         /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
         /// <param name="objectInitialisationOptions"></param>
+        /// <param name="enableMarsByDefault"></param>
         public RelationalStore(
             Func<string> connectionString,
             string applicationName,
