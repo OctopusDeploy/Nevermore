@@ -1,4 +1,6 @@
-﻿namespace Nevermore.Contracts
+﻿using Octopus.TinyTypes;
+
+namespace Nevermore.Contracts
 {
     public interface IId
     {

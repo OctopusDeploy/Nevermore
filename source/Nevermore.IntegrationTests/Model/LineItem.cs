@@ -14,7 +14,7 @@ namespace Nevermore.IntegrationTests.Model
         string IId.Id => Id?.Value;
     }
 
-    public class Quantity : TypedInt, Contracts.ITinyType<int>
+    public class Quantity : TypedInt
     {
         public Quantity(int value) : base(value)
         {
