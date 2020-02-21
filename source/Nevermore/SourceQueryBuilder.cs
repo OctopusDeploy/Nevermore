@@ -10,20 +10,20 @@ namespace Nevermore
     // However, if you don't add any other customizations, then the subquery is redundant and we don't need a subquery at all
     // This avoids heavily nested subqueries when unioning multiple statements.
     //
-    // This behaviour is different to normal subquery building, 
+    // This behaviour is different to normal subquery building,
     // because if the consumer explicitly asks for a subquery, it would be too presumptuous of us to not create a subquery for them under some circumstances
     public class UnionSourceBuilder<TRecord> : SourceQueryBuilder<TRecord>, ISubquerySourceBuilder<TRecord> where TRecord : class
     {
         readonly ISelect select;
         string alias;
 
-        public UnionSourceBuilder(ISelect select, 
-            IRelationalTransaction relationalTransaction, 
-            ITableAliasGenerator tableAliasGenerator, 
-            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
-            CommandParameterValues parameterValues, 
-            Parameters parameters, 
-            ParameterDefaults parameterDefaults) 
+        public UnionSourceBuilder(ISelect select,
+            IRelationalTransaction relationalTransaction,
+            ITableAliasGenerator tableAliasGenerator,
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator,
+            CommandParameterValues parameterValues,
+            Parameters parameters,
+            ParameterDefaults parameterDefaults)
             : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
@@ -36,14 +36,14 @@ namespace Nevermore
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            return new JoinSourceQueryBuilder<TRecord>(AsSource(), 
+            return new JoinSourceQueryBuilder<TRecord>(AsSource(),
                 joinType,
-                source, 
-                RelationalTransaction, 
-                TableAliasGenerator, 
-                UniqueParameterNameGenerator, 
-                new CommandParameterValues(ParamValues, parameterValues), 
-                new Parameters(Params, parameters), 
+                source,
+                RelationalTransaction,
+                TableAliasGenerator,
+                UniqueParameterNameGenerator,
+                new CommandParameterValues(ParamValues, parameterValues),
+                new Parameters(Params, parameters),
                 new ParameterDefaults(ParamDefaults, parameterDefaults));
         }
 
@@ -68,13 +68,13 @@ namespace Nevermore
         readonly ISelect select;
         string alias;
 
-        public SubquerySourceBuilder(ISelect select, 
-            IRelationalTransaction relationalTransaction, 
-            ITableAliasGenerator tableAliasGenerator, 
-            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
-            CommandParameterValues parameterValues, 
-            Parameters parameters, 
-            ParameterDefaults parameterDefaults) 
+        public SubquerySourceBuilder(ISelect select,
+            IRelationalTransaction relationalTransaction,
+            ITableAliasGenerator tableAliasGenerator,
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator,
+            CommandParameterValues parameterValues,
+            Parameters parameters,
+            ParameterDefaults parameterDefaults)
             : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
@@ -87,14 +87,14 @@ namespace Nevermore
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            return new JoinSourceQueryBuilder<TRecord>(AsSource(), 
+            return new JoinSourceQueryBuilder<TRecord>(AsSource(),
                 joinType,
-                source, 
-                RelationalTransaction, 
-                TableAliasGenerator, 
-                UniqueParameterNameGenerator, 
-                new CommandParameterValues(ParamValues, parameterValues), 
-                new Parameters(Params, parameters), 
+                source,
+                RelationalTransaction,
+                TableAliasGenerator,
+                UniqueParameterNameGenerator,
+                new CommandParameterValues(ParamValues, parameterValues),
+                new Parameters(Params, parameters),
                 new ParameterDefaults(ParamDefaults, parameterDefaults));
         }
 
@@ -103,7 +103,7 @@ namespace Nevermore
             if (string.IsNullOrEmpty(alias))
             {
                 Alias(TableAliasGenerator.GenerateTableAlias());
-            } 
+            }
 
             return new SubquerySource(select, alias);
         }
@@ -123,15 +123,15 @@ namespace Nevermore
         IAliasedSelectSource joinSource;
         List<JoinClause> clauses;
 
-        public JoinSourceQueryBuilder(IAliasedSelectSource originalSource, 
-            JoinType joinType, 
-            IAliasedSelectSource nextJoin, 
-            IRelationalTransaction relationalTransaction, 
+        public JoinSourceQueryBuilder(IAliasedSelectSource originalSource,
+            JoinType joinType,
+            IAliasedSelectSource nextJoin,
+            IRelationalTransaction relationalTransaction,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
-            CommandParameterValues parameterValues, 
-            Parameters parameters, 
-            ParameterDefaults parameterDefaults) 
+            CommandParameterValues parameterValues,
+            Parameters parameters,
+            ParameterDefaults parameterDefaults)
             : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.originalSource = originalSource;
@@ -180,7 +180,7 @@ namespace Nevermore
         {
             return On(originalSource.Alias, leftField, operand, rightField);
         }
-        
+
         public IJoinSourceQueryBuilder<TRecord> On(string leftTableAlias, string leftField, JoinOperand operand, string rightField)
         {
             var newClause = new JoinClause(leftTableAlias, leftField, operand, joinSource.Alias, rightField);
@@ -194,13 +194,13 @@ namespace Nevermore
         string tableOrViewName;
         string alias;
 
-        public TableSourceQueryBuilder(string tableOrViewName, 
-            IRelationalTransaction relationalTransaction, 
-            ITableAliasGenerator tableAliasGenerator, 
+        public TableSourceQueryBuilder(string tableOrViewName,
+            IRelationalTransaction relationalTransaction,
+            ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults) 
+            ParameterDefaults parameterDefaults)
             : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.tableOrViewName = tableOrViewName;
@@ -213,14 +213,14 @@ namespace Nevermore
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(), 
+            return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(),
                 joinType,
-                source, 
-                RelationalTransaction, 
-                TableAliasGenerator, 
-                UniqueParameterNameGenerator, 
-                new CommandParameterValues(ParamValues, parameterValues), 
-                new Parameters(Params, parameters), 
+                source,
+                RelationalTransaction,
+                TableAliasGenerator,
+                UniqueParameterNameGenerator,
+                new CommandParameterValues(ParamValues, parameterValues),
+                new Parameters(Params, parameters),
                 new ParameterDefaults(ParamDefaults, parameterDefaults));
         }
 
@@ -261,7 +261,7 @@ namespace Nevermore
             }
             return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias);
         }
-        
+
         AliasedTableSource CreateAliasedTableSource()
         {
             return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
@@ -277,11 +277,11 @@ namespace Nevermore
         protected readonly Parameters Params;
         protected readonly ParameterDefaults ParamDefaults;
 
-        protected SourceQueryBuilder(IRelationalTransaction relationalTransaction, 
-            ITableAliasGenerator tableAliasGenerator, 
+        protected SourceQueryBuilder(IRelationalTransaction relationalTransaction,
+            ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
-            CommandParameterValues parameterValues, 
-            Parameters parameters, 
+            CommandParameterValues parameterValues,
+            Parameters parameters,
             ParameterDefaults parameterDefaults)
         {
             RelationalTransaction = relationalTransaction;
@@ -322,9 +322,9 @@ namespace Nevermore
         {
             return Builder.WhereParameterised(fieldName, operand, parameter);
         }
-        
+
         public IQueryBuilder<TRecord> WhereNull(string fieldName) => Builder.WhereNull(fieldName);
-        
+
         public IQueryBuilder<TRecord> WhereNotNull(string fieldName) => Builder.WhereNotNull(fieldName);
 
         public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
@@ -343,12 +343,12 @@ namespace Nevermore
         {
             return Builder.OrderBy(fieldName);
         }
-        
+
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
         {
             return Builder.OrderBy(fieldName, tableAlias);
         }
-        
+
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
             return Builder.OrderByDescending(fieldName);
@@ -473,6 +473,11 @@ namespace Nevermore
         public List<TRecord> ToList()
         {
             return Builder.ToList();
+        }
+
+        public TRecord[] ToArray()
+        {
+            return Builder.ToArray();
         }
 
         public IEnumerable<TRecord> Stream()
