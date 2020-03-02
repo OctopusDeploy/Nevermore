@@ -20,9 +20,9 @@ namespace Nevermore
 
         [Obsolete("First returns the first row, or null if there are no rows. To make your code easier to read, use FirstOrDefault instead.")]
         TRecord First();
-        
+
         /// <summary>
-        /// Executes the query and returns the first row, or null if there are no rows 
+        /// Executes the query and returns the first row, or null if there are no rows
         /// </summary>
         TRecord FirstOrDefault();
 
@@ -54,11 +54,18 @@ namespace Nevermore
         List<TRecord> ToList(int skip, int take, out int totalResults);
 
         /// <summary>
-        /// Executes the query and returns all of the rows. 
+        /// Executes the query and returns all of the rows.
         /// The rows are completely enumerated and stored in a List in memory.
         /// </summary>
         /// <returns>All of the rows from the result set</returns>
         List<TRecord> ToList();
+
+        /// <summary>
+        /// Executes the query and returns all of the rows.
+        /// The rows are completely enumerated and stored in a Array in memory.
+        /// </summary>
+        /// <returns>All of the rows from the result set</returns>
+        TRecord[] ToArray();
 
         /// <summary>
         /// Executes the query and streams the rows.

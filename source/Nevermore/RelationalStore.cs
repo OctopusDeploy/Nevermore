@@ -21,14 +21,26 @@ namespace Nevermore
         public const int DefaultConnectRetryCount = 3;
         public const int DefaultConnectRetryInterval = 10;
 
-        private readonly ISqlCommandFactory sqlCommandFactory;
+        readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
-        private readonly IRelatedDocumentStore relatedDocumentStore;
+        readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
         readonly ObjectInitialisationOptions objectInitialisationOptions;
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="applicationName"></param>
+        /// <param name="sqlCommandFactory"></param>
+        /// <param name="mappings"></param>
+        /// <param name="jsonSettings"></param>
+        /// <param name="relatedDocumentStore"></param>
+        /// <param name="keyBlockSize"></param>
+        /// <param name="objectInitialisationOptions"></param>
+        /// <param name="forceMars">MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15</param>
         public RelationalStore(
             string connectionString,
             string applicationName,
@@ -37,7 +49,8 @@ namespace Nevermore
             JsonSerializerSettings jsonSettings,
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
-            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None)
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
+            bool forceMars = true)
             : this(
                 () => connectionString,
                 applicationName,
@@ -46,7 +59,8 @@ namespace Nevermore
                 jsonSettings,
                 relatedDocumentStore,
                 keyBlockSize,
-                objectInitialisationOptions
+                objectInitialisationOptions,
+                forceMars
             )
         {
 
@@ -63,6 +77,7 @@ namespace Nevermore
         /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
         /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
         /// <param name="objectInitialisationOptions"></param>
+        /// <param name="forceMars"></param>
         public RelationalStore(
             Func<string> connectionString,
             string applicationName,
@@ -71,11 +86,13 @@ namespace Nevermore
             JsonSerializerSettings jsonSettings,
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
-            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None)
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
+            bool forceMars = true)
         {
             this.registry = new Lazy<RelationalTransactionRegistry>(
-                () => SetConnectionStringOptions(connectionString(), applicationName)
+                () => SetConnectionStringOptions(connectionString(), applicationName, forceMars)
             );
+
             this.sqlCommandFactory = sqlCommandFactory;
             this.mappings = mappings;
             keyAllocator = new KeyAllocator(this, keyBlockSize);
@@ -110,13 +127,17 @@ namespace Nevermore
                 jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
-        static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName)
+        static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)
         {
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
-                MultipleActiveResultSets = true,
                 ApplicationName = applicationName,
             };
+
+            if (forceMars)
+            {
+                connectionStringBuilder.MultipleActiveResultSets = true;
+            }
 
             OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout),
                 DefaultConnectTimeoutSeconds);

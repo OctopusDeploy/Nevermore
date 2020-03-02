@@ -18,13 +18,13 @@ namespace Nevermore
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
         TimeSpan? commandTimeout;
-        
-        public QueryBuilder(TSelectBuilder selectBuilder, 
+
+        public QueryBuilder(TSelectBuilder selectBuilder,
             IRelationalTransaction transaction,
-            ITableAliasGenerator tableAliasGenerator, 
-            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
-            CommandParameterValues paramValues, 
-            Parameters @params, 
+            ITableAliasGenerator tableAliasGenerator,
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator,
+            CommandParameterValues paramValues,
+            Parameters @params,
             ParameterDefaults paramDefaults)
         {
             this.selectBuilder = selectBuilder;
@@ -57,7 +57,7 @@ namespace Nevermore
             selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, false));
             return this;
         }
-        
+
         public IQueryBuilder<TRecord> WhereNotNull(string fieldName)
         {
             selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, true));
@@ -156,36 +156,36 @@ namespace Nevermore
         public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
             var subquery = new SubquerySource(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias());
-            return new JoinSourceQueryBuilder<TRecord>(subquery, 
-                joinType, 
-                source, 
-                transaction, 
+            return new JoinSourceQueryBuilder<TRecord>(subquery,
+                joinType,
+                source,
+                transaction,
                 tableAliasGenerator,
-                uniqueParameterNameGenerator, 
-                new CommandParameterValues(ParameterValues, parameterValues), 
+                uniqueParameterNameGenerator,
+                new CommandParameterValues(ParameterValues, parameterValues),
                 new Parameters(Parameters, parameters),
                 new ParameterDefaults(ParameterDefaults, parameterDefaults));
         }
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
-            return new UnionSourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }), 
-                transaction, 
-                tableAliasGenerator, 
-                uniqueParameterNameGenerator, 
-                new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues), 
-                new Parameters(Parameters, queryBuilder.Parameters), 
+            return new UnionSourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }),
+                transaction,
+                tableAliasGenerator,
+                uniqueParameterNameGenerator,
+                new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues),
+                new Parameters(Parameters, queryBuilder.Parameters),
                 new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults));
         }
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), 
-                transaction, 
-                tableAliasGenerator, 
-                uniqueParameterNameGenerator, 
-                ParameterValues, 
-                Parameters, 
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(),
+                transaction,
+                tableAliasGenerator,
+                uniqueParameterNameGenerator,
+                ParameterValues,
+                Parameters,
                 ParameterDefaults);
         }
 
@@ -204,7 +204,7 @@ namespace Nevermore
             selectBuilder.AddOrder(fieldName, false);
             return this;
         }
-        
+
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
         {
             selectBuilder.AddOrder(fieldName, tableAlias, false);
@@ -216,7 +216,7 @@ namespace Nevermore
             selectBuilder.AddOrder(fieldName, true);
             return this;
         }
-        
+
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName, string tableAlias)
         {
             selectBuilder.AddOrder(fieldName, tableAlias, true);
@@ -265,7 +265,7 @@ namespace Nevermore
             {
                 return new CommandParameterValues(paramValues)
                 {
-                    {trueParameter.ParameterName, trueValue}, 
+                    {trueParameter.ParameterName, trueValue},
                     {falseParameter.ParameterName, falseValue}
                 };
             }
@@ -274,8 +274,8 @@ namespace Nevermore
             {
                 var clonedSelectBuilder = selectBuilder.Clone();
                 clonedSelectBuilder.RemoveOrderBys();
-                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()), 
-                    new SelectConstant(trueParameter), 
+                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
+                    new SelectConstant(trueParameter),
                     new SelectConstant(falseParameter));
             }
         }
@@ -316,7 +316,7 @@ namespace Nevermore
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
-            
+
             var parmeterValues = new CommandParameterValues(paramValues)
             {
                 {minRowParameter.ParameterName, skip + 1},
@@ -337,6 +337,12 @@ namespace Nevermore
         public List<TRecord> ToList()
         {
             return Stream().ToList();
+        }
+
+        [Pure]
+        public TRecord[] ToArray()
+        {
+            return Stream().ToArray();
         }
 
         [Pure]
