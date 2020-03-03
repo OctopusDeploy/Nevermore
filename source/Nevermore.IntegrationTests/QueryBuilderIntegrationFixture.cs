@@ -79,5 +79,49 @@ namespace Nevermore.IntegrationTests
                 customers.Select(c => c.FirstName).Should().BeEquivalentTo("Charlie");
             }
         }
+
+        [Test]
+        public void WhereEqualsDifferentTypeOfTypedStringClause()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                foreach (var c in new[]
+                {
+                    new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
+                    new Customer {FirstName = "Bob", LastName = "Banana", Nickname = new Nickname("")},
+                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = new Nickname("Chazza")}
+                })
+                    t.Insert(c);
+                t.Commit();
+
+                var customers = t.TableQuery<Customer>()
+                    .Where(c => c.Nickname == new CustomerId("Chazza"))
+                    .ToList();
+
+                customers.Should().BeEmpty();
+            }
+        }
+
+        [Test]
+        public void WhereNotEqualsDifferentTypeOfTypedStringClause()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                foreach (var c in new[]
+                {
+                    new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
+                    new Customer {FirstName = "Bob", LastName = "Banana", Nickname = new Nickname("")},
+                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = new Nickname("Chazza")}
+                })
+                    t.Insert(c);
+                t.Commit();
+
+                var customers = t.TableQuery<Customer>()
+                    .Where(c => c.Nickname != new CustomerId("Chazza"))
+                    .ToList();
+
+                customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob", "Charlie");
+            }
+        }
     }
 }

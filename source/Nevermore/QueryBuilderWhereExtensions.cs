@@ -4,6 +4,7 @@ using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Nevermore.Util;
 
 namespace Nevermore
 {
@@ -144,9 +145,29 @@ namespace Nevermore
             var value = GetValueFromExpression(binaryExpression.Right, property.PropertyType);
             var fieldName = property.Name;
 
-            if (value == null && new[] {UnarySqlOperand.Equal, UnarySqlOperand.NotEqual}.Contains(operand))
-                return operand == UnarySqlOperand.Equal ? queryBuilder.WhereNull(fieldName) : queryBuilder.WhereNotNull(fieldName);
-            return queryBuilder.Where(fieldName, operand, value);
+            switch (operand)
+            {
+                case UnarySqlOperand.Equal when value == null:
+                    return queryBuilder.WhereNull(fieldName);
+                case UnarySqlOperand.NotEqual when value == null:
+                    return queryBuilder.WhereNotNull(fieldName);
+                case UnarySqlOperand.Equal when !property.PropertyType.IsInstanceOfType(value):
+                    return AddAlwaysFalseWhere(queryBuilder);
+                case UnarySqlOperand.NotEqual when !property.PropertyType.IsInstanceOfType(value):
+                    return AddAlwaysTrueWhere(queryBuilder);
+                default:
+                    return queryBuilder.Where(fieldName, operand, value);
+            }
+        }
+        
+        static IQueryBuilder<TRecord> AddAlwaysFalseWhere<TRecord>(IQueryBuilder<TRecord> queryBuilder) where TRecord : class
+        {
+            return queryBuilder.Where("0 = 1");
+        }
+        
+        static IQueryBuilder<TRecord> AddAlwaysTrueWhere<TRecord>(IQueryBuilder<TRecord> queryBuilder) where TRecord : class
+        {
+            return queryBuilder.Where("1 = 1");
         }
 
         static object GetValueFromExpression(Expression expression, Type resultType)
