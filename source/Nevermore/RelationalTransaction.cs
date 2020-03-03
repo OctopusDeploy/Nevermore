@@ -680,7 +680,7 @@ namespace Nevermore
 
         string QueryInfoForLogging(string query, CommandParameterValues parameterValues)
         {
-            return QueryInfoForLogging(query, parameterValues.Select(p => (p.Key, p.Value)).ToList());
+            return QueryInfoForLogging(query, parameterValues?.Select(p => (p.Key, p.Value)).ToList() ?? new List<(string Key, object Value)>());
         }
         
         string QueryInfoForLogging(IDbCommand command)
