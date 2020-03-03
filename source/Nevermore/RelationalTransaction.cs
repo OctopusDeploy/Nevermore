@@ -200,7 +200,7 @@ namespace Nevermore
                 true
              );
             
-            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {QueryInfoForLogging(statement, parameters)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -241,7 +241,7 @@ namespace Nevermore
                 AllocateId,
                 includeDefaultModelColumns);
 
-            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {QueryInfoForLogging(statement, parameters)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -307,7 +307,7 @@ namespace Nevermore
         {
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
             
-            using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {QueryInfoForLogging(statement, parameters)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -345,7 +345,7 @@ namespace Nevermore
 
         void DeleteInternal(string statement, CommandParameterValues parameterValues, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {QueryInfoForLogging(statement, parameterValues)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameterValues, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -369,7 +369,7 @@ namespace Nevermore
 
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {QueryInfoForLogging(query, args)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -431,7 +431,7 @@ namespace Nevermore
             try
             {
                 long msUntilFirstRecord = -1;
-                using (var timedSection = new TimedSection(Log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
+                using (var timedSection = new TimedSection(Log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {QueryInfoForLogging(command)}", 300))
                 {
 
                     try
@@ -531,7 +531,7 @@ namespace Nevermore
 
             using (var timedSection = new TimedSection(Log,
                 ms =>
-                    $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}",
+                    $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {QueryInfoForLogging(command)}",
                 300))
             using (var reader = command.ExecuteReaderWithRetry())
             {
@@ -560,7 +560,7 @@ namespace Nevermore
         [Pure]
         public T ExecuteScalar<T>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Scalar took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(Log, ms => $"Scalar took {ms}ms in transaction '{name}': {QueryInfoForLogging(query, args)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -601,7 +601,7 @@ namespace Nevermore
             Action<IDataReader> readerCallback,
             TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {QueryInfoForLogging(query, args)}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args,
                 commandTimeout: commandTimeout))
             {
@@ -678,6 +678,25 @@ namespace Nevermore
             return $"{CreatedTime} - {connection?.State} - {name}";
         }
 
+        string QueryInfoForLogging(string query, CommandParameterValues parameterValues)
+        {
+            return QueryInfoForLogging(query, parameterValues.Select(p => (p.Key, p.Value)).ToList());
+        }
+        
+        string QueryInfoForLogging(IDbCommand command)
+        {
+            return QueryInfoForLogging(command.CommandText, command.Parameters.Cast<IDataParameter>().Select(p => (p.ParameterName, p.Value)).ToList());
+        }
+
+        string QueryInfoForLogging(string query, IReadOnlyList<(string ParameterName, object ParameterValue)> parameters)
+        {
+            if (!parameters.Any())
+                return query;
+
+            var parameterInfo = "Parameters:\r\n" + string.Join(",\r\n", parameters.Select(p => p.ParameterName + ": " + p.ParameterValue));
+            return query + "\r\n" + parameterInfo;
+        }
+        
         class ProjectionMapper : IProjectionMapper
         {
             readonly IDataReader reader;
