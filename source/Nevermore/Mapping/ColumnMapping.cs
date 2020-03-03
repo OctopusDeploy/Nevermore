@@ -2,6 +2,8 @@
 using System.Data;
 using System.Reflection;
 using Nevermore.Contracts;
+using Nevermore.Util;
+using Octopus.TinyTypes;
 
 namespace Nevermore.Mapping
 {
@@ -45,7 +47,7 @@ namespace Nevermore.Mapping
                 IsNullable = true;
             }
             
-            if (property.PropertyType == typeof(string))
+            if (property.PropertyType == typeof(string) || typeof(TypedString).IsAssignableFrom(property.PropertyType))
             {
                 DbType = DbType.String;
                 if (maxLength == 0)

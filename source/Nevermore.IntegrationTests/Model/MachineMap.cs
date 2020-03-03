@@ -27,16 +27,15 @@ namespace Nevermore.IntegrationTests.Model
         protected override string TypeDesignatingPropertyName => "Type";
     }
 
-    public class MachineToTestSerialization : IDocument<MachineToTestSerializationId>, IId
+    public class MachineToTestSerialization : IDocument
     {
         public MachineToTestSerializationId Id { get; protected set; }
         public string Name { get; set; }
 
         public string JSON { get; set; }
-        string IId.Id => Id?.Value;
     }
 
-    public class MachineToTestSerializationId : CaseSensitiveTypedString, IIdWrapper
+    public class MachineToTestSerializationId : CaseSensitiveTypedString
     {
         public MachineToTestSerializationId(string value) : base(value)
         {

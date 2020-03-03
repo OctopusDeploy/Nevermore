@@ -360,41 +360,38 @@ namespace Nevermore.Tests.Util
         }
 
 
-        class TestDocument : IId<TestDocumentId>, IId
+        class TestDocument : IId
         {
             public TestDocumentId Id { get; set; }
             public string AColumn { get; set; }
             public string NotMapped { get; set; }
             public string ReadOnly { get; set; }
-            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentId : CaseSensitiveTypedString, IIdWrapper
+        class TestDocumentId : CaseSensitiveTypedString
         {
             public TestDocumentId(string value) : base(value)
             {
             }
         }
 
-        class TestDocumentWithRelatedDocuments : IId<TestDocumentWithRelatedDocumentsId>, IId
+        class TestDocumentWithRelatedDocuments : IId
         {
             public TestDocumentWithRelatedDocumentsId Id { get; set; }
             public string AColumn { get; set; }
 
             [JsonIgnore]
             public IEnumerable<(string, Type)> RelatedDocumentIds { get; set; }
-
-            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
+        class TestDocumentWithRelatedDocumentsId : CaseSensitiveTypedString
         {
             public TestDocumentWithRelatedDocumentsId(string value) : base(value)
             {
             }
         }
 
-        class TestDocumentWithMultipleRelatedDocuments : IId<TestDocumentWithMultipleRelatedDocumentsId>, IId
+        class TestDocumentWithMultipleRelatedDocuments : IId
         {
             public TestDocumentWithMultipleRelatedDocumentsId Id { get; set; }
             public string AColumn { get; set; }
@@ -407,11 +404,9 @@ namespace Nevermore.Tests.Util
 
             [JsonIgnore]
             public IEnumerable<(string, Type)> RelatedDocumentIds3 { get; set; }
-
-            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithMultipleRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
+        class TestDocumentWithMultipleRelatedDocumentsId : CaseSensitiveTypedString
         {
             public TestDocumentWithMultipleRelatedDocumentsId(string value) : base(value)
             {
@@ -427,6 +422,7 @@ namespace Nevermore.Tests.Util
             public TestDocumentMap()
             {
                 TableName = "TestDocumentTbl";
+                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 Column(t => t.ReadOnly).ReadOnly();
             }
@@ -437,6 +433,7 @@ namespace Nevermore.Tests.Util
             public TestDocumentWithRelatedDocumentsMap()
             {
                 TableName = "TestDocumentTbl";
+                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds);
             }
@@ -447,6 +444,7 @@ namespace Nevermore.Tests.Util
             public TestDocumentWithMultipleRelatedDocumentsMap()
             {
                 TableName = "TestDocumentTbl";
+                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds1);
                 RelatedDocuments(t => t.RelatedDocumentIds2);

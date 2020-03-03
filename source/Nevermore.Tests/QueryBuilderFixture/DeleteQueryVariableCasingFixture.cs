@@ -18,9 +18,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             parameters = null;
         }
 
-        IDeleteQueryBuilder<IId<IIdWrapper>> CreateQueryBuilder()
+        IDeleteQueryBuilder<IId> CreateQueryBuilder()
         {
-            return new DeleteQueryBuilder<IId<IIdWrapper>>(
+            return new DeleteQueryBuilder<IId>(
                 new UniqueParameterNameGenerator(),
                 (_, q, p, __) =>
                 {

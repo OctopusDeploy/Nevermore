@@ -4,6 +4,7 @@ using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 using NUnit.Framework;
+using Octopus.TinyTypes;
 
 namespace Nevermore.Tests.Mapping
 {
@@ -21,17 +22,14 @@ namespace Nevermore.Tests.Mapping
             AmazingConverter.Convert("35", typeof (int)).Should().Be(35);
             AmazingConverter.Convert("button", typeof (XName)).Should().Be((XName)"button");
             AmazingConverter.Convert("FirstEnumValue", typeof (SomeEnum)).Should().Be(SomeEnum.FirstEnumValue);
-            AmazingConverter.Convert("some-value", typeof (SomeIdWrapper)).Should().BeOfType<SomeIdWrapper>().Which.Value.Should().Be("some-value");
+            AmazingConverter.Convert("some-value", typeof (SomeTypedString)).Should().BeOfType<SomeTypedString>().Which.Value.Should().Be("some-value");
         }
 
-        class SomeIdWrapper : IIdWrapper
+        class SomeTypedString : CaseSensitiveTypedString
         {
-            public SomeIdWrapper(string value)
+            public SomeTypedString(string value) : base(value)
             {
-                Value = value;
             }
-
-            public string Value { get; }
         }
 
         enum SomeEnum

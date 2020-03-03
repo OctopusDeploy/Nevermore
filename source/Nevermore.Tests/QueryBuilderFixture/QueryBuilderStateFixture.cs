@@ -195,7 +195,7 @@ ORDER BY [Id]");
         {
             var queryBuilder = QueryBuilder("Accounts");
 
-            queryBuilder.ToDictionary(d => d.Id);
+            queryBuilder.ToDictionary(d => d.Name);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM dbo.[Accounts]

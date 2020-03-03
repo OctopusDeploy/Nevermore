@@ -70,7 +70,7 @@ namespace Nevermore.Util
         public (string statement, CommandParameterValues parameterValues) CreateDelete(IId document)
         {
             var mapping = mappings.Get(document.GetType());
-            var id = UnboxIdString(mapping.IdColumn.ReaderWriter.Read(document));
+            var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             return CreateDeleteById(mapping, id);
         }
 
@@ -182,7 +182,7 @@ namespace Nevermore.Util
 
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IId document, DocumentMap mapping, string prefix = null)
         {
-            var id = UnboxIdString(mapping.IdColumn.ReaderWriter.Read(document));
+            var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             if (string.IsNullOrWhiteSpace(id))
                 id = allocateId(mapping);
 
@@ -325,11 +325,6 @@ namespace Nevermore.Util
                     Related = related
                 };
             return groupedByTable.ToArray();
-        }
-
-        static string UnboxIdString(object idObject)
-        {
-            return idObject is IIdWrapper wrapper ? wrapper.Value : (string) idObject;
         }
 
         class RelatedDocumentTableData

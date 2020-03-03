@@ -8,6 +8,7 @@ namespace Nevermore.IntegrationTests.Model
     {
         public CustomerMap()
         {
+            TypedIdColumn(m => m.Id);
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
             Column(m => m.Nickname).Nullable();
@@ -17,7 +18,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class CustomerToTestSerialization : IId<CustomerToTestSerializationId>, IId
+    public class CustomerToTestSerialization : IId
     {
         public CustomerToTestSerializationId Id { get; set; }
         public string FirstName { get; set; }
@@ -26,10 +27,9 @@ namespace Nevermore.IntegrationTests.Model
         public Nickname Nickname { get; set; }
         public ReferenceCollection Roles { get; private set; }
         public string JSON { get; set; }
-        string IId.Id => Id?.Value;
     }
 
-    public class CustomerToTestSerializationId: CaseSensitiveTypedString, IIdWrapper
+    public class CustomerToTestSerializationId: CaseSensitiveTypedString
     {
         public CustomerToTestSerializationId(string value) : base(value)
         {

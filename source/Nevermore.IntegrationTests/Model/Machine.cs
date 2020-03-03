@@ -3,17 +3,16 @@ using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Machine : IDocument<MachineId>, IId
+    public class Machine : IDocument
     {
         public MachineId Id { get; protected set; }
         public string Name { get; set; }
 
         public string Description { get; set; }
         public Endpoint Endpoint { get; set; }
-        string IId.Id => Id?.Value;
     }
 
-    public class MachineId: CaseSensitiveTypedString, IIdWrapper
+    public class MachineId: CaseSensitiveTypedString
     {
         public MachineId(string value) : base(value)
         {

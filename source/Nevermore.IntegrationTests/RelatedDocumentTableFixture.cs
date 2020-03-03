@@ -71,7 +71,7 @@ namespace Nevermore.IntegrationTests
         public void WhenTheOrderIsRead()
         {
             using (var trn = Store.BeginTransaction())
-                loadedOrder = trn.Load<Order, OrderId>(orderId);
+                loadedOrder = trn.Load<Order>(orderId);
         }
 
         public void WhenANewOrderIsInsertedReferencing(string[] referenceIds)

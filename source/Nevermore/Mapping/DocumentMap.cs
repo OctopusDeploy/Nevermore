@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
+using Octopus.TinyTypes;
 
 namespace Nevermore.Mapping
 {
@@ -10,7 +11,21 @@ namespace Nevermore.Mapping
     {
         protected DocumentMap()
         {
-            InitializeDefault(typeof (TDocument));
+            InitializeDefault(typeof(TDocument));
+        }
+
+        protected ColumnMapping TypedIdColumn<TId>(Expression<Func<TDocument, TId>> propertyLambda)
+            where TId : TypedString
+        {
+            var idProperty = GetPropertyInfo(propertyLambda);
+
+            string ReadValueFromTypedString(TDocument document) => ((TypedString) idProperty.GetValue(document))?.Value;
+
+            void WriteValueAsTypedString(TDocument document, string value) => idProperty.SetValue(document,
+                value == null ? null : Activator.CreateInstance(typeof(TId), value));
+
+            IdColumn.ReaderWriter = new DelegateReaderWriter<TDocument, string>(ReadValueFromTypedString, WriteValueAsTypedString);
+            return IdColumn;
         }
 
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
@@ -82,7 +97,7 @@ namespace Nevermore.Mapping
     public abstract class DocumentMap
     {
         public const string DefaultRelatedDocumentTableName = "RelatedDocument";
-        
+
         protected DocumentMap()
         {
             IndexedColumns = new List<ColumnMapping>();
@@ -96,7 +111,7 @@ namespace Nevermore.Mapping
         public bool IsProjection { get; protected set; }
         public Type Type { get; protected set; }
         public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
-        public ColumnMapping IdColumn { get; private set; }
+        public ColumnMapping IdColumn { get; protected set; }
 
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
@@ -104,7 +119,7 @@ namespace Nevermore.Mapping
         public List<ColumnMapping> IndexedColumns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
-        
+
         public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)

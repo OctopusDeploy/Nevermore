@@ -29,7 +29,7 @@ namespace Nevermore.Tests.Delete
 
             void ExecuteDelete(Type _, Where where, CommandParameterValues __, TimeSpan? ___) => actual = where.GenerateSql().Trim();
 
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("[Price] > 5")
                 .Delete();
 
@@ -47,7 +47,7 @@ namespace Nevermore.Tests.Delete
                 values = cmdValue;
             }
             
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", UnarySqlOperand.GreaterThan, new Parameter("price"))
                 .ParameterValue(5)
                 .Delete();
@@ -67,7 +67,7 @@ namespace Nevermore.Tests.Delete
                 values = cmdValue;
             }
 
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", BinarySqlOperand.Between, new Parameter("LowerPrice"), new Parameter("UpperPrice"))
                 .ParameterValues(5, 10)
                 .Delete();
@@ -88,7 +88,7 @@ namespace Nevermore.Tests.Delete
                 values = cmdValue;
             }
 
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .WhereParameterised("Price", ArraySqlOperand.In, new [] { new Parameter("LowerPrice"), new Parameter("UpperPrice") })
                 .ParameterValues(new object[] {5, 10})
                 .Delete();
@@ -109,7 +109,7 @@ namespace Nevermore.Tests.Delete
                 values = cmdValue;
             }
 
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
@@ -128,7 +128,7 @@ namespace Nevermore.Tests.Delete
                 values = cmdValue;
             }
 
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", BinarySqlOperand.Between, 5, 10)
                 .Delete();
 
@@ -147,7 +147,7 @@ namespace Nevermore.Tests.Delete
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
             }
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", ArraySqlOperand.In, new [] { 5, 10, 15 })
                 .Delete();
 
@@ -167,7 +167,7 @@ namespace Nevermore.Tests.Delete
                 actual = @where.GenerateSql().Trim();
                 values = cmdValue;
             }
-            CreateQueryBuilder<IDocument<IIdWrapper>>(ExecuteDelete)
+            CreateQueryBuilder<IDocument>(ExecuteDelete)
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Where("Price", UnarySqlOperand.LessThan, 10)
                 .Delete();
@@ -181,7 +181,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
-            CreateQueryBuilder<IDocument<IIdWrapper>>((t, w, p, _) => { })
+            CreateQueryBuilder<IDocument>((t, w, p, _) => { })
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
