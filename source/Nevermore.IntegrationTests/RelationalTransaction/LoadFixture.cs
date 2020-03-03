@@ -65,7 +65,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 {
                     FirstName = "Bob",
                     LastName = "Tester",
-                    Nickname = "Bob the builder",
+                    Nickname = new Nickname("Bob the builder"),
                     Id = new CustomerId("Customers-01")
                 };
 
@@ -75,7 +75,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var c = customers.Single(p => p.Id == "Customers-01");
                 c.FirstName.Should().Be("Bob", "Type isn't serializing into column correctly");
-                c.Nickname.Should().Be("Bob the builder", "Type isn't serializing into column correctly");
+                c.Nickname.Should().BeOfType<Nickname>().Which.Value.Should().Be("Bob the builder", "Type isn't serializing into column correctly");
                 c.JSON.Should().Be("{\"LuckyNumbers\":null,\"ApiKey\":null,\"Passphrases\":null}");
             }
         }

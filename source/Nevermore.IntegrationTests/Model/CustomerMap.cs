@@ -23,7 +23,7 @@ namespace Nevermore.IntegrationTests.Model
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
-        public string Nickname { get; set; }
+        public Nickname Nickname { get; set; }
         public ReferenceCollection Roles { get; private set; }
         public string JSON { get; set; }
         string IId.Id => Id?.Value;

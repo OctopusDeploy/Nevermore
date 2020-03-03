@@ -14,9 +14,9 @@ namespace Nevermore.IntegrationTests
             // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {Id = new CustomerId("Customers-Alice"), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"web-server", "app-server"}};
-                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {Id = new CustomerId("Customers-Alice"), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
+                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("B-man"), Roles = {"web-server", "app-server"}};
+                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Chazza"), Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, "Customers-Chazza");
@@ -34,9 +34,9 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"db-server", "app-server"}};
-                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
+                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("B-man"), Roles = {"db-server", "app-server"}};
+                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Chazza"), Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3);
@@ -59,9 +59,9 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"db-server", "app-server"}};
-                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
+                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("B-man"), Roles = {"db-server", "app-server"}};
+                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Chazza"), Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3);
@@ -177,7 +177,7 @@ namespace Nevermore.IntegrationTests
                         FirstName = new string('A', 21),
                         LastName = "Apple",
                         LuckyNumbers = new[] {12, 13},
-                        Nickname = "Ally",
+                        Nickname = new Nickname("Ally"),
                         Roles = {"web-server", "app-server"}
                     });
                 exec.ShouldThrow<StringTooLongException>()
@@ -190,9 +190,9 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                var customer2 = new Customer {FirstName = "Alice", LastName = "Appleby", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                var customer3 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
+                var customer2 = new Customer {FirstName = "Alice", LastName = "Appleby", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
+                var customer3 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
 
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
@@ -207,7 +207,7 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = new Nickname("Ally"), Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1); // customer has a RowVersion column, but would have an error when inserting if the ReadOnly mapping was ignored
                 var dbCustomer = transaction.TableQuery<Customer>().Where(c => c.Id == customer1.Id).ToList().Single();
                 dbCustomer.RowVersion.Length.Should().Be(8);

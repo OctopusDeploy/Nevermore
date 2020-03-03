@@ -36,25 +36,47 @@ namespace Nevermore.IntegrationTests
         {
             using (var t = Store.BeginTransaction())
             {
-                foreach (var c in new []
+                foreach (var c in new[]
                 {
                     new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
-                    new Customer {FirstName = "Bob", LastName = "Banana", Nickname = ""},
-                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
+                    new Customer {FirstName = "Bob", LastName = "Banana", Nickname = new Nickname("")},
+                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = new Nickname("Chazza")}
                 })
                     t.Insert(c);
                 t.Commit();
-                
+
                 var customersNull = t.TableQuery<Customer>()
                     .Where(c => c.Nickname == null)
                     .ToList();
-                
+
                 var customersNotNull = t.TableQuery<Customer>()
                     .Where(c => c.Nickname != null)
                     .ToList();
 
                 customersNull.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
                 customersNotNull.Select(c => c.FirstName).Should().BeEquivalentTo("Bob", "Charlie");
+            }
+        }
+
+        [Test]
+        public void WhereEqualsTypedStringClause()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                foreach (var c in new[]
+                {
+                    new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
+                    new Customer {FirstName = "Bob", LastName = "Banana", Nickname = new Nickname("")},
+                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = new Nickname("Chazza")}
+                })
+                    t.Insert(c);
+                t.Commit();
+
+                var customers = t.TableQuery<Customer>()
+                    .Where(c => c.Nickname == new Nickname("Chazza"))
+                    .ToList();
+
+                customers.Select(c => c.FirstName).Should().BeEquivalentTo("Charlie");
             }
         }
     }
