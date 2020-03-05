@@ -422,7 +422,6 @@ namespace Nevermore.Tests.Util
             public TestDocumentMap()
             {
                 TableName = "TestDocumentTbl";
-                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 Column(t => t.ReadOnly).ReadOnly();
             }
@@ -433,7 +432,6 @@ namespace Nevermore.Tests.Util
             public TestDocumentWithRelatedDocumentsMap()
             {
                 TableName = "TestDocumentTbl";
-                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds);
             }
@@ -444,7 +442,6 @@ namespace Nevermore.Tests.Util
             public TestDocumentWithMultipleRelatedDocumentsMap()
             {
                 TableName = "TestDocumentTbl";
-                TypedIdColumn(t => t.Id);
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds1);
                 RelatedDocuments(t => t.RelatedDocumentIds2);

@@ -14,20 +14,6 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof(TDocument));
         }
 
-        protected ColumnMapping TypedIdColumn<TId>(Expression<Func<TDocument, TId>> propertyLambda)
-            where TId : TypedString
-        {
-            var idProperty = GetPropertyInfo(propertyLambda);
-
-            string ReadValueFromTypedString(TDocument document) => ((TypedString) idProperty.GetValue(document))?.Value;
-
-            void WriteValueAsTypedString(TDocument document, string value) => idProperty.SetValue(document,
-                value == null ? null : Activator.CreateInstance(typeof(TId), value));
-
-            IdColumn.ReaderWriter = new DelegateReaderWriter<TDocument, string>(ReadValueFromTypedString, WriteValueAsTypedString);
-            return IdColumn;
-        }
-
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
         {
             var column = new ColumnMapping(GetPropertyInfo(property));
@@ -134,9 +120,37 @@ namespace Nevermore.Mapping
             {
                 if (property.Name == "Id")
                 {
-                    IdColumn = new ColumnMapping(property);
+                    IdColumn = CreateIdColumnMapping(property);
                 }
             }
+        }
+
+        ColumnMapping CreateIdColumnMapping(PropertyInfo idProperty)
+        {
+            var idPropertyType = idProperty.PropertyType;
+            var idColumnMapping = new ColumnMapping(idProperty);
+
+            if (typeof(TypedString).IsAssignableFrom(idPropertyType))
+                idColumnMapping.ReaderWriter = CreateUnboxingTypedStringReaderWriter(idProperty, idPropertyType);
+
+            return idColumnMapping;
+        }
+
+        DelegateReaderWriter<object, string> CreateUnboxingTypedStringReaderWriter(PropertyInfo idProperty, Type idPropertyType)
+        {
+            string ReadValueFromTypedString(object document)
+            {
+                var id = (TypedString) idProperty.GetValue(document);
+                return id?.Value;
+            }
+
+            void WriteValueAsTypedString(object document, string value)
+            {
+                var id = value == null ? null : Activator.CreateInstance(idPropertyType, value);
+                idProperty.SetValue(document, id);
+            }
+
+            return new DelegateReaderWriter<object, string>(ReadValueFromTypedString, WriteValueAsTypedString);
         }
     }
 }

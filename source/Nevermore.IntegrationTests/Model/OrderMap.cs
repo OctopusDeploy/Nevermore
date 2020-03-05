@@ -6,7 +6,6 @@ namespace Nevermore.IntegrationTests.Model
     {
         public OrderMap()
         {
-            TypedIdColumn(o => o.Id);
             RelatedDocuments(o => o.RelatedDocuments);
         }
     }

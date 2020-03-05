@@ -11,7 +11,6 @@ namespace Nevermore.IntegrationTests.Model
     {
         public ProductMap()
         {
-            TypedIdColumn(m => m.Id);
             Column(m => m.Name);
             Column(m => m.Type);
         }
@@ -47,7 +46,6 @@ namespace Nevermore.IntegrationTests.Model
         public ProductToTestSerializationMap()
         {
             TableName = "Product";
-            TypedIdColumn(x => x.Id);
             Column(x => x.Name);
             Column(x => x.Type);
             Column(x => x.JSON);
