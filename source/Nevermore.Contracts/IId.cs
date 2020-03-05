@@ -1,9 +1,21 @@
-﻿namespace Nevermore.Contracts
+﻿using Octopus.TinyTypes;
+
+namespace Nevermore.Contracts
 {
-    /// <summary>
-    /// Implementations must have an Id property of type string, or TypedString
-    /// </summary>
     public interface IId
+    {
+        string Id { get; }
+    }
+
+    public interface IId<out TId> where TId : IIdWrapper
+    {
+        TId Id { get; }
+    }
+
+    /// <summary>
+    /// Implementations must have a constructor that takes a single string value
+    /// </summary>
+    public interface IIdWrapper : ITinyType<string>
     {
     }
 }

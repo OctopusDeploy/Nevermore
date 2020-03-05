@@ -360,38 +360,41 @@ namespace Nevermore.Tests.Util
         }
 
 
-        class TestDocument : IId
+        class TestDocument : IId<TestDocumentId>, IId
         {
             public TestDocumentId Id { get; set; }
             public string AColumn { get; set; }
             public string NotMapped { get; set; }
             public string ReadOnly { get; set; }
+            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentId : CaseSensitiveTypedString
+        class TestDocumentId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentId(string value) : base(value)
             {
             }
         }
 
-        class TestDocumentWithRelatedDocuments : IId
+        class TestDocumentWithRelatedDocuments : IId<TestDocumentWithRelatedDocumentsId>, IId
         {
             public TestDocumentWithRelatedDocumentsId Id { get; set; }
             public string AColumn { get; set; }
 
             [JsonIgnore]
             public IEnumerable<(string, Type)> RelatedDocumentIds { get; set; }
+
+            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithRelatedDocumentsId : CaseSensitiveTypedString
+        class TestDocumentWithRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentWithRelatedDocumentsId(string value) : base(value)
             {
             }
         }
 
-        class TestDocumentWithMultipleRelatedDocuments : IId
+        class TestDocumentWithMultipleRelatedDocuments : IId<TestDocumentWithMultipleRelatedDocumentsId>, IId
         {
             public TestDocumentWithMultipleRelatedDocumentsId Id { get; set; }
             public string AColumn { get; set; }
@@ -404,9 +407,11 @@ namespace Nevermore.Tests.Util
 
             [JsonIgnore]
             public IEnumerable<(string, Type)> RelatedDocumentIds3 { get; set; }
+
+            string IId.Id => Id?.Value;
         }
 
-        class TestDocumentWithMultipleRelatedDocumentsId : CaseSensitiveTypedString
+        class TestDocumentWithMultipleRelatedDocumentsId : CaseSensitiveTypedString, IIdWrapper
         {
             public TestDocumentWithMultipleRelatedDocumentsId(string value) : base(value)
             {

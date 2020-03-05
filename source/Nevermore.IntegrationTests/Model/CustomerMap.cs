@@ -17,7 +17,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class CustomerToTestSerialization : IId
+    public class CustomerToTestSerialization : IId<CustomerToTestSerializationId>, IId
     {
         public CustomerToTestSerializationId Id { get; set; }
         public string FirstName { get; set; }
@@ -26,9 +26,10 @@ namespace Nevermore.IntegrationTests.Model
         public Nickname Nickname { get; set; }
         public ReferenceCollection Roles { get; private set; }
         public string JSON { get; set; }
+        string IId.Id => Id?.Value;
     }
 
-    public class CustomerToTestSerializationId: CaseSensitiveTypedString
+    public class CustomerToTestSerializationId: CaseSensitiveTypedString, IIdWrapper
     {
         public CustomerToTestSerializationId(string value) : base(value)
         {

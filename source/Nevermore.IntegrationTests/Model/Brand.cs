@@ -3,7 +3,7 @@ using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public abstract class Brand : IDocument
+    public abstract class Brand : IDocument<BrandId>, IId
     {
         public BrandId Id { get; protected set; }
         public string Name { get; set; }
@@ -11,9 +11,11 @@ namespace Nevermore.IntegrationTests.Model
         public abstract string Type { get; }
 
         public string Description { get; set; }
-     }
 
-    public class BrandId : CaseSensitiveTypedString
+        string IId.Id => Id?.Value;
+    }
+
+    public class BrandId : CaseSensitiveTypedString, IIdWrapper
     {
         public BrandId(string value) : base(value)
         {

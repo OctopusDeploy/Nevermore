@@ -25,16 +25,17 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class ProductToTestSerialization : IDocument
+    public class ProductToTestSerialization : IDocument<ProductToTestSerializationId>, IId
     {
         public ProductToTestSerializationId Id { get; set; }
         public string Name { get; set; }
      
         public string Type { get; set; }
         public string JSON { get; set; }
+        string IId.Id => Id?.Value;
     }
 
-    public class ProductToTestSerializationId : CaseSensitiveTypedString
+    public class ProductToTestSerializationId : CaseSensitiveTypedString, IIdWrapper
     {
         public ProductToTestSerializationId(string value) : base(value)
         {

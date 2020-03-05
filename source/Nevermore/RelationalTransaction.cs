@@ -73,7 +73,7 @@ namespace Nevermore
             this.objectInitialisationOptions = objectInitialisationOptions;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
-            
+
             dataModificationQueryBuilder = new DataModificationQueryBuilder(mappings, jsonSerializerSettings);
 
             try
@@ -96,10 +96,10 @@ namespace Nevermore
                 uniqueParameterNameGenerator,
                 (documentType, where, parameterValues, commandTimeout) => DeleteInternal(
                     dataModificationQueryBuilder.CreateDelete(documentType, where),
-                    parameterValues, 
+                    parameterValues,
                     commandTimeout
-                ), 
-                Enumerable.Empty<IWhereClause>(), 
+                ),
+                Enumerable.Empty<IWhereClause>(),
                 new CommandParameterValues()
             );
         }
@@ -107,7 +107,18 @@ namespace Nevermore
         [Pure]
         public T Load<T>(string id) where T : class, IId
         {
-            return TableQuery<T>()
+            return LoadInner(id, TableQuery<T>());
+        }
+
+        [Pure]
+        public T Load<T, TId>(TId id) where T : class, IId<IIdWrapper> where TId : IIdWrapper
+        {
+            return LoadInner(id?.Value, TableQueryTyped<T>());
+        }
+
+        static T LoadInner<T>(string id, ITableSourceQueryBuilder<T> tableSourceQueryBuilder) where T : class
+        {
+            return tableSourceQueryBuilder
                 .Where("[Id] = @id")
                 .Parameter("id", id)
                 .FirstOrDefault();
@@ -144,6 +155,15 @@ namespace Nevermore
             var result = Load<T>(id);
             if (result == null)
                 throw new ResourceNotFoundException(id);
+            return result;
+        }
+
+        public TDocument LoadRequired<TDocument, TId>(TId id) where TDocument : class, IId<TId>, IId<IIdWrapper>
+            where TId : IIdWrapper
+        {
+            var result = Load<TDocument, TId>(id);
+            if (result == null)
+                throw new ResourceNotFoundException(id.Value);
             return result;
         }
 
@@ -189,17 +209,16 @@ namespace Nevermore
 
         public void Insert<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
+            if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
+                throw new ArgumentException("Do not pass a different Id when one is already set on the document");
+
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
-                new[] {instance}, 
-                tableName, 
+                new[] {instance},
+                tableName,
                 tableHint,
                 m => string.IsNullOrEmpty(customAssignedId) ? AllocateId(m) : customAssignedId,
                 true
-             );
-
-            var alreadySetInstanceId = mapping.IdColumn.ReaderWriter.Read(instance);
-            if (customAssignedId != null && alreadySetInstanceId != null && customAssignedId != (string) alreadySetInstanceId)
-                throw new ArgumentException("Do not pass a different Id when one is already set on the document");
+            );
 
             using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
@@ -236,8 +255,8 @@ namespace Nevermore
 
             IReadOnlyList<IId> instanceList = instances.ToArray();
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
-                instanceList, 
-                tableName, 
+                instanceList,
+                tableName,
                 tableHint,
                 AllocateId,
                 includeDefaultModelColumns);
@@ -249,7 +268,7 @@ namespace Nevermore
                 try
                 {
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
-                    for(var x = 0; x < instanceList.Count; x++)
+                    for (var x = 0; x < instanceList.Count; x++)
                     {
                         var idVariableName = instanceList.Count == 1 ? "Id" : $"{x}__Id";
 
@@ -307,7 +326,7 @@ namespace Nevermore
         public void Update<TDocument>(TDocument instance, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
-            
+
             using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
@@ -549,7 +568,19 @@ namespace Nevermore
         [Pure]
         public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return TableQueryInner<T>();
+        }
+
+        [Pure]
+        public ITableSourceQueryBuilder<T> TableQueryTyped<T>() where T : class, IId<IIdWrapper>
+        {
+            return TableQueryInner<T>();
+        }
+
+        ITableSourceQueryBuilder<T> TableQueryInner<T>() where T : class
+        {
+            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator,
+                uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Pure]

@@ -7,7 +7,7 @@ using Octopus.TinyTypes;
 namespace Nevermore.IntegrationTests.Model
 {
 
-    public class Order : IDocument
+    public class Order : IDocument<OrderId>, IId
     {
         public Order()
         {
@@ -23,9 +23,10 @@ namespace Nevermore.IntegrationTests.Model
         public string Name { get; set; }
 
         public IEnumerable<(string, Type)> RelatedDocuments { get; }
+        string IId.Id => Id?.Value;
     }
 
-    public class OrderId : CaseSensitiveTypedString
+    public class OrderId : CaseSensitiveTypedString, IIdWrapper
     {
         public OrderId(string value) : base(value)
         {

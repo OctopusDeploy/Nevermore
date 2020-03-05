@@ -3,20 +3,22 @@ using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductId : CaseSensitiveTypedString
+    public class ProductId : CaseSensitiveTypedString, IIdWrapper
     {
         public ProductId(string value) : base(value)
         {
         }
     }
 
-    public class Product : IDocument
+    public class Product : IDocument<ProductId>, IDocument
     {
         public ProductId Id { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
 
         public ProductType Type { get; set; } = ProductType.Normal;
+
+        string IId.Id => Id?.Value;
     }
 
     public enum ProductType

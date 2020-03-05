@@ -3,7 +3,7 @@ using Octopus.TinyTypes;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Customer : IId
+    public class Customer : IId<CustomerId>, IId
     {
         public Customer()
         {
@@ -19,6 +19,7 @@ namespace Nevermore.IntegrationTests.Model
         public string ApiKey { get; set; }
         public string[] Passphrases { get; set; }
         public byte[] RowVersion { get; set; }
+        string IId.Id => Id?.Value;
     }
 
     public class Nickname : CaseSensitiveTypedString
@@ -28,7 +29,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class CustomerId : CaseSensitiveTypedString
+    public class CustomerId : CaseSensitiveTypedString, IIdWrapper
     {
         public CustomerId(string value) : base(value)
         {

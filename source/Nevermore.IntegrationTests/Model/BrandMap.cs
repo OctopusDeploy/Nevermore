@@ -31,15 +31,17 @@ namespace Nevermore.IntegrationTests.Model
         protected override string TypeDesignatingPropertyName => "Type";
     }
 
-    public class BrandToTestSerialization : IDocument
+    public class BrandToTestSerialization : IDocument<BrandToTestSerializationId>, IId
     {
         public BrandToTestSerializationId Id { get; set; }
         public string Name { get; set; }
 
         public string JSON { get; set; }
+
+        string IId.Id => Id?.Value;
     }
 
-    public class BrandToTestSerializationId : CaseSensitiveTypedString
+    public class BrandToTestSerializationId : CaseSensitiveTypedString, IIdWrapper
     {
         public BrandToTestSerializationId(string value) : base(value)
         {
