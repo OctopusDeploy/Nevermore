@@ -39,23 +39,23 @@ namespace Nevermore.Tests
             command.Parameters["someIdentifier_1"].Value.Should().Be("id2");
         }
 
-        [TestCase("@")]
-        [TestCase("#")]
-        [TestCase("_")]
-        [TestCase("$")]
-        public void ShouldReplaceParametersWithExactMatchSpecialCharacters(string specialCharacter)
+        [TestCase("someId@entifier")]
+        [TestCase("someId#entifier")]
+        [TestCase("someId_entifier")]
+        [TestCase("someId$entifier")]
+        public void ShouldReplaceParametersWithExactMatchSpecialCharacters(string paramName)
         {
             var parameters = new CommandParameterValues();
             parameters.Add("someId", new[] { "id1", "id2" });
-            parameters.Add($"someId{specialCharacter}entifier", "value");
-            var command = new SqlCommand($"SELECT * FROM [Table] WHERE [Id] IN @someId AND [OtherId] = @someId{specialCharacter}entifier");
+            parameters.Add(paramName, "value");
+            var command = new SqlCommand($"SELECT * FROM [Table] WHERE [Id] IN @someId AND [OtherId] = @{paramName}");
 
             parameters.ContributeTo(command);
 
-            command.CommandText.Should().Be($"SELECT * FROM [Table] WHERE [Id] IN (@someId_0, @someId_1) AND [OtherId] = @someId{specialCharacter}entifier");
+            command.CommandText.Should().Be($"SELECT * FROM [Table] WHERE [Id] IN (@someId_0, @someId_1) AND [OtherId] = @{paramName}");
             command.Parameters["someId_0"].Value.Should().Be("id1");
             command.Parameters["someId_1"].Value.Should().Be("id2");
-            command.Parameters[$"someId{specialCharacter}entifier"].Value.Should().Be("value");
+            command.Parameters[paramName].Value.Should().Be("value");
         }
 
         [Test]
