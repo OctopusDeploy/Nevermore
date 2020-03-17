@@ -18,6 +18,9 @@ namespace Nevermore.Tests
             parameters.ContributeTo(command);
 
             command.CommandText.Should().Be("SELECT * FROM [Table] WHERE [Id] IN (@someId_0, @someId_1) AND [OtherId] = @someIdentifier");
+            command.Parameters["someId_0"].Value.Should().Be("id1");
+            command.Parameters["someId_1"].Value.Should().Be("id2");
+            command.Parameters["someIdentifier"].Value.Should().Be("value");
         }
 
         [Test]
@@ -31,6 +34,9 @@ namespace Nevermore.Tests
             parameters.ContributeTo(command);
 
             command.CommandText.Should().Be($"SELECT * FROM [Table]{Environment.NewLine}WHERE [Id] IN (@someId_0, @someId_1){Environment.NewLine}AND [OtherId] = @someIdentifier");
+            command.Parameters["someId_0"].Value.Should().Be("id1");
+            command.Parameters["someId_1"].Value.Should().Be("id2");
+            command.Parameters["someIdentifier"].Value.Should().Be("value");
         }
     }
 }
