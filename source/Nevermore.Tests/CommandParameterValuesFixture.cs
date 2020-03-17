@@ -23,6 +23,25 @@ namespace Nevermore.Tests
             command.Parameters["someIdentifier"].Value.Should().Be("value");
         }
 
+        [TestCase("@")]
+        [TestCase("#")]
+        [TestCase("_")]
+        [TestCase("$")]
+        public void ShouldReplaceParametersWithExactMatchSpecialCharacters(string specialCharacter)
+        {
+            var parameters = new CommandParameterValues();
+            parameters.Add("someId", new[] { "id1", "id2" });
+            parameters.Add($"someId{specialCharacter}entifier", "value");
+            var command = new SqlCommand($"SELECT * FROM [Table] WHERE [Id] IN @someId AND [OtherId] = @someId{specialCharacter}entifier");
+
+            parameters.ContributeTo(command);
+
+            command.CommandText.Should().Be($"SELECT * FROM [Table] WHERE [Id] IN (@someId_0, @someId_1) AND [OtherId] = @someId{specialCharacter}entifier");
+            command.Parameters["someId_0"].Value.Should().Be("id1");
+            command.Parameters["someId_1"].Value.Should().Be("id2");
+            command.Parameters[$"someId{specialCharacter}entifier"].Value.Should().Be("value");
+        }
+
         [Test]
         public void ShouldReplaceParametersAcrossLineBreaks()
         {
