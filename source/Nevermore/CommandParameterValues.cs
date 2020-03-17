@@ -102,7 +102,7 @@ namespace Nevermore
                 }
 
 
-                var originalParameter = Regex.Escape("@" + name.TrimStart('@'));
+                var originalParameter = Regex.Escape("@" + name.TrimStart('@')) + @"(?=[^\w\$@#_]|$)";
                 var replacementParameters = "(" + string.Join(", ", inClauseNames.Select(x => "@" + x)) + ")";
                 command.CommandText = Regex.Replace(command.CommandText, originalParameter, match => replacementParameters, RegexOptions.IgnoreCase);
                 return;
