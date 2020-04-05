@@ -5,14 +5,19 @@ using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
-    public abstract class FixtureWithRelationalStore
+    public abstract class FixtureWithRelationalStore : FixtureWithRelationalStore<IntegrationTestDatabase>
     {
-        IntegrationTestDatabase integrationTestDatabase;
+    }
+    
+    public abstract class FixtureWithRelationalStore<TDatabase>
+        where TDatabase : IntegrationTestDatabase, new()
+    {
+        TDatabase integrationTestDatabase;
 
         [SetUp]
         public virtual void SetUp()
         {
-            integrationTestDatabase = new IntegrationTestDatabase();
+            integrationTestDatabase = new TDatabase();
 
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"DELETE FROM ?\"");
@@ -22,7 +27,8 @@ namespace Nevermore.IntegrationTests
 
         protected IRelationalStore Store => integrationTestDatabase.Store;
 
-        protected RelationalMappings Mappings => integrationTestDatabase.Mappings;
+        protected RelationalStoreConfiguration RelationalStoreConfiguration => integrationTestDatabase.RelationalStoreConfiguration;
+        protected RelationalMappings Mappings => RelationalStoreConfiguration.RelationalMappings;
 
         public int CountOf<T>() where T : class, IId
         {

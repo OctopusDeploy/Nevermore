@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
@@ -9,7 +10,6 @@ using System.Reflection;
 using System.Text;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
-using Newtonsoft.Json;
 
 namespace Nevermore
 {
@@ -22,9 +22,7 @@ namespace Nevermore
         public const int DefaultConnectRetryInterval = 10;
 
         readonly ISqlCommandFactory sqlCommandFactory;
-        readonly RelationalMappings mappings;
         readonly Lazy<RelationalTransactionRegistry> registry;
-        readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         readonly IRelatedDocumentStore relatedDocumentStore;
         readonly IKeyAllocator keyAllocator;
         readonly ObjectInitialisationOptions objectInitialisationOptions;
@@ -35,8 +33,7 @@ namespace Nevermore
         /// <param name="connectionString"></param>
         /// <param name="applicationName"></param>
         /// <param name="sqlCommandFactory"></param>
-        /// <param name="mappings"></param>
-        /// <param name="jsonSettings"></param>
+        /// <param name="relationalStoreConfiguration"></param>
         /// <param name="relatedDocumentStore"></param>
         /// <param name="keyBlockSize"></param>
         /// <param name="objectInitialisationOptions"></param>
@@ -45,8 +42,7 @@ namespace Nevermore
             string connectionString,
             string applicationName,
             ISqlCommandFactory sqlCommandFactory,
-            RelationalMappings mappings,
-            JsonSerializerSettings jsonSettings,
+            RelationalStoreConfiguration relationalStoreConfiguration,
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
@@ -55,8 +51,7 @@ namespace Nevermore
                 () => connectionString,
                 applicationName,
                 sqlCommandFactory,
-                mappings,
-                jsonSettings,
+                relationalStoreConfiguration,
                 relatedDocumentStore,
                 keyBlockSize,
                 objectInitialisationOptions,
@@ -72,9 +67,8 @@ namespace Nevermore
         /// <param name="connectionString">Allows the connection string to be set after the store is built (but before it is used)</param>
         /// <param name="applicationName">Name of the application in the SQL string</param>
         /// <param name="sqlCommandFactory"></param>
-        /// <param name="mappings"></param>
-        /// <param name="jsonSettings"></param>
-        /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
+        /// <param name="relationalStoreConfiguration"></param>
+        /// <param name="relatedDocumentStore">If you don't have related documents use the EmptyRelatedDocumentStore</param>
         /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
         /// <param name="objectInitialisationOptions"></param>
         /// <param name="forceMars"></param>
@@ -82,8 +76,7 @@ namespace Nevermore
             Func<string> connectionString,
             string applicationName,
             ISqlCommandFactory sqlCommandFactory,
-            RelationalMappings mappings,
-            JsonSerializerSettings jsonSettings,
+            RelationalStoreConfiguration relationalStoreConfiguration,
             IRelatedDocumentStore relatedDocumentStore,
             int keyBlockSize = 20,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
@@ -94,20 +87,22 @@ namespace Nevermore
             );
 
             this.sqlCommandFactory = sqlCommandFactory;
-            this.mappings = mappings;
             keyAllocator = new KeyAllocator(this, keyBlockSize);
 
-            this.jsonSettings = jsonSettings;
+            RelationalStoreConfiguration = relationalStoreConfiguration;
+
             this.relatedDocumentStore = relatedDocumentStore;
             this.objectInitialisationOptions = objectInitialisationOptions;
         }
 
         public string ConnectionString => registry.Value.ConnectionString;
         public int MaxPoolSize => registry.Value.MaxPoolSize;
+        
+        public RelationalStoreConfiguration RelationalStoreConfiguration { get; }
 
         public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
-        public DocumentMap GetMappingFor(Type type) => mappings.Get(type);
-        public DocumentMap GetMappingFor<T>() => mappings.Get(typeof(T));
+        public DocumentMap GetMappingFor(Type type) => RelationalStoreConfiguration.RelationalMappings.Get(type);
+        public DocumentMap GetMappingFor<T>() => RelationalStoreConfiguration.RelationalMappings.Get(typeof(T));
 
         public void Reset()
         {
@@ -124,7 +119,7 @@ namespace Nevermore
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
             return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,
-                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+                RelationalStoreConfiguration, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)

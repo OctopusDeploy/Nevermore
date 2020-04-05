@@ -2,7 +2,6 @@
 using FluentAssertions;
 using Nevermore.AST;
 using Nevermore.Contracts;
-using NSubstitute;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.QueryBuilderFixture

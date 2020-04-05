@@ -4,7 +4,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class OrderMap : DocumentMap<Order>
     {
-        public OrderMap()
+        public OrderMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             RelatedDocuments(o => o.RelatedDocuments);
         }

@@ -10,8 +10,15 @@ namespace Nevermore.Mapping
     /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    public static class AmazingConverter
+    public class AmazingConverter : IAmazingConverter
     {
+        readonly RelationalStoreConfiguration relationalStoreConfiguration;
+
+        public AmazingConverter(RelationalStoreConfiguration relationalStoreConfiguration)
+        {
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
+        }
+
         /// <summary>
         /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
         /// object, tries its best to convert it to the target type.
@@ -19,9 +26,8 @@ namespace Nevermore.Mapping
         /// <param name="source">The source.</param>
         /// <param name="targetType">The type to convert the source object to.</param>
         /// <returns></returns>
-        public static object Convert(object source, Type targetType)
+        public object Convert(object source, Type targetType)
         {
-
             var typeInfo = targetType.GetTypeInfo();
 
             if (source == null || source == DBNull.Value)
@@ -92,8 +98,26 @@ namespace Nevermore.Mapping
             if (s != null && targetType == typeof(Uri))
                 return new Uri(s);
 
+            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomTypeDefinitions.ContainsKey(targetType))
+            {
+                var customTypeDefinition = relationalStoreConfiguration.CustomTypeDefinitions[targetType];
+                return customTypeDefinition.FromDbValue(source);
+            }
+
             // Hope and pray
             return source;
         }
+    }
+
+    public interface IAmazingConverter
+    {
+        /// <summary>
+        /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
+        /// object, tries its best to convert it to the target type.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="targetType">The type to convert the source object to.</param>
+        /// <returns></returns>
+        object Convert(object source, Type targetType);
     }
 }

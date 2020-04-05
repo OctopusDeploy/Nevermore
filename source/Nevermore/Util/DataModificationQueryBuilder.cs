@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using Nevermore.AST;
 using Nevermore.Contracts;
@@ -21,13 +18,11 @@ namespace Nevermore.Util
         const string IdVariableName = "Id";
         const string JsonVariableName = "JSON";
 
-        readonly RelationalMappings mappings;
-        readonly JsonSerializerSettings jsonSerializerSettings;
+        readonly RelationalStoreConfiguration relationalStoreConfiguration;
 
-        public DataModificationQueryBuilder(RelationalMappings mappings, JsonSerializerSettings jsonSerializerSettings)
+        public DataModificationQueryBuilder(RelationalStoreConfiguration relationalStoreConfiguration)
         {
-            this.mappings = mappings;
-            this.jsonSerializerSettings = jsonSerializerSettings;
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
         }
 
         public (DocumentMap mapping, string statement, CommandParameterValues parameterValues) CreateInsert(
@@ -49,7 +44,7 @@ namespace Nevermore.Util
 
         public (DocumentMap, string, CommandParameterValues) CreateUpdate(IId document, string tableHint)
         {
-            var mapping = mappings.Get(document.GetType());
+            var mapping = relationalStoreConfiguration.RelationalMappings.Get(document.GetType());
 
             var updates = string.Join(", ", mapping.WritableIndexedColumns()
                 .Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] {$"[JSON] = @{JsonVariableName}"}));
@@ -69,7 +64,7 @@ namespace Nevermore.Util
 
         public (string statement, CommandParameterValues parameterValues) CreateDelete(IId document)
         {
-            var mapping = mappings.Get(document.GetType());
+            var mapping = relationalStoreConfiguration.RelationalMappings.Get(document.GetType());
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             return CreateDeleteById(mapping, id);
         }
@@ -77,7 +72,7 @@ namespace Nevermore.Util
         public (string statement, CommandParameterValues parameterValues) CreateDelete<TDocument>(string id)
             where TDocument : class, IId
         {
-            var mapping = mappings.Get(typeof(TDocument));
+            var mapping = relationalStoreConfiguration.RelationalMappings.Get(typeof(TDocument));
             return CreateDeleteById(mapping, id);
         }
 
@@ -90,12 +85,12 @@ namespace Nevermore.Util
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
                 sb.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
-            var parameters = new CommandParameterValues {{IdVariableName, id}};
+            var parameters = new CommandParameterValues() {{IdVariableName, id}};
             return (sb.ToString(), parameters);
         }
 
         public string CreateDelete(Type documentType, Where where)
-            => CreateDelete(mappings.Get(documentType), where.GenerateSql());
+            => CreateDelete(relationalStoreConfiguration.RelationalMappings.Get(documentType), where.GenerateSql());
 
         string CreateDelete(DocumentMap mapping, string whereClause)
         {
@@ -122,7 +117,7 @@ namespace Nevermore.Util
 
         DocumentMap GetMapping(IReadOnlyList<IId> documents)
         {
-            var allMappings = documents.Select(i => this.mappings.Get(i)).Distinct().ToArray();
+            var allMappings = documents.Select(i => relationalStoreConfiguration.RelationalMappings.Get(i)).Distinct().ToArray();
             if (allMappings.Length == 0)
                 throw new Exception($"No mapping found for type {documents[0].GetType()}");
 
@@ -186,12 +181,12 @@ namespace Nevermore.Util
             if (string.IsNullOrWhiteSpace(id))
                 id = allocateId(mapping);
 
-            var result = new CommandParameterValues
+            var result = new CommandParameterValues()
             {
                 [$"{prefix}{IdVariableName}"] = id
             };
 
-            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, jsonSerializerSettings);
+            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, relationalStoreConfiguration.JsonSettings);
 
             foreach (var c in mapping.WritableIndexedColumns())
             {
@@ -313,7 +308,7 @@ namespace Nevermore.Util
                     from m in g
                     from i in documentAndIds
                     from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
-                    let relatedTableName = mappings.Get(relId.type).TableName
+                    let relatedTableName = relationalStoreConfiguration.RelationalMappings.Get(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
                 ).Distinct().ToArray()
                 select new RelatedDocumentTableData

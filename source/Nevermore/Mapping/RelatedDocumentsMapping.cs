@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -8,10 +7,10 @@ namespace Nevermore.Mapping
     public class RelatedDocumentsMapping
     {
 
-        public RelatedDocumentsMapping(PropertyInfo property, string tableName)
+        public RelatedDocumentsMapping(PropertyInfo property, string tableName, IAmazingConverter amazingConverter)
         {
             TableName = tableName;
-            ReaderWriter = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name);
+            ReaderWriter = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name, amazingConverter);
         }
 
 

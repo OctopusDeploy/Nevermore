@@ -18,8 +18,8 @@ namespace Nevermore.IntegrationTests
             Mappings.Install(
                 new DocumentMap[]
                 {
-                    new CustomerMap(),
-                    new OrderMap()
+                    new CustomerMap(RelationalStoreConfiguration),
+                    new OrderMap(RelationalStoreConfiguration)
                 }
             );
         }

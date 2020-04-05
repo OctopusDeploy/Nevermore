@@ -23,8 +23,9 @@ namespace Nevermore
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults)
-            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            ParameterDefaults parameterDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults, relationalStoreConfiguration)
         {
             this.select = select;
         }
@@ -42,9 +43,10 @@ namespace Nevermore
                 RelationalTransaction,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
-                new CommandParameterValues(ParamValues, parameterValues),
+                CommandParameterValues.PropagateCommandParameterValues(ParamValues, parameterValues),
                 new Parameters(Params, parameters),
-                new ParameterDefaults(ParamDefaults, parameterDefaults));
+                new ParameterDefaults(ParamDefaults, parameterDefaults),
+                RelationalStoreConfiguration);
         }
 
         public ISubquerySource AsSource()
@@ -74,8 +76,9 @@ namespace Nevermore
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults)
-            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            ParameterDefaults parameterDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults, relationalStoreConfiguration)
         {
             this.select = select;
         }
@@ -93,9 +96,10 @@ namespace Nevermore
                 RelationalTransaction,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
-                new CommandParameterValues(ParamValues, parameterValues),
+                CommandParameterValues.PropagateCommandParameterValues(ParamValues, parameterValues),
                 new Parameters(Params, parameters),
-                new ParameterDefaults(ParamDefaults, parameterDefaults));
+                new ParameterDefaults(ParamDefaults, parameterDefaults),
+                RelationalStoreConfiguration);
         }
 
         public ISubquerySource AsSource()
@@ -131,8 +135,9 @@ namespace Nevermore
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults)
-            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            ParameterDefaults parameterDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults, relationalStoreConfiguration)
         {
             this.originalSource = originalSource;
             clauses = new List<JoinClause>();
@@ -162,7 +167,7 @@ namespace Nevermore
             joinSource = source;
             type = joinType;
 
-            var commandParameterValues = new CommandParameterValues(ParamValues, parameterValues);
+            var commandParameterValues = CommandParameterValues.PropagateCommandParameterValues(ParamValues, parameterValues);
             var combinedParameters = new Parameters(Params, parameters);
             var combinedParameterDefaults = new ParameterDefaults(ParamDefaults, parameterDefaults);
 
@@ -200,8 +205,9 @@ namespace Nevermore
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults)
-            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            ParameterDefaults parameterDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
+            : base(relationalTransaction, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults, relationalStoreConfiguration)
         {
             this.tableOrViewName = tableOrViewName;
         }
@@ -219,9 +225,10 @@ namespace Nevermore
                 RelationalTransaction,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
-                new CommandParameterValues(ParamValues, parameterValues),
+                CommandParameterValues.PropagateCommandParameterValues(ParamValues, parameterValues),
                 new Parameters(Params, parameters),
-                new ParameterDefaults(ParamDefaults, parameterDefaults));
+                new ParameterDefaults(ParamDefaults, parameterDefaults),
+                RelationalStoreConfiguration);
         }
 
         public ITableSourceQueryBuilder<TRecord> View(string viewName)
@@ -276,13 +283,15 @@ namespace Nevermore
         protected readonly CommandParameterValues ParamValues;
         protected readonly Parameters Params;
         protected readonly ParameterDefaults ParamDefaults;
+        protected readonly RelationalStoreConfiguration RelationalStoreConfiguration;
 
         protected SourceQueryBuilder(IRelationalTransaction relationalTransaction,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
-            ParameterDefaults parameterDefaults)
+            ParameterDefaults parameterDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
         {
             RelationalTransaction = relationalTransaction;
             TableAliasGenerator = tableAliasGenerator;
@@ -290,6 +299,7 @@ namespace Nevermore
             ParamValues = parameterValues;
             Params = parameters;
             ParamDefaults = parameterDefaults;
+            RelationalStoreConfiguration = relationalStoreConfiguration;
         }
 
         protected abstract ISelectBuilder CreateSelectBuilder();
@@ -305,7 +315,7 @@ namespace Nevermore
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults);
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, RelationalTransaction, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults, RelationalStoreConfiguration);
         }
 
         public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)

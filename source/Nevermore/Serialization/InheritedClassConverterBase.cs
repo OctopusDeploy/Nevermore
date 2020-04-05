@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Nevermore.Mapping;
-using Nevermore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

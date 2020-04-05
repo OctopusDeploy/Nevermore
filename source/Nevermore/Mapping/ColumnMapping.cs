@@ -18,6 +18,8 @@ namespace Nevermore.Mapping
         // Theoretical maximum Uri is ~2048 but Nuget feed Uris will be shorter
         public const int DefaultMaxUriLength = 512;
 
+        readonly RelationalStoreConfiguration relationalStoreConfiguration;
+
         DbType? dbType;
         int maxLength;
 
@@ -34,11 +36,22 @@ namespace Nevermore.Mapping
             IsReadOnly = readOnly;
         }
 
-        public ColumnMapping(PropertyInfo property)
+        public ColumnMapping(PropertyInfo property, RelationalStoreConfiguration relationalStoreConfiguration)
         {
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
             Property = property;
             ColumnName = Property.Name;
-            ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
+            
+            if (relationalStoreConfiguration?.CustomTypeDefinitions != null && relationalStoreConfiguration.CustomTypeDefinitions.ContainsKey(property.PropertyType))
+            {
+                var definition = relationalStoreConfiguration.CustomTypeDefinitions[property.PropertyType];
+
+                DbType = definition.DbType;
+                ReaderWriter = new CustomTypeReaderWriter(definition, property);
+                return;
+            }
+
+            ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name, relationalStoreConfiguration.AmazingConverter);
 
             if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
@@ -83,7 +96,7 @@ namespace Nevermore.Mapping
             get
             {
                 if (dbType == null)
-                    return DbType = DatabaseTypeConverter.AsDbType(Property.PropertyType);
+                    return DbType = DatabaseTypeConverter.AsDbType(Property.PropertyType, relationalStoreConfiguration);
                 return dbType.Value;
             }
             set { dbType = value; }

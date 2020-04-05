@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Assent;
-using Assent.Reporters;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
@@ -20,21 +17,17 @@ namespace Nevermore.Tests.Util
 
         public DataModificationQueryBuilderFixture()
         {
-            var mappings = new RelationalMappings();
-            mappings.Install(new DocumentMap[]
+            var config = new RelationalStoreConfiguration(null);
+            config.RelationalMappings.Install(new DocumentMap[]
             {
-                new TestDocumentMap(),
-                new TestDocumentWithRelatedDocumentsMap(),
-                new TestDocumentWithMultipleRelatedDocumentsMap(),
-                new OtherMap()
+                new TestDocumentMap(config),
+                new TestDocumentWithRelatedDocumentsMap(config),
+                new TestDocumentWithMultipleRelatedDocumentsMap(config),
+                new OtherMap(config)
             });
-            builder = new DataModificationQueryBuilder(
-                mappings,
-                new JsonSerializerSettings
-                {
-                    ContractResolver = new RelationalJsonContractResolver(mappings)
-                }
-            );
+            config.JsonSettings.ContractResolver = new RelationalJsonContractResolver(config.RelationalMappings); 
+            
+            builder = new DataModificationQueryBuilder(config);
         }
 
         [Test]
@@ -401,7 +394,7 @@ namespace Nevermore.Tests.Util
 
         class TestDocumentMap : DocumentMap<TestDocument>
         {
-            public TestDocumentMap()
+            public TestDocumentMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
             {
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
@@ -411,7 +404,7 @@ namespace Nevermore.Tests.Util
 
         class TestDocumentWithRelatedDocumentsMap : DocumentMap<TestDocumentWithRelatedDocuments>
         {
-            public TestDocumentWithRelatedDocumentsMap()
+            public TestDocumentWithRelatedDocumentsMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
             {
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
@@ -421,7 +414,7 @@ namespace Nevermore.Tests.Util
 
         class TestDocumentWithMultipleRelatedDocumentsMap : DocumentMap<TestDocumentWithMultipleRelatedDocuments>
         {
-            public TestDocumentWithMultipleRelatedDocumentsMap()
+            public TestDocumentWithMultipleRelatedDocumentsMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
             {
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
@@ -433,7 +426,7 @@ namespace Nevermore.Tests.Util
 
         class OtherMap : DocumentMap<Other>
         {
-            public OtherMap()
+            public OtherMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
             {
                 TableName = "OtherTbl";
             }

@@ -1,4 +1,3 @@
-using System.Data;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
 
@@ -6,7 +5,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class CustomerMap : DocumentMap<Customer>
     {
-        public CustomerMap()
+        public CustomerMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
@@ -30,7 +29,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class CustomerToTestSerializationMap : DocumentMap<CustomerToTestSerialization>
     {
-        public CustomerToTestSerializationMap()
+        public CustomerToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             TableName = "Customer";
 

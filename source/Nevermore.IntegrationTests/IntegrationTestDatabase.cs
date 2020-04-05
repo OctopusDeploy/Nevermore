@@ -4,7 +4,9 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Resources;
 using System.IO;
+using System.Linq;
 using System.Text;
+using Nevermore.Contracts;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
@@ -16,7 +18,7 @@ namespace Nevermore.IntegrationTests
     public class IntegrationTestDatabase
     {
         readonly TextWriter output = Console.Out;
-        readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)\\SQLEXPRESS,1433";
+        readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)";
         readonly string Username = Environment.GetEnvironmentVariable("NevermoreTestUsername");
         readonly string Password = Environment.GetEnvironmentVariable("NevermoreTestPassword");
         readonly string TestDatabaseName;
@@ -50,7 +52,8 @@ namespace Nevermore.IntegrationTests
         }
 
         public RelationalStore Store { get; set; }
-        public RelationalMappings Mappings { get; set; }
+        
+        public RelationalStoreConfiguration RelationalStoreConfiguration { get; private set; }
 
         void CreateDatabase()
         {
@@ -73,44 +76,66 @@ namespace Nevermore.IntegrationTests
 
         void InitializeStore()
         {
-            Mappings = new RelationalMappings();
-
-            Mappings.Install(new List<DocumentMap>()
-            {
-                new CustomerMap(),
-                new CustomerToTestSerializationMap(),
-                new BrandMap(),
-                new BrandToTestSerializationMap(),
-                new ProductMap<Product>(),
-                new SpecialProductMap(),
-                new ProductToTestSerializationMap(),
-                new LineItemMap(),
-                new MachineMap(),
-                new MachineToTestSerializationMap()
-            });
             Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
         }
 
         RelationalStore BuildRelationalStore(string connectionString, double chaosFactor = 0.2D)
         {
-            var sqlCommandFactory = chaosFactor > 0D
-                ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(), chaosFactor)
-                : new SqlCommandFactory();
+            var config = new RelationalStoreConfiguration(CustomTypeDefinitions());
+            RelationalStoreConfiguration = config;
 
-
-            var contractResolver = new RelationalJsonContractResolver(Mappings);
-
-            var jsonSerializerSettings = new JsonSerializerSettings
+            config.RelationalMappings.Install(new List<DocumentMap>()
             {
-                ContractResolver = contractResolver,
-                TypeNameHandling = TypeNameHandling.Auto,
-                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
-            };
-            jsonSerializerSettings.Converters.Add(new ProductConverter(Mappings));
-            jsonSerializerSettings.Converters.Add(new BrandConverter(Mappings));
-            jsonSerializerSettings.Converters.Add(new EndpointConverter());
+                new CustomerMap(config),
+                new CustomerToTestSerializationMap(config),
+                new BrandMap(config),
+                new BrandToTestSerializationMap(config),
+                new ProductMap<Product>(config),
+                new SpecialProductMap(config),
+                new ProductToTestSerializationMap(config),
+                new LineItemMap(config),
+                new MachineMap(config),
+                new MachineToTestSerializationMap(config)
+            });
 
-            return new RelationalStore(connectionString ?? TestDatabaseConnectionString, TestDatabaseName, sqlCommandFactory, Mappings, jsonSerializerSettings, new EmptyRelatedDocumentStore());
+            var mappings = AddCustomMappings(config);
+            config.RelationalMappings.Install(mappings);
+            
+            var sqlCommandFactory = chaosFactor > 0D
+                ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(config), chaosFactor)
+                : new SqlCommandFactory(config);
+
+            var contractResolver = new RelationalJsonContractResolver(RelationalStoreConfiguration.RelationalMappings);
+
+            var jsonSerializerSettings = RelationalStoreConfiguration.JsonSettings;
+            jsonSerializerSettings.ContractResolver = contractResolver;
+            jsonSerializerSettings.TypeNameHandling = TypeNameHandling.Auto;
+            jsonSerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
+            
+            jsonSerializerSettings.Converters.Add(new ProductConverter(RelationalStoreConfiguration.RelationalMappings));
+            jsonSerializerSettings.Converters.Add(new BrandConverter(RelationalStoreConfiguration.RelationalMappings));
+            jsonSerializerSettings.Converters.Add(new EndpointConverter());
+            
+            return new RelationalStore(connectionString ?? TestDatabaseConnectionString,
+                TestDatabaseName,
+                sqlCommandFactory,
+                config,
+                new EmptyRelatedDocumentStore());
+        }
+
+        protected virtual IEnumerable<DocumentMap> AddCustomMappings(RelationalStoreConfiguration config)
+        {
+            return AddCustomMappingsForSchemaGeneration(config);
+        }
+
+        protected virtual IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration(RelationalStoreConfiguration config)
+        {
+            return Enumerable.Empty<DocumentMap>();
+        }
+
+        protected virtual IEnumerable<ICustomTypeDefinition> CustomTypeDefinitions()
+        {
+            return null;
         }
 
         void InstallSchema()
@@ -120,23 +145,27 @@ namespace Nevermore.IntegrationTests
             migrator.Migrate(Store);
 
             var output = new StringBuilder();
-            SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
+            var relationalStoreConfiguration = new RelationalStoreConfiguration(CustomTypeDefinitions());
+            
+            SchemaGenerator.WriteTableSchema(new CustomerMap(relationalStoreConfiguration), null, output);
 
             // needed for products, but not to generate the table
-            Mappings.Install(new List<DocumentMap>() { new ProductMap<Product>() });
+            relationalStoreConfiguration.RelationalMappings.Install(new List<DocumentMap>() { new ProductMap<Product>(relationalStoreConfiguration) });
 
             // needed to generate the table
             var mappings = new DocumentMap[]
-            {
-                new OrderMap(),
-                new CustomerMap(),
-                new SpecialProductMap(),
-                new LineItemMap(),
-                new BrandMap(),
-                new MachineMap()
-            };
+                {
+                    new OrderMap(relationalStoreConfiguration),
+                    new CustomerMap(relationalStoreConfiguration),
+                    new SpecialProductMap(relationalStoreConfiguration),
+                    new LineItemMap(relationalStoreConfiguration),
+                    new BrandMap(relationalStoreConfiguration),
+                    new MachineMap(relationalStoreConfiguration)
+                }
+                .Union(AddCustomMappingsForSchemaGeneration(relationalStoreConfiguration))
+                .ToArray();
 
-            Mappings.Install(mappings);
+            relationalStoreConfiguration.RelationalMappings.Install(mappings);
 
             using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
             {

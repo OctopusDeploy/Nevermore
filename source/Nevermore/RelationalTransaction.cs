@@ -31,13 +31,12 @@ namespace Nevermore
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation retriableOperation;
-        readonly JsonSerializerSettings jsonSerializerSettings;
-        readonly RelationalMappings mappings;
         readonly IKeyAllocator keyAllocator;
         readonly IDbConnection connection;
         readonly IDbTransaction transaction;
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly IRelatedDocumentStore relatedDocumentStore;
+        readonly RelationalStoreConfiguration relationalStoreConfiguration;
         readonly string name;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
@@ -54,8 +53,7 @@ namespace Nevermore
             RetriableOperation retriableOperation,
             IsolationLevel isolationLevel,
             ISqlCommandFactory sqlCommandFactory,
-            JsonSerializerSettings jsonSerializerSettings,
-            RelationalMappings mappings,
+            RelationalStoreConfiguration relationalStoreConfiguration,
             IKeyAllocator keyAllocator,
             IRelatedDocumentStore relatedDocumentStore,
             string name = null,
@@ -65,16 +63,15 @@ namespace Nevermore
             this.registry = registry;
             this.retriableOperation = retriableOperation;
             this.sqlCommandFactory = sqlCommandFactory;
-            this.jsonSerializerSettings = jsonSerializerSettings;
-            this.mappings = mappings;
             this.keyAllocator = keyAllocator;
             this.relatedDocumentStore = relatedDocumentStore;
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
             this.name = name ?? Thread.CurrentThread.Name;
             this.objectInitialisationOptions = objectInitialisationOptions;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
             
-            dataModificationQueryBuilder = new DataModificationQueryBuilder(mappings, jsonSerializerSettings);
+            dataModificationQueryBuilder = new DataModificationQueryBuilder(relationalStoreConfiguration);
 
             try
             {
@@ -285,7 +282,7 @@ namespace Nevermore
 
         public string AllocateId(Type documentType)
         {
-            var mapping = mappings.Get(documentType);
+            var mapping = relationalStoreConfiguration.RelationalMappings.Get(documentType);
             return AllocateId(mapping);
         }
 
@@ -393,7 +390,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<T> ExecuteReader<T>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            var mapping = mappings.Get(typeof(T));
+            var mapping = relationalStoreConfiguration.RelationalMappings.Get(typeof(T));
 
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping, commandTimeout))
             {
@@ -461,7 +458,7 @@ namespace Nevermore
                         if (jsonIndex >= 0)
                         {
                             var json = reader[jsonIndex].ToString();
-                            var deserialized = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
+                            var deserialized = JsonConvert.DeserializeObject(json, instanceType, relationalStoreConfiguration.JsonSettings);
                             // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
                             // If the deserialized object is not the desired type, then we are querying for a specific sub-type
                             // and this record is a different sub-type, and should be excluded from the result-set.
@@ -477,7 +474,7 @@ namespace Nevermore
                             instance = (T) Activator.CreateInstance(instanceType, objectInitialisationOptions.HasFlag(ObjectInitialisationOptions.UseNonPublicConstructors));
                         }
 
-                        var specificMapping = mappings.Get(instance.GetType());
+                        var specificMapping = relationalStoreConfiguration.RelationalMappings.Get(instance.GetType());
                         var columnIndexes = specificMapping.IndexedColumns.ToDictionary(c => c, c => GetOrdinal(reader, c.ColumnName));
 
                         foreach (var index in columnIndexes)
@@ -537,7 +534,7 @@ namespace Nevermore
             {
                 msUntilFirstRecord = timedSection.ElapsedMilliseconds;
 
-                var mapper = new ProjectionMapper(reader, jsonSerializerSettings, mappings);
+                var mapper = new ProjectionMapper(reader, relationalStoreConfiguration.JsonSettings, relationalStoreConfiguration.RelationalMappings);
                 while (reader.Read())
                 {
                     yield return projectionMapper(mapper);
@@ -548,13 +545,13 @@ namespace Nevermore
         [Pure]
         public ITableSourceQueryBuilder<T> TableQuery<T>() where T : class, IId
         {
-            return new TableSourceQueryBuilder<T>(mappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<T>(relationalStoreConfiguration.RelationalMappings.Get(typeof(T)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults(), relationalStoreConfiguration);
         }
 
         [Pure]
         public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class, IId
         {
-            return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults(), relationalStoreConfiguration);
         }
 
         [Pure]
@@ -567,7 +564,7 @@ namespace Nevermore
                 try
                 {
                     var result = command.ExecuteScalarWithRetry(GetRetryPolicy(RetriableOperation.Select));
-                    return (T) AmazingConverter.Convert(result, typeof(T));
+                    return (T) relationalStoreConfiguration.AmazingConverter.Convert(result, typeof(T));
                 }
                 catch (SqlException ex)
                 {
@@ -592,7 +589,7 @@ namespace Nevermore
             Action<IDataReader> readerCallback,
             TimeSpan? commandTimeout = null)
         {
-            ExecuteReader(query, new CommandParameterValues(args), readerCallback, commandTimeout);
+            ExecuteReader(query, new CommandParameterValues(relationalStoreConfiguration, args), readerCallback, commandTimeout);
         }
 
         public void ExecuteReader(

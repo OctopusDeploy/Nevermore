@@ -8,7 +8,7 @@ namespace Nevermore.Mapping
     {
         static readonly ConcurrentDictionary<string, object> Readers = new ConcurrentDictionary<string, object>();
 
-        public static IPropertyReaderWriter<TCast> Create<TCast>(Type objectType, string propertyName)
+        public static IPropertyReaderWriter<TCast> Create<TCast>(Type objectType, string propertyName, IAmazingConverter amazingConverter)
         {
             var key = objectType.AssemblyQualifiedName + "-" + propertyName;
             IPropertyReaderWriter<TCast> result = null;
@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
                     propertySetterDelegate = propertySetterMethodInfo.CreateDelegate(delegateWriterType);
                 }
 
-                result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
+                result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate, amazingConverter);
                 Readers[key] = result;
             }
             else
@@ -72,11 +72,13 @@ namespace Nevermore.Mapping
         {
             readonly Func<TInput, TReturn> caller;
             readonly Action<TInput, TReturn> writer;
+            readonly IAmazingConverter amazingConverter;
 
-            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
+            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer, IAmazingConverter amazingConverter)
             {
                 this.caller = caller;
                 this.writer = writer;
+                this.amazingConverter = amazingConverter;
             }
 
             public TCast Read(object target)
@@ -90,7 +92,7 @@ namespace Nevermore.Mapping
                 {
                     throw new InvalidOperationException("Cannot write to a property without a setter");
                 }
-                var returnable = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
+                var returnable = (TReturn)amazingConverter.Convert(value, typeof (TReturn));
                 writer((TInput)target, returnable);
             }
         }

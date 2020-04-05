@@ -16,6 +16,7 @@ namespace Nevermore
         readonly CommandParameterValues paramValues;
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
+        readonly RelationalStoreConfiguration relationalStoreConfiguration;
         TimeSpan? commandTimeout;
 
         public QueryBuilder(TSelectBuilder selectBuilder,
@@ -24,7 +25,8 @@ namespace Nevermore
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues paramValues,
             Parameters @params,
-            ParameterDefaults paramDefaults)
+            ParameterDefaults paramDefaults,
+            RelationalStoreConfiguration relationalStoreConfiguration)
         {
             this.selectBuilder = selectBuilder;
             this.transaction = transaction;
@@ -33,6 +35,7 @@ namespace Nevermore
             this.paramValues = paramValues;
             this.@params = @params;
             this.paramDefaults = paramDefaults;
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
         }
 
         public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)
@@ -111,7 +114,7 @@ namespace Nevermore
 
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
-            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
+            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults, relationalStoreConfiguration);
         }
 
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
@@ -158,9 +161,10 @@ namespace Nevermore
                 transaction,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
-                new CommandParameterValues(ParameterValues, parameterValues),
+                CommandParameterValues.PropagateCommandParameterValues(ParameterValues, parameterValues),
                 new Parameters(Parameters, parameters),
-                new ParameterDefaults(ParameterDefaults, parameterDefaults));
+                new ParameterDefaults(ParameterDefaults, parameterDefaults),
+                relationalStoreConfiguration);
         }
 
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
@@ -169,9 +173,10 @@ namespace Nevermore
                 transaction,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
-                new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues),
+                CommandParameterValues.PropagateCommandParameterValues(ParameterValues, queryBuilder.ParameterValues),
                 new Parameters(Parameters, queryBuilder.Parameters),
-                new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults));
+                new ParameterDefaults(ParameterDefaults, queryBuilder.ParameterDefaults),
+                relationalStoreConfiguration);
         }
 
         public ISubquerySourceBuilder<TRecord> Subquery()
@@ -182,7 +187,8 @@ namespace Nevermore
                 uniqueParameterNameGenerator,
                 ParameterValues,
                 Parameters,
-                ParameterDefaults);
+                ParameterDefaults,
+                relationalStoreConfiguration);
         }
 
         SubquerySelectBuilder CreateSubqueryBuilder(ISelectBuilder subquerySelectBuilder)

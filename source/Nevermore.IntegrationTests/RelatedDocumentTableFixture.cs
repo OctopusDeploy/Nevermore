@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
@@ -13,6 +12,17 @@ namespace Nevermore.IntegrationTests
 {
     public class RelatedDocumentTableFixture : FixtureWithRelationalStore
     {
+        RelatedDocumentsMapping orderRelatedDocMap;
+
+        public override void SetUp()
+        {
+            base.SetUp();
+            
+            var orderMap = new OrderMap(RelationalStoreConfiguration);
+            RelationalStoreConfiguration.RelationalMappings.Install(new []{ orderMap });
+            orderRelatedDocMap = orderMap.RelatedDocumentsMappings.First();
+        }
+
         static readonly IReadOnlyList<RelatedDocumentRow> StartingRecords = new[]
         {
             new RelatedDocumentRow
@@ -241,16 +251,14 @@ namespace Nevermore.IntegrationTests
 
         RelatedDocumentRow[] GetReferencesFromDb()
         {
-            var map = new OrderMap().RelatedDocumentsMappings.First();
-
             Func<IDataReader, RelatedDocumentRow> Callback()
                 => reader
                     => new RelatedDocumentRow
                     {
-                        Id = (string) reader[map.IdColumnName],
-                        Table = (string) reader[map.IdTableColumnName],
-                        RelatedDocumentId = (string) reader[map.RelatedDocumentIdColumnName],
-                        RelatedDocumentType = (string) reader[map.RelatedDocumentTableColumnName],
+                        Id = (string) reader[orderRelatedDocMap.IdColumnName],
+                        Table = (string) reader[orderRelatedDocMap.IdTableColumnName],
+                        RelatedDocumentId = (string) reader[orderRelatedDocMap.RelatedDocumentIdColumnName],
+                        RelatedDocumentType = (string) reader[orderRelatedDocMap.RelatedDocumentTableColumnName],
                     };
 
             using (var trn = Store.BeginTransaction())

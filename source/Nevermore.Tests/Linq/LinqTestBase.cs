@@ -32,7 +32,8 @@ namespace Nevermore.Tests.Query
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,
                 parameters,
-                new ParameterDefaults()
+                new ParameterDefaults(),
+                new RelationalStoreConfiguration(null)
             );
 
             return (builder, (parameters, captures));

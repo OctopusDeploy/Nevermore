@@ -28,29 +28,35 @@ namespace Nevermore
             CommandType = from.CommandType;
         }
 
-        public CommandParameterValues(params CommandParameterValues[] from)
-            : this()
+        public CommandParameterValues(RelationalStoreConfiguration relationalStoreConfiguration, object args)
         {
+            AddFromParametersObject(args, relationalStoreConfiguration.AmazingConverter);
+        }
+
+        /// <summary>
+        /// This was a ctor overload previously but the wrong one could easily end up being called 
+        /// </summary>
+        /// <param name="from">Parameters to propagate to the new CommandParameterValues object.</param>
+        /// <returns>A new CommandParameterValues object with the parameter copied into it.</returns>
+        internal static CommandParameterValues PropagateCommandParameterValues(params CommandParameterValues[] from)
+        {
+            var result = new CommandParameterValues();
             if (from.Any())
             {
-                CommandType = from.First().CommandType;
+                result.CommandType = from.First().CommandType;
             }
 
             foreach (var values in from)
             {
-                AddRange(values);
+                result.AddRange(values);
             }
-        }
 
-        public CommandParameterValues(object args)
-            : this()
-        {
-            AddFromParametersObject(args);
+            return result;
         }
 
         public CommandType CommandType { get; set; }
 
-        void AddFromParametersObject(object args)
+        void AddFromParametersObject(object args, IAmazingConverter amazingConverter)
         {
             if (args == null)
                 return;
@@ -58,23 +64,23 @@ namespace Nevermore
             var type = args.GetType();
             foreach (var property in type.GetTypeInfo().GetProperties())
             {
-                var rw = PropertyReaderFactory.Create<object>(type, property.Name);
+                var rw = PropertyReaderFactory.Create<object>(type, property.Name, amazingConverter);
 
                 var value = rw.Read(args);
                 this[property.Name] = value;
             }
         }
 
-        public virtual void ContributeTo(IDbCommand command, DocumentMap mapping = null)
+        public virtual void ContributeTo(IDbCommand command, RelationalStoreConfiguration relationalStoreConfiguration, DocumentMap mapping = null)
         {
             command.CommandType = CommandType;
             foreach (var pair in this)
             {
-                ContributeParameter(command, pair.Key, pair.Value, mapping);
+                ContributeParameter(command, pair.Key, pair.Value, relationalStoreConfiguration, mapping);
             }
         }
 
-        protected virtual void ContributeParameter(IDbCommand command, string name, object value, DocumentMap mapping = null)
+        protected virtual void ContributeParameter(IDbCommand command, string name, object value, RelationalStoreConfiguration relationalStoreConfiguration, DocumentMap mapping = null)
         {
             if (value == null)
             {
@@ -90,7 +96,7 @@ namespace Nevermore
                 {
                     var inClauseName = name + "_" + i;
                     inClauseNames.Add(inClauseName);
-                    ContributeParameter(command, inClauseName, inClauseValue);
+                    ContributeParameter(command, inClauseName, inClauseValue, relationalStoreConfiguration);
                     i++;
                 }
 
@@ -98,7 +104,7 @@ namespace Nevermore
                 {
                     var inClauseName = name + "_" + i;
                     inClauseNames.Add(inClauseName);
-                    ContributeParameter(command, inClauseName, null);
+                    ContributeParameter(command, inClauseName, null, relationalStoreConfiguration);
                 }
 
 
@@ -108,7 +114,7 @@ namespace Nevermore
                 return;
             }
 
-            var columnType = DatabaseTypeConverter.AsDbType(value.GetType());
+            var columnType = DatabaseTypeConverter.AsDbType(value.GetType(), relationalStoreConfiguration);
 
             var param = new SqlParameter();
             param.ParameterName = name;

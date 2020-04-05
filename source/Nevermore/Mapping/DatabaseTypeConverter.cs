@@ -52,7 +52,7 @@ namespace Nevermore.Mapping
             TypeMap[typeof (object)] = DbType.Object;
         }
 
-        public static DbType AsDbType(Type propertyType)
+        public static DbType AsDbType(Type propertyType, RelationalStoreConfiguration relationalStoreConfiguration)
         {
             if (propertyType.GetTypeInfo().IsEnum)
             {
@@ -64,6 +64,11 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
+            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomTypeDefinitions.ContainsKey(propertyType))
+            {
+                return relationalStoreConfiguration.CustomTypeDefinitions[propertyType].DbType;
+            }
+            
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);

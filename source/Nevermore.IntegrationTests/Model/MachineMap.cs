@@ -8,7 +8,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class MachineMap : DocumentMap<Machine>
     {
-        public MachineMap()
+        public MachineMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             Column(x => x.Name);
         }
@@ -36,7 +36,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class MachineToTestSerializationMap : DocumentMap<MachineToTestSerialization>
     {
-        public MachineToTestSerializationMap()
+        public MachineToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             TableName = "Machine";
             Column(x => x.Name);

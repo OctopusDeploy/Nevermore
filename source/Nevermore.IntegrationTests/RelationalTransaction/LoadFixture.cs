@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             Mappings.Install(
                 new DocumentMap[]
                 {
-                    new ProductSubtotalMap()
+                    new ProductSubtotalMap(RelationalStoreConfiguration)
                 }
             );
         }

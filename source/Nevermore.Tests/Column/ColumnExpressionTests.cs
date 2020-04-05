@@ -65,7 +65,8 @@ ORDER BY [Id]");
                 new UniqueParameterNameGenerator(), 
                 new CommandParameterValues(),
                 new Parameters(),
-                new ParameterDefaults()
+                new ParameterDefaults(),
+                new RelationalStoreConfiguration(null)
             );
         }
 
