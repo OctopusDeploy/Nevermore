@@ -1,45 +1,51 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Nevermore.Mapping;
 
 namespace Nevermore.Serialization
 {
-    public abstract class InheritedClassConverter<TDocument, TDiscriminator> : InheritedClassConverterBase<TDocument, TDiscriminator>
-        where TDiscriminator : struct
+    abstract class InheritedClassConverter<TDocument, TDiscriminator> : InheritedClassConverterBase<TDocument, TDiscriminator>
     {
-        protected InheritedClassConverter(RelationalMappings relationalMappings = null) : base(relationalMappings)
+        protected InheritedClassConverter(RelationalMappings relationalMappings) : base(relationalMappings)
         {
         }
 
         protected override TypeInfo GetTypeInfoFromDerivedType(string derivedType)
         {
-            var enumType = (TDiscriminator) Enum.Parse(typeof(TDiscriminator), derivedType);
-            if (!DerivedTypeMappings.ContainsKey(enumType))
+            var type = typeof(TDiscriminator);
+
+            if (type.IsEnum)
             {
-                throw new Exception(
-                    $"Unable to determine type to deserialize. {TypeDesignatingPropertyName} `{enumType}` does not map to a known type");
+                var enumType = (TDiscriminator) Enum.Parse(type, derivedType);
+                if (!DerivedTypeMappings.ContainsKey(enumType))
+                {
+                    throw new Exception(
+                        $"Unable to determine type to deserialize. {TypeDesignatingPropertyName} `{enumType}` does not map to a known type");
+                }
+
+                return DerivedTypeMappings[enumType].GetTypeInfo();
             }
 
-            var typeInfo = DerivedTypeMappings[enumType].GetTypeInfo();
-            return typeInfo;
+            if (type == typeof(string))
+            {
+                var mappings = (Dictionary<string, Type>) DerivedTypeMappings;
+                if (!mappings.ContainsKey(derivedType))
+                {
+                    throw new Exception($"Unable to determine type to deserialize. {TypeDesignatingPropertyName} `{derivedType}` does not map to a known type");
+                }
+
+                return mappings[derivedType].GetTypeInfo();
+            }
+
+            throw new Exception($"Unable to determine type to deserialize, override GetTypeInfoFromDerivedType to map the derivedType");
         }
     }
 
-    public abstract class InheritedClassConverter<TModel> : InheritedClassConverterBase<TModel, string>
+    abstract class InheritedClassConverter<TModel> : InheritedClassConverter<TModel, string>
     {
         protected InheritedClassConverter(RelationalMappings relationalMappings = null) : base(relationalMappings)
         {
-        }
-
-        protected override TypeInfo GetTypeInfoFromDerivedType(string derivedType)
-        {
-            if (!DerivedTypeMappings.ContainsKey(derivedType))
-            {
-                throw new Exception($"Unable to determine type to deserialize. {TypeDesignatingPropertyName} `{derivedType}` does not map to a known type");
-            }
-
-            var typeInfo = DerivedTypeMappings[derivedType].GetTypeInfo();
-            return typeInfo;
         }
     }
 }

@@ -19,7 +19,6 @@ using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Nevermore.Transient;
 using Nevermore.Util;
-using Newtonsoft.Json;
 
 namespace Nevermore
 {
@@ -458,7 +457,7 @@ namespace Nevermore
                         if (jsonIndex >= 0)
                         {
                             var json = reader[jsonIndex].ToString();
-                            var deserialized = JsonConvert.DeserializeObject(json, instanceType, relationalStoreConfiguration.JsonSettings);
+                            var deserialized = relationalStoreConfiguration.DeserializeObject(json, instanceType);
                             // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
                             // If the deserialized object is not the desired type, then we are querying for a specific sub-type
                             // and this record is a different sub-type, and should be excluded from the result-set.
@@ -534,7 +533,7 @@ namespace Nevermore
             {
                 msUntilFirstRecord = timedSection.ElapsedMilliseconds;
 
-                var mapper = new ProjectionMapper(reader, relationalStoreConfiguration.JsonSettings, relationalStoreConfiguration.RelationalMappings);
+                var mapper = new ProjectionMapper(reader, relationalStoreConfiguration);
                 while (reader.Read())
                 {
                     yield return projectionMapper(mapper);
@@ -678,25 +677,23 @@ namespace Nevermore
         class ProjectionMapper : IProjectionMapper
         {
             readonly IDataReader reader;
-            readonly JsonSerializerSettings jsonSerializerSettings;
-            readonly RelationalMappings mappings;
+            readonly RelationalStoreConfiguration relationalStoreConfiguration;
 
-            public ProjectionMapper(IDataReader reader, JsonSerializerSettings jsonSerializerSettings, RelationalMappings mappings)
+            public ProjectionMapper(IDataReader reader, RelationalStoreConfiguration relationalStoreConfiguration)
             {
-                this.mappings = mappings;
                 this.reader = reader;
-                this.jsonSerializerSettings = jsonSerializerSettings;
+                this.relationalStoreConfiguration = relationalStoreConfiguration;
             }
 
             public TResult Map<TResult>(string prefix)
             {
-                var mapping = mappings.Get(typeof(TResult));
+                var mapping = relationalStoreConfiguration.RelationalMappings.Get(typeof(TResult));
                 var json = reader[GetColumnName(prefix, "JSON")].ToString();
 
                 var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
 
-                var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
-                foreach (var column in mappings.Get(instance.GetType()).IndexedColumns)
+                var instance = relationalStoreConfiguration.DeserializeObject(json, instanceType);
+                foreach (var column in relationalStoreConfiguration.RelationalMappings.Get(instance.GetType()).IndexedColumns)
                 {
                     column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
                 }

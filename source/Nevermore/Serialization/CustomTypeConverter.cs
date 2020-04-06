@@ -1,14 +1,14 @@
 using System;
-using Nevermore.Contracts;
+using Nevermore.Mapping;
 using Newtonsoft.Json;
 
 namespace Nevermore.Serialization
 {
-    public class CustomTypeConverter : JsonConverter
+    class CustomTypeConverter : JsonConverter
     {
-        readonly ICustomTypeDefinition customTypeDefinition;
+        readonly CustomSingleTypeDefinition customTypeDefinition;
 
-        public CustomTypeConverter(ICustomTypeDefinition customTypeDefinition)
+        public CustomTypeConverter(CustomSingleTypeDefinition customTypeDefinition)
         {
             this.customTypeDefinition = customTypeDefinition;
         }

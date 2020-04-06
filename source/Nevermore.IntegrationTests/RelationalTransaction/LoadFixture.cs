@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             base.SetUp();
 
-            Mappings.Install(
+            RelationalStoreConfiguration.AddDocumentMaps(
                 new DocumentMap[]
                 {
                     new ProductSubtotalMap(RelationalStoreConfiguration)

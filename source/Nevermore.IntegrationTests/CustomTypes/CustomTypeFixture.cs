@@ -102,17 +102,17 @@ namespace Nevermore.IntegrationTests.CustomTypes
             public string Name { get; set; }
         }
 
-        class SomeCustomTypeDefinition : ICustomTypeDefinition
+        class SomeCustomTypeDefinition : CustomSingleTypeDefinition
         {
-            public Type ModelType => typeof(SomeCustomType);
-            public DbType DbType => DbType.String;
-            public int MaxLength => 50;
+            public override Type ModelType => typeof(SomeCustomType);
+            public override DbType DbType => DbType.String;
+            public override int MaxLength => 50;
 
-            public object ToDbValue(object instance)
+            public override object ToDbValue(object instance)
             {
                 return ((SomeCustomType) instance).Name;
             }
-            public object FromDbValue(object value)
+            public override object FromDbValue(object value)
             {
                 return new SomeCustomType { Name = (string)value };
             }

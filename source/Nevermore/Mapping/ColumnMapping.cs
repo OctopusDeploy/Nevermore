@@ -42,9 +42,9 @@ namespace Nevermore.Mapping
             Property = property;
             ColumnName = Property.Name;
             
-            if (relationalStoreConfiguration?.CustomTypeDefinitions != null && relationalStoreConfiguration.CustomTypeDefinitions.ContainsKey(property.PropertyType))
+            if (relationalStoreConfiguration?.CustomSingleTypeDefinitions != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(property.PropertyType))
             {
-                var definition = relationalStoreConfiguration.CustomTypeDefinitions[property.PropertyType];
+                var definition = relationalStoreConfiguration.CustomSingleTypeDefinitions[property.PropertyType];
 
                 DbType = definition.DbType;
                 ReaderWriter = new CustomTypeReaderWriter(definition, property);

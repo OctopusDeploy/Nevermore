@@ -1,14 +1,13 @@
 using System.Reflection;
-using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public class CustomTypeReaderWriter : IPropertyReaderWriter<object>
+    class CustomTypeReaderWriter : IPropertyReaderWriter<object>
     {
-        readonly ICustomTypeDefinition customTypeDefinition;
+        readonly CustomSingleTypeDefinition customTypeDefinition;
         readonly PropertyInfo property;
 
-        public CustomTypeReaderWriter(ICustomTypeDefinition customTypeDefinition, PropertyInfo property)
+        public CustomTypeReaderWriter(CustomSingleTypeDefinition customTypeDefinition, PropertyInfo property)
         {
             this.customTypeDefinition = customTypeDefinition;
             this.property = property;

@@ -2,17 +2,26 @@ using System;
 using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.Serialization;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductMap<TProduct> : DocumentMap<TProduct> where TProduct : Product
+    public class ProductMap<TProduct> : DocumentHierarchyMap<TProduct, ProductType> where TProduct : Product
     {
         public ProductMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
         {
             Column(m => m.Name);
             Column(m => m.Type);
         }
+        
+        readonly Dictionary<ProductType, Type> derivedTypeMappings = new Dictionary<ProductType, Type>
+        {
+            {ProductType.Dodgy, typeof(DodgyProduct)},
+            {ProductType.Special, typeof(SpecialProduct)},
+            {ProductType.Normal, typeof(Product)}
+        };
+
+        protected override IDictionary<ProductType, Type> DerivedTypeMappings => derivedTypeMappings;
+        protected override string TypeDesignatingPropertyName => "Type";
     }
 
     public class SpecialProductMap : ProductMap<SpecialProduct>
@@ -22,6 +31,13 @@ namespace Nevermore.IntegrationTests.Model
             TableName = typeof(Product).Name;
             Column(m => m.BonusMaterial).IsNullable = true;
         }
+
+        readonly Dictionary<ProductType, Type> derivedTypeMappings = new Dictionary<ProductType, Type>
+        {
+            {ProductType.Special, typeof(SpecialProduct)}
+        };
+
+        protected override IDictionary<ProductType, Type> DerivedTypeMappings => derivedTypeMappings;
     }
 
     public class ProductToTestSerialization : IDocument
@@ -42,22 +58,5 @@ namespace Nevermore.IntegrationTests.Model
             Column(x => x.Type);
             Column(x => x.JSON);
         }
-    }
-
-    public class ProductConverter : InheritedClassConverter<Product, ProductType>
-    {
-        readonly Dictionary<ProductType, Type> derivedTypeMappings = new Dictionary<ProductType, Type>
-        {
-            {ProductType.Dodgy, typeof(DodgyProduct)},
-            {ProductType.Special, typeof(SpecialProduct)},
-            {ProductType.Normal, typeof(Product)}
-        };
-
-        public ProductConverter(RelationalMappings relationalMappings) : base(relationalMappings)
-        {
-        }
-
-        protected override IDictionary<ProductType, Type> DerivedTypeMappings => derivedTypeMappings;
-        protected override string TypeDesignatingPropertyName => "Type";
     }
 }

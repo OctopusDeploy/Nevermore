@@ -9,13 +9,13 @@ using Newtonsoft.Json.Linq;
 
 namespace Nevermore.Serialization
 {
-    public abstract class InheritedClassConverterBase<TDocument, TDiscriminator> : JsonConverter
+    abstract class InheritedClassConverterBase<TDocument, TDiscriminator> : JsonConverter
     {
         protected readonly RelationalMappings RelationalMappings;
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> unmappedReadablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> writeablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
 
-        protected InheritedClassConverterBase(RelationalMappings relationalMappings = null)
+        protected InheritedClassConverterBase(RelationalMappings relationalMappings)
         {
             RelationalMappings = relationalMappings;
         }
@@ -25,7 +25,7 @@ namespace Nevermore.Serialization
             writer.WriteStartObject();
 
             DocumentMap map = null;
-            RelationalMappings?.TryGet(value.GetType(), out map);
+            RelationalMappings.TryGet(value.GetType(), out map);
 
             var documentType = value.GetType().GetTypeInfo();
 

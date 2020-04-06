@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 #if NETFRAMEWORK
 using System.Data.SqlClient;

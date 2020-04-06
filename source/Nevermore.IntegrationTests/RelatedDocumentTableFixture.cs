@@ -19,7 +19,7 @@ namespace Nevermore.IntegrationTests
             base.SetUp();
             
             var orderMap = new OrderMap(RelationalStoreConfiguration);
-            RelationalStoreConfiguration.RelationalMappings.Install(new []{ orderMap });
+            RelationalStoreConfiguration.AddDocumentMaps(new []{ orderMap });
             orderRelatedDocMap = orderMap.RelatedDocumentsMappings.First();
         }
 

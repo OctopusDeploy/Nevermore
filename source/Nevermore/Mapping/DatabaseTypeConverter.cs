@@ -64,9 +64,9 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
-            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomTypeDefinitions.ContainsKey(propertyType))
+            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(propertyType))
             {
-                return relationalStoreConfiguration.CustomTypeDefinitions[propertyType].DbType;
+                return relationalStoreConfiguration.CustomSingleTypeDefinitions[propertyType].DbType;
             }
             
             DbType result;

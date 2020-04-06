@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.Serialization;
 
 namespace Nevermore.IntegrationTests.Model
 {
@@ -14,7 +13,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class EndpointConverter : InheritedClassConverter<Endpoint>
+    public class EndpointTypeDefinition : CustomInheritedTypeDefinition<Endpoint>
     {
         readonly Dictionary<string, Type> derivedTypeMappings = new Dictionary<string, Type>
         {

@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests
         {
             base.SetUp();
 
-            Mappings.Install(
+            RelationalStoreConfiguration.AddDocumentMaps(
                 new DocumentMap[]
                 {
                     new CustomerMap(RelationalStoreConfiguration),

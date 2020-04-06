@@ -186,7 +186,7 @@ namespace Nevermore.Util
                 [$"{prefix}{IdVariableName}"] = id
             };
 
-            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, relationalStoreConfiguration.JsonSettings);
+            result[$"{prefix}{JsonVariableName}"] = relationalStoreConfiguration.SerializeObject(document, mapping.Type);
 
             foreach (var c in mapping.WritableIndexedColumns())
             {

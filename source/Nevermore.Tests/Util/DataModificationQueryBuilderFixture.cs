@@ -18,14 +18,13 @@ namespace Nevermore.Tests.Util
         public DataModificationQueryBuilderFixture()
         {
             var config = new RelationalStoreConfiguration(null);
-            config.RelationalMappings.Install(new DocumentMap[]
+            config.AddDocumentMaps(new DocumentMap[]
             {
                 new TestDocumentMap(config),
                 new TestDocumentWithRelatedDocumentsMap(config),
                 new TestDocumentWithMultipleRelatedDocumentsMap(config),
                 new OtherMap(config)
             });
-            config.JsonSettings.ContractResolver = new RelationalJsonContractResolver(config.RelationalMappings); 
             
             builder = new DataModificationQueryBuilder(config);
         }

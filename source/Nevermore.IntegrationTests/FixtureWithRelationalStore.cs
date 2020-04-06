@@ -1,5 +1,4 @@
 using System;
-using Nevermore.Mapping;
 using Nevermore.Contracts;
 using NUnit.Framework;
 
@@ -28,7 +27,6 @@ namespace Nevermore.IntegrationTests
         protected IRelationalStore Store => integrationTestDatabase.Store;
 
         protected RelationalStoreConfiguration RelationalStoreConfiguration => integrationTestDatabase.RelationalStoreConfiguration;
-        protected RelationalMappings Mappings => RelationalStoreConfiguration.RelationalMappings;
 
         public int CountOf<T>() where T : class, IId
         {

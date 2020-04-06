@@ -2,16 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Resources;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nevermore.Contracts;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
-using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests
 {
@@ -84,7 +81,7 @@ namespace Nevermore.IntegrationTests
             var config = new RelationalStoreConfiguration(CustomTypeDefinitions());
             RelationalStoreConfiguration = config;
 
-            config.RelationalMappings.Install(new List<DocumentMap>()
+            config.AddDocumentMaps(new List<DocumentMap>()
             {
                 new CustomerMap(config),
                 new CustomerToTestSerializationMap(config),
@@ -99,22 +96,16 @@ namespace Nevermore.IntegrationTests
             });
 
             var mappings = AddCustomMappings(config);
-            config.RelationalMappings.Install(mappings);
+            config.AddDocumentMaps(mappings);
             
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(config), chaosFactor)
                 : new SqlCommandFactory(config);
-
-            var contractResolver = new RelationalJsonContractResolver(RelationalStoreConfiguration.RelationalMappings);
-
-            var jsonSerializerSettings = RelationalStoreConfiguration.JsonSettings;
-            jsonSerializerSettings.ContractResolver = contractResolver;
-            jsonSerializerSettings.TypeNameHandling = TypeNameHandling.Auto;
-            jsonSerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
             
-            jsonSerializerSettings.Converters.Add(new ProductConverter(RelationalStoreConfiguration.RelationalMappings));
-            jsonSerializerSettings.Converters.Add(new BrandConverter(RelationalStoreConfiguration.RelationalMappings));
-            jsonSerializerSettings.Converters.Add(new EndpointConverter());
+            config.AddCustomTypeDefinitions(new []
+            {
+                new EndpointTypeDefinition()
+            });
             
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString,
                 TestDatabaseName,
@@ -150,7 +141,7 @@ namespace Nevermore.IntegrationTests
             SchemaGenerator.WriteTableSchema(new CustomerMap(relationalStoreConfiguration), null, output);
 
             // needed for products, but not to generate the table
-            relationalStoreConfiguration.RelationalMappings.Install(new List<DocumentMap>() { new ProductMap<Product>(relationalStoreConfiguration) });
+            relationalStoreConfiguration.AddDocumentMaps(new List<DocumentMap>() { new ProductMap<Product>(relationalStoreConfiguration) });
 
             // needed to generate the table
             var mappings = new DocumentMap[]
@@ -165,7 +156,7 @@ namespace Nevermore.IntegrationTests
                 .Union(AddCustomMappingsForSchemaGeneration(relationalStoreConfiguration))
                 .ToArray();
 
-            relationalStoreConfiguration.RelationalMappings.Install(mappings);
+            relationalStoreConfiguration.AddDocumentMaps(mappings);
 
             using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
             {

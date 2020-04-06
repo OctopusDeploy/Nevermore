@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Nevermore.Mapping
 {
-    public class RelationalMappings
+    public class RelationalMappings : IRelationalMappings
     {
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
 
@@ -56,5 +56,12 @@ namespace Nevermore.Mapping
             
             return mapping;
         }
+    }
+
+    public interface IRelationalMappings
+    {
+        bool TryGet(Type type, out DocumentMap map);
+        DocumentMap Get(object instance);
+        DocumentMap Get(Type type);
     }
 }
