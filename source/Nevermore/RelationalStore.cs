@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 #endif
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
@@ -15,11 +16,12 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        public const int DefaultConnectTimeoutSeconds = 60 * 5;
-            // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
+        public const int DefaultConnectTimeoutSeconds = 60 * 5; 
+        // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
 
         public const int DefaultConnectRetryCount = 3;
         public const int DefaultConnectRetryInterval = 10;
+        public const IsolationLevel DefaultIsolationLevel = IsolationLevel.ReadCommitted;
 
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
@@ -107,6 +109,7 @@ namespace Nevermore
 
         public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
         public DocumentMap GetMappingFor(Type type) => mappings.Get(type);
+
         public DocumentMap GetMappingFor<T>() => mappings.Get(typeof(T));
 
         public void Reset()
@@ -114,17 +117,34 @@ namespace Nevermore
             keyAllocator.Reset();
         }
 
-        public IRelationalTransaction BeginTransaction(
-            RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
+        public IRelationalTransaction BeginTransaction(RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, [CallerMemberName]string name = null)
         {
-            return BeginTransaction(IsolationLevel.ReadCommitted, retriableOperation, name);
+            return new RelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel,
-            RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, [CallerMemberName]string name = null)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,
-                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+        }
+
+        public IReadTransaction BeginReadTransaction(RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        {
+            return new ReadRelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+        }
+
+        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        {
+            return new ReadRelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+        }
+
+        public IWriteTransaction BeginWriteTransaction(RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        {
+            return new RelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+        }
+
+        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        {
+            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)

@@ -10,7 +10,7 @@ namespace Nevermore
     public class QueryBuilder<TRecord, TSelectBuilder> : IOrderedQueryBuilder<TRecord> where TSelectBuilder: ISelectBuilder where TRecord : class
     {
         readonly TSelectBuilder selectBuilder;
-        readonly IRelationalTransaction transaction;
+        readonly IReadQueryExecutor readQueryExecutor;
         readonly ITableAliasGenerator tableAliasGenerator;
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator;
         readonly CommandParameterValues paramValues;
@@ -19,7 +19,7 @@ namespace Nevermore
         TimeSpan? commandTimeout;
 
         public QueryBuilder(TSelectBuilder selectBuilder,
-            IRelationalTransaction transaction,
+            IReadQueryExecutor readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues paramValues,
@@ -27,7 +27,7 @@ namespace Nevermore
             ParameterDefaults paramDefaults)
         {
             this.selectBuilder = selectBuilder;
-            this.transaction = transaction;
+            this.readQueryExecutor = readQueryExecutor;
             this.tableAliasGenerator = tableAliasGenerator;
             this.uniqueParameterNameGenerator = uniqueParameterNameGenerator;
             this.paramValues = paramValues;
@@ -111,7 +111,7 @@ namespace Nevermore
 
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
-            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, transaction, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
+            return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
         }
 
         public IQueryBuilder<TRecord> AddRowNumberColumn(string columnAlias)
@@ -155,7 +155,7 @@ namespace Nevermore
             return new JoinSourceQueryBuilder<TRecord>(subquery,
                 joinType,
                 source,
-                transaction,
+                readQueryExecutor,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
                 new CommandParameterValues(ParameterValues, parameterValues),
@@ -166,7 +166,7 @@ namespace Nevermore
         public ISubquerySourceBuilder<TRecord> Union(IQueryBuilder<TRecord> queryBuilder)
         {
             return new UnionSourceBuilder<TRecord>(new Union(new [] { selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryBuilder.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy() }),
-                transaction,
+                readQueryExecutor,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
                 new CommandParameterValues(ParameterValues, queryBuilder.ParameterValues),
@@ -177,7 +177,7 @@ namespace Nevermore
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
             return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(),
-                transaction,
+                readQueryExecutor,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
                 ParameterValues,
@@ -242,7 +242,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
-            return transaction.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
@@ -253,7 +253,7 @@ namespace Nevermore
             var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
-            var result = transaction.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), commandTimeout);
+            var result = readQueryExecutor.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), commandTimeout);
 
             return result != falseValue;
 
@@ -293,7 +293,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
-            return transaction.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
@@ -319,7 +319,7 @@ namespace Nevermore
                 {maxRowParameter.ParameterName, take + skip}
             };
 
-            return transaction.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
+            return readQueryExecutor.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
         }
 
         [Pure]
@@ -344,7 +344,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return transaction.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]

@@ -2,11 +2,7 @@ using System;
 
 namespace Nevermore
 {
-    public interface IRelationalTransaction : IQueryExecutor, IDisposable
+    public interface IRelationalTransaction : IWriteTransaction
     {
-        /// <summary>
-        /// Commits the current pending transaction.
-        /// </summary>
-        void Commit();
     }
 }
