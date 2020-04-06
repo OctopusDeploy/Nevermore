@@ -9,7 +9,7 @@ namespace Nevermore.IntegrationTests
 {
     public class LoadStreamFixture : FixtureWithRelationalStore
     {
-        [Test]
+        [Test, Ignore("For performance")]
         public void LoadManyPerformanceTest()
         {
             using (var creator = Store.BeginTransaction())
