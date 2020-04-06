@@ -17,9 +17,9 @@ namespace Nevermore.Tests
 
             var connectionStringBuilder = new SqlConnectionStringBuilder(store.ConnectionString);
 
-            connectionStringBuilder.ConnectTimeout.Should().Be(RelationalStore.DefaultConnectTimeoutSeconds);
-            connectionStringBuilder.ConnectRetryCount.Should().Be(RelationalStore.DefaultConnectRetryCount);
-            connectionStringBuilder.ConnectRetryInterval.Should().Be(RelationalStore.DefaultConnectRetryInterval);
+            connectionStringBuilder.ConnectTimeout.Should().Be(NevermoreDefaults.DefaultConnectTimeoutSeconds);
+            connectionStringBuilder.ConnectRetryCount.Should().Be(NevermoreDefaults.DefaultConnectRetryCount);
+            connectionStringBuilder.ConnectRetryInterval.Should().Be(NevermoreDefaults.DefaultConnectRetryInterval);
         }
 
         [Test]

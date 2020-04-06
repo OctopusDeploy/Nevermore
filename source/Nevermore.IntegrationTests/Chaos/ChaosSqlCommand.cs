@@ -1,16 +1,17 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 
 namespace Nevermore.IntegrationTests.Chaos
 {
-    public class ChaosSqlCommand : IDbCommand
+    public class ChaosSqlCommand : DbCommand
     {
-        readonly IDbCommand wrappedCommand;
+        readonly DbCommand wrappedCommand;
         readonly double chaosFactor;
         static readonly Random ChaosGenerator = new Random();
 
-        public ChaosSqlCommand(IDbCommand wrappedCommand, double chaosFactor)
+        public ChaosSqlCommand(DbCommand wrappedCommand, double chaosFactor)
         {
             this.wrappedCommand = wrappedCommand;
             this.chaosFactor = chaosFactor;
@@ -22,90 +23,80 @@ namespace Nevermore.IntegrationTests.Chaos
             if (ChaosGenerator.NextDouble() < chaosFactor) throw new TimeoutException("You made the chaos monkey angry...");
         }
 
-        public int ExecuteNonQuery()
+        public override void Cancel()
+        {
+            wrappedCommand.Cancel();
+        }
+
+        protected override DbParameter CreateDbParameter()
+        {
+            return wrappedCommand.CreateParameter();
+        }
+
+        public override int ExecuteNonQuery()
         {
             return wrappedCommand.ExecuteNonQuery();
         }
 
-        public IDataReader ExecuteReader()
-        {
-            MakeSomeChaos();
-            return wrappedCommand.ExecuteReader();
-        }
-
-        public IDataReader ExecuteReader(CommandBehavior behavior)
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
             MakeSomeChaos();
             return wrappedCommand.ExecuteReader(behavior);
         }
 
-        public object ExecuteScalar()
+        public override object ExecuteScalar()
         {
             MakeSomeChaos();
             return wrappedCommand.ExecuteScalar();
         }
 
-        #region Purely Wrapped
-        public void Dispose()
-        {
-            wrappedCommand.Dispose();
-        }
-
-        public void Prepare()
+        public override void Prepare()
         {
             wrappedCommand.Prepare();
         }
 
-        public void Cancel()
+        public override string CommandText
         {
-            wrappedCommand.Cancel();
+            get => wrappedCommand.CommandText;
+            set => wrappedCommand.CommandText = value;
         }
 
-        public IDbDataParameter CreateParameter()
+        public override int CommandTimeout
         {
-            return wrappedCommand.CreateParameter();
+            get => wrappedCommand.CommandTimeout;
+            set => wrappedCommand.CommandTimeout = value;
         }
 
-        public IDbConnection Connection
+        public override CommandType CommandType
         {
-            get { return wrappedCommand.Connection; }
-            set { wrappedCommand.Connection = value; }
+            get => wrappedCommand.CommandType;
+            set => wrappedCommand.CommandType = value;
         }
 
-        public IDbTransaction Transaction
+        public override UpdateRowSource UpdatedRowSource
         {
-            get { return wrappedCommand.Transaction; }
-            set { wrappedCommand.Transaction = value; }
+            get => wrappedCommand.UpdatedRowSource;
+            set => wrappedCommand.UpdatedRowSource = value;
         }
 
-        public string CommandText
+        protected override DbConnection DbConnection
         {
-            get { return wrappedCommand.CommandText; }
-            set { wrappedCommand.CommandText = value; }
+            get => wrappedCommand.Connection;
+            set => wrappedCommand.Connection = value;
         }
 
-        public int CommandTimeout
+        protected override DbParameterCollection DbParameterCollection => wrappedCommand.Parameters;
+
+        protected override DbTransaction DbTransaction
         {
-            get { return wrappedCommand.CommandTimeout; }
-            set { wrappedCommand.CommandTimeout = value; }
+            get => wrappedCommand.Transaction;
+            set => wrappedCommand.Transaction = value;
         }
 
-        public CommandType CommandType
+        public override bool DesignTimeVisible
         {
-            get { return wrappedCommand.CommandType; }
-            set { wrappedCommand.CommandType = value; }
+            get => wrappedCommand.DesignTimeVisible;
+            set => wrappedCommand.DesignTimeVisible = value;
         }
-
-        public IDataParameterCollection Parameters
-        {
-            get { return wrappedCommand.Parameters; }
-        }
-
-        public UpdateRowSource UpdatedRowSource
-        {
-            get { return wrappedCommand.UpdatedRowSource; }
-            set { wrappedCommand.UpdatedRowSource = value; }
-        }
-        #endregion
     }
 }

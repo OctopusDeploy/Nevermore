@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
@@ -10,6 +11,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
@@ -31,8 +33,8 @@ namespace Nevermore
         protected readonly RetriableOperation retriableOperation;
         protected readonly JsonSerializerSettings jsonSerializerSettings;
         protected readonly RelationalMappings mappings;
-        protected readonly IDbConnection connection;
-        protected readonly IDbTransaction transaction;
+        protected DbConnection connection;
+        protected DbTransaction transaction;
         protected readonly ISqlCommandFactory sqlCommandFactory;
         protected readonly IRelatedDocumentStore relatedDocumentStore;
         protected readonly string name;
@@ -49,7 +51,6 @@ namespace Nevermore
         public ReadRelationalTransaction(
             RelationalTransactionRegistry registry,
             RetriableOperation retriableOperation,
-            IsolationLevel isolationLevel,
             ISqlCommandFactory sqlCommandFactory,
             JsonSerializerSettings jsonSerializerSettings,
             RelationalMappings mappings,
@@ -70,21 +71,23 @@ namespace Nevermore
                 this.name = "<unknown>";
             
             dataModificationQueryBuilder = new DataModificationQueryBuilder(mappings, jsonSerializerSettings);
-
-            try
-            {
-                registry.Add(this);
-                connection = new SqlConnection(registry.ConnectionString);
-                connection.OpenWithRetry();
-                transaction = connection.BeginTransaction(isolationLevel);
-            }
-            catch
-            {
-                Dispose();
-                throw;
-            }
+            registry.Add(this);
         }
 
+        public void Open(IsolationLevel isolationLevel)
+        {
+            connection = new SqlConnection(registry.ConnectionString);
+            connection.OpenWithRetry();
+            transaction = connection.BeginTransaction(isolationLevel);
+        }
+
+        public async Task OpenAsync(IsolationLevel isolationLevel)
+        {
+            connection = new SqlConnection(registry.ConnectionString);
+            await connection.OpenWithRetryAsync();
+            transaction = connection.BeginTransaction(isolationLevel);
+        }
+        
         [Pure]
         public T Load<T>(string id) where T : class, IId
         {
@@ -94,6 +97,16 @@ namespace Nevermore
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
             return ExecuteReader<T>($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [Id] = @Id", mapping, args).FirstOrDefault();
+        }
+
+        public async Task<T> LoadAsync<T>(string id) where T : class, IId
+        {
+            // It's tempting to use TableQuery<T>().Where...... etc., but in this case we know exactly the query we need,
+            // so it's a lot faster to go direct. This shaves about 7% off the load time.
+            var mapping = mappings.Get(typeof(T));
+            var tableName = mapping.TableName;
+            var args = new CommandParameterValues {{"Id", id}};
+            return (await ExecuteReaderAsync<T>($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [Id] = @Id", mapping, args)).FirstOrDefault();
         }
 
         [Pure]
@@ -190,6 +203,15 @@ namespace Nevermore
                 return Stream<T>(command, mapping);
             }
         }
+        
+        Task<IEnumerable<T>> ExecuteReaderAsync<T>(string query, DocumentMap mapping, CommandParameterValues args, TimeSpan? commandTimeout = null)
+        {
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, mapping, commandTimeout))
+            {
+                AddCommandTrace(command.CommandText);
+                return StreamAsync<T>(command, mapping);
+            }
+        }
 
         [Pure]
         public IEnumerable<T> ExecuteReaderWithProjection<T>(string query, CommandParameterValues args, Func<IProjectionMapper, T> projectionMapper, TimeSpan? commandTimeout = null)
@@ -214,15 +236,14 @@ namespace Nevermore
         }
 
         [Pure]
-        IEnumerable<T> Stream<T>(IDbCommand command, DocumentMap mapping)
+        IEnumerable<T> Stream<T>(DbCommand command, DocumentMap mapping)
         {
-            IDataReader reader = null;
+            DbDataReader reader = null;
             try
             {
                 long msUntilFirstRecord = -1;
                 using (var timedSection = new TimedSection(Log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
                 {
-
                     try
                     {
                         reader = command.ExecuteReaderWithRetry();
@@ -238,57 +259,100 @@ namespace Nevermore
                     }
 
                     msUntilFirstRecord = timedSection.ElapsedMilliseconds;
-                    var idIndex = GetOrdinal(reader, "Id");
-                    var jsonIndex = GetOrdinal(reader, "JSON");
-                    var typeResolver = mapping.InstanceTypeResolver.TypeResolverFromReader(s => GetOrdinal(reader, s));
-
-                    while (reader.Read())
-                    {
-                        T instance;
-                        var instanceType = typeResolver(reader);
-
-                        if (jsonIndex >= 0)
-                        {
-                            var json = reader[(int) jsonIndex].ToString();
-                            var deserialized = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
-                            // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
-                            // If the deserialized object is not the desired type, then we are querying for a specific sub-type
-                            // and this record is a different sub-type, and should be excluded from the result-set.
-                            if (deserialized is T)
-                            {
-                                instance = (T) deserialized;
-                            }
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            instance = (T) Activator.CreateInstance(instanceType, objectInitialisationOptions.HasFlag(ObjectInitialisationOptions.UseNonPublicConstructors));
-                        }
-
-                        var specificMapping = mappings.Get(instance.GetType());
-                        var columnIndexes = specificMapping.IndexedColumns.ToDictionary<ColumnMapping, ColumnMapping, int>(c => c, c => GetOrdinal(reader, c.ColumnName));
-
-                        foreach (var index in columnIndexes)
-                        {
-                            if (index.Value >= 0)
-                            {
-                                index.Key.ReaderWriter.Write(instance, reader[index.Value]);
-                            }
-                        }
-
-                        if (idIndex >= 0)
-                        {
-                            mapping.IdColumn.ReaderWriter.Write(instance, reader[(int) idIndex]);
-                        }
-
-                        yield return instance;
-                    }
+                    foreach (var item in ProcessReader<T>(reader, mapping))
+                        yield return item;
                 }
             }
             finally
             {
                 reader?.Dispose();
+            }
+        }
+
+        [Pure]
+        async Task<IEnumerable<T>> StreamAsync<T>(DbCommand command, DocumentMap mapping)
+        {
+            DbDataReader reader = null;
+            try
+            {
+                long msUntilFirstRecord = -1;
+                using (var timedSection = new TimedSection(Log, ms => $"Async reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
+                {
+                    try
+                    {
+                        reader = await command.ExecuteReaderAsyncWithRetry();
+                    }
+                    catch (SqlException ex)
+                    {
+                        throw WrapException(command, ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.DebugException($"Exception in relational transaction '{name}'", ex);
+                        throw;
+                    }
+
+                    msUntilFirstRecord = timedSection.ElapsedMilliseconds;
+                    
+                    // TODO: Need to decide whether to:
+                    //  (a) Upgrade to .NET Standard 2.1/.NET Core 3.0 and use AsyncEnumerable, or:
+                    //  (b) Code a custom enumerator
+                    return ProcessReader<T>(reader, mapping).ToList();
+                }
+            }
+            finally
+            {
+                reader?.Dispose();
+            }
+        }
+
+        IEnumerable<T> ProcessReader<T>(DbDataReader reader, DocumentMap mapping)
+        {
+            var idIndex = GetOrdinal(reader, "Id");
+            var jsonIndex = GetOrdinal(reader, "JSON");
+            var typeResolver = mapping.InstanceTypeResolver.TypeResolverFromReader(s => GetOrdinal(reader, s));
+
+            while (reader.Read())
+            {
+                T instance;
+                var instanceType = typeResolver(reader);
+
+                if (jsonIndex >= 0)
+                {
+                    var json = reader[(int) jsonIndex].ToString();
+                    var deserialized = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
+                    // This is to handle polymorphic queries. e.g. Query<AzureAccount>()
+                    // If the deserialized object is not the desired type, then we are querying for a specific sub-type
+                    // and this record is a different sub-type, and should be excluded from the result-set.
+                    if (deserialized is T)
+                    {
+                        instance = (T) deserialized;
+                    }
+                    else
+                        continue;
+                }
+                else
+                {
+                    instance = (T) Activator.CreateInstance(instanceType, objectInitialisationOptions.HasFlag(ObjectInitialisationOptions.UseNonPublicConstructors));
+                }
+
+                var specificMapping = mappings.Get(instance.GetType());
+                var columnIndexes = specificMapping.IndexedColumns.ToDictionary<ColumnMapping, ColumnMapping, int>(c => c, c => GetOrdinal(reader, c.ColumnName));
+
+                foreach (var index in columnIndexes)
+                {
+                    if (index.Value >= 0)
+                    {
+                        index.Key.ReaderWriter.Write(instance, reader[index.Value]);
+                    }
+                }
+
+                if (idIndex >= 0)
+                {
+                    mapping.IdColumn.ReaderWriter.Write(instance, reader[(int) idIndex]);
+                }
+
+                yield return instance;
             }
         }
 
@@ -314,7 +378,7 @@ namespace Nevermore
             return -1;
         }
 
-        IEnumerable<T> Stream<T>(IDbCommand command, Func<IProjectionMapper, T> projectionMapper)
+        IEnumerable<T> Stream<T>(DbCommand command, Func<IProjectionMapper, T> projectionMapper)
         {
             long msUntilFirstRecord = -1;
 

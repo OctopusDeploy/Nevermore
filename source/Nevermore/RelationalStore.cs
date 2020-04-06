@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
@@ -16,13 +17,6 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        public const int DefaultConnectTimeoutSeconds = 60 * 5; 
-        // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
-
-        public const int DefaultConnectRetryCount = 3;
-        public const int DefaultConnectRetryInterval = 10;
-        public const IsolationLevel DefaultIsolationLevel = IsolationLevel.ReadCommitted;
-
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly RelationalMappings mappings;
         readonly Lazy<RelationalTransactionRegistry> registry;
@@ -91,7 +85,7 @@ namespace Nevermore
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
             bool forceMars = true)
         {
-            this.registry = new Lazy<RelationalTransactionRegistry>(
+            registry = new Lazy<RelationalTransactionRegistry>(
                 () => SetConnectionStringOptions(connectionString(), applicationName, forceMars)
             );
 
@@ -117,60 +111,64 @@ namespace Nevermore
             keyAllocator.Reset();
         }
 
-        public IRelationalTransaction BeginTransaction(RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, [CallerMemberName]string name = null)
+        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            var txn = CreateReadTransaction(retriableOperation, name);
+            txn.Open(isolationLevel);
+            return txn;
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, [CallerMemberName]string name = null)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            var txn = CreateReadTransaction(retriableOperation, name);
+            await txn.OpenAsync(isolationLevel);
+            return txn;
         }
 
-        public IReadTransaction BeginReadTransaction(RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
         {
-            return new ReadRelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+            var txn = CreateWriteTransaction(retriableOperation, name);
+            txn.Open(isolationLevel);
+            return txn;
         }
 
-        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
         {
-            return new ReadRelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+            var txn = CreateWriteTransaction(retriableOperation, name);
+            await txn.OpenAsync(isolationLevel);
+            return txn;
         }
 
-        public IWriteTransaction BeginWriteTransaction(RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, DefaultIsolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            return (IRelationalTransaction)BeginWriteTransaction(isolationLevel, retriableOperation, name);
         }
 
-        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.None | RetriableOperation.Select | RetriableOperation.Delete, [CallerMemberName]string name = null)
+        ReadRelationalTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            return new ReadRelationalTransaction(registry.Value, retriableOperation, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+        }
+        
+        RelationalTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
+        {
+            return new RelationalTransaction(registry.Value, retriableOperation, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)
         {
-            var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
-            {
-                ApplicationName = applicationName,
-            };
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            builder.ApplicationName = applicationName;
 
-            if (forceMars)
-            {
-                connectionStringBuilder.MultipleActiveResultSets = true;
-            }
+            if (forceMars) builder.MultipleActiveResultSets = true;
 
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectTimeout),
-                DefaultConnectTimeoutSeconds);
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryCount),
-                DefaultConnectRetryCount);
-            OverrideValueIfNotSet(connectionStringBuilder, nameof(connectionStringBuilder.ConnectRetryInterval),
-                DefaultConnectRetryInterval);
+            OverrideValueIfNotSet(builder, nameof(builder.ConnectTimeout), NevermoreDefaults.DefaultConnectTimeoutSeconds);
+            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryCount), NevermoreDefaults.DefaultConnectRetryCount);
+            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryInterval), NevermoreDefaults.DefaultConnectRetryInterval);
 
-            return new RelationalTransactionRegistry(connectionStringBuilder);
+            return new RelationalTransactionRegistry(builder);
         }
 
-        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName,
-            object overrideValue)
+        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
         {
             var defaultConnectionStringBuilder = new SqlConnectionStringBuilder();
 

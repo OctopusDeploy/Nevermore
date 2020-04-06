@@ -17,7 +17,7 @@ namespace Nevermore.IntegrationTests
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"DELETE FROM ?\"");
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
-            integrationTestDatabase.Store.Reset();
+            ((RelationalStore)integrationTestDatabase.Store).Reset();
         }
 
         protected IRelationalStore Store => integrationTestDatabase.Store;

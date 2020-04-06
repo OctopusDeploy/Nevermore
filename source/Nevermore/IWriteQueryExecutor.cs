@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nevermore.Contracts;
 
 namespace Nevermore
@@ -15,6 +16,16 @@ namespace Nevermore
         /// <param name="instance">The document instance to insert.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         void Insert<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId;
+        
+        /// <summary>
+        /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
+        /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
+        /// <see cref="M:Insert" /> returns.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
+        /// <param name="instance">The document instance to insert.</param>
+        /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
+        Task InsertAsync<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. The item will have an automatically assigned ID, and that ID
@@ -35,6 +46,16 @@ namespace Nevermore
         /// <param name="customAssignedId">The ID to assign to the document.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         void Insert<TDocument>(TDocument instance, string customAssignedId, TimeSpan? commandTimeout = null) where TDocument : class, IId;
+        
+        /// <summary>
+        /// Immediately inserts a new item into the default table for the document type. Uses a specific ID rather than
+        /// automatically generating one.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
+        /// <param name="instance">The document instance to insert.</param>
+        /// <param name="customAssignedId">The ID to assign to the document.</param>
+        /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
+        Task InsertAsync<TDocument>(TDocument instance, string customAssignedId, TimeSpan? commandTimeout = null) where TDocument : class, IId;
 
         /// <summary>
         /// Immediately inserts a new item into a specific table. Uses a specific ID rather than automatically generating one.

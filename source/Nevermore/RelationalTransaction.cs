@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
 using System.Data;
+using System.Data.Common;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
@@ -9,6 +10,7 @@ using Microsoft.Data.SqlClient;
 #endif
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
@@ -28,7 +30,6 @@ namespace Nevermore
         public RelationalTransaction(
             RelationalTransactionRegistry registry,
             RetriableOperation retriableOperation,
-            IsolationLevel isolationLevel,
             ISqlCommandFactory sqlCommandFactory,
             JsonSerializerSettings jsonSerializerSettings,
             RelationalMappings mappings,
@@ -36,7 +37,7 @@ namespace Nevermore
             IRelatedDocumentStore relatedDocumentStore,
             string name = null,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None
-        ) : base(registry, retriableOperation, isolationLevel, sqlCommandFactory, jsonSerializerSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions)
+        ) : base(registry, retriableOperation, sqlCommandFactory, jsonSerializerSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions)
         {
             this.keyAllocator = keyAllocator;
         }
@@ -61,6 +62,11 @@ namespace Nevermore
             Insert(null, instance, null, commandTimeout: commandTimeout);
         }
 
+        public Task InsertAsync<TDocument>(TDocument instance, TimeSpan? commandTimeout = null) where TDocument : class, IId
+        {
+            return InsertAsync(null, instance, null, commandTimeout: commandTimeout);
+        }
+
         public void Insert<TDocument>(string tableName, TDocument instance, TimeSpan? commandTimeout = null)
             where TDocument : class, IId
         {
@@ -71,6 +77,11 @@ namespace Nevermore
             where TDocument : class, IId
         {
             Insert(null, instance, customAssignedId, commandTimeout: commandTimeout);
+        }
+
+        public Task InsertAsync<TDocument>(TDocument instance, string customAssignedId, TimeSpan? commandTimeout = null) where TDocument : class, IId
+        {
+            return InsertAsync(null, instance, customAssignedId, commandTimeout: commandTimeout);
         }
 
         public void InsertWithHint<TDocument>(TDocument instance, string tableHint, TimeSpan? commandTimeout = null)
@@ -99,6 +110,45 @@ namespace Nevermore
                 try
                 {
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
+
+                    // Copy the assigned Id back onto the document
+                    mapping.IdColumn.ReaderWriter.Write(instance, (string) parameters["Id"]);
+
+                    relatedDocumentStore.PopulateRelatedDocuments(this, instance);
+                }
+                catch (SqlException ex)
+                {
+                    DetectAndThrowIfKnownException(ex, mapping);
+                    throw WrapException(command, ex);
+                }
+                catch (Exception ex)
+                {
+                    Log.DebugException($"Exception in relational transaction '{name}'", ex);
+                    throw;
+                }
+            }
+        }
+        
+        public async Task InsertAsync<TDocument>(string tableName, TDocument instance, string customAssignedId, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
+        {
+            if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
+                throw new ArgumentException("Do not pass a different Id when one is already set on the document");
+            
+            var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
+                new[] {instance}, 
+                tableName, 
+                tableHint,
+                m => string.IsNullOrEmpty(customAssignedId) ? AllocateId(m) : customAssignedId,
+                true
+            );
+            
+            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
+            {
+                AddCommandTrace(command.CommandText);
+                try
+                {
+                    await command.ExecuteNonQueryWithRetryAsync(GetRetryPolicy(RetriableOperation.Insert));
 
                     // Copy the assigned Id back onto the document
                     mapping.IdColumn.ReaderWriter.Write(instance, (string) parameters["Id"]);

@@ -49,7 +49,7 @@ namespace Nevermore.IntegrationTests
             InstallSchema();
         }
 
-        public RelationalStore Store { get; set; }
+        public IRelationalStore Store { get; set; }
         public RelationalMappings Mappings { get; set; }
 
         void CreateDatabase()
@@ -139,7 +139,7 @@ namespace Nevermore.IntegrationTests
 
             Mappings.Install(mappings);
 
-            using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
+            using (var transaction = Store.BeginTransaction())
             {
                 output.Clear();
 
