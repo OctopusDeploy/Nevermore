@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design.Serialization;
 using System.Data;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
@@ -116,22 +117,18 @@ namespace Nevermore
         [Pure]
         public IEnumerable<T> LoadStream<T>(IEnumerable<string> ids) where T : class, IId
         {
-            var blocks = ids
-                .Distinct()
-                .Select((id, index) => (id: id, index: index))
-                .GroupBy(x => x.index / 500, y => y.id)
-                .ToArray();
-
-            foreach (var block in blocks)
-            {
-                var results = TableQuery<T>()
-                    .Where("[Id] IN @ids")
-                    .Parameter("ids", block.ToArray())
-                    .Stream();
-
-                foreach (var result in results)
-                    yield return result;
-            }
+            var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            if (idList.Count == 0)
+                return new List<T>();
+            
+            var mapping = mappings.Get(typeof(T));
+            var tableName = mapping.TableName;
+            
+            var param = new CommandParameterValues();
+            param.AddTable("criteriaTable", idList);
+            return ExecuteReader<T>(
+                $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[Id] order by s.[Id]",
+                param);
         }
 
         [Pure]
