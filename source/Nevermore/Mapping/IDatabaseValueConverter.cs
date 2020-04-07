@@ -2,7 +2,7 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    public interface IDatabaseValueConverter
+    interface IDatabaseValueConverter
     {
         /// <summary>
         /// If it can be converted, the <see cref="DatabaseValueConverter" /> will figure out how. Given a source

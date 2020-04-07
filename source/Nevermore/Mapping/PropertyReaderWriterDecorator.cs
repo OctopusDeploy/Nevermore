@@ -1,6 +1,6 @@
 namespace Nevermore.Mapping
 {
-    public class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>, IPropertyReaderWriterWithConverter
+    class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>, IPropertyReaderWriterWithConverter
     {
         readonly IPropertyReaderWriter<object> original;
 

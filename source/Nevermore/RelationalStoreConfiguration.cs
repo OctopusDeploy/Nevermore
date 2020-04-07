@@ -27,11 +27,11 @@ namespace Nevermore
             };
         }
 
-        public IRelationalMappings RelationalMappings => relationalMappings;
+        internal IRelationalMappings RelationalMappings => relationalMappings;
 
         List<CustomTypeDefinition> CustomTypeDefinitions { get; } = new List<CustomTypeDefinition>();
 
-        public IDatabaseValueConverter DatabaseValueConverter { get; }
+        internal IDatabaseValueConverter DatabaseValueConverter { get; }
 
         public void SetSerializationContractResolver<TResolver>(TResolver resolver)
             where TResolver : DefaultContractResolver

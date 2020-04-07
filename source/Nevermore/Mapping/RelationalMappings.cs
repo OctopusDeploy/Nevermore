@@ -57,11 +57,4 @@ namespace Nevermore.Mapping
             return mapping;
         }
     }
-
-    public interface IRelationalMappings
-    {
-        bool TryGet(Type type, out DocumentMap map);
-        DocumentMap Get(object instance);
-        DocumentMap Get(Type type);
-    }
 }

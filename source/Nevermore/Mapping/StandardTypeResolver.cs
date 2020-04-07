@@ -3,7 +3,7 @@ using System.Data;
 
 namespace Nevermore.Mapping
 {
-    public class StandardTypeResolver : InstanceTypeResolver
+    class StandardTypeResolver : InstanceTypeResolver
     {
         readonly DocumentMap mapper;
 

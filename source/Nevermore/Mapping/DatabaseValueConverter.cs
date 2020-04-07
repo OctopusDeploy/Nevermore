@@ -10,7 +10,7 @@ namespace Nevermore.Mapping
     /// The one and only <see cref="DatabaseValueConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    public class DatabaseValueConverter : IDatabaseValueConverter
+    class DatabaseValueConverter : IDatabaseValueConverter
     {
         readonly RelationalStoreConfiguration relationalStoreConfiguration;
 

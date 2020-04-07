@@ -6,7 +6,7 @@ using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public static class DatabaseTypeConverter
+    static class DatabaseTypeConverter
     {
         static readonly Dictionary<Type, DbType> TypeMap;
 

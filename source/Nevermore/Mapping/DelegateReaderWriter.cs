@@ -2,7 +2,7 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    public class DelegateReaderWriter<TTarget, TProperty> : IPropertyReaderWriter<object>
+    class DelegateReaderWriter<TTarget, TProperty> : IPropertyReaderWriter<object>
     {
         readonly Func<TTarget, TProperty> reader;
         readonly Action<TTarget, TProperty> writer;

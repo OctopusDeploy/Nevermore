@@ -5,7 +5,7 @@ using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public class ReferenceCollectionReaderWriter : PropertyReaderWriterDecorator
+    class ReferenceCollectionReaderWriter : PropertyReaderWriterDecorator
     {
         public ReferenceCollectionReaderWriter(IPropertyReaderWriter<object> original) : base(original)
         {
