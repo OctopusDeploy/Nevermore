@@ -81,15 +81,25 @@ namespace Nevermore.IntegrationTests.CustomTypes
                 return typeof(TinyType<string>).IsAssignableFrom(type);
             }
 
-            public override object ToDbValue(object instance, bool isJson)
+            public override object ToDbValue(object instance, bool isForJsonSerialization)
             {
                 return ((TinyType<string>) instance).Value;
             }
 
-            public override object FromDbValue(object value, Type targetType)
+            public override object ConvertToDbValue(object instance)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override object FromDbValue(object value, Type targetType, bool isForJsonSerialization)
             {
                 var tinyType = Activator.CreateInstance(targetType, value);
                 return tinyType;
+            }
+
+            public override object ConvertFromDbValue(object value, Type targetType)
+            {
+                throw new NotImplementedException();
             }
         }
 

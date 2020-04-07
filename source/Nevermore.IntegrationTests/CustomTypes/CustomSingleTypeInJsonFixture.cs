@@ -28,11 +28,11 @@ namespace Nevermore.IntegrationTests.CustomTypes
                     .FirstOrDefault();
                 read.JSON.Should().Be(JsonConvert.SerializeObject(new
                 {
-                    CustomTypeUsedAsAProperty = JsonConvert.SerializeObject(new CustomTypeUsedAsAProperty
+                    CustomTypeUsedAsAProperty = new CustomTypeUsedAsAProperty
                     {
                         Name = "foo",
                         Value = 10
-                    })
+                    }
                 }));
             }
         }

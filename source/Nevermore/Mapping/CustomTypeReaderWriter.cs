@@ -21,7 +21,7 @@ namespace Nevermore.Mapping
 
         public void Write(object target, object value)
         {
-            var convertedValue = customTypeDefinition.FromDbValue(value, property.PropertyType);
+            var convertedValue = customTypeDefinition.FromDbValue(value, property.PropertyType, false);
             property.SetValue(target, convertedValue);
         }
     }

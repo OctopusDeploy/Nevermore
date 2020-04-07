@@ -17,11 +17,11 @@ namespace Nevermore.IntegrationTests.CustomTypes
             return type == typeof(CustomTypeUsedAsAProperty);
         }
 
-        public override object ToDbValue(object instance, bool isJson)
+        public override object ConvertToDbValue(object instance)
         {
             return JsonConvert.SerializeObject(instance);
         }
-        public override object FromDbValue(object value, Type targetType)
+        public override object ConvertFromDbValue(object value, Type targetType)
         {
             return JsonConvert.DeserializeObject<CustomTypeUsedAsAProperty>((string)value);
         }
