@@ -15,7 +15,7 @@ namespace Nevermore
 
         public RelationalStoreConfiguration()
         {
-            AmazingConverter = new AmazingConverter(this);
+            DatabaseValueConverter = new DatabaseValueConverter(this);
             
             relationalMappings = new RelationalMappings();
             
@@ -31,7 +31,7 @@ namespace Nevermore
 
         List<CustomTypeDefinition> CustomTypeDefinitions { get; } = new List<CustomTypeDefinition>();
 
-        public IAmazingConverter AmazingConverter { get; }
+        public IDatabaseValueConverter DatabaseValueConverter { get; }
 
         public void SetSerializationContractResolver<TResolver>(TResolver resolver)
             where TResolver : DefaultContractResolver

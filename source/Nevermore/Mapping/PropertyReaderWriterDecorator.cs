@@ -19,11 +19,11 @@ namespace Nevermore.Mapping
             original.Write(target, value);
         }
 
-        public void Initialize(IAmazingConverter amazingConverter)
+        public void Initialize(IDatabaseValueConverter databaseValueConverter)
         {
             if (original is IPropertyReaderWriterWithConverter hasConverter)
             {
-                hasConverter.Initialize(amazingConverter);
+                hasConverter.Initialize(databaseValueConverter);
             }
         }
     }

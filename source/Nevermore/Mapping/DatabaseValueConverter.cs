@@ -7,26 +7,26 @@ using System.Reflection;
 namespace Nevermore.Mapping
 {
     /// <summary>
-    /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
+    /// The one and only <see cref="DatabaseValueConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    public class AmazingConverter : IAmazingConverter
+    public class DatabaseValueConverter : IDatabaseValueConverter
     {
         readonly RelationalStoreConfiguration relationalStoreConfiguration;
 
-        public AmazingConverter(RelationalStoreConfiguration relationalStoreConfiguration)
+        public DatabaseValueConverter(RelationalStoreConfiguration relationalStoreConfiguration)
         {
             this.relationalStoreConfiguration = relationalStoreConfiguration;
         }
 
         /// <summary>
-        /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
+        /// If it can be converted, the <see cref="DatabaseValueConverter" /> will figure out how. Given a source
         /// object, tries its best to convert it to the target type.
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="targetType">The type to convert the source object to.</param>
         /// <returns></returns>
-        public object Convert(object source, Type targetType)
+        public object ConvertFromDatabaseValue(object source, Type targetType)
         {
             var typeInfo = targetType.GetTypeInfo();
 
@@ -81,7 +81,7 @@ namespace Nevermore.Mapping
                     var result = Array.CreateInstance(elt, list.Length);
                     for (var i = 0; i < list.Length; i++)
                     {
-                        var el = Convert(list[i], elt);
+                        var el = ConvertFromDatabaseValue(list[i], elt);
                         result.SetValue(el, i);
                     }
 
@@ -106,17 +106,5 @@ namespace Nevermore.Mapping
             // Hope and pray
             return source;
         }
-    }
-
-    public interface IAmazingConverter
-    {
-        /// <summary>
-        /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
-        /// object, tries its best to convert it to the target type.
-        /// </summary>
-        /// <param name="source">The source.</param>
-        /// <param name="targetType">The type to convert the source object to.</param>
-        /// <returns></returns>
-        object Convert(object source, Type targetType);
     }
 }

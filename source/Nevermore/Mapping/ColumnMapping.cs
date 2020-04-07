@@ -142,7 +142,7 @@ namespace Nevermore.Mapping
 
             if (ReaderWriter is IPropertyReaderWriterWithConverter readerWriter)
             {
-                readerWriter.Initialize(relationalStoreConfiguration.AmazingConverter);
+                readerWriter.Initialize(relationalStoreConfiguration.DatabaseValueConverter);
             }
         }
     }

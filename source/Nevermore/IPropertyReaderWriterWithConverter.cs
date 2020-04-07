@@ -4,6 +4,6 @@ namespace Nevermore
 {
     interface IPropertyReaderWriterWithConverter
     {
-        void Initialize(IAmazingConverter amazingConverter);
+        void Initialize(IDatabaseValueConverter databaseValueConverter);
     }
 }

@@ -72,7 +72,7 @@ namespace Nevermore.Mapping
         {
             readonly Func<TInput, TReturn> caller;
             readonly Action<TInput, TReturn> writer;
-            IAmazingConverter converter;
+            IDatabaseValueConverter converter;
 
             public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
             {
@@ -80,9 +80,9 @@ namespace Nevermore.Mapping
                 this.writer = writer;
             }
 
-            public void Initialize(IAmazingConverter amazingConverter)
+            public void Initialize(IDatabaseValueConverter databaseValueConverter)
             {
-                this.converter = amazingConverter;
+                this.converter = databaseValueConverter;
             }
 
             public TCast Read(object target)
@@ -96,7 +96,7 @@ namespace Nevermore.Mapping
                 {
                     throw new InvalidOperationException("Cannot write to a property without a setter");
                 }
-                var returnable = (TReturn)converter.Convert(value, typeof (TReturn));
+                var returnable = (TReturn)converter.ConvertFromDatabaseValue(value, typeof (TReturn));
                 writer((TInput)target, returnable);
             }
         }

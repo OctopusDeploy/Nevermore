@@ -563,7 +563,7 @@ namespace Nevermore
                 try
                 {
                     var result = command.ExecuteScalarWithRetry(GetRetryPolicy(RetriableOperation.Select));
-                    return (T) relationalStoreConfiguration.AmazingConverter.Convert(result, typeof(T));
+                    return (T) relationalStoreConfiguration.DatabaseValueConverter.ConvertFromDatabaseValue(result, typeof(T));
                 }
                 catch (SqlException ex)
                 {
