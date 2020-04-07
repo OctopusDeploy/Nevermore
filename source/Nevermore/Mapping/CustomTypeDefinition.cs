@@ -15,9 +15,13 @@ namespace Nevermore.Mapping
         {
             if (isForJsonSerialization)
                 return null;
-            return ConvertToDbValue(instance);
+            return ConvertToColumnDbValue(instance);
         }
-        public abstract object ConvertToDbValue(object instance);
+
+        public virtual object ConvertToColumnDbValue(object instance)
+        {
+            return instance;
+        }
 
         /// <summary>
         /// Get an object instance from the database value. Only override this in order to take over complete control of the
@@ -31,8 +35,12 @@ namespace Nevermore.Mapping
         {
             if (isForJsonSerialization)
                 return null;
-            return ConvertFromDbValue((string)value, targetType);
+            return ConvertFromColumnDbValue((string)value, targetType);
         }
-        public abstract object ConvertFromDbValue(object value, Type targetType);
+
+        public virtual object ConvertFromColumnDbValue(object value, Type targetType)
+        {
+            return value;
+        }
     }
 }

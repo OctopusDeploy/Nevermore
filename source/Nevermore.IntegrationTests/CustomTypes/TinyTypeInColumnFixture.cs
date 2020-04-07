@@ -82,20 +82,10 @@ namespace Nevermore.IntegrationTests.CustomTypes
                 return ((TinyType<string>) instance).Value;
             }
 
-            public override object ConvertToDbValue(object instance)
-            {
-                throw new NotImplementedException();
-            }
-
             public override object FromDbValue(object value, Type targetType, bool isForJsonSerialization)
             {
                 var tinyType = Activator.CreateInstance(targetType, value);
                 return tinyType;
-            }
-
-            public override object ConvertFromDbValue(object value, Type targetType)
-            {
-                throw new NotImplementedException();
             }
         }
 
