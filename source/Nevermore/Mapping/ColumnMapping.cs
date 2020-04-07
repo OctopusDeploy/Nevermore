@@ -133,6 +133,7 @@ namespace Nevermore.Mapping
 
         internal void Initialize(RelationalStoreConfiguration relationalStoreConfiguration)
         {
+            this.relationalStoreConfiguration = relationalStoreConfiguration;
             if (relationalStoreConfiguration.TryGetCustomTypeDefinitionForType(Property.PropertyType, out var definition))
             {
                 DbType = definition.DbType;

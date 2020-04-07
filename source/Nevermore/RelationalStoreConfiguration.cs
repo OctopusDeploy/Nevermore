@@ -29,7 +29,7 @@ namespace Nevermore
 
         public IRelationalMappings RelationalMappings => relationalMappings;
 
-        List<CustomTypeDefinition> CustomSingleTypeDefinitions { get; } = new List<CustomTypeDefinition>();
+        List<CustomTypeDefinition> CustomTypeDefinitions { get; } = new List<CustomTypeDefinition>();
 
         public IAmazingConverter AmazingConverter { get; }
 
@@ -45,22 +45,22 @@ namespace Nevermore
             jsonSettings.TypeNameAssemblyFormatHandling = typeNameAssemblyFormatHandling;
         }
 
-        void AddCustomTypeDefinition(CustomTypeDefinition customTypeDefinition)
+        void AddCustomTypeDefinition(CustomTypeDefinitionBase customTypeDefinition)
         {
-            if (customTypeDefinition is CustomTypeDefinition customType)
-            {
-                var jsonConverter = new CustomTypeConverter(customType);
-                jsonSettings.Converters.Add(jsonConverter);
-
-                CustomSingleTypeDefinitions.Add(customType);
-            }
             if (customTypeDefinition is ITypeDesignatingTypeDefinition customInheritedType)
             {
                 jsonSettings.Converters.Add(customInheritedType.GetJsonConverter(this.relationalMappings));
             }
+            else if (customTypeDefinition is CustomTypeDefinition customType)
+            {
+                var jsonConverter = new CustomTypeConverter(customType);
+                jsonSettings.Converters.Add(jsonConverter);
+
+                CustomTypeDefinitions.Add(customType);
+            }
         }
         
-        public void Initialize(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions = null)
+        public void Initialize(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions = null)
         {
             if (documentMaps == null)
                 throw new ArgumentException("DocumentMaps must be specified", nameof(documentMaps));
@@ -97,7 +97,7 @@ namespace Nevermore
         {
             customTypeDefinition = null;
 
-            var definition = CustomSingleTypeDefinitions.FirstOrDefault(d => d.CanConvertType(type));
+            var definition = CustomTypeDefinitions.FirstOrDefault(d => d.CanConvertType(type));
             if (definition == null) 
                 return false;
             

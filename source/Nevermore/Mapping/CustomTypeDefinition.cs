@@ -1,15 +1,9 @@
 using System;
-using System.Data;
 
 namespace Nevermore.Mapping
 {
-    public abstract class CustomTypeDefinition
+    public abstract class CustomTypeDefinition : CustomTypeDefinitionBase
     {
-        public virtual DbType DbType => DbType.String;
-        public virtual int MaxLength => 250;
-
-        public abstract bool CanConvertType(Type type);
-        
         public abstract object ToDbValue(object instance, bool isJson);
         public abstract object FromDbValue(object value, Type targetType);
     }

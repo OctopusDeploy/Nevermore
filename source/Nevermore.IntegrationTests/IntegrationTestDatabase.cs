@@ -65,12 +65,12 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        internal void InitializeStore(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions)
+        internal void InitializeStore(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions)
         {
             Store = BuildRelationalStore(TestDatabaseConnectionString, documentMaps, customTypeDefinitions, 0.01);
         }
 
-        RelationalStore BuildRelationalStore(string connectionString, IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions, double chaosFactor = 0.2D)
+        RelationalStore BuildRelationalStore(string connectionString, IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions, double chaosFactor = 0.2D)
         {
             var config = new RelationalStoreConfiguration();
             RelationalStoreConfiguration = config;
@@ -91,7 +91,7 @@ namespace Nevermore.IntegrationTests
                 new []
                 {
                     new EndpointTypeDefinition()
-                }.Union(customTypeDefinitions ?? Enumerable.Empty<CustomTypeDefinition>()));
+                }.Union(customTypeDefinitions ?? Enumerable.Empty<CustomTypeDefinitionBase>()));
             
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(config), chaosFactor)
@@ -104,7 +104,7 @@ namespace Nevermore.IntegrationTests
                 new EmptyRelatedDocumentStore());
         }
 
-        internal void InstallSchema(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions)
+        internal void InstallSchema(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions)
         {
             Console.WriteLine("Performing migration");
             var migrator = new DatabaseMigrator();
@@ -129,6 +129,9 @@ namespace Nevermore.IntegrationTests
                 .ToArray();
 
             relationalStoreConfiguration.Initialize(mappings, customTypeDefinitions);
+
+            // needed for products, but not to generate the table
+            relationalStoreConfiguration.Initialize(new DocumentMap[]{new ProductMap<Product>()});
 
             using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
             {

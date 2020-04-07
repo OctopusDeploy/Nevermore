@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Nevermore.Serialization;
 using Newtonsoft.Json;
 
@@ -13,26 +14,15 @@ namespace Nevermore.Mapping
     {
     }
 
-    public abstract class TypeDesignatingTypeDefinition<TModelBase, TDiscriminator> : CustomTypeDefinition, ITypeDesignatingTypeDefinition
+    public abstract class TypeDesignatingTypeDefinition<TModelBase, TDiscriminator> : CustomTypeDefinitionBase, ITypeDesignatingTypeDefinition
     {
         public override bool CanConvertType(Type type)
         {
-            return typeof(TModelBase).IsAssignableFrom(type);
+            return typeof(TModelBase).GetTypeInfo().IsAssignableFrom(type);
         }
 
         protected abstract IDictionary<TDiscriminator, Type> DerivedTypeMappings { get; }
         protected abstract string TypeDesignatingPropertyName { get; }
-
-        public override object ToDbValue(object instance, bool isJson)
-        {
-            return JsonConvert.SerializeObject(instance);
-        }
-
-        public override object FromDbValue(object value, Type targetType)
-        {
-            var obj = JsonConvert.DeserializeObject((string)value, targetType);
-            return obj;
-        }
 
         public JsonConverter GetJsonConverter(RelationalMappings relationalMappings)
         {
