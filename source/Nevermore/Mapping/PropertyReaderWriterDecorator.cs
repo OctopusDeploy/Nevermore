@@ -1,6 +1,6 @@
 namespace Nevermore.Mapping
 {
-    public class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>
+    public class PropertyReaderWriterDecorator : IPropertyReaderWriter<object>, IPropertyReaderWriterWithConverter
     {
         readonly IPropertyReaderWriter<object> original;
 
@@ -17,6 +17,14 @@ namespace Nevermore.Mapping
         public virtual void Write(object target, object value)
         {
             original.Write(target, value);
+        }
+
+        public void Initialize(IAmazingConverter amazingConverter)
+        {
+            if (original is IPropertyReaderWriterWithConverter hasConverter)
+            {
+                hasConverter.Initialize(amazingConverter);
+            }
         }
     }
 }
