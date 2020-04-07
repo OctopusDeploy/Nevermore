@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests
     public class IntegrationTestDatabase
     {
         readonly TextWriter output = Console.Out;
-        readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)";
+        readonly string SqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)\\SQLEXPRESS,1433";
         readonly string Username = Environment.GetEnvironmentVariable("NevermoreTestUsername");
         readonly string Password = Environment.GetEnvironmentVariable("NevermoreTestPassword");
         readonly string TestDatabaseName;
