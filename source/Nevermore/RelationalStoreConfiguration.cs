@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
 using Newtonsoft.Json;
@@ -13,7 +12,7 @@ namespace Nevermore
         readonly JsonSerializerSettings jsonSettings;
         readonly RelationalMappings relationalMappings;
 
-        public RelationalStoreConfiguration(IEnumerable<ICustomTypeDefinition> customTypeDefinitions)
+        public RelationalStoreConfiguration()
         {
             AmazingConverter = new AmazingConverter(this);
             
@@ -25,14 +24,6 @@ namespace Nevermore
                 TypeNameHandling = TypeNameHandling.Auto,
                 TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
             };
-
-            if (customTypeDefinitions != null)
-            {
-                foreach (var customTypeDefinition in customTypeDefinitions)
-                {
-                    AddCustomTypeDefinition(customTypeDefinition);
-                }
-            }
         }
 
         public IRelationalMappings RelationalMappings => relationalMappings;
@@ -53,14 +44,14 @@ namespace Nevermore
             jsonSettings.TypeNameAssemblyFormatHandling = typeNameAssemblyFormatHandling;
         }
 
-        void AddCustomTypeDefinition(ICustomTypeDefinition customTypeDefinition)
+        void AddCustomTypeDefinition(CustomTypeDefinition customTypeDefinition)
         {
             if (customTypeDefinition is CustomSingleTypeDefinition customType)
             {
                 var jsonConverter = new CustomTypeConverter(customType);
                 jsonSettings.Converters.Add(jsonConverter);
 
-                CustomSingleTypeDefinitions.Add(customType.ModelType, customType);
+                CustomSingleTypeDefinitions.Add(customType.TypeToConvert, customType);
             }
             if (customTypeDefinition is ICustomInheritedTypeDefinition customInheritedType)
             {
@@ -68,19 +59,19 @@ namespace Nevermore
             }
         }
         
-        public void AddCustomTypeDefinitions(IEnumerable<ICustomTypeDefinition> customTypeDefinitions)
+        public void Initialize(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions = null)
         {
-            if (customTypeDefinitions == null)
-                return;
-            
-            foreach (var customTypeDefinition in customTypeDefinitions)
-            {
-                AddCustomTypeDefinition(customTypeDefinition);
-            }
-        }
+            if (documentMaps == null)
+                throw new ArgumentException("DocumentMaps must be specified", nameof(documentMaps));
 
-        public void AddDocumentMaps(IEnumerable<DocumentMap> documentMaps)
-        {
+            if (customTypeDefinitions != null)
+            {
+                foreach (var customTypeDefinition in customTypeDefinitions)
+                {
+                    AddCustomTypeDefinition(customTypeDefinition);
+                }
+            }
+
             relationalMappings.Install(documentMaps);
 
             foreach (var documentMap in documentMaps)
@@ -101,11 +92,11 @@ namespace Nevermore
             }
         }
 
-        public string SerializeObject(object value, Type type)
+        internal string SerializeObject(object value, Type type)
         {
             return JsonConvert.SerializeObject(value, type, jsonSettings);
         }
-        public object DeserializeObject(string value, Type type)
+        internal object DeserializeObject(string value, Type type)
         {
             return JsonConvert.DeserializeObject(value, type, jsonSettings);
         }

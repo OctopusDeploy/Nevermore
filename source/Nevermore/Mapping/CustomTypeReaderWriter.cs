@@ -16,12 +16,12 @@ namespace Nevermore.Mapping
         public object Read(object target)
         {
             var value = property.GetValue(target);
-            return customTypeDefinition.ToDbValue(value);
+            return customTypeDefinition.ToDbValue(value, false);
         }
 
         public void Write(object target, object value)
         {
-            var convertedValue = customTypeDefinition.FromDbValue(value);
+            var convertedValue = customTypeDefinition.FromDbValue(value, property.PropertyType);
             property.SetValue(target, convertedValue);
         }
     }

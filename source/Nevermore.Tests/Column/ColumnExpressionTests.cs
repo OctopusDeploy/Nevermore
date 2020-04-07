@@ -66,7 +66,7 @@ ORDER BY [Id]");
                 new CommandParameterValues(),
                 new Parameters(),
                 new ParameterDefaults(),
-                new RelationalStoreConfiguration(null)
+                new RelationalStoreConfiguration()
             );
         }
 

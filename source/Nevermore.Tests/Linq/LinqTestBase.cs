@@ -33,7 +33,7 @@ namespace Nevermore.Tests.Query
                 captures,
                 parameters,
                 new ParameterDefaults(),
-                new RelationalStoreConfiguration(null)
+                new RelationalStoreConfiguration()
             );
 
             return (builder, (parameters, captures));

@@ -11,7 +11,7 @@ namespace Nevermore.Tests.Mapping
         [Test]
         public void CanConvert()
         {
-            var amazingConverter = new AmazingConverter(new RelationalStoreConfiguration(null));
+            var amazingConverter = new AmazingConverter(new RelationalStoreConfiguration());
             
             amazingConverter.Convert(null, typeof(string)).Should().BeNull();
             amazingConverter.Convert(null, typeof (int)).Should().Be(0);

@@ -101,7 +101,7 @@ namespace Nevermore.Mapping
             if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(targetType))
             {
                 var customTypeDefinition = relationalStoreConfiguration.CustomSingleTypeDefinitions[targetType];
-                return customTypeDefinition.FromDbValue(source);
+                return customTypeDefinition.FromDbValue(source, targetType);
             }
 
             // Hope and pray

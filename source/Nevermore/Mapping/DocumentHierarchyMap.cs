@@ -17,7 +17,7 @@ namespace Nevermore.Mapping
         protected abstract IDictionary<TDiscriminator, Type> DerivedTypeMappings { get; }
         protected abstract string TypeDesignatingPropertyName { get; }
         
-        public ICustomInheritedTypeDefinition CustomTypeDefinition { get; }
+        public CustomTypeDefinition CustomTypeDefinition { get; }
         
         class InheritedTypeDefinition : CustomInheritedTypeDefinition<TBaseDocument, TDiscriminator>
         {
@@ -38,6 +38,6 @@ namespace Nevermore.Mapping
     
     public interface IDocumentHierarchyMap
     {
-        ICustomInheritedTypeDefinition CustomTypeDefinition { get; }
+        CustomTypeDefinition CustomTypeDefinition { get; }
     }
 }

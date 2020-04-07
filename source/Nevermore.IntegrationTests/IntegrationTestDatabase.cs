@@ -40,24 +40,18 @@ namespace Nevermore.IntegrationTests
                 builder.Password = Password;
             }
             TestDatabaseConnectionString = builder.ToString();
-
-            DropDatabase();
-            CreateDatabase();
-
-            InitializeStore();
-            InstallSchema();
         }
 
         public RelationalStore Store { get; set; }
         
         public RelationalStoreConfiguration RelationalStoreConfiguration { get; private set; }
 
-        void CreateDatabase()
+        internal void CreateDatabase()
         {
             ExecuteScript(@"create database [" + TestDatabaseName + "] COLLATE SQL_Latin1_General_CP1_CS_AS", GetMaster(TestDatabaseConnectionString));
         }
 
-        void DropDatabase()
+        internal void DropDatabase()
         {
             try
             {
@@ -71,41 +65,37 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        void InitializeStore()
+        internal void InitializeStore(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions)
         {
-            Store = BuildRelationalStore(TestDatabaseConnectionString, 0.01);
+            Store = BuildRelationalStore(TestDatabaseConnectionString, documentMaps, customTypeDefinitions, 0.01);
         }
 
-        RelationalStore BuildRelationalStore(string connectionString, double chaosFactor = 0.2D)
+        RelationalStore BuildRelationalStore(string connectionString, IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions, double chaosFactor = 0.2D)
         {
-            var config = new RelationalStoreConfiguration(CustomTypeDefinitions());
+            var config = new RelationalStoreConfiguration();
             RelationalStoreConfiguration = config;
 
-            config.AddDocumentMaps(new List<DocumentMap>()
-            {
-                new CustomerMap(),
-                new CustomerToTestSerializationMap(),
-                new BrandMap(),
-                new BrandToTestSerializationMap(),
-                new ProductMap<Product>(),
-                new SpecialProductMap(),
-                new ProductToTestSerializationMap(),
-                new LineItemMap(),
-                new MachineMap(),
-                new MachineToTestSerializationMap()
-            });
-
-            var mappings = AddCustomMappings();
-            config.AddDocumentMaps(mappings);
+            config.Initialize(new List<DocumentMap>()
+                {
+                    new CustomerMap(),
+                    new CustomerToTestSerializationMap(),
+                    new BrandMap(),
+                    new BrandToTestSerializationMap(),
+                    new ProductMap<Product>(),
+                    new SpecialProductMap(),
+                    new ProductToTestSerializationMap(),
+                    new LineItemMap(),
+                    new MachineMap(),
+                    new MachineToTestSerializationMap()
+                }.Union(documentMaps),
+                new []
+                {
+                    new EndpointTypeDefinition()
+                }.Union(customTypeDefinitions ?? Enumerable.Empty<CustomTypeDefinition>()));
             
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(config), chaosFactor)
                 : new SqlCommandFactory(config);
-            
-            config.AddCustomTypeDefinitions(new []
-            {
-                new EndpointTypeDefinition()
-            });
             
             return new RelationalStore(connectionString ?? TestDatabaseConnectionString,
                 TestDatabaseName,
@@ -114,34 +104,16 @@ namespace Nevermore.IntegrationTests
                 new EmptyRelatedDocumentStore());
         }
 
-        protected virtual IEnumerable<DocumentMap> AddCustomMappings()
-        {
-            return AddCustomMappingsForSchemaGeneration();
-        }
-
-        protected virtual IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration()
-        {
-            return Enumerable.Empty<DocumentMap>();
-        }
-
-        protected virtual IEnumerable<ICustomTypeDefinition> CustomTypeDefinitions()
-        {
-            return null;
-        }
-
-        void InstallSchema()
+        internal void InstallSchema(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinition> customTypeDefinitions)
         {
             Console.WriteLine("Performing migration");
             var migrator = new DatabaseMigrator();
             migrator.Migrate(Store);
 
             var output = new StringBuilder();
-            var relationalStoreConfiguration = new RelationalStoreConfiguration(CustomTypeDefinitions());
+            var relationalStoreConfiguration = new RelationalStoreConfiguration();
             
             SchemaGenerator.WriteTableSchema(new CustomerMap(), null, output);
-
-            // needed for products, but not to generate the table
-            relationalStoreConfiguration.AddDocumentMaps(new List<DocumentMap>() { new ProductMap<Product>() });
 
             // needed to generate the table
             var mappings = new DocumentMap[]
@@ -153,10 +125,10 @@ namespace Nevermore.IntegrationTests
                     new BrandMap(),
                     new MachineMap()
                 }
-                .Union(AddCustomMappingsForSchemaGeneration())
+                .Union(documentMaps)
                 .ToArray();
 
-            relationalStoreConfiguration.AddDocumentMaps(mappings);
+            relationalStoreConfiguration.Initialize(mappings, customTypeDefinitions);
 
             using (var transaction = Store.BeginTransaction(IsolationLevel.ReadCommitted))
             {

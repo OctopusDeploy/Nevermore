@@ -1,22 +1,25 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Nevermore.Contracts;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
 {
-    public abstract class FixtureWithRelationalStore : FixtureWithRelationalStore<IntegrationTestDatabase>
+    public abstract class FixtureWithRelationalStore
     {
-    }
-    
-    public abstract class FixtureWithRelationalStore<TDatabase>
-        where TDatabase : IntegrationTestDatabase, new()
-    {
-        TDatabase integrationTestDatabase;
+        IntegrationTestDatabase integrationTestDatabase;
 
         [SetUp]
         public virtual void SetUp()
         {
-            integrationTestDatabase = new TDatabase();
+            integrationTestDatabase = new IntegrationTestDatabase();
+            integrationTestDatabase.DropDatabase();
+            integrationTestDatabase.CreateDatabase();
+
+            integrationTestDatabase.InitializeStore(AddCustomMappings(), CustomTypeDefinitions());
+            integrationTestDatabase.InstallSchema(AddCustomMappingsForSchemaGeneration(), CustomTypeDefinitions());
 
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
             integrationTestDatabase.ExecuteScript("EXEC sp_MSforeachtable \"DELETE FROM ?\"");
@@ -27,6 +30,21 @@ namespace Nevermore.IntegrationTests
         protected IRelationalStore Store => integrationTestDatabase.Store;
 
         protected RelationalStoreConfiguration RelationalStoreConfiguration => integrationTestDatabase.RelationalStoreConfiguration;
+
+        protected virtual IEnumerable<DocumentMap> AddCustomMappings()
+        {
+            return AddCustomMappingsForSchemaGeneration();
+        }
+
+        protected virtual IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration()
+        {
+            return Enumerable.Empty<DocumentMap>();
+        }
+
+        protected virtual IEnumerable<CustomTypeDefinition> CustomTypeDefinitions()
+        {
+            return null;
+        }
 
         public int CountOf<T>() where T : class, IId
         {

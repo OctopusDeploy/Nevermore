@@ -17,8 +17,8 @@ namespace Nevermore.Tests.Util
 
         public DataModificationQueryBuilderFixture()
         {
-            var config = new RelationalStoreConfiguration(null);
-            config.AddDocumentMaps(new DocumentMap[]
+            var config = new RelationalStoreConfiguration();
+            config.Initialize(new DocumentMap[]
             {
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),

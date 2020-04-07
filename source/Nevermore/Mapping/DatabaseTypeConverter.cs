@@ -64,14 +64,16 @@ namespace Nevermore.Mapping
                 return DbType.String;
             }
 
-            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(propertyType))
-            {
-                return relationalStoreConfiguration.CustomSingleTypeDefinitions[propertyType].DbType;
-            }
-            
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
+            {
+                if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(propertyType))
+                {
+                    return relationalStoreConfiguration.CustomSingleTypeDefinitions[propertyType].DbType;
+                }
+
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);
+            }
             return result;
         }
     }
