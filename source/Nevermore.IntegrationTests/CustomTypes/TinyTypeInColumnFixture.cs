@@ -1,13 +1,13 @@
+using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    public class CustomSingleTypeInColumnFixture : FixtureWithRelationalStore
+    public class TinyTypeInColumnFixture : FixtureWithRelationalStore
     {
         [Test]
         public void ShouldWorkInColumn()
@@ -16,17 +16,13 @@ namespace Nevermore.IntegrationTests.CustomTypes
             {
                 var model = new ModelTypeWithColumn
                 {
-                    CustomTypeUsedAsAProperty =  new CustomTypeUsedAsAProperty
-                    {
-                        Name = "foo",
-                        Value = 10
-                    }
+                    ProjectId =  new ProjectId("Projects-1")
                 };
                 transaction.Insert(model);
 
                 var read = transaction.Query<CustomTypeWithColumnToTestSerialization>()
                     .FirstOrDefault();
-                read.CustomTypeUsedAsAProperty.Should().Be(JsonConvert.SerializeObject(model.CustomTypeUsedAsAProperty));
+                read.ProjectId.Should().Be("Projects-1");
             }
         }
 
@@ -37,20 +33,15 @@ namespace Nevermore.IntegrationTests.CustomTypes
             {
                 var model = new ModelTypeWithColumn
                 {
-                    CustomTypeUsedAsAProperty =  new CustomTypeUsedAsAProperty
-                    {
-                        Name = "bar",
-                        Value = 15
-                    }
+                    ProjectId =  new ProjectId("Projects-2")
                 };
                 transaction.Insert(model);
 
                 var read = transaction.Query<ModelTypeWithColumn>()
                     .FirstOrDefault();
                 read.Should().NotBeSameAs(model);
-                read.CustomTypeUsedAsAProperty.Should().NotBeSameAs(model.CustomTypeUsedAsAProperty);
-                read.CustomTypeUsedAsAProperty.Name.Should().Be("bar");
-                read.CustomTypeUsedAsAProperty.Value.Should().Be(15);
+                read.ProjectId.Should().NotBeSameAs(model.ProjectId);
+                read.ProjectId.Value.Should().Be("Projects-2");
             }
         }
 
@@ -75,28 +66,66 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new[]
             {
-                new CustomTypeUsedAsAPropertyCustomTypeDefinition()
+                new TinyTypeCustomTypeDefinition()
             };
+        }
+
+        class TinyTypeCustomTypeDefinition : CustomTypeDefinition
+        {
+            public override bool CanConvertType(Type type)
+            {
+                return typeof(TinyType<string>).IsAssignableFrom(type);
+            }
+
+            public override object ToDbValue(object instance, bool isJson)
+            {
+                return ((TinyType<string>) instance).Value;
+            }
+
+            public override object FromDbValue(object value, Type targetType)
+            {
+                var tinyType = Activator.CreateInstance(targetType, value);
+                return tinyType;
+            }
+        }
+
+        class TinyType<T>
+        {
+            public TinyType(T value)
+            {
+                Value = value;
+            }
+
+            public T Value { get; }
+        }
+
+        class ProjectId : TinyType<string>
+        {
+            public ProjectId(string value) : base(value)
+            {
+            }
         }
 
         class ModelTypeWithColumn : IId
         {
             public string Id { get; set; }
-            public CustomTypeUsedAsAProperty CustomTypeUsedAsAProperty { get; set; }
+            public ProjectId ProjectId { get; set; }
         }
 
         class ModelTypeWithColumnMap : DocumentMap<ModelTypeWithColumn>
         {
             public ModelTypeWithColumnMap()
             {
-                Column(x => x.CustomTypeUsedAsAProperty);
+                TableName = "TinyTypeWithColumn";
+
+                Column(x => x.ProjectId);
             }
         }
 
         class CustomTypeWithColumnToTestSerialization : IId
         {
             public string Id { get; set; }
-            public string CustomTypeUsedAsAProperty { get; set; }
+            public string ProjectId { get; set; }
             public string JSON { get; set; }
         }
 
@@ -104,9 +133,9 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             public CustomTypeWithColumnToTestSerializationMap()
             {
-                TableName = "ModelTypeWithColumn";
+                TableName = "TinyTypeWithColumn";
                 
-                Column(m => m.CustomTypeUsedAsAProperty);
+                Column(m => m.ProjectId);
                 Column(m => m.JSON);
             }
         }

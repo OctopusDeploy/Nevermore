@@ -4,10 +4,10 @@ namespace Nevermore.Mapping
 {
     class CustomTypeReaderWriter : IPropertyReaderWriter<object>
     {
-        readonly CustomSingleTypeDefinition customTypeDefinition;
+        readonly CustomTypeDefinition customTypeDefinition;
         readonly PropertyInfo property;
 
-        public CustomTypeReaderWriter(CustomSingleTypeDefinition customTypeDefinition, PropertyInfo property)
+        public CustomTypeReaderWriter(CustomTypeDefinition customTypeDefinition, PropertyInfo property)
         {
             this.customTypeDefinition = customTypeDefinition;
             this.property = property;

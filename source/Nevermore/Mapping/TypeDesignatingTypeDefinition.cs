@@ -9,16 +9,30 @@ namespace Nevermore.Mapping
     /// This type is used to store objects from an inheritance hierarchy.
     /// </summary>
     /// <typeparam name="TModelBase"></typeparam>
-    public abstract class CustomInheritedTypeDefinition<TModelBase> : CustomInheritedTypeDefinition<TModelBase, string>
+    public abstract class TypeDesignatingTypeDefinition<TModelBase> : TypeDesignatingTypeDefinition<TModelBase, string>
     {
     }
 
-    public abstract class CustomInheritedTypeDefinition<TModelBase, TDiscriminator> : CustomTypeDefinition, ICustomInheritedTypeDefinition
+    public abstract class TypeDesignatingTypeDefinition<TModelBase, TDiscriminator> : CustomTypeDefinition, ITypeDesignatingTypeDefinition
     {
-        public override Type TypeToConvert => typeof(TModelBase);
-        
+        public override bool CanConvertType(Type type)
+        {
+            return typeof(TModelBase).IsAssignableFrom(type);
+        }
+
         protected abstract IDictionary<TDiscriminator, Type> DerivedTypeMappings { get; }
         protected abstract string TypeDesignatingPropertyName { get; }
+
+        public override object ToDbValue(object instance, bool isJson)
+        {
+            return JsonConvert.SerializeObject(instance);
+        }
+
+        public override object FromDbValue(object value, Type targetType)
+        {
+            var obj = JsonConvert.DeserializeObject((string)value, targetType);
+            return obj;
+        }
 
         public JsonConverter GetJsonConverter(RelationalMappings relationalMappings)
         {

@@ -6,9 +6,9 @@ namespace Nevermore.Serialization
 {
     class CustomTypeConverter : JsonConverter
     {
-        readonly CustomSingleTypeDefinition customTypeDefinition;
+        readonly CustomTypeDefinition customTypeDefinition;
 
-        public CustomTypeConverter(CustomSingleTypeDefinition customTypeDefinition)
+        public CustomTypeConverter(CustomTypeDefinition customTypeDefinition)
         {
             this.customTypeDefinition = customTypeDefinition;
         }
@@ -28,7 +28,7 @@ namespace Nevermore.Serialization
 
         public override bool CanConvert(Type objectType)
         {
-            return objectType.IsAssignableFrom(customTypeDefinition.TypeToConvert);
+            return customTypeDefinition.CanConvertType(objectType);
         }
     }
 }

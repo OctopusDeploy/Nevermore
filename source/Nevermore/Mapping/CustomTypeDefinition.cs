@@ -8,6 +8,9 @@ namespace Nevermore.Mapping
         public virtual DbType DbType => DbType.String;
         public virtual int MaxLength => 250;
 
-        public abstract Type TypeToConvert { get; }
+        public abstract bool CanConvertType(Type type);
+        
+        public abstract object ToDbValue(object instance, bool isJson);
+        public abstract object FromDbValue(object value, Type targetType);
     }
 }

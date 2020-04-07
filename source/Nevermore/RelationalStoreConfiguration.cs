@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
 using Newtonsoft.Json;
@@ -28,7 +29,7 @@ namespace Nevermore
 
         public IRelationalMappings RelationalMappings => relationalMappings;
 
-        public Dictionary<Type, CustomSingleTypeDefinition> CustomSingleTypeDefinitions { get; } = new Dictionary<Type, CustomSingleTypeDefinition>();
+        List<CustomTypeDefinition> CustomSingleTypeDefinitions { get; } = new List<CustomTypeDefinition>();
 
         public IAmazingConverter AmazingConverter { get; }
 
@@ -46,14 +47,14 @@ namespace Nevermore
 
         void AddCustomTypeDefinition(CustomTypeDefinition customTypeDefinition)
         {
-            if (customTypeDefinition is CustomSingleTypeDefinition customType)
+            if (customTypeDefinition is CustomTypeDefinition customType)
             {
                 var jsonConverter = new CustomTypeConverter(customType);
                 jsonSettings.Converters.Add(jsonConverter);
 
-                CustomSingleTypeDefinitions.Add(customType.TypeToConvert, customType);
+                CustomSingleTypeDefinitions.Add(customType);
             }
-            if (customTypeDefinition is ICustomInheritedTypeDefinition customInheritedType)
+            if (customTypeDefinition is ITypeDesignatingTypeDefinition customInheritedType)
             {
                 jsonSettings.Converters.Add(customInheritedType.GetJsonConverter(this.relationalMappings));
             }
@@ -92,6 +93,19 @@ namespace Nevermore
             }
         }
 
+        internal bool TryGetCustomTypeDefinitionForType(Type type, out CustomTypeDefinition customTypeDefinition)
+        {
+            customTypeDefinition = null;
+
+            var definition = CustomSingleTypeDefinitions.FirstOrDefault(d => d.CanConvertType(type));
+            if (definition == null) 
+                return false;
+            
+            customTypeDefinition = definition;
+            return true;
+
+        }
+        
         internal string SerializeObject(object value, Type type)
         {
             return JsonConvert.SerializeObject(value, type, jsonSettings);

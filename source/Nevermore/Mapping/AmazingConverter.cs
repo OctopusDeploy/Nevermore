@@ -98,9 +98,8 @@ namespace Nevermore.Mapping
             if (s != null && targetType == typeof(Uri))
                 return new Uri(s);
 
-            if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(targetType))
+            if (relationalStoreConfiguration != null && relationalStoreConfiguration.TryGetCustomTypeDefinitionForType(targetType, out var customTypeDefinition))
             {
-                var customTypeDefinition = relationalStoreConfiguration.CustomSingleTypeDefinitions[targetType];
                 return customTypeDefinition.FromDbValue(source, targetType);
             }
 

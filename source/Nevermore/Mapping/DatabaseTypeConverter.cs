@@ -67,9 +67,9 @@ namespace Nevermore.Mapping
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
             {
-                if (relationalStoreConfiguration != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(propertyType))
+                if (relationalStoreConfiguration != null && relationalStoreConfiguration.TryGetCustomTypeDefinitionForType(propertyType, out var definition))
                 {
-                    return relationalStoreConfiguration.CustomSingleTypeDefinitions[propertyType].DbType;
+                    return definition.DbType;
                 }
 
                 throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);

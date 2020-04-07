@@ -7,11 +7,15 @@ using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    class CustomTypeUsedAsAPropertyCustomTypeDefinition : CustomSingleTypeDefinition
+    class CustomTypeUsedAsAPropertyCustomTypeDefinition : CustomTypeDefinition
     {
-        public override Type TypeToConvert => typeof(CustomTypeUsedAsAProperty);
         public override DbType DbType => DbType.String;
         public override int MaxLength => 50;
+
+        public override bool CanConvertType(Type type)
+        {
+            return type == typeof(CustomTypeUsedAsAProperty);
+        }
 
         public override object ToDbValue(object instance, bool isJson)
         {

@@ -133,10 +133,8 @@ namespace Nevermore.Mapping
 
         internal void Initialize(RelationalStoreConfiguration relationalStoreConfiguration)
         {
-            if (relationalStoreConfiguration?.CustomSingleTypeDefinitions != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(Property.PropertyType))
+            if (relationalStoreConfiguration.TryGetCustomTypeDefinitionForType(Property.PropertyType, out var definition))
             {
-                var definition = relationalStoreConfiguration.CustomSingleTypeDefinitions[Property.PropertyType];
-
                 DbType = definition.DbType;
                 ReaderWriter = new CustomTypeReaderWriter(definition, Property);
             }

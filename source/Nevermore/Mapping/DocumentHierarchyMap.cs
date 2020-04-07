@@ -11,7 +11,7 @@ namespace Nevermore.Mapping
     {
         protected DocumentHierarchyMap()
         {
-            CustomTypeDefinition = new InheritedTypeDefinition(() => DerivedTypeMappings, () => TypeDesignatingPropertyName);
+            CustomTypeDefinition = new InheritedTypeDesignatingTypeDefinition(() => DerivedTypeMappings, () => TypeDesignatingPropertyName);
         }
 
         protected abstract IDictionary<TDiscriminator, Type> DerivedTypeMappings { get; }
@@ -19,12 +19,12 @@ namespace Nevermore.Mapping
         
         public CustomTypeDefinition CustomTypeDefinition { get; }
         
-        class InheritedTypeDefinition : CustomInheritedTypeDefinition<TBaseDocument, TDiscriminator>
+        class InheritedTypeDesignatingTypeDefinition : TypeDesignatingTypeDefinition<TBaseDocument, TDiscriminator>
         {
             readonly Func<IDictionary<TDiscriminator, Type>> derivedTypeMappings;
             readonly Func<string> typeDesignatingPropertyName;
 
-            public InheritedTypeDefinition(Func<IDictionary<TDiscriminator, Type>> derivedTypeMappings, Func<string> typeDesignatingPropertyName)
+            public InheritedTypeDesignatingTypeDefinition(Func<IDictionary<TDiscriminator, Type>> derivedTypeMappings, Func<string> typeDesignatingPropertyName)
             {
                 this.derivedTypeMappings = derivedTypeMappings;
                 this.typeDesignatingPropertyName = typeDesignatingPropertyName;
