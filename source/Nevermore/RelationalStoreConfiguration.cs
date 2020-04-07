@@ -83,9 +83,21 @@ namespace Nevermore
         {
             relationalMappings.Install(documentMaps);
 
-            foreach (var inheritedMap in documentMaps.OfType<IDocumentHierarchyMap>())
+            foreach (var documentMap in documentMaps)
             {
-                AddCustomTypeDefinition(inheritedMap.CustomTypeDefinition);
+                if (documentMap is IDocumentHierarchyMap inheritedMap)
+                {
+                    AddCustomTypeDefinition(inheritedMap.CustomTypeDefinition);
+                }
+
+                // DocumentMap doesn't enforce IId on the document type, so the IdColumn can be null if the document
+                // doesn't have an Id property 
+                documentMap.IdColumn?.Initialize(this);
+
+                foreach (var column in documentMap.IndexedColumns)
+                {
+                    column.Initialize(this);
+                }
             }
         }
 

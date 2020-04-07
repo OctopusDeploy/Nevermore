@@ -7,7 +7,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class ProductMap<TProduct> : DocumentHierarchyMap<TProduct, ProductType> where TProduct : Product
     {
-        public ProductMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public ProductMap()
         {
             Column(m => m.Name);
             Column(m => m.Type);
@@ -26,7 +26,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class SpecialProductMap : ProductMap<SpecialProduct>
     {
-        public SpecialProductMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public SpecialProductMap()
         {
             TableName = typeof(Product).Name;
             Column(m => m.BonusMaterial).IsNullable = true;
@@ -51,7 +51,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class ProductToTestSerializationMap : DocumentMap<ProductToTestSerialization>
     {
-        public ProductToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public ProductToTestSerializationMap()
         {
             TableName = "Product";
             Column(x => x.Name);

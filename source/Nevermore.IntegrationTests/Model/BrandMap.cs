@@ -7,7 +7,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class BrandMap : DocumentHierarchyMap<Brand>
     {
-        public BrandMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public BrandMap()
         {
             Column(m => m.Name);
         }
@@ -32,7 +32,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class BrandToTestSerializationMap : DocumentMap<BrandToTestSerialization>
     {
-        public BrandToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public BrandToTestSerializationMap()
         {
             TableName = "Brand";
             Column(x => x.Name);

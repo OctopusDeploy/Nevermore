@@ -28,9 +28,9 @@ namespace Nevermore
             CommandType = from.CommandType;
         }
 
-        public CommandParameterValues(RelationalStoreConfiguration relationalStoreConfiguration, object args)
+        public CommandParameterValues(object args)
         {
-            AddFromParametersObject(args, relationalStoreConfiguration.AmazingConverter);
+            AddFromParametersObject(args);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Nevermore
 
         public CommandType CommandType { get; set; }
 
-        void AddFromParametersObject(object args, IAmazingConverter amazingConverter)
+        void AddFromParametersObject(object args)
         {
             if (args == null)
                 return;
@@ -64,7 +64,7 @@ namespace Nevermore
             var type = args.GetType();
             foreach (var property in type.GetTypeInfo().GetProperties())
             {
-                var rw = PropertyReaderFactory.Create<object>(type, property.Name, amazingConverter);
+                var rw = PropertyReaderFactory.Create<object>(type, property.Name);
 
                 var value = rw.Read(args);
                 this[property.Name] = value;

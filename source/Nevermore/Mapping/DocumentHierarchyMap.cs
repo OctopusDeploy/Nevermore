@@ -5,14 +5,11 @@ namespace Nevermore.Mapping
 {
     public abstract class DocumentHierarchyMap<TBaseDocument> : DocumentHierarchyMap<TBaseDocument, string>
     {
-        protected DocumentHierarchyMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
-        {
-        }
     }
     
     public abstract class DocumentHierarchyMap<TBaseDocument, TDiscriminator> : DocumentMap<TBaseDocument>, IDocumentHierarchyMap
     {
-        protected DocumentHierarchyMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        protected DocumentHierarchyMap()
         {
             CustomTypeDefinition = new InheritedTypeDefinition(() => DerivedTypeMappings, () => TypeDesignatingPropertyName);
         }

@@ -8,14 +8,14 @@ namespace Nevermore.Mapping
 {
     public abstract class DocumentMap<TDocument> : DocumentMap
     {
-        protected DocumentMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        protected DocumentMap()
         {
             InitializeDefault(typeof (TDocument));
         }
 
         protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
         {
-            var column = new ColumnMapping(GetPropertyInfo(property), RelationalStoreConfiguration);
+            var column = new ColumnMapping(GetPropertyInfo(property));
             IndexedColumns.Add(column);
             return column;
         }
@@ -42,7 +42,7 @@ namespace Nevermore.Mapping
 
         protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentTableName)
         {
-            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName, RelationalStoreConfiguration.AmazingConverter);
+            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
             RelatedDocumentsMappings.Add(mapping);
             return mapping;
         }
@@ -83,16 +83,13 @@ namespace Nevermore.Mapping
     {
         public const string DefaultRelatedDocumentTableName = "RelatedDocument";
         
-        protected DocumentMap(RelationalStoreConfiguration relationalStoreConfiguration)
+        protected DocumentMap()
         {
-            RelationalStoreConfiguration = relationalStoreConfiguration;
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             InstanceTypeResolver = new StandardTypeResolver(this);
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
-
-        protected RelationalStoreConfiguration RelationalStoreConfiguration { get; }
 
         public string TableName { get; protected set; }
         public string IdPrefix { get; protected set; }
@@ -122,7 +119,7 @@ namespace Nevermore.Mapping
             {
                 if (property.Name == "Id")
                 {
-                    IdColumn = new ColumnMapping(property, RelationalStoreConfiguration);
+                    IdColumn = new ColumnMapping(property);
                 }
             }
         }

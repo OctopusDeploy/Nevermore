@@ -126,7 +126,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
 
         class ModelTypeWithColumnMap : DocumentMap<ModelTypeWithColumn>
         {
-            public ModelTypeWithColumnMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+            public ModelTypeWithColumnMap()
             {
                 Column(x => x.SomeCustomType);
             }
@@ -140,28 +140,25 @@ namespace Nevermore.IntegrationTests.CustomTypes
 
         class ModelTypeWithJsonMap : DocumentMap<ModelTypeWithJson>
         {
-            public ModelTypeWithJsonMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
-            {
-            }
         }
 
-        protected override IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration(RelationalStoreConfiguration config)
+        protected override IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration()
         {
             return new DocumentMap[]
             {
-                new ModelTypeWithColumnMap(config),
-                new ModelTypeWithJsonMap(config)
+                new ModelTypeWithColumnMap(),
+                new ModelTypeWithJsonMap()
             };
         }
 
-        protected override IEnumerable<DocumentMap> AddCustomMappings(RelationalStoreConfiguration config)
+        protected override IEnumerable<DocumentMap> AddCustomMappings()
         {
             return new DocumentMap[]
             {
-                new ModelTypeWithColumnMap(config),
-                new CustomTypeWithColumnToTestSerializationMap(config), 
-                new ModelTypeWithJsonMap(config),
-                new CustomTypeToTestSerializationMap(config)
+                new ModelTypeWithColumnMap(),
+                new CustomTypeWithColumnToTestSerializationMap(), 
+                new ModelTypeWithJsonMap(),
+                new CustomTypeToTestSerializationMap()
             };
         }
 
@@ -179,7 +176,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
 
         public class CustomTypeWithColumnToTestSerializationMap : DocumentMap<CustomTypeWithColumnToTestSerialization>
         {
-            public CustomTypeWithColumnToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+            public CustomTypeWithColumnToTestSerializationMap()
             {
                 TableName = "ModelTypeWithColumn";
                 
@@ -197,7 +194,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
 
         public class CustomTypeToTestSerializationMap : DocumentMap<CustomTypeToTestSerialization>
         {
-            public CustomTypeToTestSerializationMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+            public CustomTypeToTestSerializationMap()
             {
                 TableName = "ModelTypeWithJson";
 

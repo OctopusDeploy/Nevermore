@@ -18,8 +18,7 @@ namespace Nevermore.Mapping
         // Theoretical maximum Uri is ~2048 but Nuget feed Uris will be shorter
         public const int DefaultMaxUriLength = 512;
 
-        readonly RelationalStoreConfiguration relationalStoreConfiguration;
-
+        RelationalStoreConfiguration relationalStoreConfiguration;
         DbType? dbType;
         int maxLength;
 
@@ -36,22 +35,11 @@ namespace Nevermore.Mapping
             IsReadOnly = readOnly;
         }
 
-        public ColumnMapping(PropertyInfo property, RelationalStoreConfiguration relationalStoreConfiguration)
+        public ColumnMapping(PropertyInfo property)
         {
-            this.relationalStoreConfiguration = relationalStoreConfiguration;
             Property = property;
             ColumnName = Property.Name;
-            
-            if (relationalStoreConfiguration?.CustomSingleTypeDefinitions != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(property.PropertyType))
-            {
-                var definition = relationalStoreConfiguration.CustomSingleTypeDefinitions[property.PropertyType];
-
-                DbType = definition.DbType;
-                ReaderWriter = new CustomTypeReaderWriter(definition, property);
-                return;
-            }
-
-            ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name, relationalStoreConfiguration.AmazingConverter);
+            ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
 
             if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
@@ -141,6 +129,22 @@ namespace Nevermore.Mapping
         {
             ColumnName = columnName;
             return this;
+        }
+
+        internal void Initialize(RelationalStoreConfiguration relationalStoreConfiguration)
+        {
+            if (relationalStoreConfiguration?.CustomSingleTypeDefinitions != null && relationalStoreConfiguration.CustomSingleTypeDefinitions.ContainsKey(Property.PropertyType))
+            {
+                var definition = relationalStoreConfiguration.CustomSingleTypeDefinitions[Property.PropertyType];
+
+                DbType = definition.DbType;
+                ReaderWriter = new CustomTypeReaderWriter(definition, Property);
+            }
+
+            if (ReaderWriter is IPropertyReaderWriterWithConverter readerWriter)
+            {
+                readerWriter.Initialize(relationalStoreConfiguration.AmazingConverter);
+            }
         }
     }
 }

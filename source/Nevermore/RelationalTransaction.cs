@@ -588,7 +588,7 @@ namespace Nevermore
             Action<IDataReader> readerCallback,
             TimeSpan? commandTimeout = null)
         {
-            ExecuteReader(query, new CommandParameterValues(relationalStoreConfiguration, args), readerCallback, commandTimeout);
+            ExecuteReader(query, new CommandParameterValues(args), readerCallback, commandTimeout);
         }
 
         public void ExecuteReader(

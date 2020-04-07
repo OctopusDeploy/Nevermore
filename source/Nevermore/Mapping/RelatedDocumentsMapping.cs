@@ -7,10 +7,10 @@ namespace Nevermore.Mapping
     public class RelatedDocumentsMapping
     {
 
-        public RelatedDocumentsMapping(PropertyInfo property, string tableName, IAmazingConverter amazingConverter)
+        public RelatedDocumentsMapping(PropertyInfo property, string tableName)
         {
             TableName = tableName;
-            ReaderWriter = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name, amazingConverter);
+            ReaderWriter = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name);
         }
 
 

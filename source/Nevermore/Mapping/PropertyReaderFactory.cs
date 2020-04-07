@@ -8,7 +8,7 @@ namespace Nevermore.Mapping
     {
         static readonly ConcurrentDictionary<string, object> Readers = new ConcurrentDictionary<string, object>();
 
-        public static IPropertyReaderWriter<TCast> Create<TCast>(Type objectType, string propertyName, IAmazingConverter amazingConverter)
+        public static IPropertyReaderWriter<TCast> Create<TCast>(Type objectType, string propertyName)
         {
             var key = objectType.AssemblyQualifiedName + "-" + propertyName;
             IPropertyReaderWriter<TCast> result = null;
@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
                     propertySetterDelegate = propertySetterMethodInfo.CreateDelegate(delegateWriterType);
                 }
 
-                result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate, amazingConverter);
+                result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
                 Readers[key] = result;
             }
             else
@@ -67,18 +67,22 @@ namespace Nevermore.Mapping
             return result;
         }
 
-        class DelegatePropertyReaderWriter<TInput, TReturn, TCast> : IPropertyReaderWriter<TCast>
+        class DelegatePropertyReaderWriter<TInput, TReturn, TCast> : IPropertyReaderWriter<TCast>, IPropertyReaderWriterWithConverter
             where TReturn : TCast
         {
             readonly Func<TInput, TReturn> caller;
             readonly Action<TInput, TReturn> writer;
-            readonly IAmazingConverter amazingConverter;
+            IAmazingConverter converter;
 
-            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer, IAmazingConverter amazingConverter)
+            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
             {
                 this.caller = caller;
                 this.writer = writer;
-                this.amazingConverter = amazingConverter;
+            }
+
+            public void Initialize(IAmazingConverter amazingConverter)
+            {
+                this.converter = amazingConverter;
             }
 
             public TCast Read(object target)
@@ -92,7 +96,7 @@ namespace Nevermore.Mapping
                 {
                     throw new InvalidOperationException("Cannot write to a property without a setter");
                 }
-                var returnable = (TReturn)amazingConverter.Convert(value, typeof (TReturn));
+                var returnable = (TReturn)converter.Convert(value, typeof (TReturn));
                 writer((TInput)target, returnable);
             }
         }

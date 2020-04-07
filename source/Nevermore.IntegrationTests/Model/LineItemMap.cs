@@ -4,7 +4,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class LineItemMap : DocumentMap<LineItem>
     {
-        public LineItemMap(RelationalStoreConfiguration relationalStoreConfiguration) : base(relationalStoreConfiguration)
+        public LineItemMap()
         {
             Column(m => m.Name);
             Column(m => m.ProductId);
