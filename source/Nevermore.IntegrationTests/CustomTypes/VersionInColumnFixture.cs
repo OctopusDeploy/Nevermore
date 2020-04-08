@@ -6,22 +6,22 @@ using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    public class TinyTypeInColumnFixture : FixtureWithRelationalStore
+    public class VersionInColumnFixture : FixtureWithRelationalStore
     {
         [Test]
         public void ShouldWorkInColumn()
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var model = new Release
+                var model = new Package
                 {
-                    ProjectId =  new ProjectId("Projects-1")
+                    Version =  new Version(1, 2, 3)
                 };
                 transaction.Insert(model);
 
-                var read = transaction.Query<ReleaseWithColumnToTestSerialization>()
+                var read = transaction.Query<CustomTypeWithColumnToTestSerialization>()
                     .FirstOrDefault();
-                read.ProjectId.Should().Be("Projects-1");
+                read.Version.Should().Be("1.2.3");
             }
         }
 
@@ -30,17 +30,19 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var model = new Release
+                var model = new Package
                 {
-                    ProjectId =  new ProjectId("Projects-2")
+                    Version =  new Version(1, 2, 3)
                 };
                 transaction.Insert(model);
 
-                var read = transaction.Query<Release>()
+                var read = transaction.Query<Package>()
                     .FirstOrDefault();
                 read.Should().NotBeSameAs(model);
-                read.ProjectId.Should().NotBeSameAs(model.ProjectId);
-                read.ProjectId.Value.Should().Be("Projects-2");
+                read.Version.Should().NotBeSameAs(model.Version);
+                read.Version.Major.Should().Be(1);
+                read.Version.Minor.Should().Be(2);
+                read.Version.Patch.Should().Be(3);
             }
         }
 
@@ -48,7 +50,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new DocumentMap[]
             {
-                new ReleaseWithColumnMap()
+                new PackageWithColumnMap()
             };
         }
 
@@ -56,8 +58,8 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new DocumentMap[]
             {
-                new ReleaseWithColumnMap(),
-                new ReleaseWithColumnToTestSerializationMap()
+                new PackageWithColumnMap(),
+                new PackageWithColumnToTestSerializationMap()
             };
         }
 
@@ -65,40 +67,34 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new[]
             {
-                new TinyTypeCustomTypeDefinition()
+                new VersionCustomTypeDefinition()
             };
         }
 
-        class Release : IId
+        class PackageWithColumnMap : DocumentMap<Package>
         {
-            public string Id { get; set; }
-            public ProjectId ProjectId { get; set; }
-        }
-
-        class ReleaseWithColumnMap : DocumentMap<Release>
-        {
-            public ReleaseWithColumnMap()
+            public PackageWithColumnMap()
             {
-                TableName = "ReleaseWithTinyTypeColumn";
+                TableName = "PackageWithVersionInColumn";
 
-                Column(x => x.ProjectId);
+                Column(x => x.Version);
             }
         }
 
-        class ReleaseWithColumnToTestSerialization : IId
+        class CustomTypeWithColumnToTestSerialization : IId
         {
             public string Id { get; set; }
-            public string ProjectId { get; set; }
+            public string Version { get; set; }
             public string JSON { get; set; }
         }
 
-        class ReleaseWithColumnToTestSerializationMap : DocumentMap<ReleaseWithColumnToTestSerialization>
+        class PackageWithColumnToTestSerializationMap : DocumentMap<CustomTypeWithColumnToTestSerialization>
         {
-            public ReleaseWithColumnToTestSerializationMap()
+            public PackageWithColumnToTestSerializationMap()
             {
-                TableName = "ReleaseWithTinyTypeColumn";
+                TableName = "PackageWithVersionInColumn";
                 
-                Column(m => m.ProjectId);
+                Column(m => m.Version);
                 Column(m => m.JSON);
             }
         }

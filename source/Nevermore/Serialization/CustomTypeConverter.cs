@@ -22,7 +22,7 @@ namespace Nevermore.Serialization
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var obj = customTypeDefinition.ToDbValue(value, true);
+            var obj = customTypeDefinition.ConvertToJsonColumnValue(value);
             if (obj != null)
             {
                 writer.WriteValue(obj);
@@ -48,7 +48,7 @@ namespace Nevermore.Serialization
             if (reader.TokenType == JsonToken.Null)
                 return null;
 
-            var obj = customTypeDefinition.FromDbValue(reader.Value, objectType, true);
+            var obj = customTypeDefinition.ConvertFromJsonDbValue(reader.Value, objectType);
             if (obj != null)
             {
                 return obj;

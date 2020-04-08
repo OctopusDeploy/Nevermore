@@ -7,24 +7,24 @@ using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    public class TinyTypeInJsonFixture : FixtureWithRelationalStore
+    public class VersionInJsonFixture : FixtureWithRelationalStore
     {
         [Test]
-        public void ShouldWorkInJson()
+        public void ShouldWorkInJsonData()
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var model = new ReleaseWithJson
+                var model = new Package
                 {
-                    ProjectId =  new ProjectId("Projects-1")
+                    Version =  new Version(1, 2, 3)
                 };
                 transaction.Insert(model);
 
-                var read = transaction.Query<ReleaseWithJsonToTestSerialization>()
+                var read = transaction.Query<PackageToTestSerialization>()
                     .FirstOrDefault();
                 read.JSON.Should().Be(JsonConvert.SerializeObject(new
                 {
-                    ProjectId = "Projects-1"
+                    Version = "1.2.3"
                 }));
             }
         }
@@ -34,25 +34,27 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var model = new ReleaseWithJson
+                var model = new Package
                 {
-                    ProjectId =  new ProjectId("Projects-2")
+                    Version =  new Version(1, 2, 3)
                 };
                 transaction.Insert(model);
 
-                var read = transaction.Query<ReleaseWithJson>()
+                var read = transaction.Query<Package>()
                     .FirstOrDefault();
                 read.Should().NotBeSameAs(model);
-                read.ProjectId.Should().NotBeSameAs(model.ProjectId);
-                read.ProjectId.Value.Should().Be("Projects-2");
+                read.Version.Should().NotBeSameAs(model.Version);
+                read.Version.Major.Should().Be(1);
+                read.Version.Minor.Should().Be(2);
+                read.Version.Patch.Should().Be(3);
             }
         }
-
+        
         protected override IEnumerable<DocumentMap> AddCustomMappingsForSchemaGeneration()
         {
             return new DocumentMap[]
             {
-                new ReleaseWithJsonMap()
+                new PackageWithJsonMap()
             };
         }
 
@@ -60,8 +62,8 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new DocumentMap[]
             {
-                new ReleaseWithJsonMap(),
-                new ReleaseWithJsonToTestSerializationMap()
+                new PackageWithJsonMap(),
+                new PackageToTestSerializationMap()
             };
         }
 
@@ -69,36 +71,30 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             return new[]
             {
-                new TinyTypeCustomTypeDefinition()
+                new VersionCustomTypeDefinition()
             };
         }
 
-        class ReleaseWithJson : IId
+        class  PackageWithJsonMap : DocumentMap<Package>
         {
-            public string Id { get; set; }
-            public ProjectId ProjectId { get; set; }
-        }
-
-        class ReleaseWithJsonMap : DocumentMap<ReleaseWithJson>
-        {
-            public ReleaseWithJsonMap()
+            public PackageWithJsonMap()
             {
-                TableName = "ReleaseWithTinyTypeJson";
+                TableName = "PackageWithVersionInJson";
             }
         }
 
-        class ReleaseWithJsonToTestSerialization : IId
+        class PackageToTestSerialization : IId
         {
             public string Id { get; set; }
             public string JSON { get; set; }
         }
 
-        class ReleaseWithJsonToTestSerializationMap : DocumentMap<ReleaseWithJsonToTestSerialization>
+        class PackageToTestSerializationMap : DocumentMap<PackageToTestSerialization>
         {
-            public ReleaseWithJsonToTestSerializationMap()
+            public PackageToTestSerializationMap()
             {
-                TableName = "ReleaseWithTinyTypeJson";
-                
+                TableName = "PackageWithVersionInJson";
+
                 Column(m => m.JSON);
             }
         }
