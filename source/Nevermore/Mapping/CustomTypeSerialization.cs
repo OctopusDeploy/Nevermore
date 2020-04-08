@@ -2,7 +2,7 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    public abstract class CustomTypeDefinition : CustomTypeDefinitionBase
+    public abstract class CustomTypeSerialization : CustomTypeSerializationBase
     {
         /// <summary>
         /// Get the value to write when the type is used in the JSON column.

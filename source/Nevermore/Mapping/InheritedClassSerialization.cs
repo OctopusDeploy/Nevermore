@@ -10,11 +10,11 @@ namespace Nevermore.Mapping
     /// This type is used to store objects from an inheritance hierarchy.
     /// </summary>
     /// <typeparam name="TModelBase"></typeparam>
-    public abstract class TypeDesignatingTypeDefinition<TModelBase> : TypeDesignatingTypeDefinition<TModelBase, string>
+    public abstract class InheritedClassSerialization<TModelBase> : InheritedClassSerialization<TModelBase, string>
     {
     }
 
-    public abstract class TypeDesignatingTypeDefinition<TModelBase, TDiscriminator> : CustomTypeDefinitionBase, ITypeDesignatingTypeDefinition
+    public abstract class InheritedClassSerialization<TModelBase, TDiscriminator> : CustomTypeSerializationBase, IInheritedClassSerialization
     {
         public override bool CanConvertType(Type type)
         {

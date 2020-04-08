@@ -28,7 +28,7 @@ namespace Nevermore
 
         internal IRelationalMappings RelationalMappings => relationalMappings;
 
-        List<CustomTypeDefinition> CustomTypeDefinitions { get; } = new List<CustomTypeDefinition>();
+        List<CustomTypeSerialization> CustomTypeSerializations { get; } = new List<CustomTypeSerialization>();
 
         internal IDatabaseValueConverter DatabaseValueConverter { get; }
 
@@ -41,22 +41,24 @@ namespace Nevermore
             callback(jsonSettings);
         }
 
-        void AddCustomTypeDefinition(CustomTypeDefinitionBase customTypeDefinition)
+        void AddCustomTypeSerialization(CustomTypeSerializationBase customTypeSerialization)
         {
-            if (customTypeDefinition is ITypeDesignatingTypeDefinition customInheritedType)
+            if (customTypeSerialization is IInheritedClassSerialization customInheritedType)
             {
+                // this is a custom type hierarchy that may be a row, a column, or a value in the JSON column
                 jsonSettings.Converters.Add(customInheritedType.GetJsonConverter(this.relationalMappings));
             }
-            else if (customTypeDefinition is CustomTypeDefinition customType)
+            else if (customTypeSerialization is CustomTypeSerialization customType)
             {
+                // this is a custom type that may be a column or a value in the JSON column
                 var jsonConverter = new CustomTypeConverter(customType);
                 jsonSettings.Converters.Add(jsonConverter);
 
-                CustomTypeDefinitions.Add(customType);
+                CustomTypeSerializations.Add(customType);
             }
         }
         
-        public void Initialize(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions = null)
+        public void Initialize(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeSerializationBase> customTypeDefinitions = null)
         {
             if (documentMaps == null)
                 throw new ArgumentException("DocumentMaps must be specified", nameof(documentMaps));
@@ -65,7 +67,7 @@ namespace Nevermore
             {
                 foreach (var customTypeDefinition in customTypeDefinitions)
                 {
-                    AddCustomTypeDefinition(customTypeDefinition);
+                    AddCustomTypeSerialization(customTypeDefinition);
                 }
             }
 
@@ -73,11 +75,6 @@ namespace Nevermore
 
             foreach (var documentMap in documentMaps)
             {
-                if (documentMap is IDocumentHierarchyMap inheritedMap)
-                {
-                    AddCustomTypeDefinition(inheritedMap.CustomTypeDefinition);
-                }
-
                 // DocumentMap doesn't enforce IId on the document type, so the IdColumn can be null if the document
                 // doesn't have an Id property 
                 documentMap.IdColumn?.Initialize(this);
@@ -89,15 +86,15 @@ namespace Nevermore
             }
         }
 
-        internal bool TryGetCustomTypeDefinitionForType(Type type, out CustomTypeDefinition customTypeDefinition)
+        internal bool TryGetCustomTypeDefinitionForType(Type type, out CustomTypeSerialization customTypeSerialization)
         {
-            customTypeDefinition = null;
+            customTypeSerialization = null;
 
-            var definition = CustomTypeDefinitions.FirstOrDefault(d => d.CanConvertType(type));
+            var definition = CustomTypeSerializations.FirstOrDefault(d => d.CanConvertType(type));
             if (definition == null) 
                 return false;
             
-            customTypeDefinition = definition;
+            customTypeSerialization = definition;
             return true;
 
         }

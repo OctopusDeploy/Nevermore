@@ -61,11 +61,11 @@ namespace Nevermore.IntegrationTests.CustomTypes
             };
         }
 
-        protected override IEnumerable<CustomTypeDefinition> CustomTypeDefinitions()
+        protected override IEnumerable<CustomTypeSerialization> CustomTypeDefinitions()
         {
             return new[]
             {
-                new TinyTypeCustomTypeDefinition()
+                new TinyTypeCustomTypeSerialization()
             };
         }
 

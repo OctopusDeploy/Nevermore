@@ -65,12 +65,12 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        internal void InitializeStore(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions)
+        internal void InitializeStore(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeSerializationBase> customTypeDefinitions)
         {
             Store = BuildRelationalStore(TestDatabaseConnectionString, documentMaps, customTypeDefinitions, 0.01);
         }
 
-        RelationalStore BuildRelationalStore(string connectionString, IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions, double chaosFactor = 0.2D)
+        RelationalStore BuildRelationalStore(string connectionString, IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeSerializationBase> customTypeDefinitions, double chaosFactor = 0.2D)
         {
             var config = new RelationalStoreConfiguration();
             RelationalStoreConfiguration = config;
@@ -88,10 +88,12 @@ namespace Nevermore.IntegrationTests
                     new MachineMap(),
                     new MachineToTestSerializationMap()
                 }.Union(documentMaps),
-                new []
+                new CustomTypeSerializationBase[]
                 {
-                    new EndpointTypeDefinition()
-                }.Union(customTypeDefinitions ?? Enumerable.Empty<CustomTypeDefinitionBase>()));
+                    new EndpointSerialization(),
+                    new BrandSerialization(),
+                    new ProductSerialization()
+                }.Union(customTypeDefinitions ?? Enumerable.Empty<CustomTypeSerializationBase>()));
             
             var sqlCommandFactory = chaosFactor > 0D
                 ? (ISqlCommandFactory)new ChaosSqlCommandFactory(new SqlCommandFactory(config), chaosFactor)
@@ -104,7 +106,7 @@ namespace Nevermore.IntegrationTests
                 new EmptyRelatedDocumentStore());
         }
 
-        internal void InstallSchema(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeDefinitionBase> customTypeDefinitions)
+        internal void InstallSchema(IEnumerable<DocumentMap> documentMaps, IEnumerable<CustomTypeSerializationBase> customTypeDefinitions)
         {
             Console.WriteLine("Performing migration");
             var migrator = new DatabaseMigrator();

@@ -13,16 +13,16 @@ namespace Nevermore.Serialization
     {
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> unmappedReadablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> writeablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
-        readonly CustomTypeDefinition customTypeDefinition;
+        readonly CustomTypeSerialization customTypeSerialization;
 
-        public CustomTypeConverter(CustomTypeDefinition customTypeDefinition)
+        public CustomTypeConverter(CustomTypeSerialization customTypeSerialization)
         {
-            this.customTypeDefinition = customTypeDefinition;
+            this.customTypeSerialization = customTypeSerialization;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var obj = customTypeDefinition.ConvertToJsonColumnValue(value);
+            var obj = customTypeSerialization.ConvertToJsonColumnValue(value);
             if (obj != null)
             {
                 writer.WriteValue(obj);
@@ -48,7 +48,7 @@ namespace Nevermore.Serialization
             if (reader.TokenType == JsonToken.Null)
                 return null;
 
-            var obj = customTypeDefinition.ConvertFromJsonDbValue(reader.Value, objectType);
+            var obj = customTypeSerialization.ConvertFromJsonDbValue(reader.Value, objectType);
             if (obj != null)
             {
                 return obj;
@@ -82,7 +82,7 @@ namespace Nevermore.Serialization
 
         public override bool CanConvert(Type objectType)
         {
-            return customTypeDefinition.CanConvertType(objectType);
+            return customTypeSerialization.CanConvertType(objectType);
         }
         
         IReadOnlyList<PropertyInfo> GetUnmappedReadableProperties(TypeInfo documentType)

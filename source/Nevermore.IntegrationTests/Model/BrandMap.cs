@@ -5,13 +5,16 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class BrandMap : DocumentHierarchyMap<Brand>
+    public class BrandMap : DocumentMap<Brand>
     {
         public BrandMap()
         {
             Column(m => m.Name);
         }
+    }
 
+    public class BrandSerialization : InheritedClassSerialization<Brand>
+    {
         readonly Dictionary<string, Type> derivedTypeMappings = new Dictionary<string, Type>
         {
             {BrandA.BrandType, typeof(BrandA)},

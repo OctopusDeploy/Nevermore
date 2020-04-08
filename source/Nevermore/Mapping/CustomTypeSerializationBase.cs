@@ -3,7 +3,7 @@ using System.Data;
 
 namespace Nevermore.Mapping
 {
-    public abstract class CustomTypeDefinitionBase
+    public abstract class CustomTypeSerializationBase
     {
         public virtual DbType DbType => DbType.String;
         public virtual int MaxLength => 250;

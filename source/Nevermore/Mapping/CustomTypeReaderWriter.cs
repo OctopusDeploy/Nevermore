@@ -4,24 +4,24 @@ namespace Nevermore.Mapping
 {
     class CustomTypeReaderWriter : IPropertyReaderWriter<object>
     {
-        readonly CustomTypeDefinition customTypeDefinition;
+        readonly CustomTypeSerialization customTypeSerialization;
         readonly PropertyInfo property;
 
-        public CustomTypeReaderWriter(CustomTypeDefinition customTypeDefinition, PropertyInfo property)
+        public CustomTypeReaderWriter(CustomTypeSerialization customTypeSerialization, PropertyInfo property)
         {
-            this.customTypeDefinition = customTypeDefinition;
+            this.customTypeSerialization = customTypeSerialization;
             this.property = property;
         }
 
         public object Read(object target)
         {
             var value = property.GetValue(target);
-            return customTypeDefinition.ConvertToIndexedColumnDbValue(value);
+            return customTypeSerialization.ConvertToIndexedColumnDbValue(value);
         }
 
         public void Write(object target, object value)
         {
-            var convertedValue = customTypeDefinition.ConvertFromIndexedColumnDbValue(value, property.PropertyType);
+            var convertedValue = customTypeSerialization.ConvertFromIndexedColumnDbValue(value, property.PropertyType);
             property.SetValue(target, convertedValue);
         }
     }

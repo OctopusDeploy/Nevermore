@@ -3,7 +3,7 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    class TinyTypeCustomTypeDefinition : CustomTypeDefinition
+    class TinyTypeCustomTypeSerialization : CustomTypeSerialization
     {
         public override bool CanConvertType(Type type)
         {

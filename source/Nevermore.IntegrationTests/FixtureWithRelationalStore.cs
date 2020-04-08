@@ -41,7 +41,7 @@ namespace Nevermore.IntegrationTests
             return Enumerable.Empty<DocumentMap>();
         }
 
-        protected virtual IEnumerable<CustomTypeDefinition> CustomTypeDefinitions()
+        protected virtual IEnumerable<CustomTypeSerialization> CustomTypeDefinitions()
         {
             return null;
         }

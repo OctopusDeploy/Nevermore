@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Nevermore.Mapping
 {
-    public interface ITypeDesignatingTypeDefinition
+    public interface IInheritedClassSerialization
     {
         JsonConverter GetJsonConverter(RelationalMappings relationalMappings);
     }

@@ -5,7 +5,7 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.CustomTypes
 {
-    class VersionCustomTypeDefinition : CustomTypeDefinition
+    class VersionCustomTypeSerialization : CustomTypeSerialization
     {
         public override DbType DbType => DbType.String;
         public override int MaxLength => 50;
