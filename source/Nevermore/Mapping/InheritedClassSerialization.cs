@@ -24,7 +24,7 @@ namespace Nevermore.Mapping
         protected abstract IDictionary<TDiscriminator, Type> DerivedTypeMappings { get; }
         protected abstract string TypeDesignatingPropertyName { get; }
 
-        public JsonConverter GetJsonConverter(RelationalMappings relationalMappings)
+        internal override JsonConverter GetJsonConverter(RelationalMappings relationalMappings)
         {
             return new CustomInheritedTypeClassConverter(() => DerivedTypeMappings, () => TypeDesignatingPropertyName, relationalMappings);
         }

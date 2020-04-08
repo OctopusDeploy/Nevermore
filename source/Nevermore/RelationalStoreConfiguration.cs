@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nevermore.Mapping;
-using Nevermore.Serialization;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -43,17 +42,10 @@ namespace Nevermore
 
         void AddCustomTypeSerialization(CustomTypeSerializationBase customTypeSerialization)
         {
-            if (customTypeSerialization is IInheritedClassSerialization customInheritedType)
-            {
-                // this is a custom type hierarchy that may be a row, a column, or a value in the JSON column
-                jsonSettings.Converters.Add(customInheritedType.GetJsonConverter(this.relationalMappings));
-            }
-            else if (customTypeSerialization is CustomTypeSerialization customType)
-            {
-                // this is a custom type that may be a column or a value in the JSON column
-                var jsonConverter = new CustomTypeConverter(customType);
-                jsonSettings.Converters.Add(jsonConverter);
+            jsonSettings.Converters.Add(customTypeSerialization.GetJsonConverter(relationalMappings));
 
+            if (customTypeSerialization is CustomTypeSerialization customType)
+            {
                 CustomTypeSerializations.Add(customType);
             }
         }

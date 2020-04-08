@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using Newtonsoft.Json;
 
 namespace Nevermore.Mapping
 {
@@ -9,5 +10,7 @@ namespace Nevermore.Mapping
         public virtual int MaxLength => 250;
 
         public abstract bool CanConvertType(Type type);
+
+        internal abstract JsonConverter GetJsonConverter(RelationalMappings relationalMappings);
     }
 }

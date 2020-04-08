@@ -1,4 +1,6 @@
 using System;
+using Nevermore.Serialization;
+using Newtonsoft.Json;
 
 namespace Nevermore.Mapping
 {
@@ -44,6 +46,11 @@ namespace Nevermore.Mapping
         public virtual object ConvertFromIndexedColumnDbValue(object value, Type targetType)
         {
             return value;
+        }
+
+        internal override JsonConverter GetJsonConverter(RelationalMappings relationalMappings)
+        {
+            return new CustomTypeConverter(this);
         }
     }
 }
