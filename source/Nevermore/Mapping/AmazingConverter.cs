@@ -10,15 +10,8 @@ namespace Nevermore.Mapping
     /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    class AmazingConverter : IDatabaseValueConverter
+    public static class AmazingConverter
     {
-        readonly RelationalStoreConfiguration relationalStoreConfiguration;
-
-        public AmazingConverter(RelationalStoreConfiguration relationalStoreConfiguration)
-        {
-            this.relationalStoreConfiguration = relationalStoreConfiguration;
-        }
-
         /// <summary>
         /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
         /// object, tries its best to convert it to the target type.
@@ -26,7 +19,7 @@ namespace Nevermore.Mapping
         /// <param name="source">The source.</param>
         /// <param name="targetType">The type to convert the source object to.</param>
         /// <returns></returns>
-        public object ConvertFromDatabaseValue(object source, Type targetType)
+        public static object Convert(object source, Type targetType)
         {
             var typeInfo = targetType.GetTypeInfo();
 
@@ -81,7 +74,7 @@ namespace Nevermore.Mapping
                     var result = Array.CreateInstance(elt, list.Length);
                     for (var i = 0; i < list.Length; i++)
                     {
-                        var el = ConvertFromDatabaseValue(list[i], elt);
+                        var el = Convert(list[i], elt);
                         result.SetValue(el, i);
                     }
 
@@ -97,11 +90,6 @@ namespace Nevermore.Mapping
             var s = source as string;
             if (s != null && targetType == typeof(Uri))
                 return new Uri(s);
-
-            if (relationalStoreConfiguration != null && relationalStoreConfiguration.TryGetCustomTypeDefinitionForType(targetType, out var customTypeDefinition))
-            {
-                return customTypeDefinition.ConvertFromIndexedColumnDbValue(source, targetType);
-            }
 
             // Hope and pray
             return source;
