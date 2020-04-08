@@ -4,7 +4,6 @@ using System.Linq;
 using Nevermore.Mapping;
 using Nevermore.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore
 {
@@ -33,16 +32,13 @@ namespace Nevermore
 
         internal IDatabaseValueConverter DatabaseValueConverter { get; }
 
-        public void SetSerializationContractResolver<TResolver>(TResolver resolver)
-            where TResolver : DefaultContractResolver
+        /// <summary>
+        /// Use this method to include any additional JsonSerializationSettings that are required. 
+        /// </summary>
+        /// <param name="callback">Callback action that will configure settings.</param>
+        public void ConfigureJsonSerializationSettings(Action<JsonSerializerSettings> callback)
         {
-            jsonSettings.ContractResolver = resolver;
-        }
-
-        public void SetSerializationTypeNameHandlingOptions(TypeNameHandling typeNameHandling, TypeNameAssemblyFormatHandling typeNameAssemblyFormatHandling)
-        {
-            jsonSettings.TypeNameHandling = typeNameHandling;
-            jsonSettings.TypeNameAssemblyFormatHandling = typeNameAssemblyFormatHandling;
+            callback(jsonSettings);
         }
 
         void AddCustomTypeDefinition(CustomTypeDefinitionBase customTypeDefinition)
