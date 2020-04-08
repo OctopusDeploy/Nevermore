@@ -7,20 +7,20 @@ using System.Reflection;
 namespace Nevermore.Mapping
 {
     /// <summary>
-    /// The one and only <see cref="DatabaseValueConverter" />. Can convert from absolutely anything to absolutely
+    /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    class DatabaseValueConverter : IDatabaseValueConverter
+    class AmazingConverter : IDatabaseValueConverter
     {
         readonly RelationalStoreConfiguration relationalStoreConfiguration;
 
-        public DatabaseValueConverter(RelationalStoreConfiguration relationalStoreConfiguration)
+        public AmazingConverter(RelationalStoreConfiguration relationalStoreConfiguration)
         {
             this.relationalStoreConfiguration = relationalStoreConfiguration;
         }
 
         /// <summary>
-        /// If it can be converted, the <see cref="DatabaseValueConverter" /> will figure out how. Given a source
+        /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source
         /// object, tries its best to convert it to the target type.
         /// </summary>
         /// <param name="source">The source.</param>
