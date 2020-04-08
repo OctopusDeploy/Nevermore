@@ -72,7 +72,7 @@ namespace Nevermore.Mapping
             {
                 DbType = DbType.String;
                 MaxLength = int.MaxValue;
-                ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
+                ReaderWriter = new ReferenceCollectionReaderWriterInternal(ReaderWriter);
             }
         }
 

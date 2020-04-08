@@ -43,7 +43,6 @@ namespace Nevermore.Serialization
             writer.WriteEndObject();
         }
         
-                
         IReadOnlyList<PropertyInfo> GetUnmappedReadableProperties(TypeInfo documentType, DocumentMap map)
             => documentType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty)
                 .Where(p => p.Name != TypeDesignatingPropertyName &&
@@ -109,9 +108,7 @@ namespace Nevermore.Serialization
                 .GetProperties(BindingFlags.Public | BindingFlags.SetProperty | BindingFlags.Instance)
                 .Where(p => p.CanWrite && p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null)
                 .ToArray();
-
-        
-
+      
         protected virtual void SetPropertyValue(PropertyInfo prop, object instance, object value)
         {
             prop.SetValue(instance, value, null);

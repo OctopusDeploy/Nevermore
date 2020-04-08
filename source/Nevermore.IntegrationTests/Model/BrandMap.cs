@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class BrandSerialization : InheritedClassSerialization<Brand>
+    public class BrandSerialization : InheritedCustomTypeSerialization<Brand>
     {
         readonly Dictionary<string, Type> derivedTypeMappings = new Dictionary<string, Type>
         {

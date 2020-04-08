@@ -43,7 +43,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
     
-    public class ProductSerialization : InheritedClassSerialization<Product, ProductType>
+    public class ProductSerialization : InheritedCustomTypeSerialization<Product, ProductType>
     {
         readonly Dictionary<ProductType, Type> derivedTypeMappings = new Dictionary<ProductType, Type>
         {

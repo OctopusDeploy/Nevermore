@@ -10,11 +10,13 @@ namespace Nevermore
     {
         readonly JsonSerializerSettings jsonSettings;
         readonly RelationalMappings relationalMappings;
+        readonly List<CustomTypeSerialization> customTypeSerializations;
 
         public RelationalStoreConfiguration()
         {
             DatabaseValueConverter = new DatabaseValueConverter(this);
             
+            customTypeSerializations = new List<CustomTypeSerialization>();
             relationalMappings = new RelationalMappings();
             
             jsonSettings = new JsonSerializerSettings
@@ -26,8 +28,6 @@ namespace Nevermore
         }
 
         internal IRelationalMappings RelationalMappings => relationalMappings;
-
-        List<CustomTypeSerialization> CustomTypeSerializations { get; } = new List<CustomTypeSerialization>();
 
         internal IDatabaseValueConverter DatabaseValueConverter { get; }
 
@@ -46,7 +46,7 @@ namespace Nevermore
 
             if (customTypeSerialization is CustomTypeSerialization customType)
             {
-                CustomTypeSerializations.Add(customType);
+                customTypeSerializations.Add(customType);
             }
         }
         
@@ -82,7 +82,7 @@ namespace Nevermore
         {
             customTypeSerialization = null;
 
-            var definition = CustomTypeSerializations.FirstOrDefault(d => d.CanConvertType(type));
+            var definition = customTypeSerializations.FirstOrDefault(d => d.CanConvertType(type));
             if (definition == null) 
                 return false;
             

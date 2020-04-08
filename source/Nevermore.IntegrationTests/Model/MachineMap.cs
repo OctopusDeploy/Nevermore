@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Model
         }
     }
 
-    public class EndpointSerialization : InheritedClassSerialization<Endpoint>
+    public class EndpointSerialization : InheritedCustomTypeSerialization<Endpoint>
     {
         readonly Dictionary<string, Type> derivedTypeMappings = new Dictionary<string, Type>
         {
