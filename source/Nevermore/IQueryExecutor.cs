@@ -228,5 +228,14 @@ namespace Nevermore
         /// <param name="idPrefix"></param>
         /// <returns></returns>
         string AllocateId(string tableName, string idPrefix);
+        
+        /// <summary>
+        /// Given a source object, tries its best to convert it to the target type. If no conversion is known then the
+        /// source will be returned.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="targetType">The type to convert the source object to.</param>
+        /// <returns>The converted object, or source if no conversion is known</returns>
+        object ConvertFromDatabaseValue(object source, Type targetType);
     }
 }

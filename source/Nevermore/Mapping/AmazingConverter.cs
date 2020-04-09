@@ -10,7 +10,7 @@ namespace Nevermore.Mapping
     /// The one and only <see cref="AmazingConverter" />. Can convert from absolutely anything to absolutely
     /// anything.
     /// </summary>
-    public static class AmazingConverter
+    static class AmazingConverter
     {
         /// <summary>
         /// If it can be converted, the <see cref="AmazingConverter" /> will figure out how. Given a source

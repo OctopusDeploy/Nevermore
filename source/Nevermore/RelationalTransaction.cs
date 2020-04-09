@@ -625,6 +625,11 @@ namespace Nevermore
         {
             transaction.Commit();
         }
+        
+        public object ConvertFromDatabaseValue(object source, Type targetType)
+        {
+            return relationalStoreConfiguration.DatabaseValueConverter.ConvertFromDatabaseValue(source, targetType);
+        }
 
         public void Dispose()
         {
