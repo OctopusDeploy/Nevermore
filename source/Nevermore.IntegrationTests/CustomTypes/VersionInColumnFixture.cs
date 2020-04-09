@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using FluentAssertions;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
@@ -22,6 +23,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
                 var read = transaction.Query<CustomTypeWithColumnToTestSerialization>()
                     .FirstOrDefault();
                 read.Version.Should().Be("1.2.3");
+                read.VersionMajor.Should().Be("1");
             }
         }
 
@@ -78,6 +80,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
                 TableName = "PackageWithVersionInColumn";
 
                 Column(x => x.Version);
+                VirtualColumn("VersionMajor", DbType.String, x => x.Version.Major.ToString());
             }
         }
 
@@ -85,6 +88,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
         {
             public string Id { get; set; }
             public string Version { get; set; }
+            public string VersionMajor { get; set; }
             public string JSON { get; set; }
         }
 
@@ -95,6 +99,7 @@ namespace Nevermore.IntegrationTests.CustomTypes
                 TableName = "PackageWithVersionInColumn";
                 
                 Column(m => m.Version);
+                Column(m => m.VersionMajor);
                 Column(m => m.JSON);
             }
         }
