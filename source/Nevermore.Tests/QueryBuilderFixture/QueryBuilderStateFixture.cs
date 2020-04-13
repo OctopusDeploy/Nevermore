@@ -5,19 +5,20 @@ using Nevermore.AST;
 using Nevermore.Contracts;
 using NSubstitute;
 using NUnit.Framework;
+// ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
     public class QueryBuilderStateFixture
     {
-        readonly IRelationalTransaction transaction;
+        readonly IReadTransaction transaction;
         readonly List<string> executedQueries = new List<string>();
 
         public QueryBuilderStateFixture()
         {
-            transaction = Substitute.For<IRelationalTransaction>();
+            transaction = Substitute.For<IReadTransaction>();
             transaction.ExecuteScalar<int>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
+            transaction.Stream<IDocument>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
         }
 
         [SetUp]

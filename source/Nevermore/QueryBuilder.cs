@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Nevermore.AST;
+using Nevermore.Contracts;
 
 namespace Nevermore
 {
@@ -242,7 +243,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
-            return readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
         }
 
         [Pure]
@@ -253,7 +254,7 @@ namespace Nevermore
             var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
-            var result = readQueryExecutor.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), commandTimeout);
+            var result = readQueryExecutor.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout);
 
             return result != falseValue;
 
@@ -293,7 +294,7 @@ namespace Nevermore
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
-            return readQueryExecutor.ExecuteReader<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]
@@ -319,7 +320,7 @@ namespace Nevermore
                 {maxRowParameter.ParameterName, take + skip}
             };
 
-            return readQueryExecutor.ExecuteReader<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
+            return readQueryExecutor.Stream<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
         }
 
         [Pure]
@@ -344,7 +345,7 @@ namespace Nevermore
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            return readQueryExecutor.ExecuteReader<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            return readQueryExecutor.Stream<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
         }
 
         [Pure]

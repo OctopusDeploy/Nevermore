@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests

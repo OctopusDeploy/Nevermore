@@ -2,7 +2,7 @@
 using Nevermore.AST;
 using NSubstitute;
 
-namespace Nevermore.Tests.Query
+namespace Nevermore.Tests.Linq
 {
     public class LinqTestBase
     {

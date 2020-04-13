@@ -17,7 +17,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query = null;
             parameters = null;
             transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.ExecuteReader<IId>("", Arg.Any<CommandParameterValues>()))
+            transaction.WhenForAnyArgs(c => c.Stream<IId>("", Arg.Any<CommandParameterValues>()))
                 .Do(c =>
                 {
                     query = c.Arg<string>();

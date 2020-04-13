@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public class RelationalMappings
+    public class DocumentMapRegistry : IDocumentMapRegistry
     {
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
 
@@ -14,7 +16,17 @@ namespace Nevermore.Mapping
             return new List<DocumentMap>(mappings.Values);
         }
 
-        public void Install(IEnumerable<DocumentMap> mappingsToAdd)
+        public void Register(DocumentMap map)
+        {
+            Register(new List<DocumentMap> { map });
+        }
+
+        public void Register(params DocumentMap[] mappingsToAdd)
+        {
+            Register(mappingsToAdd.AsEnumerable());
+        }
+        
+        public void Register(IEnumerable<DocumentMap> mappingsToAdd)
         {
             foreach (var mapping in mappingsToAdd)
             {
@@ -22,7 +34,7 @@ namespace Nevermore.Mapping
             }
         }
 
-        public bool TryGet(Type type, out DocumentMap map)
+        public bool ResolveOptional(Type type, out DocumentMap map)
         {
             DocumentMap mapping = null;
 
@@ -38,20 +50,25 @@ namespace Nevermore.Mapping
             return mapping != null;
         }
 
-        public DocumentMap Get(object instance)
+        public DocumentMap Resolve<TDocument>() where TDocument : IId
         {
-            var mapping = Get(instance.GetType());
+            return Resolve(typeof(TDocument));
+        }
+
+        public DocumentMap Resolve(object instance)
+        {
+            var mapping = Resolve(instance.GetType());
             
             // Make sure we got the right one if the mapping defines a different resolver
             var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
-            return Get(mType);
+            return Resolve(mType);
         }
         
-        public DocumentMap Get(Type type)
+        public DocumentMap Resolve(Type type)
         {
-            if (!TryGet(type, out var mapping))
+            if (!ResolveOptional(type, out var mapping))
             {
-                throw new KeyNotFoundException(string.Format("A mapping for the type '{0}' has not been defined", type.Name));
+                throw new KeyNotFoundException($"The type '{type.Name}' is a document, but a mapping has not been defined");
             }
             
             return mapping;

@@ -180,6 +180,30 @@ namespace Nevermore.Transient
             return ExecuteScalarWithRetry(command, retryPolicy, RetryPolicy.NoRetry);
         }
 
+        public static Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy retryPolicy, string operationName = "ExecuteScalar")
+        {
+            return ExecuteScalarWithRetryAsync(command, retryPolicy, RetryPolicy.NoRetry);
+        }
+
+        public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteScalar")
+        {
+            GuardConnectionIsNotNull(command);
+            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
+            {
+                var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                try
+                {
+                    return await command.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
+                        command.Connection.Close();
+                }
+            });
+        }
+        
         public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteScalar")
         {
             GuardConnectionIsNotNull(command);

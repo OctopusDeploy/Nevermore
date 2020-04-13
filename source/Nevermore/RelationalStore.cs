@@ -5,110 +5,38 @@ using System.Data.SqlClient;
 #else
 using Microsoft.Data.SqlClient;
 #endif
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nevermore.Mapping;
-using Nevermore.RelatedDocuments;
-using Newtonsoft.Json;
 
 namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        readonly ISqlCommandFactory sqlCommandFactory;
-        readonly RelationalMappings mappings;
         readonly Lazy<RelationalTransactionRegistry> registry;
-        readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
-        readonly IRelatedDocumentStore relatedDocumentStore;
-        readonly IKeyAllocator keyAllocator;
-        readonly ObjectInitialisationOptions objectInitialisationOptions;
+        readonly Lazy<KeyAllocator> keyAllocator;
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="connectionString"></param>
-        /// <param name="applicationName"></param>
-        /// <param name="sqlCommandFactory"></param>
-        /// <param name="mappings"></param>
-        /// <param name="jsonSettings"></param>
-        /// <param name="relatedDocumentStore"></param>
-        /// <param name="keyBlockSize"></param>
-        /// <param name="objectInitialisationOptions"></param>
-        /// <param name="forceMars">MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15</param>
-        public RelationalStore(
-            string connectionString,
-            string applicationName,
-            ISqlCommandFactory sqlCommandFactory,
-            RelationalMappings mappings,
-            JsonSerializerSettings jsonSettings,
-            IRelatedDocumentStore relatedDocumentStore,
-            int keyBlockSize = 20,
-            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
-            bool forceMars = true)
-            : this(
-                () => connectionString,
-                applicationName,
-                sqlCommandFactory,
-                mappings,
-                jsonSettings,
-                relatedDocumentStore,
-                keyBlockSize,
-                objectInitialisationOptions,
-                forceMars
-            )
+        public RelationalStore(RelationalStoreConfiguration configuration)
         {
-
-        }
-
-        /// <summary>
-        /// Creates a new Relational Store
-        /// </summary>
-        /// <param name="connectionString">Allows the connection string to be set after the store is built (but before it is used)</param>
-        /// <param name="applicationName">Name of the application in the SQL string</param>
-        /// <param name="sqlCommandFactory"></param>
-        /// <param name="mappings"></param>
-        /// <param name="jsonSettings"></param>
-        /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
-        /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
-        /// <param name="objectInitialisationOptions"></param>
-        /// <param name="forceMars"></param>
-        public RelationalStore(
-            Func<string> connectionString,
-            string applicationName,
-            ISqlCommandFactory sqlCommandFactory,
-            RelationalMappings mappings,
-            JsonSerializerSettings jsonSettings,
-            IRelatedDocumentStore relatedDocumentStore,
-            int keyBlockSize = 20,
-            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
-            bool forceMars = true)
-        {
-            registry = new Lazy<RelationalTransactionRegistry>(
-                () => SetConnectionStringOptions(connectionString(), applicationName, forceMars)
-            );
-
-            this.sqlCommandFactory = sqlCommandFactory;
-            this.mappings = mappings;
-            keyAllocator = new KeyAllocator(this, keyBlockSize);
-
-            this.jsonSettings = jsonSettings;
-            this.relatedDocumentStore = relatedDocumentStore;
-            this.objectInitialisationOptions = objectInitialisationOptions;
+            Configuration = configuration;
+            registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
+            keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize));
         }
 
         public string ConnectionString => registry.Value.ConnectionString;
         public int MaxPoolSize => registry.Value.MaxPoolSize;
 
         public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
-        public DocumentMap GetMappingFor(Type type) => mappings.Get(type);
 
-        public DocumentMap GetMappingFor<T>() => mappings.Get(typeof(T));
+        public DocumentMap GetMappingFor(Type type) => Configuration.Mappings.Resolve(type);
+        public DocumentMap GetMappingFor<T>() => Configuration.Mappings.Resolve(typeof(T));
+
+        public RelationalStoreConfiguration Configuration { get; }
 
         public void Reset()
         {
-            keyAllocator.Reset();
+            keyAllocator.Value.Reset();
         }
 
         public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
@@ -144,43 +72,14 @@ namespace Nevermore
             return (IRelationalTransaction)BeginWriteTransaction(isolationLevel, retriableOperation, name);
         }
 
-        ReadRelationalTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
+        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
         {
-            return new ReadRelationalTransaction(registry.Value, retriableOperation, sqlCommandFactory, jsonSettings, mappings, relatedDocumentStore, name, objectInitialisationOptions);
+            return new ReadTransaction(registry.Value, retriableOperation, Configuration, name);
         }
         
-        RelationalTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
+        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, sqlCommandFactory, jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
-        }
-
-        static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)
-        {
-            var builder = new SqlConnectionStringBuilder(connectionString);
-            builder.ApplicationName = applicationName;
-
-            if (forceMars) builder.MultipleActiveResultSets = true;
-
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectTimeout), NevermoreDefaults.DefaultConnectTimeoutSeconds);
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryCount), NevermoreDefaults.DefaultConnectRetryCount);
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryInterval), NevermoreDefaults.DefaultConnectRetryInterval);
-
-            return new RelationalTransactionRegistry(builder);
-        }
-
-        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
-        {
-            var defaultConnectionStringBuilder = new SqlConnectionStringBuilder();
-
-            var property = connectionStringBuilder.GetType().GetRuntimeProperty(propertyName);
-
-            var defaultValue = property.GetValue(defaultConnectionStringBuilder);
-            var currentValue = property.GetValue(connectionStringBuilder);
-
-            if (Equals(defaultValue, currentValue))
-            {
-                property.SetValue(connectionStringBuilder, overrideValue);
-            }
+            return new WriteTransaction(registry.Value, retriableOperation, Configuration, keyAllocator.Value, name);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
 using NUnit.Framework;
 using TestStack.BDDfy;
@@ -255,7 +256,7 @@ namespace Nevermore.IntegrationTests
 
             using (var trn = Store.BeginTransaction())
             {
-                return trn.ExecuteReaderWithProjection(
+                return trn.Stream(
                         $"SELECT * FROM [{DocumentMap.DefaultRelatedDocumentTableName}]",
                         new CommandParameterValues(),
                         m => m.Read(Callback())

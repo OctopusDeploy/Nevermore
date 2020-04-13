@@ -7,7 +7,7 @@ namespace Nevermore.Serialization
     public abstract class InheritedClassConverter<TDocument, TDiscriminator> : InheritedClassConverterBase<TDocument, TDiscriminator>
         where TDiscriminator : struct
     {
-        protected InheritedClassConverter(RelationalMappings relationalMappings = null) : base(relationalMappings)
+        protected InheritedClassConverter(IDocumentMapRegistry documentMapRegistry = null) : base(documentMapRegistry)
         {
         }
 
@@ -27,7 +27,7 @@ namespace Nevermore.Serialization
 
     public abstract class InheritedClassConverter<TModel> : InheritedClassConverterBase<TModel, string>
     {
-        protected InheritedClassConverter(RelationalMappings relationalMappings = null) : base(relationalMappings)
+        protected InheritedClassConverter(IDocumentMapRegistry documentMapRegistry = null) : base(documentMapRegistry)
         {
         }
 

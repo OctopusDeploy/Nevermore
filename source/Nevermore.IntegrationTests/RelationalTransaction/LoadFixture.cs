@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
 using NUnit.Framework;
 
@@ -12,7 +13,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             base.SetUp();
 
-            Mappings.Install(
+            Mappings.Register(
                 new DocumentMap[]
                 {
                     new ProductSubtotalMap()
@@ -98,7 +99,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Normal", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Type\":0,\"Price\":11.1}");
+                special.JSON.Should().Be("{\"Type\":\"Normal\",\"Price\":11.1}");
             }
         }
 
@@ -130,7 +131,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Special", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Type\":1,\"Price\":11.1}");
+                special.JSON.Should().Be("{\"Type\":\"Special\",\"Price\":11.1}");
             }
         }
 
@@ -304,7 +305,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        void InsertProductAndLineItems(string productName, decimal productPrice, IRelationalTransaction trn, params int[] quantities)
+        void InsertProductAndLineItems(string productName, decimal productPrice, IWriteTransaction trn, params int[] quantities)
         {
             var product = new Product
             {

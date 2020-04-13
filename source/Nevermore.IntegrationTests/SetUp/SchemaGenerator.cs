@@ -4,7 +4,7 @@ using System.Text;
 using Nevermore.Mapping;
 using Nevermore.Util;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.SetUp
 {
     public class SchemaGenerator
     {

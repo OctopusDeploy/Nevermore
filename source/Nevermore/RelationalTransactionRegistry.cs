@@ -16,7 +16,7 @@ namespace Nevermore
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
-        readonly List<ReadRelationalTransaction> transactions = new List<ReadRelationalTransaction>();
+        readonly List<ReadTransaction> transactions = new List<ReadTransaction>();
         bool highNumberAlreadyLoggedAtError;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
@@ -28,7 +28,7 @@ namespace Nevermore
         public string ConnectionString { get; }
         public int MaxPoolSize { get; }
 
-        public void Add(ReadRelationalTransaction trn)
+        public void Add(ReadTransaction trn)
         {
             lock (transactions)
             {
@@ -42,7 +42,7 @@ namespace Nevermore
             }
         }
 
-        public void Remove(ReadRelationalTransaction trn)
+        public void Remove(ReadTransaction trn)
         {
             lock (transactions)
                 transactions.Remove(trn);
@@ -72,7 +72,7 @@ namespace Nevermore
 
         public void WriteCurrentTransactions(StringBuilder sb)
         {
-            ReadRelationalTransaction[] copy;
+            ReadTransaction[] copy;
             lock (transactions)
                 copy = transactions.ToArray();
 

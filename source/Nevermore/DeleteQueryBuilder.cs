@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Nevermore.AST;
 using Nevermore.Mapping;
 using Nevermore.Util;
@@ -11,20 +12,23 @@ namespace Nevermore
     internal class DeleteQueryBuilder<TRecord> : IDeleteQueryBuilder<TRecord> where TRecord : class
     {
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator;
-        readonly Action<Type, Where, CommandParameterValues, TimeSpan?> executeDelete;
+        readonly DataModificationQueryBuilder queryBuilder;
+        readonly IWriteQueryExecutor queryExecutor;
         readonly IEnumerable<IWhereClause> whereClauses;
         readonly CommandParameterValues parameterValues;
 
         public DeleteQueryBuilder(
-            IUniqueParameterNameGenerator uniqueParameterNameGenerator, 
-            Action<Type, Where, CommandParameterValues, TimeSpan?> executeDelete, 
-            IEnumerable<IWhereClause> whereClauses, 
-            CommandParameterValues parameterValues)
+            IUniqueParameterNameGenerator uniqueParameterNameGenerator,
+            DataModificationQueryBuilder queryBuilder,
+            IWriteQueryExecutor queryExecutor,
+            IEnumerable<IWhereClause> whereClauses = null, 
+            CommandParameterValues parameterValues = null)
         {
             this.uniqueParameterNameGenerator = uniqueParameterNameGenerator;
-            this.executeDelete = executeDelete;
-            this.whereClauses = whereClauses;
-            this.parameterValues = parameterValues;
+            this.queryBuilder = queryBuilder;
+            this.queryExecutor = queryExecutor;
+            this.whereClauses = whereClauses ?? new List<IWhereClause>();
+            this.parameterValues = parameterValues ?? new CommandParameterValues();
         }
 
         public IDeleteQueryBuilder<TRecord> Where(string whereClause)
@@ -80,29 +84,40 @@ namespace Nevermore
 
         IDeleteQueryBuilder<TRecord> AddWhereClause(IWhereClause clause)
         {
-            return new DeleteQueryBuilder<TRecord>(uniqueParameterNameGenerator, executeDelete, whereClauses.Concat(new [] {clause}), parameterValues);
+            return new DeleteQueryBuilder<TRecord>(uniqueParameterNameGenerator, queryBuilder, queryExecutor, whereClauses.Concat(new [] {clause}), parameterValues);
         }
 
         public IDeleteQueryBuilder<TRecord> Parameter(Parameter parameter, object value)
         {
             return new DeleteQueryBuilder<TRecord>( 
                 uniqueParameterNameGenerator, 
-                executeDelete, 
+                queryBuilder,
+                queryExecutor, 
                 whereClauses, 
                 new CommandParameterValues(parameterValues) {{parameter.ParameterName, value}});
         }
 
         public IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
-            return new DeleteQueryBuilder<TNewRecord>(uniqueParameterNameGenerator, executeDelete, whereClauses, parameterValues);
+            return new DeleteQueryBuilder<TNewRecord>(uniqueParameterNameGenerator, queryBuilder, queryExecutor, whereClauses, parameterValues);
         }
 
-        public void Delete(TimeSpan? commandTimeout = null)
+        PreparedCommand PrepareDelete(DeleteOptions options)
         {
             var whereClausesList = whereClauses.ToList();
             var where = whereClausesList.Any() ? new Where(new AndClause(whereClausesList)) : new Where();
 
-            executeDelete(typeof(TRecord), where, parameterValues, commandTimeout);
+            return queryBuilder.PrepareDelete(typeof(TRecord), where, parameterValues, options);
+        }
+        
+        public void Delete(DeleteOptions options = null)
+        {
+            queryExecutor.ExecuteNonQuery(PrepareDelete(options));
+        }
+
+        public Task DeleteAsync(DeleteOptions options = null)
+        {
+            return queryExecutor.ExecuteNonQueryAsync(PrepareDelete(options));
         }
     }
 }

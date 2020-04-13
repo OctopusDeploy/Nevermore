@@ -9,6 +9,7 @@ namespace Nevermore
 {
     public interface IRelationalStore
     {
+        RelationalStoreConfiguration Configuration { get; }
         string ConnectionString { get; }
         int MaxPoolSize { get; }
         void WriteCurrentTransactions(StringBuilder sb);

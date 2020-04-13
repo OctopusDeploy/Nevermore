@@ -93,7 +93,8 @@ namespace Nevermore.Mapping
 
         public string TableName { get; protected set; }
         public string IdPrefix { get; protected set; }
-        public bool IsProjection { get; protected set; }
+        public Func<int, string> IdFormat { get; protected set; }
+
         public Type Type { get; protected set; }
         public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
@@ -112,6 +113,7 @@ namespace Nevermore.Mapping
             Type = type;
             TableName = type.Name;
             IdPrefix = TableName + "s";
+            IdFormat = key => $"{IdPrefix}-{key}";
 
             var properties = type.GetTypeInfo().GetProperties();
 

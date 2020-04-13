@@ -2,11 +2,11 @@
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Nevermore
+namespace Nevermore.Util
 {
     internal static class ExceptionExtensions
     {
-        public static Exception UnpackFromContainers(this Exception error)
+        static Exception UnpackFromContainers(this Exception error)
         {
             var aggregateException = error as AggregateException;
             if (aggregateException != null && aggregateException.InnerExceptions.Count == 1)

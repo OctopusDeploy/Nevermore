@@ -12,5 +12,7 @@ namespace Nevermore
 
         public const int DefaultConnectRetryCount = 3;
         public const int DefaultConnectRetryInterval = 10;
+        
+        public const int DefaultKeyBlockSize = 20;
     }
 }

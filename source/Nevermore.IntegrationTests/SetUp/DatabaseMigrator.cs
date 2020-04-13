@@ -3,28 +3,29 @@ using System.Data.SqlClient;
 using System.Reflection;
 using DbUp;
 using DbUp.Engine.Output;
+using Nevermore.Util;
 
-namespace Nevermore.IntegrationTests
+namespace Nevermore.IntegrationTests.SetUp
 {
     public class DatabaseMigrator
     {
-        private readonly IUpgradeLog _log;
+        readonly IUpgradeLog log;
 
         public DatabaseMigrator(IUpgradeLog log = null)
         {
-            _log = log ?? new ConsoleUpgradeLog();
+            this.log = log ?? new ConsoleUpgradeLog();
         }
 
-        public void Migrate(IRelationalStore store)
+        public void Migrate(string connectionString)
         {
             var upgrader =
                 DeployChanges.To
-                    .SqlDatabase(store.ConnectionString)
+                    .SqlDatabase(connectionString)
                     .WithScriptsAndCodeEmbeddedInAssembly(typeof(RelationalStore).GetTypeInfo().Assembly)
                     .WithScriptsAndCodeEmbeddedInAssembly(typeof(IntegrationTestDatabase).GetTypeInfo().Assembly)
                     .LogScriptOutput()
-                    .WithVariable("databaseName", new SqlConnectionStringBuilder(store.ConnectionString).InitialCatalog)
-                    .LogTo(_log)
+                    .WithVariable("databaseName", new SqlConnectionStringBuilder(connectionString).InitialCatalog)
+                    .LogTo(log)
                     .Build();
 
             var result = upgrader.PerformUpgrade();

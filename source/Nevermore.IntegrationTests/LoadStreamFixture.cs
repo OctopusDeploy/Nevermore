@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
@@ -12,7 +13,7 @@ namespace Nevermore.IntegrationTests
         [Test, Ignore("For performance")]
         public void LoadManyPerformanceTest()
         {
-            using (var creator = Store.BeginTransaction())
+            using (var creator = Store.BeginWriteTransaction())
             {
                 for (var i = 0; i < 30000; i++)
                 {
@@ -22,7 +23,7 @@ namespace Nevermore.IntegrationTests
                 creator.Commit();
             }
 
-            using (var reader = Store.BeginTransaction())
+            using (var reader = Store.BeginReadTransaction())
             {
                 var all = reader.Query<Product>().ToList().Select(p => p.Id).OrderByDescending(p => Guid.NewGuid()).ToList();
 
@@ -36,12 +37,12 @@ namespace Nevermore.IntegrationTests
             }
         }
 
-        static void DoLoad(IRelationalTransaction transaction, List<string> ids)
+        static void DoLoad(IReadQueryExecutor transaction, List<string> ids)
         {
             var watch = Stopwatch.StartNew();
             var products = transaction.Load<Product>(ids);
-            Assert.That(products.Length, Is.EqualTo(ids.Count));
-            Console.WriteLine($"Loaded {products.Length} products in {watch.ElapsedMilliseconds}ms");
+            Assert.That(products.Count, Is.EqualTo(ids.Count));
+            Console.WriteLine($"Loaded {products.Count} products in {watch.ElapsedMilliseconds}ms");
         }
     }
 }

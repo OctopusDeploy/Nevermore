@@ -11,17 +11,11 @@ namespace Nevermore.Transient
     /// </summary>
     public class RetryManager
     {
-        static RetryManager _defaultRetryManager;
-
-        readonly IDictionary<string, RetryStrategy> _retryStrategies;
-
-        readonly IDictionary<string, string> _defaultRetryStrategyNamesMap;
-
-        readonly IDictionary<string, RetryStrategy> _defaultRetryStrategiesMap;
-
-        string _defaultRetryStrategyName;
-
-        RetryStrategy _defaultStrategy;
+        static RetryManager defaultRetryManager;
+        readonly IDictionary<string, RetryStrategy> retryStrategies;
+        readonly IDictionary<string, RetryStrategy> defaultRetryStrategiesMap;
+        string defaultRetryStrategyName;
+        RetryStrategy defaultStrategy;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Octopus.Shared.TransientFaultHandling.RetryManager" /> class.
@@ -48,23 +42,23 @@ namespace Nevermore.Transient
         /// <param name="defaultRetryStrategyNamesMap">The names of the default strategies for different technologies.</param>
         public RetryManager(IEnumerable<RetryStrategy> retryStrategies, string defaultRetryStrategyName, IDictionary<string, string> defaultRetryStrategyNamesMap)
         {
-            _retryStrategies = retryStrategies.ToDictionary((RetryStrategy p) => p.Name);
-            _defaultRetryStrategyNamesMap = defaultRetryStrategyNamesMap;
+            this.retryStrategies = retryStrategies.ToDictionary((RetryStrategy p) => p.Name);
+            var defaultRetryStrategyNamesMap1 = defaultRetryStrategyNamesMap;
             DefaultRetryStrategyName = defaultRetryStrategyName;
-            _defaultRetryStrategiesMap = new Dictionary<string, RetryStrategy>();
-            if (_defaultRetryStrategyNamesMap != null)
+            defaultRetryStrategiesMap = new Dictionary<string, RetryStrategy>();
+            if (defaultRetryStrategyNamesMap1 != null)
             {
-                using (var enumerator = _defaultRetryStrategyNamesMap.Where((KeyValuePair<string, string> x) => !string.IsNullOrWhiteSpace(x.Value)).GetEnumerator())
+                using (var enumerator = defaultRetryStrategyNamesMap1.Where((KeyValuePair<string, string> x) => !string.IsNullOrWhiteSpace(x.Value)).GetEnumerator())
                 {
                     while (enumerator.MoveNext())
                     {
                         var current = enumerator.Current;
                         RetryStrategy retryStrategy;
-                        if (!_retryStrategies.TryGetValue(current.Value, out retryStrategy))
+                        if (!this.retryStrategies.TryGetValue(current.Value, out retryStrategy))
                         {
                             throw new ArgumentOutOfRangeException("defaultRetryStrategyNamesMap", string.Format(CultureInfo.CurrentCulture, "Default retry mapping strategy not found {0} {1}", current.Key, current.Value));
                         }
-                        _defaultRetryStrategiesMap.Add(current.Key, retryStrategy);
+                        defaultRetryStrategiesMap.Add(current.Key, retryStrategy);
                     }
                 }
             }
@@ -78,10 +72,9 @@ namespace Nevermore.Transient
         {
             get
             {
-                var defaultRetryManager = _defaultRetryManager;
                 if (defaultRetryManager == null)
                 {
-                    throw new InvalidOperationException("Retry manager not set");
+                    TransientFaultHandling.InitializeRetryManager();
                 }
                 return defaultRetryManager;
             }
@@ -92,19 +85,19 @@ namespace Nevermore.Transient
         /// </summary>
         public string DefaultRetryStrategyName
         {
-            get { return _defaultRetryStrategyName; }
+            get { return defaultRetryStrategyName; }
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    _defaultRetryStrategyName = null;
+                    defaultRetryStrategyName = null;
                     return;
                 }
                 RetryStrategy defaultStrategy;
-                if (_retryStrategies.TryGetValue(value, out defaultStrategy))
+                if (retryStrategies.TryGetValue(value, out defaultStrategy))
                 {
-                    _defaultRetryStrategyName = value;
-                    _defaultStrategy = defaultStrategy;
+                    defaultRetryStrategyName = value;
+                    this.defaultStrategy = defaultStrategy;
                     return;
                 }
                 throw new ArgumentOutOfRangeException("value", string.Format(CultureInfo.CurrentCulture, "Retry strategy not found: {0}", value));
@@ -119,11 +112,11 @@ namespace Nevermore.Transient
         /// <exception cref="T:System.InvalidOperationException">The singleton is already set and <paramref name="throwIfSet" /> is true.</exception>
         public static void SetDefault(RetryManager retryManager, bool throwIfSet = true)
         {
-            if (_defaultRetryManager != null && throwIfSet && retryManager != _defaultRetryManager)
+            if (defaultRetryManager != null && throwIfSet && retryManager != defaultRetryManager)
             {
                 throw new InvalidOperationException("Retry manager already set");
             }
-            _defaultRetryManager = retryManager;
+            defaultRetryManager = retryManager;
         }
 
         /// <summary>
@@ -153,7 +146,7 @@ namespace Nevermore.Transient
         /// <returns>The retry strategy that matches the default strategy.</returns>
         public virtual RetryStrategy GetRetryStrategy()
         {
-            return _defaultStrategy;
+            return defaultStrategy;
         }
 
         /// <summary>
@@ -165,7 +158,7 @@ namespace Nevermore.Transient
         {
             Guard.ArgumentNotNullOrEmpty(retryStrategyName, "retryStrategyName");
             RetryStrategy result;
-            if (!_retryStrategies.TryGetValue(retryStrategyName, out result))
+            if (!retryStrategies.TryGetValue(retryStrategyName, out result))
             {
                 throw new ArgumentOutOfRangeException(string.Format(CultureInfo.CurrentCulture, "Retry strategy not found: {0}", retryStrategyName));
             }
@@ -181,9 +174,9 @@ namespace Nevermore.Transient
         {
             Guard.ArgumentNotNullOrEmpty(technology, "techonology");
             RetryStrategy defaultStrategy;
-            if (!_defaultRetryStrategiesMap.TryGetValue(technology, out defaultStrategy))
+            if (!defaultRetryStrategiesMap.TryGetValue(technology, out defaultStrategy))
             {
-                defaultStrategy = _defaultStrategy;
+                defaultStrategy = this.defaultStrategy;
             }
             if (defaultStrategy == null)
             {

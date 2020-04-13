@@ -6,6 +6,7 @@ using Nevermore.AST;
 using Nevermore.Contracts;
 using NSubstitute;
 using NUnit.Framework;
+// ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -13,7 +14,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
     {
         ITableAliasGenerator tableAliasGenerator;
         IUniqueParameterNameGenerator uniqueParameterNameGenerator;
-        readonly IRelationalTransaction transaction = Substitute.For<IRelationalTransaction>();
+        readonly IReadTransaction transaction = Substitute.For<IReadTransaction>();
 
         [SetUp]
         public void SetUp()
@@ -228,7 +229,7 @@ WHERE ([Price] > 5)";
         public void ShouldGeneratePaginate()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
             CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5")
                 .OrderBy("Foo")
@@ -242,7 +243,7 @@ WHERE ([Price] > 5)";
         public void ShouldGeneratePaginateForJoin()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
@@ -258,7 +259,7 @@ WHERE ([Price] > 5)";
         public void ShouldGenerateTop()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
             CreateQueryBuilder<IDocument>("Orders")
                 .NoLock()
                 .Where("[Price] > 5")
@@ -278,7 +279,7 @@ ORDER BY [Id]";
         public void ShouldGenerateTopForJoin()
         {
             string actual = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
             var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
                 .Where("[Price] > 5");
@@ -294,7 +295,7 @@ ORDER BY [Id]";
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
-            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
             var environment = new
@@ -321,7 +322,7 @@ ORDER BY [Id]";
         public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
-            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             CreateQueryBuilder<IDocument>("Project")
                 .LikePipedParameter("Name", "Foo|Bar|Baz")
@@ -922,14 +923,14 @@ FROM dbo.[TodoItem]
 ORDER BY [Title]";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
-            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
+            transaction.Stream<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(new[] { todoItem });
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
                 .OrderBy("Title")
                 .FirstOrDefault();
 
-            transaction.Received(1).ExecuteReader<TodoItem>(
+            transaction.Received(1).Stream<TodoItem>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
@@ -945,14 +946,14 @@ FROM dbo.[TodoItem]
 ORDER BY [Title] DESC";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
-            transaction.ExecuteReader<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
+            transaction.Stream<TodoItem>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(new[] { todoItem });
 
             var result = CreateQueryBuilder<TodoItem>("TodoItem")
                 .OrderByDescending("Title")
                 .FirstOrDefault();
 
-            transaction.Received(1).ExecuteReader<TodoItem>(
+            transaction.Received(1).Stream<TodoItem>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => cp.Count == 0));
 
@@ -1199,7 +1200,7 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParameterValuesFromUnion()
         {
             CommandParameterValues parameterValues = null;
-            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             var account = CreateQueryBuilder<IDocument>("Account")
                 .Where("Name", UnarySqlOperand.Equal, "ABC")
@@ -1469,7 +1470,7 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParameterValuesFromSubqueriesInJoin()
         {
             CommandParameterValues parameterValues = null;
-            transaction.ExecuteReader<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             var query = CreateQueryBuilder<IDocument>("Orders")
                 .InnerJoin(CreateQueryBuilder<IDocument>("Customers")
@@ -1501,7 +1502,7 @@ ORDER BY [Title] DESC";
         {
             CommandParameterValues parameterValues = null;
             string query = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(q => query = q), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<IDocument>(Arg.Do<string>(q => query = q), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             CreateQueryBuilder<IDocument>("Orders")
                 .Where("Id", UnarySqlOperand.Equal, "1")
@@ -1529,7 +1530,7 @@ ORDER BY [RowNum]");
         {
             string actual = null;
             CommandParameterValues parameters = null;
-            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+            transaction.Stream<TodoItem>(Arg.Do<string>(s => actual = s),
                 Arg.Do<CommandParameterValues>(p => parameters = p));
 
             var earlyDate = DateTime.Now;
@@ -1558,7 +1559,7 @@ ORDER BY [Id]";
         {
             string actual = null;
             CommandParameterValues parameters = null;
-            transaction.ExecuteReader<TodoItem>(Arg.Do<string>(s => actual = s),
+            transaction.Stream<TodoItem>(Arg.Do<string>(s => actual = s),
                 Arg.Do<CommandParameterValues>(p => parameters = p));
 
             var createdDate = DateTime.Now;
@@ -1619,7 +1620,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         {
             string actual = null;
             CommandParameterValues parameters = null;
-            transaction.ExecuteReader<IDocument>(Arg.Do<string>(s => actual = s),
+            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s),
                 Arg.Do<CommandParameterValues>(p => parameters = p));
 
             CreateQueryBuilder<IDocument>("Customers")

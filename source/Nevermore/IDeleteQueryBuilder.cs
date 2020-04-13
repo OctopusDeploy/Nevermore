@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Nevermore
 {
@@ -14,6 +15,7 @@ namespace Nevermore
 
         IDeleteQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class;
 
-        void Delete(TimeSpan? commandTimeout = null);
+        void Delete(DeleteOptions options = null);
+        Task DeleteAsync(DeleteOptions options = null);
     }
 }

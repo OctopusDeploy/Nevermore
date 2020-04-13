@@ -3,6 +3,7 @@ using System.Data;
 
 namespace Nevermore.Mapping
 {
+    // TODO: As far as I can tell, neither Octofront nor Octopus Deploy use this!
     public abstract class InstanceTypeResolver
     {
         public abstract Type GetTypeFromInstance(object instance);
