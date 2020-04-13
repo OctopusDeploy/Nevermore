@@ -10,20 +10,4 @@ namespace Nevermore.IntegrationTests.Model
         public string Description { get; set; }
         public Endpoint Endpoint { get; set; }
     }
-
-    public abstract class Endpoint
-    {
-        public string Name { get; set; }
-
-        public abstract string Type { get; }
-    }
-
-    public class PassiveTentacleEndpoint : Endpoint
-    {
-        public override string Type => "PassiveTentacle";
-    }
-    public class ActiveTentacleEndpoint : Endpoint
-    {
-        public override string Type => "ActiveTentacle";
-    }
 }

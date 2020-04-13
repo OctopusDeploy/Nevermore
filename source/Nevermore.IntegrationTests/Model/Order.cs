@@ -20,6 +20,7 @@ namespace Nevermore.IntegrationTests.Model
         
         public string Id { get; set; }
         public string Name { get; set; }
+        public decimal Price { get; set; }
 
         public IEnumerable<(string, Type)> RelatedDocuments { get; }
     }

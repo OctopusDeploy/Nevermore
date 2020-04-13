@@ -12,16 +12,4 @@ namespace Nevermore.IntegrationTests.Model
 
         public string Description { get; set; }
     }
-
-    public class BrandA : Brand
-    {
-        public const string BrandType = "BrandA";
-        public override string Type => BrandType;
-    }
-
-    public class BrandB : Brand
-    {
-        public const string BrandType = "BrandB";
-        public override string Type => BrandType;
-    }
 }

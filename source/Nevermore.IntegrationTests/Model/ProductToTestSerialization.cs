@@ -2,12 +2,12 @@ using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Product : IDocument
+    public class ProductToTestSerialization : IDocument
     {
         public string Id { get; set; }
         public string Name { get; set; }
-        public decimal Price { get; set; }
-
-        public ProductType Type { get; set; } = ProductType.Normal;
+     
+        public string Type { get; set; }
+        public string JSON { get; set; }
     }
 }

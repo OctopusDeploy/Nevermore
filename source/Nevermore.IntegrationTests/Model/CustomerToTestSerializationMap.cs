@@ -1,18 +1,18 @@
-using System.Data;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class CustomerMap : DocumentMap<Customer>
+    public class CustomerToTestSerializationMap : DocumentMap<CustomerToTestSerialization>
     {
-        public CustomerMap()
+        public CustomerToTestSerializationMap()
         {
+            TableName = "Customer";
+
             Column(m => m.FirstName).WithMaxLength(20);
             Column(m => m.LastName);
             Column(m => m.Nickname).Nullable();
             Column(m => m.Roles);
-            Column(m => m.RowVersion).ReadOnly();
-            Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
+            Column(m => m.JSON);
         }
     }
 }
