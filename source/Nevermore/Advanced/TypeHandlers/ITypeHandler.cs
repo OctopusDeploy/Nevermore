@@ -1,6 +1,5 @@
 using System;
 using System.Data.Common;
-using Nevermore.Contracts;
 
 namespace Nevermore.Advanced.TypeHandlers
 {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Assent;
 using FluentAssertions;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using Nevermore.Querying.AST;
 using NSubstitute;
 using NUnit.Framework;
@@ -32,7 +31,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Test]
         public void ShouldGenerateSelect()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5")
                 .OrderBy("Name")
                 .DebugViewRawQuery();
@@ -48,7 +47,7 @@ ORDER BY [Name]";
         [Test]
         public void ShouldGenerateSelectNoOrder()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5")
                 .DebugViewRawQuery();
 
@@ -63,7 +62,7 @@ ORDER BY [Id]";
         [Test]
         public void ShouldGenerateSelectForQueryBuilder()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
              .Where("[Price] > 5")
              .DebugViewRawQuery();
 
@@ -78,9 +77,9 @@ ORDER BY [Id]";
         [Test]
         public void ShouldGenerateSelectForJoin()
         {
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5");
-            var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
 
             var actual = leftQueryBuilder
                 .InnerJoin(rightQueryBuilder)
@@ -94,9 +93,9 @@ ORDER BY [Id]";
         public void ShouldGenerateSelectForMultipleJoins()
         {
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders");
-            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers");
-            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts");
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders");
+            var join1QueryBuilder = CreateQueryBuilder<object>("Customers");
+            var join2QueryBuilder = CreateQueryBuilder<object>("Accounts");
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
@@ -110,9 +109,9 @@ ORDER BY [Id]";
         public void ShouldGenerateSelectForChainedJoins()
         {
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders").Alias("Orders");
-            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers").Alias("Customers");
-            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts").Alias("Accounts");
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders").Alias("Orders");
+            var join1QueryBuilder = CreateQueryBuilder<object>("Customers").Alias("Customers");
+            var join2QueryBuilder = CreateQueryBuilder<object>("Accounts").Alias("Accounts");
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
@@ -128,9 +127,9 @@ ORDER BY [Id]";
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders").Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
-            var join1QueryBuilder = CreateQueryBuilder<IDocument>("Customers").Where("Name", UnarySqlOperand.Equal, "Abc");
-            var join2QueryBuilder = CreateQueryBuilder<IDocument>("Accounts").Where("Name", UnarySqlOperand.Equal, "CBA");
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders").Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
+            var join1QueryBuilder = CreateQueryBuilder<object>("Customers").Where("Name", UnarySqlOperand.Equal, "Abc");
+            var join2QueryBuilder = CreateQueryBuilder<object>("Accounts").Where("Name", UnarySqlOperand.Equal, "CBA");
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder.Subquery()).On("CustomerId", JoinOperand.Equal, "Id")
@@ -143,12 +142,12 @@ ORDER BY [Id]";
         [Test]
         public void ShouldGenerateSelectForComplicatedSubqueryJoin()
         {
-            var orders = CreateQueryBuilder<IDocument>("Orders");
-            var customers = CreateQueryBuilder<IDocument>("Customers")
+            var orders = CreateQueryBuilder<object>("Orders");
+            var customers = CreateQueryBuilder<object>("Customers")
                 .Where("IsActive = 1")
                 .OrderBy("Created");
 
-            var accounts = CreateQueryBuilder<IDocument>("Accounts").Hint("WITH (UPDLOCK)");
+            var accounts = CreateQueryBuilder<object>("Accounts").Hint("WITH (UPDLOCK)");
 
             var actual = orders.InnerJoin(customers.Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id")
@@ -165,7 +164,7 @@ ORDER BY [Id]";
             string actual = null;
             transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<object>("Orders")
                 .OrderBy("Created")
                 .Count();
 
@@ -181,7 +180,7 @@ FROM dbo.[Orders]";
             string actual = null;
             transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<object>("Orders")
                 .NoLock()
                 .Where("[Price] > 5")
                 .Count();
@@ -199,7 +198,7 @@ WHERE ([Price] > 5)";
             string actual = null;
             transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<object>("Orders")
                 .NoLock()
                 .Where("[Price] > 5")
                 .Count();
@@ -217,9 +216,9 @@ WHERE ([Price] > 5)";
             string actual = null;
             transaction.ExecuteScalar<int>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5");
-            var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
             leftQueryBuilder.InnerJoin(rightQueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
                 .Count();
 
@@ -230,8 +229,8 @@ WHERE ([Price] > 5)";
         public void ShouldGeneratePaginate()
         {
             string actual = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
-            CreateQueryBuilder<IDocument>("Orders")
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5")
                 .OrderBy("Foo")
                 .ToList(10, 20);
@@ -244,11 +243,11 @@ WHERE ([Price] > 5)";
         public void ShouldGeneratePaginateForJoin()
         {
             string actual = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5");
-            var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
             leftQueryBuilder
                 .InnerJoin(rightQueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
                 .ToList(10, 20);
@@ -260,8 +259,8 @@ WHERE ([Price] > 5)";
         public void ShouldGenerateTop()
         {
             string actual = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
-            CreateQueryBuilder<IDocument>("Orders")
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
                 .NoLock()
                 .Where("[Price] > 5")
                 .OrderBy("Id")
@@ -280,11 +279,11 @@ ORDER BY [Id]";
         public void ShouldGenerateTopForJoin()
         {
             string actual = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            var leftQueryBuilder = CreateQueryBuilder<IDocument>("Orders")
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5");
-            var rightQueryBuilder = CreateQueryBuilder<IDocument>("Customers");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
 
             leftQueryBuilder.InnerJoin(rightQueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
                 .Take(100);
@@ -296,14 +295,14 @@ ORDER BY [Id]";
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
-            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<object>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
             // We need to make sure parameters like opening square brackets are correctly escaped for LIKE pattern matching in SQL.
             var environment = new
             {
                 Id = "Environments-1"
             };
-            CreateQueryBuilder<IDocument>("Project")
+            CreateQueryBuilder<object>("Project")
                 .Where("[JSON] LIKE @jsonPatternSquareBracket")
                 .LikeParameter("jsonPatternSquareBracket", $"\"AutoDeployReleaseOverrides\":[{{\"EnvironmentId\":\"{environment.Id}\"")
                 .Where("[JSON] NOT LIKE @jsonPatternPercentage")
@@ -323,9 +322,9 @@ ORDER BY [Id]";
         public void ShouldGenerateExpectedPipedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;
-            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<object>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
-            CreateQueryBuilder<IDocument>("Project")
+            CreateQueryBuilder<object>("Project")
                 .LikePipedParameter("Name", "Foo|Bar|Baz")
                 .ToList();
 
@@ -755,7 +754,7 @@ FROM dbo.[Project]
 WHERE ([State] IN (@state0_0, @state1_1))
 ORDER BY [Id]";
 
-            var queryBuilder = CreateQueryBuilder<IDocument>("Project")
+            var queryBuilder = CreateQueryBuilder<object>("Project")
                 .Where("State", ArraySqlOperand.In, new[] { State.Queued, State.Running });
 
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
@@ -773,7 +772,7 @@ ORDER BY [Id]";
 FROM dbo.[Project]
 WHERE ([State] IN (@state0_0, @state1_1))
 ORDER BY [Id]";
-            var queryBuilder = CreateQueryBuilder<IDocument>("Project")
+            var queryBuilder = CreateQueryBuilder<object>("Project")
                 .Where("State", ArraySqlOperand.In, matches);
 
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
@@ -788,7 +787,7 @@ WHERE (0 = 1)
 ORDER BY [Id]";
 
             var queryBuilder =
-                CreateQueryBuilder<IDocument>("Project").Where("State", ArraySqlOperand.In, new List<State>());
+                CreateQueryBuilder<object>("Project").Where("State", ArraySqlOperand.In, new List<State>());
 
             queryBuilder.DebugViewRawQuery().Should().Be(expextedSql);
         }
@@ -965,7 +964,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateAliasForTable()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Alias("ORD")
                 .DebugViewRawQuery();
 
@@ -975,7 +974,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateAliasForSubquery()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Subquery()
                 .Alias("ORD")
                 .DebugViewRawQuery();
@@ -986,11 +985,11 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateAliasesForSourcesInJoin()
         {
-            var accounts = CreateQueryBuilder<IDocument>("Accounts")
+            var accounts = CreateQueryBuilder<object>("Accounts")
                 .Subquery()
                 .Alias("ACC");
 
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Alias("ORD")
                 .InnerJoin(accounts)
                 .On("AccountId", JoinOperand.Equal, "Id")
@@ -1004,7 +1003,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateColumnSelection()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Column("Foo")
                 .Column("Bar")
                 .Column("Baz")
@@ -1016,7 +1015,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateColumnSelectionWithAliases()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Column("Foo", "F")
                 .Column("Bar", "B")
                 .Column("Baz", "B2")
@@ -1029,7 +1028,7 @@ ORDER BY [Title] DESC";
         public void ShouldGenerateColumnSelectionWithTableAlias()
         {
             const string ordersTableAlias = "ORD";
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Alias(ordersTableAlias)
                 .Column("Foo", "F", ordersTableAlias)
                 .Column("Bar", "B", ordersTableAlias)
@@ -1042,11 +1041,11 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateColumnSelectionForJoin()
         {
-            var accounts = CreateQueryBuilder<IDocument>("Accounts")
+            var accounts = CreateQueryBuilder<object>("Accounts")
                 .Subquery()
                 .Alias("ACC");
 
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Alias("ORD")
                 .InnerJoin(accounts)
                 .On("AccountId", JoinOperand.Equal, "Id")
@@ -1062,7 +1061,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateRowNumber()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .AddRowNumberColumn("ROWNUM")
                 .OrderBy("ROWNUM")
                 .DebugViewRawQuery();
@@ -1073,7 +1072,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void Replace_Release_LatestByProjectChannel()
         {
-            var actual = CreateQueryBuilder<IDocument>("Release")
+            var actual = CreateQueryBuilder<object>("Release")
                 .AllColumns()
                 .OrderByDescending("Assembled")
                 .AddRowNumberColumn("RowNum", "SpaceId", "ProjectId", "ChannelId")
@@ -1094,10 +1093,10 @@ ORDER BY [Title] DESC";
             const string eventOccurred = "occurred";
             const string eventCategory = "category";
 
-            var eventRelatedDocuments = CreateQueryBuilder<IDocument>("EventRelatedDocument").Alias(eventRelatedDocumentAlias);
-            var eventJoin = CreateQueryBuilder<IDocument>("Event").Alias(eventAlias);
+            var eventRelatedDocuments = CreateQueryBuilder<object>("EventRelatedDocument").Alias(eventRelatedDocumentAlias);
+            var eventJoin = CreateQueryBuilder<object>("Event").Alias(eventAlias);
 
-            var actual = CreateQueryBuilder<IDocument>("Deployment")
+            var actual = CreateQueryBuilder<object>("Deployment")
                 .Alias("deployments")
                 
                 .InnerJoin(eventRelatedDocuments)
@@ -1121,7 +1120,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateRowNumberWithOrderBy()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .OrderBy("Foo")
                 .AddRowNumberColumn("ROWNUM")
                 .DebugViewRawQuery();
@@ -1132,7 +1131,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateRowNumberWithPartitionBy()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .OrderBy("Foo")
                 .AddRowNumberColumn("ROWNUM", "Region", "Area")
                 .DebugViewRawQuery();
@@ -1143,8 +1142,8 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateRowNumberWithPartitionByInJoin()
         {
-            var account = CreateQueryBuilder<IDocument>("Account");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var account = CreateQueryBuilder<object>("Account");
+            var actual = CreateQueryBuilder<object>("Orders")
                 .InnerJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .OrderBy("Foo")
@@ -1157,9 +1156,9 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateRowNumberWithPartitionByInJoinWithCustomAliases()
         {
-            var account = CreateQueryBuilder<IDocument>("Account")
+            var account = CreateQueryBuilder<object>("Account")
                 .Alias("ACC");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Alias("ORD")
                 .InnerJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
@@ -1173,9 +1172,9 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateUnion()
         {
-            var account = CreateQueryBuilder<IDocument>("Account")
+            var account = CreateQueryBuilder<object>("Account")
                 .Column("Id", "Id");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Column("Id", "Id")
                 .Union(account)
                 .DebugViewRawQuery();
@@ -1186,11 +1185,11 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateMultipleUnionsWithoutNesting()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .Column("Id", "Id")
-                .Union(CreateQueryBuilder<IDocument>("Account")
+                .Union(CreateQueryBuilder<object>("Account")
                     .Column("Id", "Id"))
-                .Union(CreateQueryBuilder<IDocument>("Customers")
+                .Union(CreateQueryBuilder<object>("Customers")
                     .Column("Id", "Id"))
                 .DebugViewRawQuery();
 
@@ -1201,12 +1200,12 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParameterValuesFromUnion()
         {
             CommandParameterValues parameterValues = null;
-            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<object>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
-            var account = CreateQueryBuilder<IDocument>("Account")
+            var account = CreateQueryBuilder<object>("Account")
                 .Where("Name", UnarySqlOperand.Equal, "ABC")
                 .Column("Id", "Id");
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<object>("Orders")
                 .Column("Id", "Id")
                 .Union(account)
                 .ToList();
@@ -1218,11 +1217,11 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParametersAndDefaultsFromUnion()
         {
             var parameter = new Parameter("Name", new NVarCharMax());
-            var account = CreateQueryBuilder<IDocument>("Account")
+            var account = CreateQueryBuilder<object>("Account")
                 .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
                 .ParameterDefault("ABC")
                 .Column("Id", "Id");
-            var query = CreateQueryBuilder<IDocument>("Orders")
+            var query = CreateQueryBuilder<object>("Orders")
                 .Column("Id", "Id")
                 .Union(account);
 
@@ -1232,7 +1231,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateCalculatedColumn()
         {
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var actual = CreateQueryBuilder<object>("Orders")
                 .CalculatedColumn("'CONSTANT'", "MyConstant")
                 .DebugViewRawQuery();
 
@@ -1242,8 +1241,8 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateLeftHashJoin()
         {
-            var account = CreateQueryBuilder<IDocument>("Account");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var account = CreateQueryBuilder<object>("Account");
+            var actual = CreateQueryBuilder<object>("Orders")
                 .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
@@ -1254,9 +1253,9 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateWithMultipleLeftHashJoinsSubQueryWithPrameter()
         {
-            var account = CreateQueryBuilder<IDocument>("Account").Where("Name", UnarySqlOperand.Equal, "Octopus 1");
-            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus 2");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var account = CreateQueryBuilder<object>("Account").Where("Name", UnarySqlOperand.Equal, "Octopus 1");
+            var company = CreateQueryBuilder<object>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus 2");
+            var actual = CreateQueryBuilder<object>("Orders")
                 .LeftHashJoin(account.Subquery())
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .LeftHashJoin(company.Subquery())
@@ -1269,9 +1268,9 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateWithMultipleLeftHashJoinsWithTableAndSubQueryWithPrameter()
         {
-            var account = CreateQueryBuilder<IDocument>("Account");
-            var company = CreateQueryBuilder<IDocument>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
+            var account = CreateQueryBuilder<object>("Account");
+            var company = CreateQueryBuilder<object>("Company").Where("Name", UnarySqlOperand.Equal, "Octopus");
+            var actual = CreateQueryBuilder<object>("Orders")
                 .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
                 .LeftHashJoin(company.Subquery())
@@ -1286,9 +1285,9 @@ ORDER BY [Title] DESC";
         {
             var customers = CreateQueryBuilder<Customer>("Customers")
                 .Where(c => c.Name.StartsWith("Bob"));
-            var account = CreateQueryBuilder<IDocument>("Account");
-            var actual = CreateQueryBuilder<IDocument>("Orders")
-                .InnerJoin(customers.AsType<IDocument>().Subquery())
+            var account = CreateQueryBuilder<object>("Account");
+            var actual = CreateQueryBuilder<object>("Orders")
+                .InnerJoin(customers.AsType<object>().Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id")
                 .LeftHashJoin(account)
                 .On("AccountId", JoinOperand.Equal, "Id")
@@ -1310,9 +1309,9 @@ ORDER BY [Title] DESC";
             var dashboard = CurrentDeployments()
                 .Union(PreviousDeployments())
                 .Alias("d")
-                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("ServerTask").Alias(taskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
-                .InnerJoin(CreateQueryBuilder<IDocument>("Release").Alias(releaseTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("Release").Alias(releaseTableAlias))
                 .On("ReleaseId", JoinOperand.Equal, "Id")
                 .Column("Id", "Id")
                 .Column("Created", "Created")
@@ -1336,14 +1335,14 @@ ORDER BY [Title] DESC";
             this.Assent(actual);
         }
 
-        IQueryBuilder<IDocument> CurrentDeployments()
+        IQueryBuilder<object> CurrentDeployments()
         {
             const string taskTableAlias = "t";
             const string deploymentTableAlias = "d";
 
-            return CreateQueryBuilder<IDocument>("Deployment")
+            return CreateQueryBuilder<object>("Deployment")
                 .Alias(deploymentTableAlias)
-                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("ServerTask").Alias(taskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
                 .CalculatedColumn("'C'", "CurrentOrPrevious")
                 .Column("Id", "Id")
@@ -1358,14 +1357,14 @@ ORDER BY [Title] DESC";
                 .Where($"NOT (({taskTableAlias}.State = \'Canceled\' OR {taskTableAlias}.State = \'Cancelling\') AND {taskTableAlias}.StartTime IS NULL)");
         }
         
-        IQueryBuilder<IDocument> PreviousDeployments()
+        IQueryBuilder<object> PreviousDeployments()
         {
             const string deploymentTableAlias = "d";
             const string taskTableAlias = "t";
             const string l = "l";
-            return CreateQueryBuilder<IDocument>("Deployment")
+            return CreateQueryBuilder<object>("Deployment")
                 .Alias(deploymentTableAlias)
-                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(taskTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("ServerTask").Alias(taskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
                 .LeftHashJoin(LQuery().Subquery().Alias(l))
                 .On("Id", JoinOperand.Equal, "Id")
@@ -1384,7 +1383,7 @@ ORDER BY [Title] DESC";
                 .Where($"{l}.Id is null");
         }
 
-        IQueryBuilder<IDocument> LQuery()
+        IQueryBuilder<object> LQuery()
         {
             return LatestDeployment()
                 .Subquery()
@@ -1393,13 +1392,13 @@ ORDER BY [Title] DESC";
                 .Where("Rank", UnarySqlOperand.Equal, 1);
         } 
         
-        IQueryBuilder<IDocument> LatestDeployment()
+        IQueryBuilder<object> LatestDeployment()
         {
             var deploymentTableAlias = "d";
             var serverTaskTableAlias = "t";
-            return CreateQueryBuilder<IDocument>("Deployment")
+            return CreateQueryBuilder<object>("Deployment")
                 .Alias(deploymentTableAlias)
-                .InnerJoin(CreateQueryBuilder<IDocument>("ServerTask").Alias(serverTaskTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("ServerTask").Alias(serverTaskTableAlias))
                 .On("TaskId", JoinOperand.Equal, "Id")
                 .Column("Id", "Id")
                 .OrderByDescending("Created")
@@ -1412,12 +1411,12 @@ ORDER BY [Title] DESC";
         {
             const string eventTableAlias = "Event";
 
-            var withJoins = CreateQueryBuilder<IDocument>("Deployment")
-                .InnerJoin(CreateQueryBuilder<IDocument>("DeploymentRelatedMachine"))
+            var withJoins = CreateQueryBuilder<object>("Deployment")
+                .InnerJoin(CreateQueryBuilder<object>("DeploymentRelatedMachine"))
                 .On("Id", JoinOperand.Equal, "DeploymentId")
-                .InnerJoin(CreateQueryBuilder<IDocument>("EventRelatedDocument"))
+                .InnerJoin(CreateQueryBuilder<object>("EventRelatedDocument"))
                 .On("Id", JoinOperand.Equal, "RelatedDocumentId")
-                .InnerJoin(CreateQueryBuilder<IDocument>("Event").Alias(eventTableAlias))
+                .InnerJoin(CreateQueryBuilder<object>("Event").Alias(eventTableAlias))
                 .On("Id", JoinOperand.Equal, "EventId")
                 .AllColumns()
                 .OrderByDescending($"[{eventTableAlias}].[Occurred]")
@@ -1436,7 +1435,7 @@ ORDER BY [Title] DESC";
         [Test]
         public void ShouldGenerateFunctionWithParameters()
         {
-            var packagesQuery = CreateQueryBuilder<IDocument>("NuGetPackages")
+            var packagesQuery = CreateQueryBuilder<object>("NuGetPackages")
                 .Where("PackageId = @packageid")
                 .Parameter(new Parameter("packageid", new NVarChar(250)));
 
@@ -1447,7 +1446,7 @@ ORDER BY [Title] DESC";
         public void ShouldGenerateStoredProcWithDefaultValues()
         {
             var packageIdParameter = new Parameter("packageid", new NVarChar(250));
-            var query = CreateQueryBuilder<IDocument>("NuGetPackages")
+            var query = CreateQueryBuilder<object>("NuGetPackages")
                 .Where("(@packageid is '') or (PackageId = @packageid)")
                 .Parameter(packageIdParameter)
                 .ParameterDefault(packageIdParameter, "");
@@ -1459,7 +1458,7 @@ ORDER BY [Title] DESC";
         public void ShouldGenerateFunctionWithDefaultValues()
         {
             var packageIdParameter = new Parameter("packageid", new NVarChar(250));
-            var query = CreateQueryBuilder<IDocument>("NuGetPackages")
+            var query = CreateQueryBuilder<object>("NuGetPackages")
                 .Where("(@packageid is '') or (PackageId = @packageid)")
                 .Parameter(packageIdParameter)
                 .ParameterDefault(packageIdParameter, "");
@@ -1471,10 +1470,10 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParameterValuesFromSubqueriesInJoin()
         {
             CommandParameterValues parameterValues = null;
-            transaction.Stream<IDocument>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<object>(Arg.Any<string>(), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
-            var query = CreateQueryBuilder<IDocument>("Orders")
-                .InnerJoin(CreateQueryBuilder<IDocument>("Customers")
+            var query = CreateQueryBuilder<object>("Orders")
+                .InnerJoin(CreateQueryBuilder<object>("Customers")
                     .Where("Name", UnarySqlOperand.Equal, "Bob")
                     .Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id");
@@ -1488,8 +1487,8 @@ ORDER BY [Title] DESC";
         public void ShouldCollectParametersAndDefaultsFromSubqueriesInJoin()
         {
             var parameter = new Parameter("Name", new NVarCharMax());
-            var query = CreateQueryBuilder<IDocument>("Orders")
-                .InnerJoin(CreateQueryBuilder<IDocument>("Customers")
+            var query = CreateQueryBuilder<object>("Orders")
+                .InnerJoin(CreateQueryBuilder<object>("Customers")
                     .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
                     .ParameterDefault("Bob")
                     .Subquery())
@@ -1503,9 +1502,9 @@ ORDER BY [Title] DESC";
         {
             CommandParameterValues parameterValues = null;
             string query = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(q => query = q), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
+            transaction.Stream<object>(Arg.Do<string>(q => query = q), Arg.Do<CommandParameterValues>(pv => parameterValues = pv));
 
-            CreateQueryBuilder<IDocument>("Orders")
+            CreateQueryBuilder<object>("Orders")
                 .Where("Id", UnarySqlOperand.Equal, "1")
                 .ToList(10, 20);
 
@@ -1567,7 +1566,7 @@ ORDER BY [Id]";
             var joinDate = createdDate - TimeSpan.FromDays(1);
             var sharedFieldName = "Date";
 
-            var orders = CreateQueryBuilder<IDocument>("Orders")
+            var orders = CreateQueryBuilder<object>("Orders")
                 .Where(sharedFieldName, UnarySqlOperand.Equal, createdDate);
 
 
@@ -1603,7 +1602,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
-            CreateQueryBuilder<IDocument>("Todo")
+            CreateQueryBuilder<object>("Todo")
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
@@ -1611,9 +1610,14 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterDefaultsProvided()
         {
-            CreateQueryBuilder<IDocument>("Todo")
+            CreateQueryBuilder<object>("Todo")
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+        }
+
+        public class Customer2
+        {
+            public string Name { get; set; }
         }
 
         [Test]
@@ -1621,10 +1625,10 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         {
             string actual = null;
             CommandParameterValues parameters = null;
-            transaction.Stream<IDocument>(Arg.Do<string>(s => actual = s),
+            transaction.Stream<Customer2>(Arg.Do<string>(s => actual = s),
                 Arg.Do<CommandParameterValues>(p => parameters = p));
 
-            CreateQueryBuilder<IDocument>("Customers")
+            CreateQueryBuilder<Customer2>("Customers")
                 .Where(d => d.Name != "Alice" && d.Name != "Bob")
                 .ToList();
 
@@ -1643,7 +1647,7 @@ ORDER BY [Id]";
         [Test]
         public void ShouldGenerateSubqueryWhenThereAreNoCustomizations()
         {
-            var subquerySql = CreateQueryBuilder<IDocument>("Accounts")
+            var subquerySql = CreateQueryBuilder<object>("Accounts")
                 .Subquery()
                 .GetSelectBuilder()
                 .GenerateSelectWithoutDefaultOrderBy()

@@ -9,7 +9,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Nevermore.Advanced.TypeHandlers;
-using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Newtonsoft.Json;
 
@@ -32,7 +31,7 @@ namespace Nevermore.Advanced.ReaderStrategies
         
         public bool CanRead(Type type)
         {
-            return typeof(IId).IsAssignableFrom(type);
+            return configuration.Mappings.ResolveOptional(type, out _);
         }
 
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()

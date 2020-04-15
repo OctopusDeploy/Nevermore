@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Data;
 using System.Reflection;
-using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public interface IColumnMappingBuilder
-    {
-        IColumnMappingBuilder Nullable();
-        IColumnMappingBuilder MaxLength(int max);
-        IColumnMappingBuilder ReadOnly();
-    }
-    
     public class ColumnMapping : IColumnMappingBuilder
     {
         const int MaxStringLengthByDefault = 200;

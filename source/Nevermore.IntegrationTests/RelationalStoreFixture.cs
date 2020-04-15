@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldGenerateIdsUnlessExplicitlyAssigned()
         {
-            // The K and Id columns allow you to give records an ID, or use an auto-generated, unique ID
+            // The Id columns allow you to give records an ID, or use an auto-generated, unique ID
             using (var transaction = Store.BeginTransaction())
             {
                 var customer1 = new Customer {Id = "Customers-Alice", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
@@ -118,7 +118,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.Stream("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.BonusMaterial as prod_bonusmaterial, prod.JSON as prod_json, prod.Type as prod_type from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
+                var lines = transaction.Stream("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.Type as prod_type, prod.JSON as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")

@@ -1,8 +1,6 @@
-using Nevermore.Contracts;
-
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Product : IDocument
+    public class Product
     {
         public string Id { get; set; }
         public string Name { get; set; }

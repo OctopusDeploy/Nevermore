@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Newtonsoft.Json;
@@ -33,7 +29,7 @@ namespace Nevermore.Util
             this.keyAllocator = keyAllocator;
         }
 
-        public PreparedCommand PrepareInsert(IReadOnlyList<IId> documents, InsertOptions options = null)
+        public PreparedCommand PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
         {
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
@@ -46,7 +42,7 @@ namespace Nevermore.Util
             return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
         }
 
-        public PreparedCommand PrepareUpdate(IId document, UpdateOptions options = null)
+        public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
             
@@ -66,14 +62,14 @@ namespace Nevermore.Util
             return new PreparedCommand(statement, parameters, RetriableOperation.Update, mapping, options.CommandTimeout);
         }
 
-        public PreparedCommand PrepareDelete(IId document, DeleteOptions options = null)
+        public PreparedCommand PrepareDelete(object document, DeleteOptions options = null)
         {
             var mapping = mappings.Resolve(document.GetType());
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             return PrepareDelete(mapping, id, options);
         }
 
-        public PreparedCommand PrepareDelete<TDocument>(string id, DeleteOptions options = null) where TDocument : class, IId
+        public PreparedCommand PrepareDelete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
         {
             var mapping = mappings.Resolve(typeof(TDocument));
             return PrepareDelete(mapping, id, options);
@@ -121,7 +117,7 @@ namespace Nevermore.Util
             return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
         }
 
-        DocumentMap GetMapping(IReadOnlyList<IId> documents)
+        DocumentMap GetMapping(IReadOnlyList<object> documents)
         {
             var allMappings = documents.Select(i => mappings.Resolve(i)).Distinct().ToArray();
             if (allMappings.Length == 0)
@@ -165,7 +161,7 @@ namespace Nevermore.Util
         }
 
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IReadOnlyList<IId> documents, DocumentMap mapping)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IReadOnlyList<object> documents, DocumentMap mapping)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, documents[0], mapping, "");
@@ -180,7 +176,7 @@ namespace Nevermore.Util
             return parameters;
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IId document, DocumentMap mapping, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object document, DocumentMap mapping, string prefix = null)
         {
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             if (string.IsNullOrWhiteSpace(id))
@@ -194,7 +190,7 @@ namespace Nevermore.Util
                 [$"{prefix}{IdVariableName}"] = id
             };
 
-            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, jsonSerializerSettings);
+            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, jsonSerializerSettings);
 
             foreach (var c in mapping.WritableIndexedColumns())
             {
@@ -223,7 +219,7 @@ namespace Nevermore.Util
             StringBuilder sb,
             CommandParameterValues parameters,
             DocumentMap mapping,
-            IReadOnlyList<IId> documents)
+            IReadOnlyList<object> documents)
         {
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
 
@@ -253,7 +249,7 @@ namespace Nevermore.Util
             string statement,
             CommandParameterValues parameters,
             DocumentMap mapping,
-            IId document)
+            object document)
         {
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
             if (relatedDocumentData.Count == 0)
@@ -302,7 +298,7 @@ namespace Nevermore.Util
             return sb.ToString();
         }
 
-        IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<IId> documents)
+        IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
         {
             var documentAndIds = documents.Count == 1
                 ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}

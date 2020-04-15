@@ -1,5 +1,4 @@
 ﻿using System;
-using Nevermore.Contracts;
 
 namespace Nevermore
 {
@@ -8,7 +7,7 @@ namespace Nevermore
         public string DocumentId { get; set; }
         public string DocumentName { get; set; }
         public string Relationship { get; set; }
-        public IDocument Document { get; set; }
+        public object Document { get; set; }
 
         public bool Equals(ReferencingDocument other)
         {

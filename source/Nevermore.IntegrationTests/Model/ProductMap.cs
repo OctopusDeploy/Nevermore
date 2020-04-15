@@ -2,7 +2,7 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductMap<TProduct> : DocumentMap<TProduct> where TProduct : Product
+    public class ProductMap : DocumentMap<Product>
     {
         public ProductMap()
         {

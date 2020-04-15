@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
+using Nevermore.Util;
 
 namespace Nevermore
 {
@@ -142,10 +143,12 @@ namespace Nevermore
             }
 
             var columnType = DatabaseTypeConverter.AsDbType(value.GetType());
-
+            if (columnType == null)
+                throw new InvalidOperationException($"Cannot map type '{value.GetType().FullName}' to a DbType. Consider providing a custom ITypeHandler.");
+            
             var param = new SqlParameter();
             param.ParameterName = name;
-            param.DbType = columnType;
+            param.DbType = columnType.Value;
             param.Value = value;
 
             // To assist SQL's query plan caching, assign a parameter size for our 

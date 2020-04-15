@@ -92,7 +92,7 @@ namespace Nevermore.IntegrationTests.SetUp
                     return "datetimeoffset";
             }
 
-            return "??TYPE??";
+            return "nvarchar(max)";
         }
         static string GetLength(ColumnMapping column)
         {

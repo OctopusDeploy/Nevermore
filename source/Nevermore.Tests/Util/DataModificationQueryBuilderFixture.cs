@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Assent;
-using Assent.Reporters;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.Util;
@@ -331,7 +327,7 @@ namespace Nevermore.Tests.Util
             return result.Statement + "\r\n" + string.Join("\r\n", receivedParameterValues);
         }
 
-        class TestDocument : IId
+        class TestDocument
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
@@ -339,7 +335,7 @@ namespace Nevermore.Tests.Util
             public string ReadOnly { get; set; }
         }
 
-        class TestDocumentWithRelatedDocuments : IId
+        class TestDocumentWithRelatedDocuments
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
@@ -348,7 +344,7 @@ namespace Nevermore.Tests.Util
             public IEnumerable<(string, Type)> RelatedDocumentIds { get; set; }
         }
 
-        class TestDocumentWithMultipleRelatedDocuments : IId
+        class TestDocumentWithMultipleRelatedDocuments
         {
             public string Id { get; set; }
             public string AColumn { get; set; }

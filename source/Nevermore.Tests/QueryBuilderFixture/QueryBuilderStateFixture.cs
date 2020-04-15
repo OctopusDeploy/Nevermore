@@ -2,7 +2,6 @@
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using NSubstitute;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -18,7 +17,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             transaction = Substitute.For<IReadTransaction>();
             transaction.ExecuteScalar<int>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
-            transaction.Stream<IDocument>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
+            transaction.Stream<object>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
         }
 
         [SetUp]
@@ -196,7 +195,7 @@ ORDER BY [Id]");
         {
             var queryBuilder = QueryBuilder("Accounts");
 
-            queryBuilder.ToDictionary(d => d.Id);
+            queryBuilder.ToDictionary(d => d.GetHashCode().ToString());
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM dbo.[Accounts]
@@ -212,9 +211,9 @@ ORDER BY [Id]");
         [Test]
         public void ShouldAddWhereClauseToExistingQueryBuilder()
         {
-            transaction.TableQuery<IDocument>().Returns(TableQueryBuilder("Accounts"));
+            transaction.TableQuery<object>().Returns(TableQueryBuilder("Accounts"));
 
-            var query = transaction.Query<IDocument>();
+            var query = transaction.Query<object>();
 
             // Don't capture the new query builder here - there is code in Octopus that is structured this way
             query.Where("Id", UnarySqlOperand.Equal, 1);
@@ -228,17 +227,17 @@ ORDER BY [Id]");
 
         string LastExecutedQuery() => executedQueries.Last();
 
-        IQueryBuilder<IDocument> QueryBuilder(string tableName)
+        IQueryBuilder<object> QueryBuilder(string tableName)
         {
             return TableQueryBuilder(tableName)
                 // This convert the table query builder to a normal query builder. 
                 // If you don't do this, then you are only testing the implementation of ITableSourceQueryBuilder, which creates a brand new query builder from most modifications.
-                .AsType<IDocument>();
+                .AsType<object>();
         }
 
-        ITableSourceQueryBuilder<IDocument> TableQueryBuilder(string tableName)
+        ITableSourceQueryBuilder<object> TableQueryBuilder(string tableName)
         {
-            return new TableSourceQueryBuilder<IDocument>(tableName, transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>(tableName, transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
     }
 }

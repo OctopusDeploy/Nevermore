@@ -15,7 +15,7 @@ namespace Nevermore.Advanced.TypeHandlers
             if (cache.TryGetValue(type, out var existing))
                 return existing;
 
-            var handler = typeHandlers.FirstOrDefault(h => h.CanConvert(type));
+            var handler = typeHandlers.OrderBy(o => o.Priority).FirstOrDefault(h => h.CanConvert(type));
             if (handler != null)
                 // Only cache if we found a value
                 cache.TryAdd(type, handler);

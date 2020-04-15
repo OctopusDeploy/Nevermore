@@ -75,7 +75,6 @@ namespace Nevermore.Mapping
         {
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
-            InstanceTypeResolver = new StandardTypeResolver(this);
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
 
@@ -84,7 +83,6 @@ namespace Nevermore.Mapping
         public Func<int, string> IdFormat { get; protected set; }
 
         public Type Type { get; protected set; }
-        public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
 
         /// <summary>

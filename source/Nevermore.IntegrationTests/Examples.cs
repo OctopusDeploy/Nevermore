@@ -6,7 +6,6 @@ using Castle.DynamicProxy.Generators.Emitters.SimpleAST;
 using FluentAssertions;
 using Nevermore.Advanced;
 using Nevermore.Advanced.TypeHandlers;
-using Nevermore.Contracts;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
@@ -20,9 +19,10 @@ namespace Nevermore.IntegrationTests
         // Welcome! We hope these examples help you to get acquainted with Nevermore.
         //
         // Nevermore is designed to map documents. Here's an example of a document we'll be working with.
-        class Person : IId
+        // The only assumption is that you'll provide an "Id" property which is a string.
+        class Person
         {
-            public string Id { get; set; }
+            public string Id { get; private set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
             public string Email { get; set; }

@@ -2,13 +2,11 @@
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NSubstitute;
-using NSubstitute.Core;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.Delete
@@ -26,7 +24,7 @@ namespace Nevermore.Tests.Delete
             parameters = null;
 
             mappings = Substitute.For<IDocumentMapRegistry>();
-            mappings.Resolve<IDocument>().Returns(c => new EmptyMap());
+            mappings.Resolve<object>().Returns(c => new EmptyMap());
             mappings.Resolve(Arg.Any<Type>()).Returns(c => new EmptyMap());
             
             queryExecutor = Substitute.For<IWriteQueryExecutor>();
@@ -50,7 +48,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDelete()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("[Price] > 5")
                 .Delete();
 
@@ -60,7 +58,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithParameterisedUnaryWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", UnarySqlOperand.GreaterThan, new Parameter("price"))
                 .ParameterValue(5)
                 .Delete();
@@ -72,7 +70,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithParameterisedBinaryWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", BinarySqlOperand.Between, new Parameter("LowerPrice"), new Parameter("UpperPrice"))
                 .ParameterValues(5, 10)
                 .Delete();
@@ -85,7 +83,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithParameterisedArrayWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", ArraySqlOperand.In, new [] { new Parameter("LowerPrice"), new Parameter("UpperPrice") })
                 .ParameterValues(new object[] {5, 10})
                 .Delete();
@@ -98,7 +96,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithUnaryWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
@@ -109,7 +107,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithBinaryWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("Price", BinarySqlOperand.Between, 5, 10)
                 .Delete();
 
@@ -121,7 +119,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateDeleteWithArrayWhereClause()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("Price", ArraySqlOperand.In, new [] { 5, 10, 15 })
                 .Delete();
 
@@ -134,7 +132,7 @@ namespace Nevermore.Tests.Delete
         [Test]
         public void ShouldGenerateUniqueParameterNames()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Where("Price", UnarySqlOperand.LessThan, 10)
                 .Delete();
@@ -148,7 +146,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
@@ -156,7 +154,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhere()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
@@ -170,7 +168,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereSingleParam()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("fOo", UnarySqlOperand.GreaterThan, "Bar")
                 .Delete();
 
@@ -182,7 +180,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereTwoParam()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("fOo", BinarySqlOperand.Between, 1, 2)
                 .Delete();
 
@@ -194,7 +192,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereParamArray()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("fOo", UnarySqlOperand.Like, new[] { 1, 2, 3 })
                 .Delete();
 
@@ -206,7 +204,7 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereIn()
         {
-            CreateQueryBuilder<IDocument>()
+            CreateQueryBuilder<object>()
                 .Where("fOo", ArraySqlOperand.In, new[] { "BaR", "BaZ" })
                 .Delete();
 

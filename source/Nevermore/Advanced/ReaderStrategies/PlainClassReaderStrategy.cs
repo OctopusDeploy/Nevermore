@@ -4,14 +4,12 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Nevermore.Contracts;
-using Nevermore.Util;
 
 namespace Nevermore.Advanced.ReaderStrategies
 {
     /// <summary>
-    /// This strategy is used for "POCO", or "Plain-Old-CLR-Objects" classes (those that don't implement
-    /// <see cref="IId"/>). They will be read from the reader automatically. Our requirements are:
+    /// This strategy is used for "POCO", or "Plain-Old-CLR-Objects" classes (those that don't have a document map).
+    /// They will be read from the reader automatically. Our requirements are:
     /// 
     ///  - The class must provide a constructor (declared or not) with no parameters.
     ///  - We only bind public, settable properties
@@ -30,7 +28,10 @@ namespace Nevermore.Advanced.ReaderStrategies
         
         public bool CanRead(Type type)
         {
-            return type.IsClass && type.GetConstructors().Any(c => c.IsPublic && c.GetParameters().Length == 0);
+            return 
+                type.IsClass 
+                && type.GetConstructors().Any(c => c.IsPublic && c.GetParameters().Length == 0)
+                && !configuration.Mappings.ResolveOptional(type, out _);
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()

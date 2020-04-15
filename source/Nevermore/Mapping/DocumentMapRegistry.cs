@@ -3,13 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Nevermore.Contracts;
+using Nevermore.Querying.AST;
 
 namespace Nevermore.Mapping
 {
     public class DocumentMapRegistry : IDocumentMapRegistry
     {
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
+        readonly ConcurrentDictionary<Type, Func<object, string>> idReaders = new ConcurrentDictionary<Type, Func<object, string>>();
 
         public List<DocumentMap> GetAll()
         {
@@ -50,7 +51,7 @@ namespace Nevermore.Mapping
             return mapping != null;
         }
 
-        public DocumentMap Resolve<TDocument>() where TDocument : IId
+        public DocumentMap Resolve<TDocument>()
         {
             return Resolve(typeof(TDocument));
         }
@@ -58,20 +59,41 @@ namespace Nevermore.Mapping
         public DocumentMap Resolve(object instance)
         {
             var mapping = Resolve(instance.GetType());
-            
-            // Make sure we got the right one if the mapping defines a different resolver
-            var mType = mapping.InstanceTypeResolver.GetTypeFromInstance(instance);
-            return Resolve(mType);
+            return mapping;
         }
-        
+
         public DocumentMap Resolve(Type type)
         {
             if (!ResolveOptional(type, out var mapping))
             {
-                throw new KeyNotFoundException($"The type '{type.Name}' is a document, but a mapping has not been defined");
+                throw NotRegistered(type);
             }
             
             return mapping;
+        }
+        
+        public string GetId(object instance)
+        {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
+            var type = instance.GetType();
+            var reader = idReaders.GetOrAdd(type, CreateIdReader);
+            return reader(instance);
+        }
+
+        Func<object, string> CreateIdReader(Type type)
+        {
+            if (!ResolveOptional(type, out var map))
+                throw NotRegistered(type);
+
+            var readerWriter = map.IdColumn.ReaderWriter;
+            return inst => (string)readerWriter.Read(inst);
+        }
+
+        static Exception NotRegistered(Type type)
+        {
+            return new InvalidOperationException($"To be used for this operation, the class '{type.FullName}' must have a document map that is registered with this relational store. Types without a document map cannot be used for this operation.");
         }
     }
 }

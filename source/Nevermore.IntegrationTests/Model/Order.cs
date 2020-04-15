@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-
-    public class Order : IDocument
+    public class Order
     {
         public Order()
         {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
@@ -12,7 +11,9 @@ namespace Nevermore.Mapping
 
         bool ResolveOptional(Type type, out DocumentMap map);
         DocumentMap Resolve(Type type);
-        DocumentMap Resolve<TDocument>() where TDocument : IId;
+        DocumentMap Resolve<TDocument>();
         DocumentMap Resolve(object instance);
+
+        string GetId(object instance);
     }
 }

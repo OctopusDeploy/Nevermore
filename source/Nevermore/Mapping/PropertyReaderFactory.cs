@@ -90,7 +90,8 @@ namespace Nevermore.Mapping
                 {
                     throw new InvalidOperationException("Cannot write to a property without a setter");
                 }
-                var returnable = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
+
+                var returnable = (TReturn) value;
                 writer((TInput)target, returnable);
             }
         }

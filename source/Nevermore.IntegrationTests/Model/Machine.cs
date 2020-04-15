@@ -1,8 +1,6 @@
-﻿using Nevermore.Contracts;
-
-namespace Nevermore.IntegrationTests.Model
+﻿namespace Nevermore.IntegrationTests.Model
 {
-    public class Machine : IDocument
+    public class Machine
     {
         public string Id { get; protected set; }
         public string Name { get; set; }

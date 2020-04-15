@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
-using Nevermore.Contracts;
 using NSubstitute;
 using NUnit.Framework;
+// ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -18,7 +18,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             query = null;
             parameters = null;
             transaction = Substitute.For<IRelationalTransaction>();
-            transaction.WhenForAnyArgs(c => c.Stream<IId>("", Arg.Any<CommandParameterValues>()))
+            transaction.WhenForAnyArgs(c => c.Stream<object>("", Arg.Any<CommandParameterValues>()))
                 .Do(c =>
                 {
                     query = c.Arg<string>();
@@ -26,9 +26,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 });
         }
 
-        IQueryBuilder<IId> CreateQueryBuilder()
+        IQueryBuilder<object> CreateQueryBuilder()
         {
-            return new TableSourceQueryBuilder<IId>("Order", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>("Order", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Test]

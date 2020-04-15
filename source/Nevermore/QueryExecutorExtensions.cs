@@ -1,5 +1,3 @@
-using Nevermore.Contracts;
-
 namespace Nevermore
 {
     public static class QueryExecutorExtensions

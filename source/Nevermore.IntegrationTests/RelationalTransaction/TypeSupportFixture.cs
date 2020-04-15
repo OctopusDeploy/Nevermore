@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Text;
-using FluentAssertions;
 using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
 // ReSharper disable RedundantTypeArgumentsOfMethod
@@ -34,7 +33,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             
             AssertCanRead<decimal>(100.10m, "convert(decimal(5,2), 100.10)");
             AssertCanRead<decimal?>(100.10m, "convert(decimal(5,2), 100.10)");
-            AssertCanRead<decimal?>(null, "convert(edecimal(5,2), null)");
+            AssertCanRead<decimal?>(null, "convert(decimal(5,2), null)");
             
             AssertCanRead<DateTime>(new DateTime(2010, 11, 14), "convert(datetime, '2010-11-14')");
             AssertCanRead<DateTime?>(new DateTime(2010, 11, 14), "convert(datetime, '2010-11-14')");

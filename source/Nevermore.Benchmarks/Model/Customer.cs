@@ -1,13 +1,7 @@
-using Nevermore.Contracts;
-
 namespace Nevermore.Benchmarks.Model
 {
-    public class Customer : IId
+    public class Customer
     {
-        public Customer()
-        {
-        }
-
         public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }

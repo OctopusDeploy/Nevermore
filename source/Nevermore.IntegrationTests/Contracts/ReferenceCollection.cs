@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Nevermore.Contracts
+namespace Nevermore.IntegrationTests.Contracts
 {
     /// <summary>
     /// A case-insensitive collection of unique strings used for holding document ID's.

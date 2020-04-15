@@ -1,5 +1,7 @@
+using System;
 using System.Text;
 using Nevermore.IntegrationTests.Chaos;
+using Nevermore.IntegrationTests.Contracts;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using NUnit.Framework;
@@ -15,25 +17,21 @@ namespace Nevermore.IntegrationTests.SetUp
             config.ApplicationName = "Nevermore-IntegrationTests";
             config.Mappings.Register(
                 new CustomerMap(),
-                new CustomerToTestSerializationMap(),
                 new BrandMap(),
-                new BrandToTestSerializationMap(),
-                new ProductMap<Product>(),
-                new SpecialProductMap(),
-                new ProductToTestSerializationMap(),
+                new ProductMap(),
                 new LineItemMap(),
                 new MachineMap(),
-                new OrderMap(),
-                new MachineToTestSerializationMap());
+                new OrderMap());
             
+            config.TypeHandlerRegistry.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeRegistry.Register(new ProductTypeResolver());
             config.JsonSerializerSettings.Converters.Add(new BrandConverter(config.Mappings));
             config.JsonSerializerSettings.Converters.Add(new EndpointConverter());
             
             GenerateSchemaAutomatically(
                 new OrderMap(), 
+                new ProductMap(),
                 new CustomerMap(), 
-                new SpecialProductMap(), 
                 new LineItemMap(), 
                 new BrandMap(), 
                 new MachineMap());
@@ -59,13 +57,20 @@ namespace Nevermore.IntegrationTests.SetUp
 
         void GenerateSchemaAutomatically(params DocumentMap[] mappings)
         {
-            var schema = new StringBuilder();
-            foreach (var map in mappings)
+            try
             {
-                SchemaGenerator.WriteTableSchema(map, null, schema);
+                var schema = new StringBuilder();
+                foreach (var map in mappings)
+                {
+                    SchemaGenerator.WriteTableSchema(map, null, schema);
+                }
+                schema.AppendLine($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
+                integrationTestDatabase.ExecuteScript(schema.ToString());
             }
-            schema.AppendLine($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
-            integrationTestDatabase.ExecuteScript(schema.ToString());
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating schema for tests: " + ex.Message, ex);
+            }
         }
     }
 }

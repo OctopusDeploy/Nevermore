@@ -1,11 +1,10 @@
-﻿using Nevermore.Contracts;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public abstract class Brand : IDocument
+    public abstract class Brand
     {
-        public string Id { get; protected set; }
+        public string Id { get; private set; }
         public string Name { get; set; }
 
         public abstract string Type { get; }

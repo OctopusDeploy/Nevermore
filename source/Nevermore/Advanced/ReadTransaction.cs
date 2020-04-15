@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
@@ -65,12 +64,12 @@ namespace Nevermore.Advanced
         }
         
         [Pure]
-        public TDocument Load<TDocument>(string id) where TDocument : class, IId
+        public TDocument Load<TDocument>(string id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument>(id)).FirstOrDefault();
         }
 
-        public async Task<TDocument> LoadAsync<TDocument>(string id) where TDocument : class, IId
+        public async Task<TDocument> LoadAsync<TDocument>(string id) where TDocument : class
         {
             var results = StreamAsync<TDocument>(PrepareLoad<TDocument>(id));
             await foreach (var row in results)
@@ -78,11 +77,11 @@ namespace Nevermore.Advanced
             return null;
         }
 
-        public List<TDocument> Load<TDocument>(IEnumerable<string> ids) where TDocument : class, IId
+        public List<TDocument> Load<TDocument>(IEnumerable<string> ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
-        public async Task<List<TDocument>> LoadAsync<TDocument>(IEnumerable<string> ids) where TDocument : class, IId
+        public async Task<List<TDocument>> LoadAsync<TDocument>(IEnumerable<string> ids) where TDocument : class
         {
             var results = new List<TDocument>();
             await foreach (var item in LoadStreamAsync<TDocument>(ids))
@@ -94,7 +93,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public TDocument LoadRequired<TDocument>(string id) where TDocument : class, IId
+        public TDocument LoadRequired<TDocument>(string id) where TDocument : class
         {
             var result = Load<TDocument>(id);
             if (result == null)
@@ -103,7 +102,7 @@ namespace Nevermore.Advanced
         }
         
         [Pure]
-        public async Task<TDocument> LoadRequiredAsync<TDocument>(string id) where TDocument : class, IId
+        public async Task<TDocument> LoadRequiredAsync<TDocument>(string id) where TDocument : class
         {
             var result = await LoadAsync<TDocument>(id);
             if (result == null)
@@ -111,13 +110,13 @@ namespace Nevermore.Advanced
             return result;
         }
 
-        public List<TDocument> LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class, IId
+        public List<TDocument> LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
             var results = Load<TDocument>(idList);
             if (results.Count != idList.Count)
             {
-                var firstMissing = idList.FirstOrDefault(id => results.All(r => r.Id != id));
+                var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.Mappings.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
             
@@ -125,14 +124,14 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class, IId
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class
         {
             var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
             return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument>(idList));
         }
         
         [Pure]
-        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids) where TDocument : class, IId
+        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids) where TDocument : class
         {
             var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
             if (idList.Count == 0)
@@ -206,8 +205,9 @@ namespace Nevermore.Advanced
         
         public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
-            using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
-            var mapper = new ProjectionMapper(reader, configuration.JsonSerializerSettings, configuration.Mappings);
+            var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
+            using var reader = ExecuteReader(command);
+            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategyRegistry);
             while (reader.Read())
             {
                 yield return projectionMapper(mapper);
@@ -216,8 +216,9 @@ namespace Nevermore.Advanced
 
         public async IAsyncEnumerable<TResult> StreamAsync<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
-            await using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
-            var mapper = new ProjectionMapper(reader, configuration.JsonSerializerSettings, configuration.Mappings);
+            var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
+            await using var reader = await ExecuteReaderAsync(command);
+            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategyRegistry);
             while (await reader.ReadAsync())
             {
                 yield return projectionMapper(mapper);
@@ -274,14 +275,14 @@ namespace Nevermore.Advanced
         {
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
-            return (T) AmazingConverter.Convert(result, typeof(T));
+            return (T) result;
         }
         
         public async Task<T> ExecuteScalarAsync<T>(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync();
-            return (T) AmazingConverter.Convert(result, typeof(T));
+            return (T) result;
         }
         
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
@@ -301,7 +302,7 @@ namespace Nevermore.Advanced
             var mapping = configuration.Mappings.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
-            return new PreparedCommand($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [Id] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
+            return new PreparedCommand($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<string> idList)
@@ -311,7 +312,7 @@ namespace Nevermore.Advanced
             
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
-            var statement = $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[Id]";
+            var statement = $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
         
@@ -322,16 +323,6 @@ namespace Nevermore.Advanced
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, transaction, command.Statement, command.ParameterValues, configuration.TypeHandlerRegistry, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
-        }
-        
-        static int GetOrdinal(IDataReader dr, string columnName)
-        {
-            for (var i = 0; i < dr.FieldCount; i++)
-            {
-                if (dr.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
-                    return i;
-            }
-            return -1;
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)
@@ -370,53 +361,6 @@ namespace Nevermore.Advanced
             transaction?.Dispose();
             connection?.Dispose();
             registry.Remove(this);
-        }
-                
-        class ProjectionMapper : IProjectionMapper
-        {
-            readonly IDataReader reader;
-            readonly JsonSerializerSettings jsonSerializerSettings;
-            readonly IDocumentMapRegistry mappings;
-
-            public ProjectionMapper(IDataReader reader, JsonSerializerSettings jsonSerializerSettings, IDocumentMapRegistry mappings)
-            {
-                this.mappings = mappings;
-                this.reader = reader;
-                this.jsonSerializerSettings = jsonSerializerSettings;
-            }
-
-            public TResult Map<TResult>(string prefix)
-            {
-                var mapping = mappings.Resolve(typeof(TResult));
-                var json = reader[GetColumnName(prefix, "JSON")].ToString();
-
-                var instanceType = mapping.InstanceTypeResolver.TypeResolverFromReader((colName) => GetOrdinal(reader, GetColumnName(prefix, colName)))(reader);
-
-                var instance = JsonConvert.DeserializeObject(json, instanceType, jsonSerializerSettings);
-                foreach (var column in mappings.Resolve(instance.GetType()).IndexedColumns)
-                {
-                    column.ReaderWriter.Write(instance, reader[GetColumnName(prefix, column.ColumnName)]);
-                }
-
-                mapping.IdColumn.ReaderWriter.Write(instance, reader[GetColumnName(prefix, mapping.IdColumn.ColumnName)]);
-
-                return (TResult) instance;
-            }
-
-            public TColumn Read<TColumn>(Func<IDataReader, TColumn> callback)
-            {
-                return callback(reader);
-            }
-
-            public void Read(Action<IDataReader> callback)
-            {
-                callback(reader);
-            }
-
-            string GetColumnName(string prefix, string name)
-            {
-                return string.IsNullOrWhiteSpace(prefix) ? name : prefix + "_" + name;
-            }
         }
     }
 }

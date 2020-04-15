@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
-using Nevermore.Contracts;
 
-namespace Nevermore.Mapping
+namespace Nevermore.Util
 {
-    public static class DatabaseTypeConverter
+    // TODO: Remove this
+    internal static class DatabaseTypeConverter
     {
         static readonly Dictionary<Type, DbType> TypeMap;
 
@@ -52,21 +52,16 @@ namespace Nevermore.Mapping
             TypeMap[typeof (object)] = DbType.Object;
         }
 
-        public static DbType AsDbType(Type propertyType)
+        public static DbType? AsDbType(Type propertyType)
         {
             if (propertyType.GetTypeInfo().IsEnum)
             {
                 return DbType.String;
             }
 
-            if (propertyType == typeof (ReferenceCollection))
-            {
-                return DbType.String;
-            }
-
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
-                throw new KeyNotFoundException("Cannot map database type from: " + propertyType.FullName);
+                return null;
             return result;
         }
     }
