@@ -7,6 +7,7 @@ using FluentAssertions;
 using Nevermore.Advanced;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Contracts;
+using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
 using Newtonsoft.Json;
@@ -26,8 +27,11 @@ namespace Nevermore.IntegrationTests
             public string LastName { get; set; }
             public string Email { get; set; }
             
-            // Documents can have all kinds of things on them, including arrays, nested properties, and more
-            public string[] Tags { get; set; }
+            // Documents can have all kinds of things on them, including arrays, nested properties, and more. 
+            // All these properties will be stored in the JSON blob.
+            public HashSet<string> Tags { get; } = new HashSet<string>();
+            
+            public int[] LuckyNumbers { get; set; }
         }
         
         // To translate documents to a relational database, we need a mapping. Here's our map. It tells us which
@@ -37,7 +41,7 @@ namespace Nevermore.IntegrationTests
         {
             public PersonMap()
             {
-                Column(m => m.FirstName).WithMaxLength(20);
+                Column(m => m.FirstName).MaxLength(20);
                 Column(m => m.LastName).Nullable();
                 Column(m => m.Email);
                 Unique("UniquePersonEmail", new[] { "Email" }, "People must have unique emails");
@@ -75,7 +79,7 @@ namespace Nevermore.IntegrationTests
         [Test, Order(1)]
         public void Insert()
         {
-            var person = new Person {FirstName = "Donald", LastName = "Duck", Email = "donald.duck@disney.com", Tags = new[] {"duck", "disney"}};
+            var person = new Person {FirstName = "Donald", LastName = "Duck", Email = "donald.duck@disney.com", Tags = {"duck", "disney", "\u2103"}, LuckyNumbers = Enumerable.Range(0, 85000).ToArray()};
             
             using var transaction = store.BeginTransaction();
             transaction.Insert(person);
@@ -102,9 +106,9 @@ namespace Nevermore.IntegrationTests
             transaction.InsertMany(
                 new List<Person>
                 {
-                    new Person {FirstName = "Daffy", LastName = "Duck", Email = "daffy.duck@wb.com", Tags = new[] {"duck", "disney"}},
-                    new Person {FirstName = "Buggs", LastName = "Bunny", Email = "buggs.bunny@wb.com", Tags = new[] {"duck", "wb"}},
-                    new Person {FirstName = "Prince", LastName = null, Email = "prince", Tags = new[] {"duck", "wb"}},
+                    new Person {FirstName = "Daffy", LastName = "Duck", Email = "daffy.duck@wb.com", Tags = {"duck", "wb"}},
+                    new Person {FirstName = "Buggs", LastName = "Bunny", Email = "buggs.bunny@wb.com", Tags = {"rabbit", "wb"}},
+                    new Person {FirstName = "Prince", LastName = null, Email = "prince", Tags = {"singer"}},
                 });
             transaction.Commit();
         }
@@ -159,6 +163,19 @@ namespace Nevermore.IntegrationTests
                 ).Single();
 
             person.LastName.Should().Be("Duck");
+            
+            // SQL Server 2016 and above supports JSON_VALUE as a function. This can be used to query for data stored 
+            // in the JSON blob at the end of the document.
+            // For example, you can use JSON_VALUE to query a single field within the JSON. Or you can use OPENJSON
+            // to query values in an array. The only downside to doing this of course is that you won't get to take 
+            // much advantage of indexes.
+            person = transaction.TableQuery<Person>()
+                .Where("exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag1) and exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag2)")
+                .Parameter("tag1", "wb")
+                .Parameter("tag2", "duck")
+                .FirstOrDefault();
+            
+            person.FirstName.Should().Be("Daffy");
         }
 
         [Test, Order(6)]
@@ -276,6 +293,5 @@ namespace Nevermore.IntegrationTests
             result.HomePage.Should().Be(new Uri("https://octopus.com"));
             result.SignIn.Should().Be(new Uri("https://octopus.com/signin"));
         }
-        
     }
 }

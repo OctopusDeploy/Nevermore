@@ -33,7 +33,7 @@ namespace Nevermore.Advanced.ReaderStrategies
                 }
             }
             
-            throw new InvalidOperationException($"No strategy can map the type {typeof(TRecord).Name}");
+            throw new InvalidOperationException($"No strategy in Nevermore knows how to map the type {typeof(TRecord).Name}. Consider using a different type or using an ITypeHandler.");
         }
     }
 }

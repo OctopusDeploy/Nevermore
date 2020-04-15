@@ -6,9 +6,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
-using Nevermore.AST;
+using Nevermore.Advanced;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
+using Nevermore.Querying.AST;
 using Newtonsoft.Json;
 
 namespace Nevermore.Util
@@ -306,15 +307,14 @@ namespace Nevermore.Util
             var documentAndIds = documents.Count == 1
                 ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
-
-
+            
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by m.TableName
                 into g
                 let related = (
                     from m in g
                     from i in documentAndIds
-                    from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
+                    from relId in (m.ReaderWriter.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
                     let relatedTableName = mappings.Resolve(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
                 ).Distinct().ToArray()

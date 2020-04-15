@@ -1,13 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Nevermore.AST;
-using Nevermore.Mapping;
+using Nevermore.Advanced;
+using Nevermore.Querying.AST;
 using Nevermore.Util;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     internal class DeleteQueryBuilder<TRecord> : IDeleteQueryBuilder<TRecord> where TRecord : class
     {

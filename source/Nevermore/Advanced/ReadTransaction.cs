@@ -9,16 +9,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Nevermore.AST;
 using Nevermore.Contracts;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
+using Nevermore.Querying.AST;
 using Nevermore.Transient;
-using Nevermore.Util;
 using Newtonsoft.Json;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     [DebuggerDisplay("{ToString()}")]
     public class ReadTransaction : IReadTransaction, ITransactionDiagnostic
@@ -162,7 +161,7 @@ namespace Nevermore
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            return Stream<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout));
+            return Stream<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.SequentialAccess | CommandBehavior.SingleResult, commandTimeout: commandTimeout));
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
@@ -207,7 +206,7 @@ namespace Nevermore
         
         public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
-            using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout));
+            using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
             var mapper = new ProjectionMapper(reader, configuration.JsonSerializerSettings, configuration.Mappings);
             while (reader.Read())
             {
@@ -217,7 +216,7 @@ namespace Nevermore
 
         public async IAsyncEnumerable<TResult> StreamAsync<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
-            await using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout));
+            await using var reader = ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
             var mapper = new ProjectionMapper(reader, configuration.JsonSerializerSettings, configuration.Mappings);
             while (await reader.ReadAsync())
             {
@@ -302,7 +301,7 @@ namespace Nevermore
             var mapping = configuration.Mappings.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
-            return new PreparedCommand($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [Id] = @Id", args, RetriableOperation.Select, mapping);
+            return new PreparedCommand($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [Id] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<string> idList)
@@ -313,14 +312,14 @@ namespace Nevermore
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
             var statement = $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[Id]";
-            return new PreparedCommand(statement, param, RetriableOperation.Select, mapping);
+            return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
         
         CommandExecutor CreateCommand(PreparedCommand command)
         {
             var operationName = command.Operation == RetriableOperation.None || command.Operation == RetriableOperation.All ? "Custom query" : command.Operation.ToString();
             var timedSection = new TimedSection(Log, ms => $"{operationName} took {ms}ms in transaction '{name}': {command.Statement}", 300);
-            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, transaction, command.Statement, command.ParameterValues, command.Mapping, command.CommandTimeout);
+            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, transaction, command.Statement, command.ParameterValues, configuration.TypeHandlerRegistry, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
         }

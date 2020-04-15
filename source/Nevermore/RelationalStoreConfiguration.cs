@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
+using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
@@ -18,10 +19,10 @@ namespace Nevermore
         IDocumentMapRegistry Mappings { get; set; }
         JsonSerializerSettings JsonSerializerSettings { get; set; }
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
-        ObjectInitialisationOptions ObjectInitialisationOptions { get; set; }
         int KeyBlockSize { get; set; }
         IReaderStrategyRegistry ReaderStrategyRegistry { get; }
         ITypeHandlerRegistry TypeHandlerRegistry { get; }
+        IInstanceTypeRegistry InstanceTypeRegistry { get; }
 
         /// <summary>
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
@@ -44,7 +45,7 @@ namespace Nevermore
             CommandFactory = new SqlCommandFactory();
             Mappings = new DocumentMapRegistry();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
-            ObjectInitialisationOptions = ObjectInitialisationOptions.None;
+            InstanceTypeRegistry = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
             
             var contractResolver = new RelationalJsonContractResolver(Mappings);
@@ -82,13 +83,12 @@ namespace Nevermore
         
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
         
-        public ObjectInitialisationOptions ObjectInitialisationOptions { get; set; }
-        
         public int KeyBlockSize { get; set; }
         
         public IReaderStrategyRegistry ReaderStrategyRegistry { get; }
         
         public ITypeHandlerRegistry TypeHandlerRegistry { get; }
+        public IInstanceTypeRegistry InstanceTypeRegistry { get; }
 
         /// <summary>
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15

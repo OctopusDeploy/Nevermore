@@ -1,4 +1,4 @@
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public interface IBinaryParametersDeleteQueryBuilder<TRecord> where TRecord : class
     {

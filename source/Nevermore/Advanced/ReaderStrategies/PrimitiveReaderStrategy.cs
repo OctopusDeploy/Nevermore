@@ -18,7 +18,10 @@ namespace Nevermore.Advanced.ReaderStrategies
         {
             return
                 type == typeof(string)
+                || type == typeof(decimal)
+                || type == typeof(byte[])
                 || type.IsPrimitive
+                || type.IsValueType
                 || type.IsEnum
                 || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
         }

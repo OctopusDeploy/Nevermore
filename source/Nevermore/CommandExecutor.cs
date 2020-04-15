@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
@@ -121,7 +122,7 @@ namespace Nevermore
         {
             try
             {
-                return command.ExecuteReaderWithRetry(retryPolicy);
+                return command.ExecuteReaderWithRetry(prepared.CommandBehavior, retryPolicy);
             }
             catch (SqlException ex)
             {
@@ -139,7 +140,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteReaderAsyncWithRetry(retryPolicy);
+                return await command.ExecuteReaderAsyncWithRetry(prepared.CommandBehavior, retryPolicy);
             }
             catch (SqlException ex)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
-using Nevermore.AST;
+using Nevermore.Advanced;
+using Nevermore.Querying.AST;
 using NSubstitute;
 
 namespace Nevermore.Tests.Linq

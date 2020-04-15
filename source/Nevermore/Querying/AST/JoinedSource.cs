@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Nevermore.AST
+namespace Nevermore.Querying.AST
 {
     public class JoinedSource : ISelectSource
     {

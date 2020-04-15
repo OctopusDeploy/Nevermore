@@ -20,7 +20,7 @@ namespace Nevermore.IntegrationTests
 
             using (var reader = await Store.BeginReadTransactionAsync())
             {
-                var first = await reader.LoadAsync<Product>("Product-First");
+                var first = reader.Load<Product>("Product-First");
                 Assert.That(first.Name, Is.EqualTo("First product"));
                 Assert.That(first.Price, Is.EqualTo(100.00M));
                 Assert.That(first.Type, Is.EqualTo(ProductType.Dodgy));

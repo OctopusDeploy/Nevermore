@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nevermore.AST;
+using Nevermore.Querying;
+using Nevermore.Querying.AST;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     public class JoinSelectBuilder : SelectBuilderBase<JoinedSource>
     {

@@ -26,7 +26,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 new OrderMap(),
                 new MachineToTestSerializationMap());
             
-            config.JsonSerializerSettings.Converters.Add(new ProductConverter(config.Mappings));
+            config.InstanceTypeRegistry.Register(new ProductTypeResolver());
             config.JsonSerializerSettings.Converters.Add(new BrandConverter(config.Mappings));
             config.JsonSerializerSettings.Converters.Add(new EndpointConverter());
             

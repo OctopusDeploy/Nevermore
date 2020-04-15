@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using FluentAssertions;
+using Nevermore.Advanced;
 using Nevermore.Contracts;
 using NSubstitute;
 using NUnit.Framework;

@@ -1,6 +1,4 @@
-﻿using Nevermore.AST;
-
-namespace Nevermore
+﻿namespace Nevermore.Querying
 {
     public class BinaryWhereParameter
     {

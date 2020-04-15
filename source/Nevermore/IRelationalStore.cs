@@ -3,6 +3,7 @@ using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nevermore.Advanced;
 using Nevermore.Mapping;
 
 namespace Nevermore

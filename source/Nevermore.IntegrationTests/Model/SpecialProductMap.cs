@@ -5,7 +5,7 @@ namespace Nevermore.IntegrationTests.Model
         public SpecialProductMap()
         {
             TableName = typeof(Product).Name;
-            Column(m => m.BonusMaterial).IsNullable = true;
+            Column(m => m.BonusMaterial).Nullable();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced;
 
 namespace Nevermore.Tests
 {

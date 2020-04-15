@@ -45,7 +45,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         static string GetDatabaseType(ColumnMapping column)
         {
-            var dbType = column.DbType;
+            var dbType = DatabaseTypeConverter.AsDbType(column.Type);
 
             switch (dbType)
             {

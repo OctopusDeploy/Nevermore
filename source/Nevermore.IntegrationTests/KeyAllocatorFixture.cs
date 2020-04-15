@@ -74,7 +74,7 @@ namespace Nevermore.IntegrationTests
         public void ShouldAllocateInParallel()
         {
             const int allocationCount = 20;
-            const int threadCount = 100;
+            const int threadCount = 10;
 
             var projectIds = new ConcurrentBag<string>();
             var deploymentIds = new ConcurrentBag<string>();

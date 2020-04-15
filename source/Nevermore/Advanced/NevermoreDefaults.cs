@@ -1,6 +1,6 @@
 using System.Data;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     public static class NevermoreDefaults
     {

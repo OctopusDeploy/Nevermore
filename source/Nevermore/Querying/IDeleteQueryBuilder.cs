@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public interface IDeleteQueryBuilder<TRecord> where TRecord : class
     {

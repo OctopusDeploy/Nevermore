@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Microsoft.Data.SqlClient;
+using Nevermore.Diagnositcs;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
-using Microsoft.Data.SqlClient;
 #endif
-using System.Linq;
-using System.Text;
-using Nevermore.Diagnositcs;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     public class RelationalTransactionRegistry
     {

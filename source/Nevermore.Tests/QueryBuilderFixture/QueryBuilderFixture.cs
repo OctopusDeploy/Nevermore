@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using Assent;
 using FluentAssertions;
-using Nevermore.AST;
+using Nevermore.Advanced;
 using Nevermore.Contracts;
+using Nevermore.Querying.AST;
 using NSubstitute;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed

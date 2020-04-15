@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public interface ICompleteQuery<TRecord> where TRecord : class
     {

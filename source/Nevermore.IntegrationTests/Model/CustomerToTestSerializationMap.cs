@@ -8,7 +8,7 @@ namespace Nevermore.IntegrationTests.Model
         {
             TableName = "Customer";
 
-            Column(m => m.FirstName).WithMaxLength(20);
+            Column(m => m.FirstName).MaxLength(20);
             Column(m => m.LastName);
             Column(m => m.Nickname).Nullable();
             Column(m => m.Roles);

@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Nevermore.AST;
+using Nevermore.Querying.AST;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.Joins

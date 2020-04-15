@@ -1,3 +1,4 @@
+using System.Data;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model

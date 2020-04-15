@@ -7,6 +7,7 @@ using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
+using Nevermore.Querying;
 using NUnit.Framework;
 using TestStack.BDDfy;
 

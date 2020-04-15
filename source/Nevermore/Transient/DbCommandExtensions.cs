@@ -67,9 +67,9 @@ namespace Nevermore.Transient
             return command.ExecuteReaderWithRetry(RetryManager.Instance.GetDefaultSqlCommandRetryPolicy(), operationName);
         }
 
-        public static Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, string operationName = "ExecuteReaderAsync")
+        public static Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, CommandBehavior commandBehavior = CommandBehavior.Default, string operationName = "ExecuteReaderAsync")
         {
-            return command.ExecuteReaderAsyncWithRetry(RetryManager.Instance.GetDefaultSqlCommandRetryPolicy(), operationName);
+            return command.ExecuteReaderAsyncWithRetry(commandBehavior, RetryManager.Instance.GetDefaultSqlCommandRetryPolicy(), operationName);
         }
 
         public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy retryPolicy, string operationName = "ExecuteReader")
@@ -77,9 +77,14 @@ namespace Nevermore.Transient
             return command.ExecuteReaderWithRetry(retryPolicy, RetryPolicy.NoRetry, operationName);
         }
 
+        public static Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, CommandBehavior commandBehavior, RetryPolicy retryPolicy, string operationName = "ExecuteReader")
+        {
+            return command.ExecuteReaderAsyncWithRetry(commandBehavior, retryPolicy, RetryPolicy.NoRetry, operationName);
+        }
+
         public static Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, RetryPolicy retryPolicy, string operationName = "ExecuteReader")
         {
-            return command.ExecuteReaderAsyncWithRetry(retryPolicy, RetryPolicy.NoRetry, operationName);
+            return command.ExecuteReaderAsyncWithRetry(CommandBehavior.Default, retryPolicy, RetryPolicy.NoRetry, operationName);
         }
 
         public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteReader")
@@ -111,7 +116,7 @@ namespace Nevermore.Transient
             }
         }
         
-        public static async Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteReader")
+        public static async Task<DbDataReader> ExecuteReaderAsyncWithRetry(this DbCommand command, CommandBehavior commandBehavior, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy, string operationName = "ExecuteReader")
         {
             try
             {
@@ -123,7 +128,7 @@ namespace Nevermore.Transient
                     var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
                     try
                     {
-                        return await command.ExecuteReaderAsync();
+                        return await command.ExecuteReaderAsync(commandBehavior);
                     }
                     catch (Exception)
                     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public interface IArrayParametersDeleteQueryBuilder<TRecord> where TRecord : class
     {

@@ -1,4 +1,4 @@
-﻿namespace Nevermore.AST
+﻿namespace Nevermore.Querying.AST
 {
     public interface ISubquerySource : IAliasedSelectSource
     {

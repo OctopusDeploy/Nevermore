@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Nevermore.AST;
-using Nevermore.Contracts;
+using Nevermore.Querying;
+using Nevermore.Querying.AST;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     public class QueryBuilder<TRecord, TSelectBuilder> : IOrderedQueryBuilder<TRecord> where TSelectBuilder: ISelectBuilder where TRecord : class
     {

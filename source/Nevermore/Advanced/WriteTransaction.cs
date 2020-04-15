@@ -5,11 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
-using Nevermore.RelatedDocuments;
+using Nevermore.Querying;
 using Nevermore.Util;
-using Newtonsoft.Json;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     [DebuggerDisplay("{ToString()}")]
     public class WriteTransaction : ReadTransaction, IRelationalTransaction

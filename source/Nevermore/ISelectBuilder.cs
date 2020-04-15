@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using Nevermore.AST;
+using Nevermore.Querying;
+using Nevermore.Querying.AST;
 
 namespace Nevermore
 {

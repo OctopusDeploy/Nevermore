@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nevermore.AST
+namespace Nevermore.Querying.AST
 {
     public class OrderBy
     {

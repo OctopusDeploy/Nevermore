@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Nevermore.AST
+namespace Nevermore.Querying.AST
 {
     public class Function
     {

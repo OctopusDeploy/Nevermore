@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Nevermore.Advanced.TypeHandlers;
@@ -52,6 +53,36 @@ namespace Nevermore.Advanced.ReaderStrategies
             if (propertyType == typeof(Guid?)) return maybeNullWithCast(nameof(IDataRecord.GetGuid));
             if (propertyType == typeof(float)) return neverNull(nameof(IDataRecord.GetFloat));
             if (propertyType == typeof(float?)) return maybeNullWithCast(nameof(IDataRecord.GetFloat));
+
+            // Enum or Nullable<Enum>
+            if (propertyType.IsEnum || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>) && propertyType.GetGenericArguments()[0].IsEnum))
+            {
+                var underlyingEnumType = propertyType.IsEnum ? propertyType : propertyType.GetGenericArguments()[0]; 
+                
+                // reader.IsDBNull(0)
+                //     ? default(TEnum?)
+                //     : (TEnum?)(reader.GetFieldType(0) == typeof(string)
+                //         ? (Enum.Parse<TEnum>(reader.GetString(0)))
+                //         : ((TEnum)reader.GetValue(0)));
+                return Expression.Condition(
+                    Expression.Call(reader, typeof(IDataRecord).GetMethod(nameof(IDataRecord.IsDBNull), bindingFlags), index),
+                    Expression.Default(propertyType),
+                    Expression.Convert(
+                        Expression.Condition(
+                            Expression.Equal(
+                                Expression.Call(reader, typeof(IDataRecord).GetMethod(nameof(IDataRecord.GetFieldType), bindingFlags), index),
+                                Expression.Constant(typeof(string), typeof(Type))),
+                            Expression.Call(null,
+                                typeof(Enum).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(m => m.Name == "Parse" && m.IsGenericMethod && m.GetParameters().Length == 2).MakeGenericMethod(underlyingEnumType),
+                                Expression.Call(reader, typeof(IDataRecord).GetMethod(nameof(IDataRecord.GetString), bindingFlags), index),
+                                Expression.Constant(true) // ignoreCase
+                            ),
+                            Expression.Convert(
+                                Expression.Call(reader, typeof(IDataRecord).GetMethod(nameof(IDataRecord.GetValue), bindingFlags), index),
+                                underlyingEnumType)),
+                        propertyType
+                        ));
+            }
 
             // We allow custom type handlers, but not for the primitive types shown above - we deal with so many 
             // of these that we want them to be fast!

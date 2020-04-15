@@ -33,9 +33,8 @@ Create Table Customer
     FirstName nvarchar(20) not null,    
     LastName nvarchar(20) not null,    
     Nickname nvarchar(200) null,    
-    Roles nvarchar(max) null,    
-    [Rowversion] rowversion not null
-
+    [Rowversion] rowversion not null,
+    [JSON] nvarchar(max) not null
 )
 
 alter table Customer add constraint UQ_UniqueCustomerNames unique(FirstName, LastName)
@@ -45,8 +44,14 @@ go
 declare @i int = 0
 While @i <= 5001
 Begin
-    Insert Customer (Id, FirstName, LastName, Nickname, Roles) values ('Customer-'+ convert(nvarchar(5), @i), 'Robert', 'Menzies ' + convert(nvarchar(5), @i), 'Bob', 'PM,Test')
+    Insert Customer (Id, FirstName, LastName, Nickname, [JSON]) values ('Customer-'+ convert(nvarchar(5), @i), 'Robert', 'Menzies ' + convert(nvarchar(5), @i), 'Bob', '{}')
     Set @i = @i + 1;
 End
 
 go 
+
+Create Table BigObject
+(
+    Id nvarchar(200) primary key not null, 
+    [JSON] nvarchar(max) not null
+)

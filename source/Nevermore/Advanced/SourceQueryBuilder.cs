@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nevermore.AST;
+using Nevermore.Querying;
+using Nevermore.Querying.AST;
 
-namespace Nevermore
+namespace Nevermore.Advanced
 {
     // A union statement is built like a subquery.
     // This is because if you add other configuration (order by, where, column selection etc), then the inner query needs to be in a subquery

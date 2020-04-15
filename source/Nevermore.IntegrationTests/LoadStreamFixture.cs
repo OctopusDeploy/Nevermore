@@ -10,12 +10,12 @@ namespace Nevermore.IntegrationTests
 {
     public class LoadStreamFixture : FixtureWithRelationalStore
     {
-        [Test, Ignore("For performance")]
+        [Test, Ignore("Performance")]
         public void LoadManyPerformanceTest()
         {
             using (var creator = Store.BeginWriteTransaction())
             {
-                for (var i = 0; i < 30000; i++)
+                for (var i = 0; i < 10000; i++)
                 {
                     creator.Insert(new Product { Name = "Product " + i, Price = i, Type = ProductType.Dodgy});
                 }
@@ -26,7 +26,7 @@ namespace Nevermore.IntegrationTests
             using (var reader = Store.BeginReadTransaction())
             {
                 var all = reader.Query<Product>().ToList().Select(p => p.Id).OrderByDescending(p => Guid.NewGuid()).ToList();
-
+            
                 DoLoad(reader, all.Take(100).ToList());
                 DoLoad(reader, all.Take(100).ToList());
                 DoLoad(reader, all.Take(300).ToList());

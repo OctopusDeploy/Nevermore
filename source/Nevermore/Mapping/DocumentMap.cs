@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Nevermore.Mapping
 {
+    
     public abstract class DocumentMap<TDocument> : DocumentMap
     {
         protected DocumentMap()
@@ -13,30 +14,17 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
-        protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
+        protected IColumnMappingBuilder Column<T>(string columnName, IPropertyReaderWriter readerWriter)
         {
-            var column = new ColumnMapping(GetPropertyInfo(property));
+            var column = new ColumnMapping(columnName, typeof(T), readerWriter);
             IndexedColumns.Add(column);
             return column;
         }
-
-        protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property, Action<ColumnMapping> configure)
+        
+        protected IColumnMappingBuilder Column<T>(Expression<Func<TDocument, T>> property, string columnName = null)
         {
-            var column = Column(property);
-            configure(column);
-            return column;
-        }
-
-        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false, bool readOnly = false)
-        {
-            var column = new ColumnMapping(name, databaseType, new DelegateReaderWriter<TDocument, TProperty>(reader, writer));
+            var column = new ColumnMapping(columnName, GetPropertyInfo(property));
             IndexedColumns.Add(column);
-            if (maxLength != null)
-            {
-                column.MaxLength = maxLength.Value;
-            }
-            column.IsNullable = nullable;
-            column.IsReadOnly = readOnly;
             return column;
         }
 
@@ -119,9 +107,9 @@ namespace Nevermore.Mapping
 
             foreach (var property in properties)
             {
-                if (property.Name == "Id")
+                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    IdColumn = new ColumnMapping(property);
+                    IdColumn = new ColumnMapping("Id", property);
                 }
             }
         }

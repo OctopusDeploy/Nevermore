@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Linq;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public static class DeleteQueryBuilderExtensions
     {

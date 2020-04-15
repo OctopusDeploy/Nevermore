@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
 namespace Nevermore
@@ -9,7 +10,7 @@ namespace Nevermore
     {
         public static readonly TimeSpan DefaultCommandTimeout = TimeSpan.FromSeconds(60);
 
-        public DbCommand CreateCommand(DbConnection connection, DbTransaction transaction, string statement, CommandParameterValues args, DocumentMap mapping = null, TimeSpan? commandTimeout = null)
+        public DbCommand CreateCommand(DbConnection connection, DbTransaction transaction, string statement, CommandParameterValues args, ITypeHandlerRegistry typeHandlers, DocumentMap mapping = null, TimeSpan? commandTimeout = null)
         {
             var command = connection.CreateCommand();
 
@@ -18,7 +19,7 @@ namespace Nevermore
                 command.CommandTimeout = (int)(commandTimeout ?? DefaultCommandTimeout).TotalSeconds;
                 command.CommandText = statement;
                 command.Transaction = transaction;
-                args?.ContributeTo(command, mapping);
+                args?.ContributeTo(command, typeHandlers, mapping);
                 return command;
             }
             catch

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     public interface IArrayParametersQueryBuilder<TRecord> where TRecord : class
     {

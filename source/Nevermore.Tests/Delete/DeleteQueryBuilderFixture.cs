@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.AST;
+using Nevermore.Advanced;
 using Nevermore.Contracts;
 using Nevermore.Mapping;
+using Nevermore.Querying;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NSubstitute;

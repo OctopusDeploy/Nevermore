@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Nevermore
+namespace Nevermore.Querying
 {
     /// <summary>
     /// This class makes it easy to build nested and/or conditions as SQL statements.

@@ -13,6 +13,7 @@ using Microsoft.Data.SqlClient.Server;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
 namespace Nevermore
@@ -80,16 +81,16 @@ namespace Nevermore
             }
         }
 
-        public virtual void ContributeTo(IDbCommand command, DocumentMap mapping = null)
+        public virtual void ContributeTo(IDbCommand command, ITypeHandlerRegistry typeHandlers, DocumentMap mapping = null)
         {
             command.CommandType = CommandType;
             foreach (var pair in this)
             {
-                ContributeParameter(command, pair.Key, pair.Value, mapping);
+                ContributeParameter(command, typeHandlers, pair.Key, pair.Value, mapping);
             }
         }
 
-        protected virtual void ContributeParameter(IDbCommand command, string name, object value, DocumentMap mapping = null)
+        protected virtual void ContributeParameter(IDbCommand command, ITypeHandlerRegistry typeHandlers, string name, object value, DocumentMap mapping = null)
         {
             if (value == null)
             {
@@ -97,6 +98,15 @@ namespace Nevermore
                 return;
             }
 
+            var typeHandler = typeHandlers.Resolve(value.GetType());
+            if (typeHandler != null)
+            {
+                var p = new SqlParameter(name, SqlDbType.NVarChar);
+                typeHandler.WriteDatabase(p, value);
+                command.Parameters.Add(p);
+                return;
+            }
+            
             if (value is List<SqlDataRecord> dr && command is SqlCommand sqlCommand)
             {
                 var p = sqlCommand.Parameters.Add(name, SqlDbType.Structured);
@@ -113,7 +123,7 @@ namespace Nevermore
                 {
                     var inClauseName = name + "_" + i;
                     inClauseNames.Add(inClauseName);
-                    ContributeParameter(command, inClauseName, inClauseValue);
+                    ContributeParameter(command, typeHandlers, inClauseName, inClauseValue);
                     i++;
                 }
 
@@ -121,7 +131,7 @@ namespace Nevermore
                 {
                     var inClauseName = name + "_" + i;
                     inClauseNames.Add(inClauseName);
-                    ContributeParameter(command, inClauseName, null);
+                    ContributeParameter(command, typeHandlers, inClauseName, null);
                 }
 
 

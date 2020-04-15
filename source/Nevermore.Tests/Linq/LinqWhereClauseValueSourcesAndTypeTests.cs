@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.AST;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq

@@ -1,3 +1,5 @@
+using Nevermore.Querying;
+
 namespace Nevermore
 {
     public interface IUnaryParameterDeleteQueryBuilder<TRecord> where TRecord : class
