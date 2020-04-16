@@ -14,7 +14,7 @@ namespace Nevermore.Advanced.InstanceTypeResolvers
         /// more than one may know how to handle a given type. This allows you to register a fallback for a given type
         /// - such as for when a subclass of a type is not found.
         /// </summary>
-        public int Priority => 0;
+        public int Order => 0;
         
         /// <summary>
         /// 

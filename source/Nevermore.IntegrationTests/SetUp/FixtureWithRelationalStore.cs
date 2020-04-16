@@ -5,6 +5,7 @@ using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Contracts;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.SetUp
@@ -33,6 +34,7 @@ namespace Nevermore.IntegrationTests.SetUp
             {
                 settings.Converters.Add(new BrandConverter(config.Mappings));
                 settings.Converters.Add(new EndpointConverter());
+                settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
             
             GenerateSchemaAutomatically(

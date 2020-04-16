@@ -88,7 +88,7 @@ namespace Nevermore.Mapping
             {
                 if (writer == null)
                 {
-                    throw new InvalidOperationException("Cannot write to a property without a setter");
+                    throw new InvalidOperationException("Cannot write to a property without a setter. If the property is meant to be read-only, mark it with StoreOnly() on the column definition in the DocumentMap.");
                 }
 
                 var returnable = (TReturn) value;

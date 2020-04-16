@@ -404,6 +404,6 @@ namespace Nevermore.Util
     internal static class DataModificationQueryBuilderExtensions
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
-            doc.IndexedColumns.Where(c => !c.IsReadOnly);
+            doc.IndexedColumns.Where(c => c.Direction == ColumnDirection.Both || c.Direction == ColumnDirection.ToDatabase);
     }
 }

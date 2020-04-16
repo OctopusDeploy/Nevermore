@@ -9,7 +9,7 @@ namespace Nevermore.Mapping
         const int DefaultPrimaryKeyIdLength = 50;
         const int DefaultMaxForeignKeyIdLength = 50;
         const int DefaultMaxEnumLength = 50;
-        bool isReadOnly;
+        ColumnDirection direction;
         int? maxLength;
         bool isNullable;
 
@@ -52,9 +52,9 @@ namespace Nevermore.Mapping
         public IPropertyReaderWriter ReaderWriter { get; }
         public PropertyInfo Property { get; }
 
-        public bool IsReadOnly => isReadOnly;
         public bool IsNullable => isNullable;
         public int MaxLength => maxLength ?? MaxStringLengthByDefault;
+        public ColumnDirection Direction => direction;
 
         IColumnMappingBuilder IColumnMappingBuilder.Nullable()
         {
@@ -68,9 +68,15 @@ namespace Nevermore.Mapping
             return this;
         }
 
-        IColumnMappingBuilder IColumnMappingBuilder.ReadOnly()
+        IColumnMappingBuilder IColumnMappingBuilder.LoadOnly()
         {
-            isReadOnly = true;
+            direction = ColumnDirection.FromDatabase;
+            return this;
+        }
+
+        IColumnMappingBuilder IColumnMappingBuilder.SaveOnly()
+        {
+            direction = ColumnDirection.ToDatabase;
             return this;
         }
     }

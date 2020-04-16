@@ -87,13 +87,21 @@ namespace Nevermore.Advanced.ReaderStrategies
                         // If the type column is not mapped, we assume it is a string.
                         typeColumnValue = reader.GetString(i);
                     }
-                    
-                    instanceType = ResolveInstanceType(instanceType, typeColumnValue) ?? instanceType;
-                    if (instanceType == typeof(void))
+
+                    if (typeColumnValue != null)
                     {
-                        // Mappers can use typeof(void) if they want to explicitly hide the result. A use case for this 
-                        // might be when we know there's a type, but the assembly isn't loaded (like in an extension).
-                        return (default, false);
+                        var resolvedInstanceType = ResolveInstanceType(instanceType, typeColumnValue);
+                        if (resolvedInstanceType == null)
+                            throw new InvalidOperationException($"The type column has a value of '{typeColumnValue}' ({typeColumnValue.GetType().Name}), but no type resolver was able to map it to a concrete type to deserialize. Either register an instance type resolver that knows how to interpret the value, or consider fixing the data.");
+                        
+                        if (resolvedInstanceType == typeof(void))
+                        {
+                            // Mappers can use typeof(void) if they want to explicitly hide the result. A use case for this 
+                            // might be when we know there's a type, but the assembly isn't loaded (like in an extension).
+                            return (default, false);
+                        }
+
+                        instanceType = resolvedInstanceType;
                     }
                 }
                 else if (i == plan.JsonIndex && !reader.IsDBNull(i))
@@ -264,7 +272,7 @@ namespace Nevermore.Advanced.ReaderStrategies
 
             public ReaderColumn Bind(int index)
             {
-                return new ReaderColumn(index, readerFunc, column.ReaderWriter);
+                return new ReaderColumn(index, readerFunc, column.ReaderWriter, column.Direction == ColumnDirection.Both || column.Direction == ColumnDirection.FromDatabase);
             }
         }
         
@@ -362,18 +370,19 @@ namespace Nevermore.Advanced.ReaderStrategies
         
         // When a specific query runs against a document type, we finally know the index that the column appears in
         // (when we read the first row). A BoundColumn is added to our ReaderPlan as soon as we know the index.  
-        [DebuggerDisplay("{name} : {index}")]
         class ReaderColumn
         {
             readonly Func<DbDataReader, int, object> reader;
             readonly IPropertyReaderWriter getterSetter;
+            readonly bool writable;
             readonly int index;
 
-            public ReaderColumn(int index, Func<DbDataReader, int, object> reader, IPropertyReaderWriter getterSetter)
+            public ReaderColumn(int index, Func<DbDataReader, int, object> reader, IPropertyReaderWriter getterSetter, bool writable)
             {
                 this.index = index;
                 this.reader = reader;
                 this.getterSetter = getterSetter;
+                this.writable = writable;
             }
 
             public object Read(DbDataReader dataReader)
@@ -383,7 +392,10 @@ namespace Nevermore.Advanced.ReaderStrategies
 
             public void WriteTo(object instance, object value)
             {
-                getterSetter.Write(instance, value);
+                if (writable)
+                {
+                    getterSetter.Write(instance, value);
+                }
             }
         }
     }

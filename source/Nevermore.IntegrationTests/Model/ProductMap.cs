@@ -8,6 +8,8 @@ namespace Nevermore.IntegrationTests.Model
         {
             Column(m => m.Name);
             Column(m => m.Type);
+            
+            JsonStorageFormat = JsonStorageFormat.CompressedOnly;
         }
     }
 }
