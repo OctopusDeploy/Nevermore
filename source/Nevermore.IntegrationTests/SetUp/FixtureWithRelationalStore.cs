@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Nevermore.Advanced.Serialization;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Contracts;
 using Nevermore.IntegrationTests.Model;
@@ -10,6 +11,8 @@ namespace Nevermore.IntegrationTests.SetUp
 {
     public abstract class FixtureWithRelationalStore : FixtureWithDatabase
     {
+        bool resetBetweenTests = true;
+        
         protected FixtureWithRelationalStore()
         {
             var config = new RelationalStoreConfiguration(ConnectionString);
@@ -25,8 +28,12 @@ namespace Nevermore.IntegrationTests.SetUp
             
             config.TypeHandlerRegistry.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeRegistry.Register(new ProductTypeResolver());
-            config.JsonSerializerSettings.Converters.Add(new BrandConverter(config.Mappings));
-            config.JsonSerializerSettings.Converters.Add(new EndpointConverter());
+            
+            config.UseJsonNetSerialization(settings =>
+            {
+                settings.Converters.Add(new BrandConverter(config.Mappings));
+                settings.Converters.Add(new EndpointConverter());
+            });
             
             GenerateSchemaAutomatically(
                 new OrderMap(), 
@@ -43,6 +50,11 @@ namespace Nevermore.IntegrationTests.SetUp
         public RelationalStoreConfiguration Configuration => Store.Configuration;
         public IDocumentMapRegistry Mappings => Configuration.Mappings;
 
+        protected void NoMonkeyBusiness()
+        {
+            Configuration.CommandFactory = new SqlCommandFactory();
+        }
+
         [OneTimeSetUp]
         public virtual void OneTimeSetUp()
         {
@@ -51,8 +63,16 @@ namespace Nevermore.IntegrationTests.SetUp
         [SetUp]
         public virtual void SetUp()
         {
-            integrationTestDatabase.ResetBetweenTestRuns();
-            ((RelationalStore)Store).Reset();
+            if (resetBetweenTests)
+            {            
+                integrationTestDatabase.ResetBetweenTestRuns();
+                ((RelationalStore)Store).Reset();
+            }
+        }
+
+        protected void KeepDataBetweenTests()
+        {
+            resetBetweenTests = false;
         }
 
         void GenerateSchemaAutomatically(params DocumentMap[] mappings)

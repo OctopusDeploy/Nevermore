@@ -155,7 +155,7 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandTimeout: commandTimeout));
+            return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)

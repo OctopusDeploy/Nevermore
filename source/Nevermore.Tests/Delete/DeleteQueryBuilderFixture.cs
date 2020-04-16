@@ -2,6 +2,7 @@
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
@@ -40,7 +41,7 @@ namespace Nevermore.Tests.Delete
         {
             return new DeleteQueryBuilder<TDocument>(
                 new UniqueParameterNameGenerator(),
-                new DataModificationQueryBuilder(mappings, new JsonSerializerSettings(), s => null),
+                new DataModificationQueryBuilder(mappings, new NewtonsoftDocumentSerializer(mappings), s => null),
                 queryExecutor
             );
         }

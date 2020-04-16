@@ -1,5 +1,5 @@
-INSERT INTO dbo.[AltTableName] WITH (NOLOCK) ([AColumn], [Id], [JSON]) VALUES 
-(@AColumn, @Id, @JSON)
+INSERT INTO dbo.[AltTableName] WITH (NOLOCK) ([Id], [AColumn], [JSON]) VALUES 
+(@Id, @AColumn, @JSON)
 
 @Id=New-Id
 @JSON={"NotMapped":"NonMappedValue"}

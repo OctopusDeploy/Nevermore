@@ -4,9 +4,9 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
-using Newtonsoft.Json;
 
 namespace Nevermore.Util
 {
@@ -17,15 +17,16 @@ namespace Nevermore.Util
     {
         const string IdVariableName = "Id";
         const string JsonVariableName = "JSON";
+        const string JsonBlobVariableName = "JSONBlob";
 
         readonly IDocumentMapRegistry mappings;
-        readonly JsonSerializerSettings jsonSerializerSettings;
+        readonly IDocumentSerializer serializer;
         readonly Func<DocumentMap, string> keyAllocator;
 
-        public DataModificationQueryBuilder(IDocumentMapRegistry mappings, JsonSerializerSettings jsonSerializerSettings, Func<DocumentMap, string> keyAllocator)
+        public DataModificationQueryBuilder(IDocumentMapRegistry mappings, IDocumentSerializer serializer, Func<DocumentMap, string> keyAllocator)
         {
             this.mappings = mappings;
-            this.jsonSerializerSettings = jsonSerializerSettings;
+            this.serializer = serializer;
             this.keyAllocator = keyAllocator;
         }
 
@@ -47,8 +48,29 @@ namespace Nevermore.Util
             options ??= UpdateOptions.Default;
             
             var mapping = mappings.Resolve(document.GetType());
-            var updates = string.Join(", ", mapping.WritableIndexedColumns()
-                .Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] {$"[JSON] = @{JsonVariableName}"}));
+
+            var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
+            switch (mapping.JsonStorageFormat)
+            {
+                case JsonStorageFormat.TextOnly:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    break;
+                case JsonStorageFormat.CompressedOnly:
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                case JsonStorageFormat.MixedPreferCompressed:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                case JsonStorageFormat.MixedPreferText:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            var updates = string.Join(", ", updateStatements);
             
             var statement = $"UPDATE dbo.[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}";
 
@@ -128,11 +150,34 @@ namespace Nevermore.Util
             return allMappings[0];
         }
 
+        // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
-            var columns = mapping.WritableIndexedColumns().Select(c => c.ColumnName).ToList();
+            var columns = new List<string>();
+            
+            if (includeDefaultModelColumns) 
+                columns.Add(mapping.IdColumn.ColumnName);
+            
+            columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
+            
             if (includeDefaultModelColumns)
-                columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName}).ToList();
+            {
+                switch (mapping.JsonStorageFormat)
+                {
+                    case JsonStorageFormat.TextOnly:
+                        columns.Add(JsonVariableName);
+                        break;
+                    case JsonStorageFormat.CompressedOnly:
+                        columns.Add(JsonBlobVariableName);
+                        break;
+                    case JsonStorageFormat.MixedPreferCompressed:
+                    case JsonStorageFormat.MixedPreferText:
+                        columns.Add(JsonBlobVariableName);
+                        columns.Add(JsonVariableName);
+                        break;
+                }
+            }
+
             var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
             var actualTableName = tableName ?? mapping.TableName;
@@ -190,8 +235,26 @@ namespace Nevermore.Util
                 [$"{prefix}{IdVariableName}"] = id
             };
 
-            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, jsonSerializerSettings);
-
+            switch (mapping.JsonStorageFormat)
+            {
+                case JsonStorageFormat.TextOnly:
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    break;
+                case JsonStorageFormat.CompressedOnly:
+                    result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
+                    break;
+                case JsonStorageFormat.MixedPreferCompressed:
+                    result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
+                    result[$"{prefix}{JsonVariableName}"] = null;
+                    break;
+                case JsonStorageFormat.MixedPreferText:
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    result[$"{prefix}{JsonBlobVariableName}"] = null;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.ReaderWriter.Read(document);

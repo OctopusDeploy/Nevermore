@@ -84,6 +84,8 @@ namespace Nevermore.Mapping
 
         public Type Type { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
+        
+        public JsonStorageFormat JsonStorageFormat { get; set; }
 
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
@@ -92,6 +94,7 @@ namespace Nevermore.Mapping
         public List<UniqueRule> UniqueConstraints { get; private set; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
         
+        // TODO: Obsolete
         public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)
@@ -102,6 +105,8 @@ namespace Nevermore.Mapping
             IdFormat = key => $"{IdPrefix}-{key}";
 
             var properties = type.GetTypeInfo().GetProperties();
+
+            JsonStorageFormat = JsonStorageFormat.TextOnly;
 
             foreach (var property in properties)
             {

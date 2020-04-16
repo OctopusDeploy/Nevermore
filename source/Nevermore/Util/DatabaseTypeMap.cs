@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Reflection;
 
 namespace Nevermore.Util
@@ -57,6 +58,10 @@ namespace Nevermore.Util
             if (propertyType.GetTypeInfo().IsEnum)
             {
                 return DbType.String;
+            }
+            if (typeof(Stream).IsAssignableFrom(propertyType))
+            {
+                return DbType.Binary;
             }
 
             DbType result;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assent;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.Util;
@@ -28,10 +29,7 @@ namespace Nevermore.Tests.Util
             });
             builder = new DataModificationQueryBuilder(
                 mappings,
-                new JsonSerializerSettings
-                {
-                    ContractResolver = new RelationalJsonContractResolver(mappings)
-                },
+                new NewtonsoftDocumentSerializer(mappings),
                 m => idAllocator() 
             );
         }

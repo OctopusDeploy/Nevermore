@@ -11,7 +11,7 @@ namespace Nevermore.IntegrationTests.Chaos
         readonly ISqlCommandFactory wrappedFactory;
         readonly double chaosFactor;
 
-        public ChaosSqlCommandFactory(ISqlCommandFactory wrappedFactory, double chaosFactor = 0.2)
+        public ChaosSqlCommandFactory(ISqlCommandFactory wrappedFactory, double chaosFactor = 0.1)
         {
             this.wrappedFactory = wrappedFactory;
             this.chaosFactor = chaosFactor;

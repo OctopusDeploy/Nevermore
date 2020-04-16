@@ -27,7 +27,7 @@ namespace Nevermore.Advanced
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
-            builder = new DataModificationQueryBuilder(configuration.Mappings, configuration.JsonSerializerSettings, AllocateId);
+            builder = new DataModificationQueryBuilder(configuration.Mappings, configuration.Serializer, AllocateId);
         }
         
         public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class

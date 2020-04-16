@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
@@ -16,8 +17,8 @@ namespace Nevermore
     {
         string ApplicationName { get; set; }
         string ConnectionString { get; }
-        IDocumentMapRegistry Mappings { get; set; }
-        JsonSerializerSettings JsonSerializerSettings { get; set; }
+        IDocumentMapRegistry Mappings { get; }
+        IDocumentSerializer Serializer { get; set; }
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         int KeyBlockSize { get; set; }
         IReaderStrategyRegistry ReaderStrategyRegistry { get; }
@@ -48,15 +49,7 @@ namespace Nevermore
             InstanceTypeRegistry = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
             
-            var contractResolver = new RelationalJsonContractResolver(Mappings);
-            JsonSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = contractResolver,
-                TypeNameHandling = TypeNameHandling.Auto,
-                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
-            };
-            
-            JsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            this.UseJsonNetSerialization(s => {});
             
             ReaderStrategyRegistry = new ReaderStrategyRegistry();
             ReaderStrategyRegistry.Register(new DocumentReaderStrategy(this));
@@ -77,9 +70,9 @@ namespace Nevermore
 
         public string ConnectionString => connectionString.Value;
 
-        public IDocumentMapRegistry Mappings { get; set; }
+        public IDocumentMapRegistry Mappings { get; }
         
-        public JsonSerializerSettings JsonSerializerSettings { get; set; }
+        public IDocumentSerializer Serializer { get; set; }
         
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
         

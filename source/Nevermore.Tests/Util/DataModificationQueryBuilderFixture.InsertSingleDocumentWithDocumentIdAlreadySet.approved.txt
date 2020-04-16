@@ -1,5 +1,5 @@
-INSERT INTO dbo.[TestDocumentTbl]  ([AColumn], [Id], [JSON]) VALUES 
-(@AColumn, @Id, @JSON)
+INSERT INTO dbo.[TestDocumentTbl]  ([Id], [AColumn], [JSON]) VALUES 
+(@Id, @AColumn, @JSON)
 
 @Id=SuppliedId
 @JSON={"NotMapped":"NonMappedValue"}

@@ -41,12 +41,15 @@ alter table Customer add constraint UQ_UniqueCustomerNames unique(FirstName, Las
 
 go
 
+begin transaction 
 declare @i int = 0
-While @i <= 5001
+While @i <= 50001
 Begin
-    Insert Customer (Id, FirstName, LastName, Nickname, [JSON]) values ('Customer-'+ convert(nvarchar(5), @i), 'Robert', 'Menzies ' + convert(nvarchar(5), @i), 'Bob', '{}')
+    Insert Customer (Id, FirstName, LastName, Nickname, [JSON]) values ('Customer-'+ convert(nvarchar(10), @i), 'Robert', 'Menzies ' + convert(nvarchar(10), @i), 'Bob', '{}')
     Set @i = @i + 1;
 End
+
+commit 
 
 go 
 
@@ -54,4 +57,17 @@ Create Table BigObject
 (
     Id nvarchar(200) primary key not null, 
     [JSON] nvarchar(max) not null
+)
+
+Create Table BigObjectCompressed
+(
+    Id nvarchar(200) primary key not null, 
+    [JSONBlob] varbinary(max) not null
+)
+
+Create Table BigObjectMixed
+(
+    Id nvarchar(200) primary key not null, 
+    [JSON] nvarchar(max) not null,
+    [JSONBlob] varbinary(max) not null
 )

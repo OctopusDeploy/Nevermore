@@ -4,13 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
-using Newtonsoft.Json;
 
 namespace Nevermore.Advanced.ReaderStrategies
 {
@@ -21,12 +18,10 @@ namespace Nevermore.Advanced.ReaderStrategies
     public class DocumentReaderStrategy : IReaderStrategy
     {
         readonly RelationalStoreConfiguration configuration;
-        readonly Lazy<JsonSerializer> serializer;
         
         public DocumentReaderStrategy(RelationalStoreConfiguration configuration)
         {
             this.configuration = configuration;
-            serializer = new Lazy<JsonSerializer>(() => JsonSerializer.Create(configuration.JsonSerializerSettings));
         }
         
         public bool CanRead(Type type)
@@ -101,7 +96,7 @@ namespace Nevermore.Advanced.ReaderStrategies
                         return (default, false);
                     }
                 }
-                else if (i == plan.JsonIndex)
+                else if (i == plan.JsonIndex && !reader.IsDBNull(i))
                 {
                     // The JSON column is typically the largest column on a document, and contains one big string.
                     // We have two approaches for reading the JSON. We start by simply reading it to a string with
@@ -123,17 +118,28 @@ namespace Nevermore.Advanced.ReaderStrategies
                     {
                         // < 1K and we'll just read it as a string and deserialize
                         var text = reader.GetString(i);
-                        deserialized = JsonConvert.DeserializeObject(text, instanceType, configuration.JsonSerializerSettings);
                         if (text.Length >= 1024) 
+                            // We'll know for next time
                             plan.TypePlan.ExpectsLargeDocuments = true;
+
+                        if (deserialized == null || plan.TypePlan.JsonStorageFormat == JsonStorageFormat.MixedPreferText)
+                            deserialized = configuration.Serializer.DeserializeSmallText(text, instanceType);
                     }
                     else
                     {
-                        // Large documents will be streamed
+                        // Large documents will be streamed. Since it's a text column, we have to call GetChars.
+                        // DataReaderTextStream exposes that character stream as a stream that our serializer can read
+                        // (as serializers typically prefer byte[] streams)
                         using var dataStream = new DataReaderTextStream(reader, plan.JsonIndex);
-                        using var jsonTextReader = new JsonTextReader(new StreamReader(dataStream, Encoding.UTF8, false, 1024));
-                        deserialized = serializer.Value.Deserialize(jsonTextReader, instanceType);
+                        if (deserialized == null || plan.TypePlan.JsonStorageFormat == JsonStorageFormat.MixedPreferText)
+                            deserialized = configuration.Serializer.DeserializeLargeText(dataStream, instanceType);
                     }
+                }
+                else if (i == plan.JsonBlobIndex && !reader.IsDBNull(i))
+                {
+                    using var stream = reader.GetStream(i);
+                    if (deserialized == null || plan.TypePlan.JsonStorageFormat == JsonStorageFormat.MixedPreferCompressed)
+                        deserialized = configuration.Serializer.DeserializeCompressed(stream, instanceType);
                 }
                 else if (plan.BoundExpectedColumns[i] != null)
                 {
@@ -141,6 +147,16 @@ namespace Nevermore.Advanced.ReaderStrategies
                     // reader, we need to read the value anyway. So store and buffer it.
                     bufferedValues[i] = plan.BoundExpectedColumns[i].Read(reader);
                 }
+            }
+
+            if (deserialized == null)
+            {
+                if (plan.JsonBlobIndex >= 0 && plan.JsonIndex >= 0)
+                    throw new InvalidOperationException("The result set contained both a [JSON] and [JSONBlob] column, but on this row both were null, so the document could not be deserialized.");
+                if (plan.JsonBlobIndex >= 0)
+                    throw new InvalidOperationException("The result set contained a [JSONBlob] column (no [JSON] column), but on this row the value was null, so the document could not be deserialized.");
+                if (plan.JsonIndex >= 0)
+                    throw new InvalidOperationException("The result set contained a [JSON] column (no [JSONBlob] column), but on this row the value was null, so the document could not be deserialized.");
             }
             
             if (!(deserialized is TDocument document))
@@ -175,6 +191,9 @@ namespace Nevermore.Advanced.ReaderStrategies
             public readonly Type Type;
             public readonly DocumentMap Mapping;
             public readonly ConcurrentDictionary<string, TypeColumn> Columns;
+            public readonly JsonStorageFormat JsonStorageFormat;
+            public readonly bool ExpectsJsonText;
+            public readonly bool ExpectsJsonCompressed;
             
             public bool ExpectsLargeDocuments { get; set; }
 
@@ -183,6 +202,9 @@ namespace Nevermore.Advanced.ReaderStrategies
                 Type = type;
                 Mapping = mapping;
                 Columns = columns;
+                JsonStorageFormat = mapping.JsonStorageFormat;
+                ExpectsJsonText = JsonStorageFormat != JsonStorageFormat.CompressedOnly;
+                ExpectsJsonCompressed = JsonStorageFormat != JsonStorageFormat.TextOnly;
             }
 
             public static TypePlan Create(Type type, IRelationalStoreConfiguration configuration)
@@ -255,6 +277,7 @@ namespace Nevermore.Advanced.ReaderStrategies
             public ReaderColumn[] BoundExpectedColumns;
             public int IdIndex = -1;
             public int JsonIndex = -1;
+            public int JsonBlobIndex = -1;
             public int TypeIndex = -1;
             public TypePlan TypePlan;
 
@@ -282,6 +305,7 @@ namespace Nevermore.Advanced.ReaderStrategies
                     
                     if (string.Equals(fieldName, idColumnName, StringComparison.OrdinalIgnoreCase)) IdIndex = i;
                     if (string.Equals(fieldName, "JSON", StringComparison.OrdinalIgnoreCase)) JsonIndex = i;
+                    if (string.Equals(fieldName, "JSONBlob", StringComparison.OrdinalIgnoreCase)) JsonBlobIndex = i;
                     if (string.Equals(fieldName, "Type", StringComparison.OrdinalIgnoreCase)) TypeIndex = i;
 
                     if (TypePlan.Columns.TryGetValue(fieldName, out var column))
@@ -297,15 +321,30 @@ namespace Nevermore.Advanced.ReaderStrategies
                     throw new InvalidOperationException(
                         $"The class '{TypePlan.Type.Name}' has a document map, but the query does not include the 'Id' column. Queries against this type must include the Id in the select clause. Columns returned: " +
                         DebugListReturnedColumnNames(reader));
-
-                if (JsonIndex < 0)
+                
+                if (TypePlan.ExpectsJsonText && JsonIndex < 0 && TypePlan.ExpectsJsonCompressed && JsonBlobIndex < 0)
                     throw new InvalidOperationException(
-                        $"The class '{TypePlan.Type.Name}' has a document map, but the query does not include the 'JSON' column. Queries against this type must include the JSON in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support. Columns returned: " +
+                        $"The class '{TypePlan.Type.Name}' has a document map with JSON storage set to {TypePlan.JsonStorageFormat.ToString()}, but the query does not include either the 'JSON' or 'JSONBlob' column. Queries against this type must include both columns in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support. Columns returned: " +
+                        DebugListReturnedColumnNames(reader));
+                
+                if (TypePlan.ExpectsJsonText && JsonIndex < 0)
+                    throw new InvalidOperationException(
+                        $"The class '{TypePlan.Type.Name}' has a document map with JSON storage set to {TypePlan.JsonStorageFormat.ToString()}, but the query does not include the 'JSON' column. Queries against this type must include the JSON in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support. Columns returned: " +
+                        DebugListReturnedColumnNames(reader));
+                
+                if (TypePlan.ExpectsJsonCompressed && JsonBlobIndex < 0)
+                    throw new InvalidOperationException(
+                        $"The class '{TypePlan.Type.Name}' has a document map with JSON storage set to {TypePlan.JsonStorageFormat.ToString()}, but the query does not include the 'JSONBlob' column. Queries against this type must include the JSONBlob in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support. Columns returned: " +
                         DebugListReturnedColumnNames(reader));
 
-                if (TypeIndex >= 0 && TypeIndex > JsonIndex)
+                if (TypeIndex >= 0 && TypePlan.ExpectsJsonText && TypeIndex > JsonIndex)
                     throw new InvalidOperationException(
                         $"When querying the document '{TypePlan.Type.Name}', the 'Type' column must always appear before the 'JSON' column. Change the order in the SELECT clause, or if selecting '*', change the order of columns in the table. Columns returned: " +
+                        DebugListReturnedColumnNames(reader));
+                
+                if (TypeIndex >= 0 && TypePlan.ExpectsJsonCompressed && TypeIndex > JsonBlobIndex)
+                    throw new InvalidOperationException(
+                        $"When querying the document '{TypePlan.Type.Name}', the 'Type' column must always appear before the 'JSONBlob' column. Change the order in the SELECT clause, or if selecting '*', change the order of columns in the table. Columns returned: " +
                         DebugListReturnedColumnNames(reader));
             }
 
