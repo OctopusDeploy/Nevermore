@@ -82,7 +82,7 @@ namespace Nevermore.Mapping
 
             int GetNextMaxValue()
             {
-                using (var transaction = store.BeginTransaction(IsolationLevel.Serializable))
+                using (var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable))
                 {
                     var parameters = new CommandParameterValues
                     {
@@ -91,12 +91,7 @@ namespace Nevermore.Mapping
                     };
                     parameters.CommandType = CommandType.StoredProcedure;
 
-                    var result = 0;
-                    transaction.ExecuteReader("GetNextKeyBlock", parameters, r =>
-                    {
-                        r.Read();
-                        result = (int)r[0];
-                    });
+                    var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
                     transaction.Commit();
                     return result;
                 }

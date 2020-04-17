@@ -1,5 +1,6 @@
 ﻿using System;
 using FluentAssertions;
+using Nevermore.Advanced;
 using NSubstitute;
 using NUnit.Framework;
 

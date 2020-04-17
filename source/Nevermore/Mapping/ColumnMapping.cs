@@ -1,132 +1,82 @@
 ﻿using System;
-using System.Data;
 using System.Reflection;
-using Nevermore.Contracts;
 
 namespace Nevermore.Mapping
 {
-    public class ColumnMapping
+    public class ColumnMapping : IColumnMappingBuilder
     {
-        public const int DefaultMaxLongStringLength = 2000;
-        public const int DefaultMaxStringLength = 200;
-        // Override in DocumentMap subclasses where necessary
-        public const int DefaultPrimaryKeyIdLength = 50;
-        public const int DefaultMaxForeignKeyIdLength = 50;
-        public const int DefaultMaxEnumLength = 50;
-        // Thumbprints today are 40 (SHA-1), 128 this allows room for alternative hash algorithms
-        public const int DefaultMaxThumbprintLength = 128;
-        // Theoretical maximum Uri is ~2048 but Nuget feed Uris will be shorter
-        public const int DefaultMaxUriLength = 512;
+        const int MaxStringLengthByDefault = 200;
+        const int DefaultPrimaryKeyIdLength = 50;
+        const int DefaultMaxForeignKeyIdLength = 50;
+        const int DefaultMaxEnumLength = 50;
+        ColumnDirection direction;
+        int? maxLength;
+        bool isNullable;
 
-        DbType? dbType;
-        int maxLength;
-
-        public ColumnMapping(string columnName, DbType dbType, IPropertyReaderWriter<object> readerWriter, bool readOnly = false)
+        internal ColumnMapping(string columnName, Type type, IPropertyReaderWriter readerWriter)
         {
-            if (columnName == null)
-                throw new ArgumentNullException("columnName");
-            if (readerWriter == null)
-                throw new ArgumentNullException("readerWriter");
-
-            this.dbType = dbType;
-            ColumnName = columnName;
-            ReaderWriter = readerWriter;
-            IsReadOnly = readOnly;
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            ColumnName = columnName ?? throw new ArgumentNullException(nameof(columnName));
+            ReaderWriter = readerWriter ?? throw new ArgumentNullException(nameof(readerWriter));
         }
-
-        public ColumnMapping(PropertyInfo property)
+        
+        internal ColumnMapping(string columnName, PropertyInfo property)
         {
             Property = property;
-            ColumnName = Property.Name;
+            Type = property.PropertyType;
+            ColumnName = columnName ?? property.Name;
             ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
 
             if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
-                IsNullable = true;
+                isNullable = true;
             }
             
-            if (property.PropertyType == typeof(string))
+            if (property.Name == "Id")
             {
-                DbType = DbType.String;
-                if (maxLength == 0)
-                {
-                    if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase)) // Primary keys
-                    {
-                        MaxLength = DefaultPrimaryKeyIdLength;
-                    }
-                    else if (property.Name.EndsWith("Id")) // Foreign keys
-                    {
-                        MaxLength = DefaultMaxForeignKeyIdLength;
-                    }
-                }
+                maxLength = DefaultPrimaryKeyIdLength;
+            }
+            else if (property.Name.EndsWith("Id")) // Foreign keys
+            {
+                maxLength = DefaultMaxForeignKeyIdLength;
             }
 
             if (property.PropertyType.GetTypeInfo().IsEnum)
             {
-                MaxLength = DefaultMaxEnumLength;
-                DbType = DbType.String;
-            }
-
-            if (property.PropertyType == typeof(ReferenceCollection))
-            {
-                DbType = DbType.String;
-                MaxLength = int.MaxValue;
-                ReaderWriter = new ReferenceCollectionReaderWriter(ReaderWriter);
+                maxLength = DefaultMaxEnumLength;
             }
         }
 
-        public bool IsNullable { get; set; }
-        public string ColumnName { get; private set; }
+        public string ColumnName { get; }
+        public Type Type { get; }
+        public IPropertyReaderWriter ReaderWriter { get; }
+        public PropertyInfo Property { get; }
 
-        public DbType DbType
+        public bool IsNullable => isNullable;
+        public int MaxLength => maxLength ?? MaxStringLengthByDefault;
+        public ColumnDirection Direction => direction;
+
+        IColumnMappingBuilder IColumnMappingBuilder.Nullable()
         {
-            get
-            {
-                if (dbType == null)
-                    return DbType = DatabaseTypeConverter.AsDbType(Property.PropertyType);
-                return dbType.Value;
-            }
-            set { dbType = value; }
-        }
-
-        public int MaxLength
-        {
-            get
-            {
-                if (maxLength == 0 && (dbType == DbType.String))
-                {
-                    MaxLength = DefaultMaxStringLength;
-                }
-                return maxLength;
-            }
-            set { maxLength = value; }
-        }
-
-        public PropertyInfo Property { get; private set; }
-        public IPropertyReaderWriter<object> ReaderWriter { get; set; }
-        public bool IsReadOnly { get; set; }
-
-        public ColumnMapping Nullable()
-        {
-            IsNullable = true;
+            isNullable = true;
             return this;
         }
 
-        public ColumnMapping WithMaxLength(int max)
+        IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {
             maxLength = max;
             return this;
         }
 
-        public ColumnMapping ReadOnly()
+        IColumnMappingBuilder IColumnMappingBuilder.LoadOnly()
         {
-            IsReadOnly = true;
+            direction = ColumnDirection.FromDatabase;
             return this;
         }
-        
-        public ColumnMapping WithColumnName(string columnName)
+
+        IColumnMappingBuilder IColumnMappingBuilder.SaveOnly()
         {
-            ColumnName = columnName;
+            direction = ColumnDirection.ToDatabase;
             return this;
         }
     }

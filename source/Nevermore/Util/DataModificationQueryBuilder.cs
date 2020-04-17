@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
-using Nevermore.AST;
-using Nevermore.Contracts;
+using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
-using Newtonsoft.Json;
+using Nevermore.Querying.AST;
 
 namespace Nevermore.Util
 {
@@ -20,109 +17,131 @@ namespace Nevermore.Util
     {
         const string IdVariableName = "Id";
         const string JsonVariableName = "JSON";
+        const string JsonBlobVariableName = "JSONBlob";
 
-        readonly RelationalMappings mappings;
-        readonly JsonSerializerSettings jsonSerializerSettings;
+        readonly IDocumentMapRegistry mappings;
+        readonly IDocumentSerializer serializer;
+        readonly Func<DocumentMap, string> keyAllocator;
 
-        public DataModificationQueryBuilder(RelationalMappings mappings, JsonSerializerSettings jsonSerializerSettings)
+        public DataModificationQueryBuilder(IDocumentMapRegistry mappings, IDocumentSerializer serializer, Func<DocumentMap, string> keyAllocator)
         {
             this.mappings = mappings;
-            this.jsonSerializerSettings = jsonSerializerSettings;
+            this.serializer = serializer;
+            this.keyAllocator = keyAllocator;
         }
 
-        public (DocumentMap mapping, string statement, CommandParameterValues parameterValues) CreateInsert(
-            IReadOnlyList<IId> documents,
-            string tableName,
-            string tableHint,
-            Func<DocumentMap, string> allocateId,
-            bool includeDefaultModelColumns)
+        public PreparedCommand PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
         {
+            options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
 
             var sb = new StringBuilder();
-            AppendInsertStatement(sb, mapping, tableName, tableHint, documents.Count, includeDefaultModelColumns);
-            var parameters = GetDocumentParameters(allocateId, documents, mapping);
+            AppendInsertStatement(sb, mapping, options.TableName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
+            var parameters = GetDocumentParameters(m => string.IsNullOrEmpty(options.CustomAssignedId) ? keyAllocator(m) : options.CustomAssignedId, documents, mapping);
 
             AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
-            return (mapping, sb.ToString(), parameters);
+            return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
         }
 
-        public (DocumentMap, string, CommandParameterValues) CreateUpdate(IId document, string tableHint)
+        public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
         {
-            var mapping = mappings.Get(document.GetType());
+            options ??= UpdateOptions.Default;
+            
+            var mapping = mappings.Resolve(document.GetType());
 
-            var updates = string.Join(", ", mapping.WritableIndexedColumns()
-                .Select(c => "[" + c.ColumnName + "] = @" + c.ColumnName).Union(new[] {$"[JSON] = @{JsonVariableName}"}));
-            var statement = $"UPDATE dbo.[{mapping.TableName}] {tableHint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}";
+            var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
+            switch (mapping.JsonStorageFormat)
+            {
+                case JsonStorageFormat.TextOnly:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    break;
+                case JsonStorageFormat.CompressedOnly:
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                case JsonStorageFormat.MixedPreferCompressed:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                case JsonStorageFormat.MixedPreferText:
+                    updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
+                    updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            var updates = string.Join(", ", updateStatements);
+            
+            var statement = $"UPDATE dbo.[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
                 document,
-                mapping,
-                null
+                mapping
             );
 
             statement = AppendRelatedDocumentStatementsForUpdate(statement, parameters, mapping, document);
-
-            return (mapping, statement, parameters);
+            return new PreparedCommand(statement, parameters, RetriableOperation.Update, mapping, options.CommandTimeout);
         }
 
-        public (string statement, CommandParameterValues parameterValues) CreateDelete(IId document)
+        public PreparedCommand PrepareDelete(object document, DeleteOptions options = null)
         {
-            var mapping = mappings.Get(document.GetType());
+            var mapping = mappings.Resolve(document.GetType());
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
-            return CreateDeleteById(mapping, id);
+            return PrepareDelete(mapping, id, options);
         }
 
-        public (string statement, CommandParameterValues parameterValues) CreateDelete<TDocument>(string id)
-            where TDocument : class, IId
+        public PreparedCommand PrepareDelete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
         {
-            var mapping = mappings.Get(typeof(TDocument));
-            return CreateDeleteById(mapping, id);
+            var mapping = mappings.Resolve(typeof(TDocument));
+            return PrepareDelete(mapping, id, options);
         }
 
-        static (string statement, CommandParameterValues parameterValues) CreateDeleteById(DocumentMap mapping, string id)
+        static PreparedCommand PrepareDelete(DocumentMap mapping, string id, DeleteOptions options = null)
         {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
+            options ??= DeleteOptions.Default;
+            var statement = new StringBuilder();
+            statement.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
-                sb.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
+                statement.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
             var parameters = new CommandParameterValues {{IdVariableName, id}};
-            return (sb.ToString(), parameters);
+            return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
         }
 
-        public string CreateDelete(Type documentType, Where where)
-            => CreateDelete(mappings.Get(documentType), where.GenerateSql());
-
-        string CreateDelete(DocumentMap mapping, string whereClause)
+        public PreparedCommand PrepareDelete(Type documentType, Where where, CommandParameterValues parameters, DeleteOptions options = null)
         {
+            return PrepareDelete(mappings.Resolve(documentType), where, parameters, options);
+        }
+
+        public PreparedCommand PrepareDelete(DocumentMap mapping, Where where, CommandParameterValues parameters, DeleteOptions options = null)
+        {
+            options ??= DeleteOptions.Default;
+            
             if (!mapping.RelatedDocumentsMappings.Any())
-                return $"DELETE FROM [{mapping.TableName}] {whereClause}";
-            ;
+                return new PreparedCommand($"DELETE FROM [{options.TableName ?? mapping.TableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
 
-            var sb = new StringBuilder();
-            sb.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
-            sb.AppendLine();
-            sb.AppendLine("INSERT INTO @Ids");
-            sb.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
-            sb.AppendLine($"FROM [{mapping.TableName}] WITH (ROWLOCK)");
-            sb.AppendLine(whereClause);
-            sb.AppendLine();
+            var statement = new StringBuilder();
+            statement.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
+            statement.AppendLine();
+            statement.AppendLine("INSERT INTO @Ids");
+            statement.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
+            statement.AppendLine($"FROM [{mapping.TableName}] WITH (ROWLOCK)");
+            statement.AppendLine(where.GenerateSql());
+            statement.AppendLine();
 
-            sb.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
+            statement.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
 
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
-                sb.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
+                statement.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
 
-            return sb.ToString();
+            return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
         }
 
-        DocumentMap GetMapping(IReadOnlyList<IId> documents)
+        DocumentMap GetMapping(IReadOnlyList<object> documents)
         {
-            var allMappings = documents.Select(i => this.mappings.Get(i)).Distinct().ToArray();
+            var allMappings = documents.Select(i => mappings.Resolve(i)).Distinct().ToArray();
             if (allMappings.Length == 0)
                 throw new Exception($"No mapping found for type {documents[0].GetType()}");
 
@@ -131,17 +150,39 @@ namespace Nevermore.Util
             return allMappings[0];
         }
 
+        // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
-            var columns = mapping.WritableIndexedColumns().Select(c => c.ColumnName).ToList();
+            var columns = new List<string>();
+            
+            if (includeDefaultModelColumns) 
+                columns.Add(mapping.IdColumn.ColumnName);
+            
+            columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
+            
             if (includeDefaultModelColumns)
-                columns = columns.Union(new[] {mapping.IdColumn.ColumnName, JsonVariableName}).ToList();
+            {
+                switch (mapping.JsonStorageFormat)
+                {
+                    case JsonStorageFormat.TextOnly:
+                        columns.Add(JsonVariableName);
+                        break;
+                    case JsonStorageFormat.CompressedOnly:
+                        columns.Add(JsonBlobVariableName);
+                        break;
+                    case JsonStorageFormat.MixedPreferCompressed:
+                    case JsonStorageFormat.MixedPreferText:
+                        columns.Add(JsonBlobVariableName);
+                        columns.Add(JsonVariableName);
+                        break;
+                }
+            }
+
             var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
             var actualTableName = tableName ?? mapping.TableName;
 
             sb.AppendLine($"INSERT INTO dbo.[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
-
 
             void Append(string prefix)
             {
@@ -165,7 +206,7 @@ namespace Nevermore.Util
         }
 
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IReadOnlyList<IId> documents, DocumentMap mapping)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IReadOnlyList<object> documents, DocumentMap mapping)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, documents[0], mapping, "");
@@ -180,19 +221,40 @@ namespace Nevermore.Util
             return parameters;
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IId document, DocumentMap mapping, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object document, DocumentMap mapping, string prefix = null)
         {
             var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
             if (string.IsNullOrWhiteSpace(id))
+            {
                 id = allocateId(mapping);
+                mapping.IdColumn.ReaderWriter.Write(document, id);
+            }
 
             var result = new CommandParameterValues
             {
                 [$"{prefix}{IdVariableName}"] = id
             };
 
-            result[$"{prefix}{JsonVariableName}"] = JsonConvert.SerializeObject(document, mapping.Type, jsonSerializerSettings);
-
+            switch (mapping.JsonStorageFormat)
+            {
+                case JsonStorageFormat.TextOnly:
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    break;
+                case JsonStorageFormat.CompressedOnly:
+                    result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
+                    break;
+                case JsonStorageFormat.MixedPreferCompressed:
+                    result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
+                    result[$"{prefix}{JsonVariableName}"] = null;
+                    break;
+                case JsonStorageFormat.MixedPreferText:
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    result[$"{prefix}{JsonBlobVariableName}"] = null;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.ReaderWriter.Read(document);
@@ -220,7 +282,7 @@ namespace Nevermore.Util
             StringBuilder sb,
             CommandParameterValues parameters,
             DocumentMap mapping,
-            IReadOnlyList<IId> documents)
+            IReadOnlyList<object> documents)
         {
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
 
@@ -250,7 +312,7 @@ namespace Nevermore.Util
             string statement,
             CommandParameterValues parameters,
             DocumentMap mapping,
-            IId document)
+            object document)
         {
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
             if (relatedDocumentData.Count == 0)
@@ -299,21 +361,20 @@ namespace Nevermore.Util
             return sb.ToString();
         }
 
-        IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<IId> documents)
+        IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
         {
             var documentAndIds = documents.Count == 1
                 ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
-
-
+            
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by m.TableName
                 into g
                 let related = (
                     from m in g
                     from i in documentAndIds
-                    from relId in m.ReaderWriter.Read(i.document) ?? new (string id, Type type)[0]
-                    let relatedTableName = mappings.Get(relId.type).TableName
+                    from relId in (m.ReaderWriter.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
+                    let relatedTableName = mappings.Resolve(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
                 ).Distinct().ToArray()
                 select new RelatedDocumentTableData
@@ -343,6 +404,6 @@ namespace Nevermore.Util
     internal static class DataModificationQueryBuilderExtensions
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
-            doc.IndexedColumns.Where(c => !c.IsReadOnly);
+            doc.IndexedColumns.Where(c => c.Direction == ColumnDirection.Both || c.Direction == ColumnDirection.ToDatabase);
     }
 }

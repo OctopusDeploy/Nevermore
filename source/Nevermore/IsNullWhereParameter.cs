@@ -1,6 +1,4 @@
-﻿using Nevermore.AST;
-
-namespace Nevermore
+﻿namespace Nevermore
 {
     public class IsNullWhereParameter
     {

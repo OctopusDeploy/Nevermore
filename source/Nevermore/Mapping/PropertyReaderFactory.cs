@@ -8,13 +8,13 @@ namespace Nevermore.Mapping
     {
         static readonly ConcurrentDictionary<string, object> Readers = new ConcurrentDictionary<string, object>();
 
-        public static IPropertyReaderWriter<TCast> Create<TCast>(Type objectType, string propertyName)
+        public static IPropertyReaderWriter Create<TCast>(Type objectType, string propertyName)
         {
             var key = objectType.AssemblyQualifiedName + "-" + propertyName;
-            IPropertyReaderWriter<TCast> result = null;
+            IPropertyReaderWriter result = null;
             if (Readers.ContainsKey(key))
             {
-                result = Readers[key] as IPropertyReaderWriter<TCast>;
+                result = Readers[key] as IPropertyReaderWriter;
             }
 
             if (result != null)
@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
                     propertySetterDelegate = propertySetterMethodInfo.CreateDelegate(delegateWriterType);
                 }
 
-                result = (IPropertyReaderWriter<TCast>)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
+                result = (IPropertyReaderWriter)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
                 Readers[key] = result;
             }
             else
@@ -60,14 +60,14 @@ namespace Nevermore.Mapping
                     throw new InvalidOperationException(string.Format("Field type '{0}' for field '{1}.{2}' cannot be converted to type '{3}", fieldInfo.FieldType, fieldInfo.DeclaringType == null ? "??" : fieldInfo.DeclaringType.Name, fieldInfo.Name, typeof (TCast).Name));
                 }
 
-                result = new FieldReaderWriter<TCast>(fieldInfo);
+                result = new FieldReaderWriter(fieldInfo);
                 Readers[key] = result;
             }
 
             return result;
         }
 
-        class DelegatePropertyReaderWriter<TInput, TReturn, TCast> : IPropertyReaderWriter<TCast>
+        class DelegatePropertyReaderWriter<TInput, TReturn, TCast> : IPropertyReaderWriter
             where TReturn : TCast
         {
             readonly Func<TInput, TReturn> caller;
@@ -79,23 +79,24 @@ namespace Nevermore.Mapping
                 this.writer = writer;
             }
 
-            public TCast Read(object target)
+            public object Read(object target)
             {
                 return caller((TInput)target);
             }
 
-            public void Write(object target, TCast value)
+            public void Write(object target, object value)
             {
                 if (writer == null)
                 {
-                    throw new InvalidOperationException("Cannot write to a property without a setter");
+                    throw new InvalidOperationException("Cannot write to a property without a setter. If the property is meant to be read-only, mark it with StoreOnly() on the column definition in the DocumentMap.");
                 }
-                var returnable = (TReturn)AmazingConverter.Convert(value, typeof (TReturn));
+
+                var returnable = (TReturn) value;
                 writer((TInput)target, returnable);
             }
         }
 
-        class FieldReaderWriter<TCast> : IPropertyReaderWriter<TCast>
+        class FieldReaderWriter : IPropertyReaderWriter
         {
             readonly FieldInfo field;
 
@@ -104,12 +105,12 @@ namespace Nevermore.Mapping
                 this.field = field;
             }
 
-            public TCast Read(object target)
+            public object Read(object target)
             {
-                return (TCast)field.GetValue(target);
+                return field.GetValue(target);
             }
 
-            public void Write(object target, TCast value)
+            public void Write(object target, object value)
             {
                 field.SetValue(target, value);
             }

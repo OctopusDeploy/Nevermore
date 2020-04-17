@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.AST;
-using Nevermore.Contracts;
+using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
+using Nevermore.Mapping;
+using Nevermore.Querying;
+using Nevermore.Util;
+using Newtonsoft.Json;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -10,180 +14,208 @@ namespace Nevermore.Tests.Delete
 {
     public class DeleteQueryBuilderFixture
     {
-        readonly IRelationalTransaction transaction;
+        readonly IWriteQueryExecutor queryExecutor;
+        string query;
+        CommandParameterValues parameters;
+        IDocumentMapRegistry mappings;
 
         public DeleteQueryBuilderFixture()
         {
-            transaction = Substitute.For<IRelationalTransaction>();
+            query = null;
+            parameters = null;
+
+            mappings = Substitute.For<IDocumentMapRegistry>();
+            mappings.Resolve<object>().Returns(c => new EmptyMap());
+            mappings.Resolve(Arg.Any<Type>()).Returns(c => new EmptyMap());
+            
+            queryExecutor = Substitute.For<IWriteQueryExecutor>();
+            queryExecutor.ExecuteNonQuery(Arg.Any<PreparedCommand>()).Returns(info =>
+            {
+                query = info.Arg<PreparedCommand>().Statement;
+                parameters = info.Arg<PreparedCommand>().ParameterValues;
+                return 1;
+            });
         }
 
-        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(Action<Type, Where, CommandParameterValues, TimeSpan?> executeDelete) where TDocument : class
+        IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>() where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), executeDelete, Enumerable.Empty<IWhereClause>(), new CommandParameterValues());
+            return new DeleteQueryBuilder<TDocument>(
+                new UniqueParameterNameGenerator(),
+                new DataModificationQueryBuilder(mappings, new NewtonsoftDocumentSerializer(mappings), s => null),
+                queryExecutor
+            );
         }
 
         [Test]
         public void ShouldGenerateDelete()
         {
-            string actual = null;
-
-            void ExecuteDelete(Type _, Where where, CommandParameterValues __, TimeSpan? ___) => actual = where.GenerateSql().Trim();
-
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .Where("[Price] > 5")
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] > 5)");
+            query.Should().Contain(@"WHERE ([Price] > 5)");
         }
 
         [Test]
         public void ShouldGenerateDeleteWithParameterisedUnaryWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-            
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", UnarySqlOperand.GreaterThan, new Parameter("price"))
                 .ParameterValue(5)
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] > @price_0)");
-            values["price_0"].Should().Be(5);
+            query.Should().Contain(@"WHERE ([Price] > @price_0)");
+            parameters["price_0"].Should().Be(5);
         }
 
         [Test]
         public void ShouldGenerateDeleteWithParameterisedBinaryWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", BinarySqlOperand.Between, new Parameter("LowerPrice"), new Parameter("UpperPrice"))
                 .ParameterValues(5, 10)
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
-            values["lowerprice_0"].Should().Be(5);
-            values["upperprice_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
+            parameters["lowerprice_0"].Should().Be(5);
+            parameters["upperprice_1"].Should().Be(10);
         }
 
         [Test]
         public void ShouldGenerateDeleteWithParameterisedArrayWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Price", ArraySqlOperand.In, new [] { new Parameter("LowerPrice"), new Parameter("UpperPrice") })
                 .ParameterValues(new object[] {5, 10})
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
-            values["lowerprice_0"].Should().Be(5);
-            values["upperprice_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
+            parameters["lowerprice_0"].Should().Be(5);
+            parameters["upperprice_1"].Should().Be(10);
         }
 
         [Test]
         public void ShouldGenerateDeleteWithUnaryWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] > @price_0)");
-            values["price_0"].Should().Be(5);
+            query.Should().Contain(@"WHERE ([Price] > @price_0)");
+            parameters["price_0"].Should().Be(5);
         }
 
         [Test]
         public void ShouldGenerateDeleteWithBinaryWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .Where("Price", BinarySqlOperand.Between, 5, 10)
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
-            values["startvalue_0"].Should().Be(5);
-            values["endvalue_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
+            parameters["startvalue_0"].Should().Be(5);
+            parameters["endvalue_1"].Should().Be(10);
         }
 
         [Test]
         public void ShouldGenerateDeleteWithArrayWhereClause()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .Where("Price", ArraySqlOperand.In, new [] { 5, 10, 15 })
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
-            values["price0_0"].Should().Be("5");
-            values["price1_1"].Should().Be("10");
-            values["price2_2"].Should().Be("15");
+            query.Should().Contain(@"WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
+            parameters["price0_0"].Should().Be("5");
+            parameters["price1_1"].Should().Be("10");
+            parameters["price2_2"].Should().Be("15");
         }
 
         [Test]
         public void ShouldGenerateUniqueParameterNames()
         {
-            string actual = null;
-            CommandParameterValues values = null;
-            void ExecuteDelete(Type _, Where where, CommandParameterValues cmdValue, TimeSpan? ___)
-            {
-                actual = @where.GenerateSql().Trim();
-                values = cmdValue;
-            }
-            CreateQueryBuilder<IDocument>(ExecuteDelete)
+            CreateQueryBuilder<object>()
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Where("Price", UnarySqlOperand.LessThan, 10)
                 .Delete();
 
-            actual.Should().Be(@"WHERE ([Price] > @price_0)
+            query.Should().Contain(@"WHERE ([Price] > @price_0)
 AND ([Price] < @price_1)");
-            values["price_0"].Should().Be(5);
-            values["price_1"].Should().Be(10);
+            parameters["price_0"].Should().Be(5);
+            parameters["price_1"].Should().Be(10);
         }
 
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
-            CreateQueryBuilder<IDocument>((t, w, p, _) => { })
+            CreateQueryBuilder<object>()
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhere()
+        {
+            CreateQueryBuilder<object>()
+                .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
+                .Parameter("MyVariable", "Bar")
+                .Parameter("OTHERVAR", "Bar")
+                .Delete();
+
+            parameters.Count.Should().Be(2);
+            foreach (var parameter in parameters)
+                query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
+        }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhereSingleParam()
+        {
+            CreateQueryBuilder<object>()
+                .Where("fOo", UnarySqlOperand.GreaterThan, "Bar")
+                .Delete();
+
+            parameters.Count.Should().Be(1);
+            var parameter = "@" + parameters.Keys.Single();
+            query.Should().Contain(parameter, "Should contain " + parameter);
+        }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhereTwoParam()
+        {
+            CreateQueryBuilder<object>()
+                .Where("fOo", BinarySqlOperand.Between, 1, 2)
+                .Delete();
+
+            parameters.Count.Should().Be(2);
+            foreach (var parameter in parameters)
+                query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
+        }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhereParamArray()
+        {
+            CreateQueryBuilder<object>()
+                .Where("fOo", UnarySqlOperand.Like, new[] { 1, 2, 3 })
+                .Delete();
+
+            parameters.Count.Should().Be(1);
+            var parameter = "@" + parameters.Keys.Single();
+            query.Should().Contain(parameter, "Should contain " + parameter);
+        }
+
+        [Test]
+        public void VariablesCasingIsNormalisedForWhereIn()
+        {
+            CreateQueryBuilder<object>()
+                .Where("fOo", ArraySqlOperand.In, new[] { "BaR", "BaZ" })
+                .Delete();
+
+            parameters.Count.Should().Be(2);
+            foreach (var parameter in parameters)
+                query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
+        }
+    }
+
+    internal class EmptyMap : DocumentMap
+    {
     }
 }

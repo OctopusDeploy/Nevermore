@@ -2,9 +2,9 @@ using System;
 
 namespace Nevermore
 {
-    public interface IPropertyReaderWriter<TCast>
+    public interface IPropertyReaderWriter
     {
-        TCast Read(object target);
-        void Write(object target, TCast value);
+        object Read(object target);
+        void Write(object target, object value);
     }
 }

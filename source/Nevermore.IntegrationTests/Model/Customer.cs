@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Nevermore.Contracts;
+using Nevermore.IntegrationTests.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Customer : IId
+    public class Customer
     {
         public Customer()
         {

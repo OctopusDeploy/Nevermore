@@ -1,6 +1,7 @@
 ﻿using Nevermore.IntegrationTests.Model;
 using NUnit.Framework;
 using FluentAssertions;
+using Nevermore.IntegrationTests.SetUp;
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
 {
@@ -29,7 +30,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             using (var trn = Store.BeginTransaction())
             {
-                trn.DeleteById<Product>(id);
+                trn.Delete<Product>(id);
                 trn.Commit();
             }
 

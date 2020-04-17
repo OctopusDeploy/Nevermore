@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Nevermore.Util;
 
 namespace Nevermore.Transient
@@ -168,7 +169,7 @@ namespace Nevermore.Transient
             Guard.ArgumentNotNull(action, "action");
             ExecuteAction<object>(delegate
             {
-                action.Invoke();
+                action();
                 return null;
             });
         }
@@ -192,6 +193,68 @@ namespace Nevermore.Transient
                 try
                 {
                     result = func.Invoke();
+                    break;
+                }
+#pragma warning disable 618
+                catch (RetryLimitExceededException ex2)
+#pragma warning restore 618
+                {
+                    if (ex2.InnerException != null)
+                    {
+                        throw ex2.InnerException;
+                    }
+                    result = default(TResult);
+                    break;
+                }
+                catch (Exception ex3)
+                {
+                    ex = ex3;
+                    if (!ErrorDetectionStrategy.IsTransient(ex) || !shouldRetry(num++, ex, out zero))
+                    {
+                        throw;
+                    }
+                }
+                if (zero.TotalMilliseconds < 0.0)
+                {
+                    zero = TimeSpan.Zero;
+                }
+                OnRetrying(num, ex, zero);
+                if (num > 1 || !RetryStrategy.FastFirstRetry)
+                {
+                    Thread.Sleep(zero);
+                }
+            }
+            return result;
+        }
+
+        public virtual Task ExecuteActionAsync(Func<Task> func)
+        {
+            return ExecuteActionAsync<object>(async () =>
+            {
+                await func();
+                return null;
+            });
+        }
+        
+        /// <summary>
+        /// Repetitively executes the specified action while it satisfies the current retry policy.
+        /// </summary>
+        /// <typeparam name="TResult">The type of result expected from the executable action.</typeparam>
+        /// <param name="func">A delegate that represents the executable action that returns the result of type <typeparamref name="TResult" />.</param>
+        /// <returns>The result from the action.</returns>
+        public virtual async Task<TResult> ExecuteActionAsync<TResult>(Func<Task<TResult>> func)
+        {
+            Guard.ArgumentNotNull(func, "func");
+            var num = 0;
+            var zero = TimeSpan.Zero;
+            var shouldRetry = RetryStrategy.GetShouldRetry();
+            TResult result;
+            while (true)
+            {
+                Exception ex = null;
+                try
+                {
+                    result = await func();
                     break;
                 }
 #pragma warning disable 618

@@ -104,11 +104,6 @@ Task("Publish")
     .Does(() =>
 {
     
-	NuGetPush($"{artifactsDir}Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
-		ApiKey = EnvironmentVariable("FeedzIoApiKey")
-	});
-
 	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
 		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
@@ -116,12 +111,7 @@ Task("Publish")
 	
     if (gitVersionInfo.PreReleaseTag == "")
     {
-        NuGetPush($"{artifactsDir}Nevermore.Contracts.{nugetVersion}.nupkg", new NuGetPushSettings {
-            Source = "https://www.nuget.org/api/v2/package",
-            ApiKey = EnvironmentVariable("NuGetApiKey")
-        });
-
-          NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+        NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
             Source = "https://www.nuget.org/api/v2/package",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });

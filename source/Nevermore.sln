@@ -16,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{8FCDD3A3-1FF
 		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nevermore.Contracts", "Nevermore.Contracts\Nevermore.Contracts.csproj", "{643125C7-F477-4FA8-960B-E42372CE3AE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Benchmarks", "Nevermore.Benchmarks\Nevermore.Benchmarks.csproj", "{BE37C675-CA40-466D-B5F1-71199C7A0D31}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,10 +36,10 @@ Global
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{643125C7-F477-4FA8-960B-E42372CE3AE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{643125C7-F477-4FA8-960B-E42372CE3AE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{643125C7-F477-4FA8-960B-E42372CE3AE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{643125C7-F477-4FA8-960B-E42372CE3AE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -47,5 +47,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{10E71E20-EBBD-4F03-87E8-5958B7E7B996} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
+		{BE37C675-CA40-466D-B5F1-71199C7A0D31} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 	EndGlobalSection
 EndGlobal

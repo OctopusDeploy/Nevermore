@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
+using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
 using NUnit.Framework;
 
@@ -11,19 +12,6 @@ namespace Nevermore.IntegrationTests
 {
     public class KeyAllocatorFixture : FixtureWithRelationalStore
     {
-        public override void SetUp()
-        {
-            base.SetUp();
-
-            Mappings.Install(
-                new DocumentMap[]
-                {
-                    new CustomerMap(),
-                    new OrderMap()
-                }
-            );
-        }
-
         [Test]
         public void ShouldAllocateKeysInChunks()
         {
@@ -86,7 +74,7 @@ namespace Nevermore.IntegrationTests
         public void ShouldAllocateInParallel()
         {
             const int allocationCount = 20;
-            const int threadCount = 100;
+            const int threadCount = 10;
 
             var projectIds = new ConcurrentBag<string>();
             var deploymentIds = new ConcurrentBag<string>();

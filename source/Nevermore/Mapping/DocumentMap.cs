@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Nevermore.Mapping
 {
+    
     public abstract class DocumentMap<TDocument> : DocumentMap
     {
         protected DocumentMap()
@@ -13,30 +14,19 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
-        protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property)
+        protected new IColumnMappingBuilder IdColumn => base.IdColumn;
+
+        protected IColumnMappingBuilder Column<T>(string columnName, IPropertyReaderWriter readerWriter)
         {
-            var column = new ColumnMapping(GetPropertyInfo(property));
+            var column = new ColumnMapping(columnName, typeof(T), readerWriter);
             IndexedColumns.Add(column);
             return column;
         }
-
-        protected ColumnMapping Column<T>(Expression<Func<TDocument, T>> property, Action<ColumnMapping> configure)
+        
+        protected IColumnMappingBuilder Column<T>(Expression<Func<TDocument, T>> property, string columnName = null)
         {
-            var column = Column(property);
-            configure(column);
-            return column;
-        }
-
-        protected ColumnMapping VirtualColumn<TProperty>(string name, DbType databaseType, Func<TDocument, TProperty> reader, Action<TDocument, TProperty> writer = null, int? maxLength = null, bool nullable = false, bool readOnly = false)
-        {
-            var column = new ColumnMapping(name, databaseType, new DelegateReaderWriter<TDocument, TProperty>(reader, writer));
+            var column = new ColumnMapping(columnName, GetPropertyInfo(property));
             IndexedColumns.Add(column);
-            if (maxLength != null)
-            {
-                column.MaxLength = maxLength.Value;
-            }
-            column.IsNullable = nullable;
-            column.IsReadOnly = readOnly;
             return column;
         }
 
@@ -87,16 +77,24 @@ namespace Nevermore.Mapping
         {
             IndexedColumns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
-            InstanceTypeResolver = new StandardTypeResolver(this);
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
 
         public string TableName { get; protected set; }
         public string IdPrefix { get; protected set; }
-        public bool IsProjection { get; protected set; }
+        public Func<int, string> IdFormat { get; protected set; }
+
         public Type Type { get; protected set; }
-        public InstanceTypeResolver InstanceTypeResolver { get; protected set; }
         public ColumnMapping IdColumn { get; private set; }
+        
+        public JsonStorageFormat JsonStorageFormat { get; set; }
+        
+        /// <summary>
+        /// Tells Nevermore whether to expect large documents or not. Defaults to false, since most tables tend to only
+        /// have small documents. However, this property is self-tuning: if Nevermore reads or writes a document
+        /// larger than  
+        /// </summary>
+        public bool ExpectLargeDocuments { get; set; }
 
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
@@ -105,6 +103,7 @@ namespace Nevermore.Mapping
         public List<UniqueRule> UniqueConstraints { get; private set; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
         
+        // TODO: Obsolete
         public string SingletonId { get; protected set; }
 
         protected void InitializeDefault(Type type)
@@ -112,14 +111,17 @@ namespace Nevermore.Mapping
             Type = type;
             TableName = type.Name;
             IdPrefix = TableName + "s";
+            IdFormat = key => $"{IdPrefix}-{key}";
 
             var properties = type.GetTypeInfo().GetProperties();
 
+            JsonStorageFormat = JsonStorageFormat.TextOnly;
+
             foreach (var property in properties)
             {
-                if (property.Name == "Id")
+                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    IdColumn = new ColumnMapping(property);
+                    IdColumn = new ColumnMapping("Id", property);
                 }
             }
         }

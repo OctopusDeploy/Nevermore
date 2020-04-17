@@ -1,9 +1,8 @@
 ﻿using System;
-using Nevermore.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class LineItem : IDocument
+    public class LineItem
     {
         public string Id { get; private set; }
         public string Name { get; set; }

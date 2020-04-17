@@ -1,5 +1,4 @@
 using System.Data;
-using Nevermore.Contracts;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
@@ -8,37 +7,13 @@ namespace Nevermore.IntegrationTests.Model
     {
         public CustomerMap()
         {
-            Column(m => m.FirstName).WithMaxLength(20);
+            IdColumn.MaxLength(100);
+            Column(m => m.FirstName).MaxLength(20);
             Column(m => m.LastName);
             Column(m => m.Nickname).Nullable();
             Column(m => m.Roles);
-            Column(m => m.RowVersion).ReadOnly();
+            Column(m => m.RowVersion).LoadOnly();
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
-        }
-    }
-
-    public class CustomerToTestSerialization : IId
-    {
-        public string Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-
-        public string Nickname { get; set; }
-        public ReferenceCollection Roles { get; private set; }
-        public string JSON { get; set; }
-    }
-
-    public class CustomerToTestSerializationMap : DocumentMap<CustomerToTestSerialization>
-    {
-        public CustomerToTestSerializationMap()
-        {
-            TableName = "Customer";
-
-            Column(m => m.FirstName).WithMaxLength(20);
-            Column(m => m.LastName);
-            Column(m => m.Nickname).Nullable();
-            Column(m => m.Roles);
-            Column(m => m.JSON);
         }
     }
 }

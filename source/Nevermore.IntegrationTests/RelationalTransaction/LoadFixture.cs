@@ -1,25 +1,13 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
-using Nevermore.Mapping;
+using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
 {
     public class LoadFixture : FixtureWithRelationalStore
     {
-        public override void SetUp()
-        {
-            base.SetUp();
-
-            Mappings.Install(
-                new DocumentMap[]
-                {
-                    new ProductSubtotalMap()
-                }
-            );
-        }
-
         [Test]
         public void LoadWithSingleId()
         {
@@ -59,25 +47,24 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         [Test]
         public void StoreNonInheritedTypesSerializesCorrectly()
         {
-            using (var trn = Store.BeginTransaction())
+            using var trn = Store.BeginTransaction();
+            
+            var customer = new Customer
             {
-                var customer = new Customer
-                {
-                    FirstName = "Bob",
-                    LastName = "Tester",
-                    Nickname = "Bob the builder",
-                    Id = "Customers-01"
-                };
+                FirstName = "Bob",
+                LastName = "Tester",
+                Nickname = "Bob the builder",
+                Id = "Customers-01"
+            };
 
-                trn.Insert<Customer>(customer);
+            trn.Insert(customer);
 
-                var customers = trn.TableQuery<CustomerToTestSerialization>().ToList();
+            var customers = trn.Stream<(string Id, string FirstName, string Nickname, string JSON)>("select Id, FirstName, Nickname, [JSON] from Customer").ToList();
 
-                var c = customers.Single(p => p.Id == "Customers-01");
-                c.FirstName.Should().Be("Bob", "Type isn't serializing into column correctly");
-                c.Nickname.Should().Be("Bob the builder", "Type isn't serializing into column correctly");
-                c.JSON.Should().Be("{\"LuckyNumbers\":null,\"ApiKey\":null,\"Passphrases\":null}");
-            }
+            var c = customers.Single(p => p.Id == "Customers-01");
+            c.FirstName.Should().Be("Bob", "Type isn't serializing into column correctly");
+            c.Nickname.Should().Be("Bob the builder", "Type isn't serializing into column correctly");
+            c.JSON.Should().Be("{\"LuckyNumbers\":null,\"ApiKey\":null,\"Passphrases\":null}");
         }
 
         [Test]
@@ -94,11 +81,11 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 trn.Insert(originalNormal);
 
-                var allProducts = trn.TableQuery<ProductToTestSerialization>().ToList();
+                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from Product").ToList();
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Normal", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Type\":0,\"Price\":11.1}");
+                special.JSON.Should().Be("{\"Price\":11.1}");
             }
         }
 
@@ -107,7 +94,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                var originalSpecial = new SpecialProduct()
+                var originalSpecial = new SpecialProduct
                 {
                     Name = "Unicorn Dust",
                     BonusMaterial = "Directors Commentary",
@@ -115,7 +102,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                     Price = 11.1m,
                 };
 
-                var originalDud = new DodgyProduct()
+                var originalDud = new DodgyProduct
                 {
                     Id = "DO-01",
                     Name = "Something",
@@ -123,14 +110,14 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                     Tax = 15m
                 };
 
-                trn.Insert<SpecialProduct>(originalSpecial);
-                trn.Insert<DodgyProduct>(originalDud);
+                trn.Insert(originalSpecial);
+                trn.Insert(originalDud);
 
-                var allProducts = trn.TableQuery<ProductToTestSerialization>().ToList();
+                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from Product").ToList();
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Special", "Type isn't serializing into column correctly");
-                special.JSON.Should().Be("{\"Type\":1,\"Price\":11.1}");
+                special.JSON.Should().Be("{\"BonusMaterial\":\"Directors Commentary\",\"Price\":11.1}");
             }
         }
 
@@ -189,7 +176,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert<Brand>(brandB);
                 trn.Commit();
 
-                var allBrands = trn.TableQuery<BrandToTestSerialization>().ToList();
+                var allBrands = trn.Stream<(string Name, string JSON)>("select Name, [JSON] from Brand").ToList();
 
                 allBrands.SingleOrDefault(x => x.Name == "Brand A").Should().NotBeNull("Didn't retrieve BrandA");
                 var brandToTestSerialization = allBrands.Single(x => x.Name == "Brand A");
@@ -228,7 +215,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(machineB);
                 trn.Commit();
 
-                var allMachines = trn.TableQuery<MachineToTestSerialization>().ToList();
+                var allMachines = trn.Stream<(string Name, string JSON)>("select Name, [JSON] from Machine").ToList();
 
                 allMachines.SingleOrDefault(x => x.Name == "Machine A").Should().NotBeNull("Didn't retrieve BrandA");
                 allMachines.Single(x => x.Name == "Machine A").JSON.Should().Be("{\"Description\":\"Details for Machine A.\",\"Endpoint\":{\"Type\":\"PassiveTentacle\",\"Name\":\"Quiet tentacle\"}}");
@@ -304,7 +291,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
-        void InsertProductAndLineItems(string productName, decimal productPrice, IRelationalTransaction trn, params int[] quantities)
+        void InsertProductAndLineItems(string productName, decimal productPrice, IWriteTransaction trn, params int[] quantities)
         {
             var product = new Product
             {

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
+using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Assent;
-using Assent.Reporters;
-using Nevermore.AST;
-using Nevermore.Contracts;
+using Nevermore.Advanced;
+using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
+using Nevermore.Querying.AST;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -17,11 +16,12 @@ namespace Nevermore.Tests.Util
     public class DataModificationQueryBuilderFixture
     {
         readonly DataModificationQueryBuilder builder;
+        Func<string> idAllocator;
 
         public DataModificationQueryBuilderFixture()
         {
-            var mappings = new RelationalMappings();
-            mappings.Install(new DocumentMap[]
+            var mappings = new DocumentMapRegistry();
+            mappings.Register(new DocumentMap[]
             {
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
@@ -30,11 +30,15 @@ namespace Nevermore.Tests.Util
             });
             builder = new DataModificationQueryBuilder(
                 mappings,
-                new JsonSerializerSettings
-                {
-                    ContractResolver = new RelationalJsonContractResolver(mappings)
-                }
+                new NewtonsoftDocumentSerializer(mappings),
+                m => idAllocator() 
             );
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            idAllocator = () => "New-Id";
         }
 
         [Test]
@@ -42,13 +46,7 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
 
-            var result = builder.CreateInsert(
-                new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                true
-            );
+            var result = builder.PrepareInsert(new[] {document}, InsertOptions.Default);
 
             this.Assent(Format(result));
         }
@@ -58,12 +56,8 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "SuppliedId"};
 
-            var result = builder.CreateInsert(
-                new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                true
+            var result = builder.PrepareInsert(
+                new[] {document}
             );
 
             this.Assent(Format(result));
@@ -74,12 +68,13 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
 
-            var result = builder.CreateInsert(
+            var result = builder.PrepareInsert(
                 new[] {document},
-                "AltTableName",
-                "WITH (NOLOCK)",
-                map => "New-Id",
-                true
+                new InsertOptions
+                {
+                    TableName ="AltTableName",
+                    Hint ="WITH (NOLOCK)" 
+                }
             );
 
             this.Assent(Format(result));
@@ -90,12 +85,9 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue"};
 
-            var result = builder.CreateInsert(
+            var result = builder.PrepareInsert(
                 new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                false
+                new InsertOptions { IncludeDefaultModelColumns = false}
             );
 
             this.Assent(Format(result));
@@ -106,12 +98,8 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = null};
 
-            var result = builder.CreateInsert(
-                new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                true
+            var result = builder.PrepareInsert(
+                new[] {document}
             );
 
             this.Assent(Format(result));
@@ -122,12 +110,8 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {("Rel-1", typeof(Other))}};
 
-            var result = builder.CreateInsert(
-                new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                true
+            var result = builder.PrepareInsert(
+                new[] {document}
             );
 
             this.Assent(Format(result));
@@ -138,12 +122,8 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocumentWithRelatedDocuments {AColumn = "AValue", RelatedDocumentIds = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))}};
 
-            var result = builder.CreateInsert(
-                new[] {document},
-                null,
-                null,
-                map => "New-Id",
-                true
+            var result = builder.PrepareInsert(
+                new[] {document}
             );
 
             this.Assent(Format(result));
@@ -159,12 +139,9 @@ namespace Nevermore.Tests.Util
             };
 
             int n = 0;
-            var result = builder.CreateInsert(
-                documents,
-                null,
-                null,
-                map => "New-Id-" + (++n),
-                true
+            idAllocator = () => "New-Id-" + (++n);
+            var result = builder.PrepareInsert(
+                documents
             );
 
             this.Assent(Format(result));
@@ -181,12 +158,9 @@ namespace Nevermore.Tests.Util
             };
 
             int n = 0;
-            var result = builder.CreateInsert(
-                documents,
-                null,
-                null,
-                map => "New-Id-" + (++n),
-                true
+            idAllocator = () => "New-Id-" + (++n);
+            var result = builder.PrepareInsert(
+                documents
             );
 
             this.Assent(Format(result));
@@ -207,12 +181,9 @@ namespace Nevermore.Tests.Util
             };
 
             int n = 0;
-            var result = builder.CreateInsert(
-                documents,
-                null,
-                null,
-                map => "New-Id-" + (++n),
-                true
+            idAllocator = () => "New-Id-" + (++n);
+            var result = builder.PrepareInsert(
+                documents
             );
 
             this.Assent(Format(result));
@@ -224,7 +195,8 @@ namespace Nevermore.Tests.Util
             int n = 0;
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", ReadOnly = "Value"};
             
-            var result = builder.CreateInsert(new [] { document }, null, null, map => $"New-Id-{++n}", true);
+            idAllocator = () => "New-Id-" + (++n);
+            var result = builder.PrepareInsert(new [] { document });
             
             this.Assent(Format(result));
         }
@@ -234,9 +206,8 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1"};
 
-            var result = builder.CreateUpdate(
-                document,
-                null
+            var result = builder.PrepareUpdate(
+                document
             );
 
             this.Assent(Format(result));
@@ -247,9 +218,9 @@ namespace Nevermore.Tests.Util
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1"};
 
-            var result = builder.CreateUpdate(
+            var result = builder.PrepareUpdate(
                 document,
-                "WITH (NO LOCK)"
+                new UpdateOptions { Hint = "WITH (NO LOCK)"}
             );
 
             this.Assent(Format(result));
@@ -265,9 +236,8 @@ namespace Nevermore.Tests.Util
                 RelatedDocumentIds = new (string, Type)[0]
             };
 
-            var result = builder.CreateUpdate(
-                document,
-                null
+            var result = builder.PrepareUpdate(
+                document
             );
 
             this.Assent(Format(result));
@@ -283,9 +253,8 @@ namespace Nevermore.Tests.Util
                 RelatedDocumentIds = new[] {("Rel-1", typeof(Other))}
             };
 
-            var result = builder.CreateUpdate(
-                document,
-                null
+            var result = builder.PrepareUpdate(
+                document
             );
 
             this.Assent(Format(result));
@@ -303,9 +272,8 @@ namespace Nevermore.Tests.Util
                 RelatedDocumentIds3 = new[] {("Rel-3-Other", typeof(Other)), ("Rel-2", typeof(Other))}
             };
 
-            var result = builder.CreateUpdate(
-                document,
-                null
+            var result = builder.PrepareUpdate(
+                document
             );
 
             this.Assent(Format(result));
@@ -315,7 +283,7 @@ namespace Nevermore.Tests.Util
         public void DeleteByDocument()
         {
             var document = new TestDocument {Id = "Doc-1",};
-            var result = builder.CreateDelete(document);
+            var result = builder.PrepareDelete(document);
 
             this.Assent(Format(result));
         }
@@ -323,22 +291,22 @@ namespace Nevermore.Tests.Util
         [Test]
         public void DeleteById()
         {
-            var result = builder.CreateDelete<TestDocument>("Doc-1");
+            var result = builder.PrepareDelete<TestDocument>("Doc-1");
             this.Assent(Format(result));
         }
 
         [Test]
         public void DeleteByWhere()
         {
-            var result = builder.CreateDelete(typeof(TestDocument), new Where(new UnaryWhereClause(new WhereFieldReference("Foo"), UnarySqlOperand.GreaterThan, "1")));
-            this.Assent(result);
+            var result = builder.PrepareDelete(typeof(TestDocument), new Where(new UnaryWhereClause(new WhereFieldReference("Foo"), UnarySqlOperand.GreaterThan, "1")), new CommandParameterValues());
+            this.Assent(Format(result));
         }
 
         [Test]
         public void DeleteByDocumentWithOneRelatedTable()
         {
             var document = new TestDocumentWithRelatedDocuments {Id = "Doc-1",};
-            var result = builder.CreateDelete(document);
+            var result = builder.PrepareDelete(document);
 
             this.Assent(Format(result));
         }
@@ -346,23 +314,29 @@ namespace Nevermore.Tests.Util
         [Test]
         public void DeleteByDocumentWithManyRelatedTables()
         {
-            var result = builder.CreateDelete<TestDocumentWithMultipleRelatedDocuments>("Doc-1");
+            var result = builder.PrepareDelete<TestDocumentWithMultipleRelatedDocuments>("Doc-1");
 
             this.Assent(Format(result));
         }
 
 
-        string Format((DocumentMap, string statement, CommandParameterValues parameterValues) result)
-            => Format((result.statement, result.parameterValues));
-
-        string Format((string statement, CommandParameterValues parameterValues) result)
+        string Format(PreparedCommand result)
         {
-            var recievedParameterValues = result.parameterValues.Select(v => $"@{v.Key}={v.Value}");
-            return result.statement + "\r\n" + string.Join("\r\n", recievedParameterValues);
+            var receivedParameterValues = result.ParameterValues.Select(v => $"@{v.Key}={FormatValue(v.Value)}");
+            return result.Statement + "\r\n" + string.Join("\r\n", receivedParameterValues);
         }
 
+        object FormatValue(object paramValue)
+        {
+            if (paramValue is TextReader r)
+            {
+                return r.ReadToEnd();
+            }
 
-        class TestDocument : IId
+            return paramValue;
+        }
+
+        class TestDocument
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
@@ -370,7 +344,7 @@ namespace Nevermore.Tests.Util
             public string ReadOnly { get; set; }
         }
 
-        class TestDocumentWithRelatedDocuments : IId
+        class TestDocumentWithRelatedDocuments
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
@@ -379,7 +353,7 @@ namespace Nevermore.Tests.Util
             public IEnumerable<(string, Type)> RelatedDocumentIds { get; set; }
         }
 
-        class TestDocumentWithMultipleRelatedDocuments : IId
+        class TestDocumentWithMultipleRelatedDocuments
         {
             public string Id { get; set; }
             public string AColumn { get; set; }
@@ -405,7 +379,7 @@ namespace Nevermore.Tests.Util
             {
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
-                Column(t => t.ReadOnly).ReadOnly();
+                Column(t => t.ReadOnly).LoadOnly();
             }
         }
 

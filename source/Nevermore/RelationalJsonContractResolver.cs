@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using Nevermore.Mapping;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -8,9 +9,9 @@ namespace Nevermore
 {
     public class RelationalJsonContractResolver : DefaultContractResolver
     {
-        private RelationalMappings mappings;
+        private IDocumentMapRegistry mappings;
 
-        public RelationalJsonContractResolver(RelationalMappings mappings)
+        public RelationalJsonContractResolver(IDocumentMapRegistry mappings)
         {
             this.mappings = mappings;
         }
@@ -18,7 +19,7 @@ namespace Nevermore
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             DocumentMap map;
-            mappings.TryGet(member.DeclaringType, out map);
+            mappings.ResolveOptional(member.DeclaringType, out map);
 
             var property = base.CreateProperty(member, memberSerialization);
 

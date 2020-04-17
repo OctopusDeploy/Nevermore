@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using Nevermore.Tests.Query;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.Linq

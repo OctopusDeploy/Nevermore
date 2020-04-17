@@ -1,8 +1,6 @@
-using Nevermore.Contracts;
-
 namespace Nevermore.IntegrationTests.Model
 {
-    public class ProductSubtotal : IId
+    public class ProductSubtotal
     {
         public string Id { get; set; }
         public string ProductId { get; set; }

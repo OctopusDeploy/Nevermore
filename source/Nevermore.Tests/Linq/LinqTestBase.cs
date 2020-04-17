@@ -1,8 +1,9 @@
 ﻿using System;
-using Nevermore.AST;
+using Nevermore.Advanced;
+using Nevermore.Querying.AST;
 using NSubstitute;
 
-namespace Nevermore.Tests.Query
+namespace Nevermore.Tests.Linq
 {
     public class LinqTestBase
     {

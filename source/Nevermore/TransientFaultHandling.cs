@@ -12,7 +12,6 @@ namespace Nevermore
         static readonly string DefaultExponentialStrategyName = "default exponential";
         static readonly string FastIncrementalStrategyName = "fast incremental";
 
-
         public static readonly Incremental FastIncremental = new Incremental(name: FastIncrementalStrategyName, retryCount: 10,
             initialInterval: TimeSpan.FromSeconds(1),
             increment: TimeSpan.FromSeconds(1),

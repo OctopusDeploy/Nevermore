@@ -1,5 +1,7 @@
 using System;
 using System.Data;
+using System.Data.Common;
+using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Chaos
@@ -9,15 +11,16 @@ namespace Nevermore.IntegrationTests.Chaos
         readonly ISqlCommandFactory wrappedFactory;
         readonly double chaosFactor;
 
-        public ChaosSqlCommandFactory(ISqlCommandFactory wrappedFactory, double chaosFactor = 0.2)
+        public ChaosSqlCommandFactory(ISqlCommandFactory wrappedFactory, double chaosFactor = 0.1)
         {
             this.wrappedFactory = wrappedFactory;
             this.chaosFactor = chaosFactor;
         }
 
-        public IDbCommand CreateCommand(IDbConnection connection, IDbTransaction transaction, string statement, CommandParameterValues args, DocumentMap mapping = null, TimeSpan? commandTimeout = null)
+        public DbCommand CreateCommand(DbConnection connection, DbTransaction transaction, string statement,
+            CommandParameterValues args, ITypeHandlerRegistry typeHandlers, DocumentMap mapping = null, TimeSpan? commandTimeout = null)
         {
-            return new ChaosSqlCommand(wrappedFactory.CreateCommand(connection, transaction, statement, args, mapping, commandTimeout), chaosFactor);
+            return new ChaosSqlCommand(wrappedFactory.CreateCommand(connection, transaction, statement, args, typeHandlers, mapping, commandTimeout), chaosFactor);
         }
     }
 }

@@ -12,13 +12,13 @@ namespace Nevermore.Serialization
 {
     public abstract class InheritedClassConverterBase<TDocument, TDiscriminator> : JsonConverter
     {
-        protected readonly RelationalMappings RelationalMappings;
+        protected readonly IDocumentMapRegistry documentMapRegistry;
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> unmappedReadablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
         readonly ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>> writeablePropertiesCache = new ConcurrentDictionary<TypeInfo, IReadOnlyList<PropertyInfo>>();
 
-        protected InheritedClassConverterBase(RelationalMappings relationalMappings = null)
+        protected InheritedClassConverterBase(IDocumentMapRegistry documentMapRegistry = null)
         {
-            RelationalMappings = relationalMappings;
+            this.documentMapRegistry = documentMapRegistry;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
@@ -26,7 +26,7 @@ namespace Nevermore.Serialization
             writer.WriteStartObject();
 
             DocumentMap map = null;
-            RelationalMappings?.TryGet(value.GetType(), out map);
+            documentMapRegistry?.ResolveOptional(value.GetType(), out map);
 
             var documentType = value.GetType().GetTypeInfo();
 
