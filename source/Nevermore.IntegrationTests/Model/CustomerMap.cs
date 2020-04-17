@@ -7,6 +7,7 @@ namespace Nevermore.IntegrationTests.Model
     {
         public CustomerMap()
         {
+            IdColumn.MaxLength(100);
             Column(m => m.FirstName).MaxLength(20);
             Column(m => m.LastName);
             Column(m => m.Nickname).Nullable();

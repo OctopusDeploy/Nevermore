@@ -14,6 +14,8 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
+        protected new IColumnMappingBuilder IdColumn => base.IdColumn;
+
         protected IColumnMappingBuilder Column<T>(string columnName, IPropertyReaderWriter readerWriter)
         {
             var column = new ColumnMapping(columnName, typeof(T), readerWriter);
