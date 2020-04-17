@@ -13,8 +13,9 @@
     <Version>1.0.0.0</Version>
     <Authors>Octopus Deploy</Authors>
     <PackageProjectUrl>https://github.com/OctopusDeploy/Nevermore</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/OctopusDeploy/Nevermore/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageLicense>LICENSE.txt</PackageLicense>
+    <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/OctopusDeploy/Nevermore.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <WarningsAsErrors />
@@ -27,7 +28,7 @@
   <ItemGroup>
     <EmbeddedResource Include="UpgradeScripts\*.*" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
@@ -39,5 +40,10 @@
     <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Visible="false" Include="..\..\assets\logo.png" Pack="True" PackagePath="" />
+    <None Visible="false" Include="..\..\LICENSE.txt" Pack="True" PackagePath="" />
   </ItemGroup>
 </Project>
