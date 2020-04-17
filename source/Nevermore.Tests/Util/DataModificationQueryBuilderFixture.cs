@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Assent;
 using Nevermore.Advanced;
@@ -321,8 +322,18 @@ namespace Nevermore.Tests.Util
 
         string Format(PreparedCommand result)
         {
-            var receivedParameterValues = result.ParameterValues.Select(v => $"@{v.Key}={v.Value}");
+            var receivedParameterValues = result.ParameterValues.Select(v => $"@{v.Key}={FormatValue(v.Value)}");
             return result.Statement + "\r\n" + string.Join("\r\n", receivedParameterValues);
+        }
+
+        object FormatValue(object paramValue)
+        {
+            if (paramValue is TextReader r)
+            {
+                return r.ReadToEnd();
+            }
+
+            return paramValue;
         }
 
         class TestDocument
