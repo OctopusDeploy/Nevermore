@@ -14,4 +14,4 @@ The Wiki is the best place to get familiar with Nevermore.
 * [Quickstart](https://github.com/OctopusDeploy/Nevermore/wiki/Quickstart)
 * [Why Nevermore?](https://github.com/OctopusDeploy/Nevermore/wiki/Why-Nevermore%3F)
 
-<img alt="Nuget" src="https://img.shields.io/nuget/v/Nevermore?label=NuGet&style=flat-square">
+<img alt="Nuget" src="https://img.shields.io/nuget/v/Nevermore?label=NuGet&logo=nuget&style=flat-square">
