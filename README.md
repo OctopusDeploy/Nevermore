@@ -15,3 +15,4 @@ The Wiki is the best place to get familiar with Nevermore.
 * [Why Nevermore?](https://github.com/OctopusDeploy/Nevermore/wiki/Why-Nevermore%3F)
 
 <img alt="Nuget" src="https://img.shields.io/nuget/v/Nevermore?label=NuGet&logo=nuget&style=flat-square">
+<img alt="TeamCity" src="https://build.octopushq.com/app/rest/builds/buildType:(id:OctopusDeploy_LIbraries_Nevermore)/statusIcon">
