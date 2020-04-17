@@ -7,6 +7,8 @@ namespace Nevermore.Benchmarks.Model
     {
         public string Id { get; set; }
 
+        public string Name { get; set; }
+        
         public List<object> History { get; set; }
     }
 

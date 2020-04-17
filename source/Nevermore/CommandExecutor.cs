@@ -186,8 +186,22 @@ namespace Nevermore
             
         public void Dispose()
         {
+            DisposeOfParameters();
+
             timedSection?.Dispose();
             command?.Dispose();
+        }
+
+        void DisposeOfParameters()
+        {
+            foreach (DbParameter parameter in command.Parameters)
+            {
+                // Parameters can contain streams and other disposable objects.
+                if (parameter.Value is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
         }
     }
 }

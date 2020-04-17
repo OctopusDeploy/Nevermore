@@ -28,8 +28,8 @@ namespace Nevermore.Benchmarks
         [Params(100, 1000, 10000, 50000)]
         public int NumberToLoad { get; set; }
         
-        [Benchmark(Description = "Load Many")]
-        public List<Customer> LoadManyPerformanceTest()
+        [Benchmark]
+        public List<Customer> LoadMany()
         {
             var result = transaction.Load<Customer>(allIdsRandomlySorted.Take(NumberToLoad));
             if (result.Count != NumberToLoad)

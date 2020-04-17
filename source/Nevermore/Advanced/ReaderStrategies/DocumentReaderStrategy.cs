@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
@@ -124,9 +126,9 @@ namespace Nevermore.Advanced.ReaderStrategies
                     // Documents that are larger than 1K tend to be clustered in specific tables. 
                     if (!plan.TypePlan.ExpectsLargeDocuments)
                     {
-                        // < 1K and we'll just read it as a string and deserialize
+                        // For small documents, we'll just read it as a string and deserialize. This tends to be faster
                         var text = reader.GetString(i);
-                        if (text.Length >= 1024) 
+                        if (text.Length >= NevermoreDefaults.LargeDocumentCutoffChars) 
                             // We'll know for next time
                             plan.TypePlan.ExpectsLargeDocuments = true;
 
@@ -138,7 +140,7 @@ namespace Nevermore.Advanced.ReaderStrategies
                         // Large documents will be streamed. Since it's a text column, we have to call GetChars.
                         // DataReaderTextStream exposes that character stream as a stream that our serializer can read
                         // (as serializers typically prefer byte[] streams)
-                        using var dataStream = new DataReaderTextStream(reader, plan.JsonIndex);
+                        using var dataStream = new DataTextReader(reader, plan.JsonIndex);
                         if (deserialized == null || plan.TypePlan.JsonStorageFormat == JsonStorageFormat.MixedPreferText)
                             deserialized = configuration.Serializer.DeserializeLargeText(dataStream, instanceType);
                     }
@@ -202,8 +204,12 @@ namespace Nevermore.Advanced.ReaderStrategies
             public readonly JsonStorageFormat JsonStorageFormat;
             public readonly bool ExpectsJsonText;
             public readonly bool ExpectsJsonCompressed;
-            
-            public bool ExpectsLargeDocuments { get; set; }
+
+            public bool ExpectsLargeDocuments
+            {
+                get => Mapping.ExpectLargeDocuments;
+                set => Mapping.ExpectLargeDocuments = true;
+            }
 
             TypePlan(Type type, DocumentMap mapping, ConcurrentDictionary<string, TypeColumn> columns)
             {

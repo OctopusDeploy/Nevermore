@@ -14,7 +14,7 @@ namespace Nevermore.Benchmarks
     public class DocumentSizeBenchmark : BenchmarkBase
     {
         IRelationalStore store;
-        IReadTransaction transaction;
+        IReadTransaction readTransaction;
 
         public override void SetUp()
         {
@@ -23,7 +23,7 @@ namespace Nevermore.Benchmarks
             config.Mappings.Register(new BigObjectMap(Format));
 
             store = new RelationalStore(config);
-            transaction = store.BeginReadTransaction();
+            readTransaction = store.BeginReadTransaction();
 
             using var writer = store.BeginWriteTransaction();
             var rand = new Random(42);
@@ -39,20 +39,30 @@ namespace Nevermore.Benchmarks
             writer.Commit();
         }
 
-        [Params(JsonStorageFormat.TextOnly, JsonStorageFormat.CompressedOnly, JsonStorageFormat.MixedPreferCompressed)]
+        [Params(JsonStorageFormat.TextOnly, JsonStorageFormat.CompressedOnly)]
         public JsonStorageFormat Format { get; set; }
 
         [Params(256, 1024, 4096, 16384, 65536, 65536*8)]
         public int DocumentSize { get; set; }
         
-        [Benchmark(Description = "Load big object")]
-        public BigObject LoadBigObject()
+        [Benchmark]
+        public BigObject Load()
         {
-            var item = transaction.Load<BigObject>("BigObject-1");
+            var item = readTransaction.Load<BigObject>("BigObject-1");
 
             if (item.Id != "BigObject-1" || item.History.Count == 0)
                 throw new Exception("Incorrect results");
             return item;
+        }
+        
+        [Benchmark]
+        public void LoadSave()
+        {
+            using var transaction = store.BeginTransaction();
+            var item = transaction.Load<BigObject>("BigObject-1");
+            item.Name = Guid.NewGuid().ToString();
+            transaction.Update(item);
+            transaction.Commit();
         }
     }
 }

@@ -57,7 +57,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             using (var transaction = Store.BeginTransaction())
             {
-                transaction.Insert(new Person() { Id = "Persons-4", Name = "Bill", Text = "AAA" });
+                transaction.Insert(new Person { Id = "Persons-4", Name = "Bill", Text = "AAA" });
                 transaction.Commit();
             }
             AssertCompressed("Persons-4");

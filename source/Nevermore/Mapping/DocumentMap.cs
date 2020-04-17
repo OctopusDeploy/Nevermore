@@ -86,6 +86,13 @@ namespace Nevermore.Mapping
         public ColumnMapping IdColumn { get; private set; }
         
         public JsonStorageFormat JsonStorageFormat { get; set; }
+        
+        /// <summary>
+        /// Tells Nevermore whether to expect large documents or not. Defaults to false, since most tables tend to only
+        /// have small documents. However, this property is self-tuning: if Nevermore reads or writes a document
+        /// larger than  
+        /// </summary>
+        public bool ExpectLargeDocuments { get; set; }
 
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)

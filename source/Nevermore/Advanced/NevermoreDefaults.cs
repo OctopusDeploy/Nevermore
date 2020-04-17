@@ -14,5 +14,7 @@ namespace Nevermore.Advanced
         public const int DefaultConnectRetryInterval = 10;
         
         public const int DefaultKeyBlockSize = 20;
+
+        public const int LargeDocumentCutoffChars = 1024;
     }
 }

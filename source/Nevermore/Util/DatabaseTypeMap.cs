@@ -63,6 +63,11 @@ namespace Nevermore.Util
             {
                 return DbType.Binary;
             }
+            if (propertyType == typeof(StreamReader) || propertyType == typeof(TextReader) || propertyType == typeof(StringReader) || 
+                typeof(TextReader).IsAssignableFrom(propertyType) )
+            {
+                return DbType.String;
+            }
 
             DbType result;
             if (!TypeMap.TryGetValue(propertyType, out result))
