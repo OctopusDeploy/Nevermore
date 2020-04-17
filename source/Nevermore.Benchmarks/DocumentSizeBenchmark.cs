@@ -10,7 +10,6 @@ using Nevermore.Mapping;
 
 namespace Nevermore.Benchmarks
 {
-    [Description("Document size")]
     public class DocumentSizeBenchmark : BenchmarkBase
     {
         IRelationalStore store;
@@ -42,7 +41,7 @@ namespace Nevermore.Benchmarks
         [Params(JsonStorageFormat.TextOnly, JsonStorageFormat.CompressedOnly)]
         public JsonStorageFormat Format { get; set; }
 
-        [Params(256, 1024, 4096, 16384, 65536, 65536*8)]
+        [Params(256, 1024, 4096, 16384 * 2, 65536*8)]
         public int DocumentSize { get; set; }
         
         [Benchmark]

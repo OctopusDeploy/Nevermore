@@ -15,6 +15,6 @@ namespace Nevermore.Advanced
         
         public const int DefaultKeyBlockSize = 20;
 
-        public const int LargeDocumentCutoffChars = 1024;
+        public const int LargeDocumentCutoffSize = 1024;
     }
 }

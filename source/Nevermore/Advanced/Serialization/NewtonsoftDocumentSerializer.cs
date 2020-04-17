@@ -58,7 +58,7 @@ namespace Nevermore.Advanced.Serialization
             {
                 // Serializing directly to a string is faster for small documents
                 var text = JsonConvert.SerializeObject(instance, SerializerSettings);
-                if (text.Length > NevermoreDefaults.LargeDocumentCutoffChars)
+                if (text.Length > NevermoreDefaults.LargeDocumentCutoffSize)
                     map.ExpectLargeDocuments = true;
                 return new StringReader(text);
             }

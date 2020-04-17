@@ -3,11 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
@@ -128,7 +125,7 @@ namespace Nevermore.Advanced.ReaderStrategies
                     {
                         // For small documents, we'll just read it as a string and deserialize. This tends to be faster
                         var text = reader.GetString(i);
-                        if (text.Length >= NevermoreDefaults.LargeDocumentCutoffChars) 
+                        if (text.Length >= NevermoreDefaults.LargeDocumentCutoffSize) 
                             // We'll know for next time
                             plan.TypePlan.ExpectsLargeDocuments = true;
 
@@ -208,7 +205,7 @@ namespace Nevermore.Advanced.ReaderStrategies
             public bool ExpectsLargeDocuments
             {
                 get => Mapping.ExpectLargeDocuments;
-                set => Mapping.ExpectLargeDocuments = true;
+                set => Mapping.ExpectLargeDocuments = value;
             }
 
             TypePlan(Type type, DocumentMap mapping, ConcurrentDictionary<string, TypeColumn> columns)
