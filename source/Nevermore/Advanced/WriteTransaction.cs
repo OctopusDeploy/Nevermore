@@ -32,13 +32,19 @@ namespace Nevermore.Advanced
         
         public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
         {
-            ExecuteNonQuery(builder.PrepareInsert(new[] {instance}, options));
+            var command = builder.PrepareInsert(new[] {instance}, options);
+            configuration.HookRegistry.BeforeInsert(instance, command.Mapping, this);
+            ExecuteNonQuery(command);
+            configuration.HookRegistry.AfterInsert(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
         }
 
         public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
         {
-            await ExecuteNonQueryAsync(builder.PrepareInsert(new[] {instance}, options));
+            var command = builder.PrepareInsert(new[] {instance}, options);
+            await configuration.HookRegistry.BeforeInsertAsync(instance, command.Mapping, this);
+            await ExecuteNonQueryAsync(command);
+            await configuration.HookRegistry.AfterInsertAsync(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
         }
 
@@ -47,7 +53,10 @@ namespace Nevermore.Advanced
             IReadOnlyList<object> instanceList = documents.ToArray();
             if (!instanceList.Any()) return;
 
-            ExecuteNonQuery(builder.PrepareInsert(instanceList, options));
+            var command = builder.PrepareInsert(instanceList, options);
+            foreach (var instance in instanceList) configuration.HookRegistry.BeforeInsert(instance, command.Mapping, this);
+            ExecuteNonQuery(command);
+            foreach (var instance in instanceList) configuration.HookRegistry.AfterInsert(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
         }
 
@@ -56,39 +65,56 @@ namespace Nevermore.Advanced
             IReadOnlyList<object> instanceList = documents.ToArray();
             if (!instanceList.Any()) return;
 
-            await ExecuteNonQueryAsync(builder.PrepareInsert(instanceList, options));
+            var command = builder.PrepareInsert(instanceList, options);
+            foreach (var instance in instanceList) await configuration.HookRegistry.BeforeInsertAsync(instance, command.Mapping, this);
+            await ExecuteNonQueryAsync(command);
+            foreach (var instance in instanceList) await configuration.HookRegistry.AfterInsertAsync(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
         }
 
         public void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
         {
-            ExecuteNonQuery(builder.PrepareUpdate(document, options));
+            var command = builder.PrepareUpdate(document, options);
+            configuration.HookRegistry.BeforeUpdate(document, command.Mapping, this);
+            ExecuteNonQuery(command);
+            configuration.HookRegistry.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
         public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
         {
-            await ExecuteNonQueryAsync(builder.PrepareUpdate(document, options));
+            var command = builder.PrepareUpdate(document, options);
+            await configuration.HookRegistry.BeforeUpdateAsync(document, command.Mapping, this);
+            await ExecuteNonQueryAsync(command);
+            await configuration.HookRegistry.AfterUpdateAsync(document, command.Mapping, this);
         }
 
         public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
-            ExecuteNonQuery(builder.PrepareDelete(document, options));
+            var id = configuration.Mappings.GetId(document);
+            Delete<TDocument>(id, options);
         }
 
-        public async Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
+        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
-            await ExecuteNonQueryAsync(builder.PrepareDelete(document, options));
+            var id = configuration.Mappings.GetId(document);
+            return DeleteAsync<TDocument>(id, options);
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
         {
-            ExecuteNonQuery(builder.PrepareDelete<TDocument>(id, options));
+            var command = builder.PrepareDelete<TDocument>(id, options);
+            configuration.HookRegistry.BeforeDelete(id, command.Mapping, this);
+            ExecuteNonQuery(command);
+            configuration.HookRegistry.AfterDelete(id, command.Mapping, this);
         }
 
         public async Task DeleteAsync<TDocument>(string id, DeleteOptions options = null) where TDocument : class
         {
-            await ExecuteNonQueryAsync(builder.PrepareDelete<TDocument>(id, options));
+            var command = builder.PrepareDelete<TDocument>(id, options);
+            await configuration.HookRegistry.BeforeDeleteAsync(id, command.Mapping, this);
+            await ExecuteNonQueryAsync(command);
+            await configuration.HookRegistry.AfterDeleteAsync(id, command.Mapping, this);
         }
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
@@ -123,7 +149,16 @@ namespace Nevermore.Advanced
 
         public void Commit()
         {
+            configuration.HookRegistry.BeforeCommit(this);
             transaction.Commit();
+            configuration.HookRegistry.AfterCommit(this);
+        }
+
+        public async Task CommitAsync()
+        {
+            await configuration.HookRegistry.BeforeCommitAsync(this);
+            await transaction.CommitAsync();
+            await configuration.HookRegistry.AfterCommitAsync(this);
         }
     }
 }

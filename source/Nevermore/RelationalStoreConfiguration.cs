@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Advanced.Serialization;
@@ -56,6 +57,8 @@ namespace Nevermore
             ReaderStrategyRegistry.Register(new ValueTupleReaderStrategy(this));
             ReaderStrategyRegistry.Register(new PlainClassReaderStrategy(this));
             ReaderStrategyRegistry.Register(new PrimitiveReaderStrategy(this));
+            
+            HookRegistry = new HookRegistry();
 
             TypeHandlerRegistry = new TypeHandlerRegistry();
             
@@ -89,7 +92,8 @@ namespace Nevermore
         public bool ForceMultipleActiveResultSets { get; set; }
         
         public ISqlCommandFactory CommandFactory { get; set; }
-        
+        public IHookRegistry HookRegistry { get; private set; }
+
         string InitializeConnectionString(string sqlConnectionString)
         {
             var builder = new SqlConnectionStringBuilder(sqlConnectionString);
