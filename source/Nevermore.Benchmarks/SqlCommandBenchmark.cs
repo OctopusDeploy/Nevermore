@@ -9,7 +9,10 @@ using Nevermore.Benchmarks.SetUp;
 
 namespace Nevermore.Benchmarks
 {
-    [Description("SQL Command (hand-coded)")]
+    /// <summary>
+    /// This benchmark is a sister benchmark to <see cref="NevermoreBenchmark"/>. It helps to show the overhead that
+    /// Nevermore adds compared to if we hand-coded it ourselves using SqlCommand.
+    /// </summary>
     public class SqlCommandBenchmark : BenchmarkBase
     {
         SqlConnection connection;
@@ -23,13 +26,13 @@ namespace Nevermore.Benchmarks
             sqlTransaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
         }
         
-        [Benchmark(Description = "List 100 posts")]
+        [Benchmark]
         public List<Post> List100Posts()
         {
             using var postCommand = new SqlCommand("select Top 100 * from Posts", connection, sqlTransaction);
 
             var results = new List<Post>();
-            using var reader = postCommand.ExecuteReader();
+            using var reader = postCommand.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
             while (reader.Read())
             {
                 var post = new Post
@@ -58,7 +61,7 @@ namespace Nevermore.Benchmarks
             return results;
         }
         
-        [Benchmark(Description = "List 50 tuples")]
+        [Benchmark]
         public List<(string Id, long PostLength)> List50Tuples()
         {
             using var postCommand = new SqlCommand("select Top 50 Id, Len([Text]) as PostLength from Posts", connection, sqlTransaction);
@@ -80,7 +83,7 @@ namespace Nevermore.Benchmarks
             return results;
         }
         
-        [Benchmark(Description = "List 100 primitives")]
+        [Benchmark]
         public List<long?> List100Primitives()
         {
             using var postCommand = new SqlCommand("select Top 100 Len([Text]) as PostLength from Posts", connection, sqlTransaction);
