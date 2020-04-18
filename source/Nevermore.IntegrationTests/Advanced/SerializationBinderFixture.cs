@@ -75,7 +75,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 this.fallback = fallback ?? new DefaultSerializationBinder();
             }
             
-            public Type BindToType(string? assemblyName, string typeName)
+            public Type BindToType(string assemblyName, string typeName)
             {
                 if (typeName == "Created" && assemblyName == null)
                     return typeof(CreatedEvent);
@@ -84,7 +84,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 return fallback.BindToType(assemblyName, typeName);
             }
 
-            public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
+            public void BindToName(Type serializedType, out string assemblyName, out string typeName)
             {
                 if (serializedType == typeof(CreatedEvent))
                 {
