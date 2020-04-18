@@ -16,9 +16,9 @@ namespace Nevermore.Mapping
 
         protected new IColumnMappingBuilder IdColumn => base.IdColumn;
 
-        protected IColumnMappingBuilder Column<T>(string columnName, IPropertyReaderWriter readerWriter)
+        protected IColumnMappingBuilder Column<T>(string columnName, IPropertyHandler handler)
         {
-            var column = new ColumnMapping(columnName, typeof(T), readerWriter);
+            var column = new ColumnMapping(columnName, typeof(T), handler);
             IndexedColumns.Add(column);
             return column;
         }

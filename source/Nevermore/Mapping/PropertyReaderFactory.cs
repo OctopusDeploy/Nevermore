@@ -8,13 +8,13 @@ namespace Nevermore.Mapping
     {
         static readonly ConcurrentDictionary<string, object> Readers = new ConcurrentDictionary<string, object>();
 
-        public static IPropertyReaderWriter Create<TCast>(Type objectType, string propertyName)
+        public static IPropertyHandler Create<TCast>(Type objectType, string propertyName)
         {
             var key = objectType.AssemblyQualifiedName + "-" + propertyName;
-            IPropertyReaderWriter result = null;
+            IPropertyHandler result = null;
             if (Readers.ContainsKey(key))
             {
-                result = Readers[key] as IPropertyReaderWriter;
+                result = Readers[key] as IPropertyHandler;
             }
 
             if (result != null)
@@ -30,7 +30,7 @@ namespace Nevermore.Mapping
 
                 var delegateReaderType = typeof (Func<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
                 var delegateWriterType = typeof (Action<,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType);
-                var readerType = typeof (DelegatePropertyReaderWriter<,,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType, typeof (TCast));
+                var readerType = typeof (DelegatePropertyHandler<,,>).MakeGenericType(propertyInfo.DeclaringType, propertyInfo.PropertyType, typeof (TCast));
                 var propertyGetterMethodInfo = propertyInfo.GetGetMethod();
                 if (propertyGetterMethodInfo == null)
                 {
@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
                     propertySetterDelegate = propertySetterMethodInfo.CreateDelegate(delegateWriterType);
                 }
 
-                result = (IPropertyReaderWriter)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
+                result = (IPropertyHandler)Activator.CreateInstance(readerType, propertyGetterDelegate, propertySetterDelegate);
                 Readers[key] = result;
             }
             else
@@ -60,20 +60,20 @@ namespace Nevermore.Mapping
                     throw new InvalidOperationException(string.Format("Field type '{0}' for field '{1}.{2}' cannot be converted to type '{3}", fieldInfo.FieldType, fieldInfo.DeclaringType == null ? "??" : fieldInfo.DeclaringType.Name, fieldInfo.Name, typeof (TCast).Name));
                 }
 
-                result = new FieldReaderWriter(fieldInfo);
+                result = new FieldHandler(fieldInfo);
                 Readers[key] = result;
             }
 
             return result;
         }
 
-        class DelegatePropertyReaderWriter<TInput, TReturn, TCast> : IPropertyReaderWriter
+        class DelegatePropertyHandler<TInput, TReturn, TCast> : IPropertyHandler
             where TReturn : TCast
         {
             readonly Func<TInput, TReturn> caller;
             readonly Action<TInput, TReturn> writer;
 
-            public DelegatePropertyReaderWriter(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
+            public DelegatePropertyHandler(Func<TInput, TReturn> caller, Action<TInput, TReturn> writer)
             {
                 this.caller = caller;
                 this.writer = writer;
@@ -96,11 +96,11 @@ namespace Nevermore.Mapping
             }
         }
 
-        class FieldReaderWriter : IPropertyReaderWriter
+        class FieldHandler : IPropertyHandler
         {
             readonly FieldInfo field;
 
-            public FieldReaderWriter(FieldInfo field)
+            public FieldHandler(FieldInfo field)
             {
                 this.field = field;
             }

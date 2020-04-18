@@ -13,11 +13,11 @@ namespace Nevermore.Mapping
         int? maxLength;
         bool isNullable;
 
-        internal ColumnMapping(string columnName, Type type, IPropertyReaderWriter readerWriter)
+        internal ColumnMapping(string columnName, Type type, IPropertyHandler handler)
         {
             Type = type ?? throw new ArgumentNullException(nameof(type));
             ColumnName = columnName ?? throw new ArgumentNullException(nameof(columnName));
-            ReaderWriter = readerWriter ?? throw new ArgumentNullException(nameof(readerWriter));
+            PropertyHandler = handler ?? throw new ArgumentNullException(nameof(handler));
         }
         
         internal ColumnMapping(string columnName, PropertyInfo property)
@@ -25,7 +25,7 @@ namespace Nevermore.Mapping
             Property = property;
             Type = property.PropertyType;
             ColumnName = columnName ?? property.Name;
-            ReaderWriter = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
+            PropertyHandler = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
 
             if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
@@ -49,7 +49,7 @@ namespace Nevermore.Mapping
 
         public string ColumnName { get; }
         public Type Type { get; }
-        public IPropertyReaderWriter ReaderWriter { get; }
+        public IPropertyHandler PropertyHandler { get; }
         public PropertyInfo Property { get; }
 
         public bool IsNullable => isNullable;

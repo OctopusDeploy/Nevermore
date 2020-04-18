@@ -10,7 +10,7 @@ namespace Nevermore.Mapping
         public RelatedDocumentsMapping(PropertyInfo property, string tableName)
         {
             TableName = tableName;
-            ReaderWriter = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name);
+            Handler = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name);
         }
         
         public string TableName { get; }
@@ -19,6 +19,6 @@ namespace Nevermore.Mapping
         public string RelatedDocumentIdColumnName => "RelatedDocumentId";
         public string RelatedDocumentTableColumnName => "RelatedDocumentTable";
 
-        public IPropertyReaderWriter ReaderWriter { get; }
+        public IPropertyHandler Handler { get; }
     }
 }

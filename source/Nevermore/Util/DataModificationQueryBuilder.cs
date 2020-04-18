@@ -87,7 +87,7 @@ namespace Nevermore.Util
         public PreparedCommand PrepareDelete(object document, DeleteOptions options = null)
         {
             var mapping = mappings.Resolve(document.GetType());
-            var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
+            var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
             return PrepareDelete(mapping, id, options);
         }
 
@@ -223,11 +223,11 @@ namespace Nevermore.Util
 
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object document, DocumentMap mapping, string prefix = null)
         {
-            var id = (string) mapping.IdColumn.ReaderWriter.Read(document);
+            var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
             if (string.IsNullOrWhiteSpace(id))
             {
                 id = allocateId(mapping);
-                mapping.IdColumn.ReaderWriter.Write(document, id);
+                mapping.IdColumn.PropertyHandler.Write(document, id);
             }
 
             var result = new CommandParameterValues
@@ -257,7 +257,7 @@ namespace Nevermore.Util
             
             foreach (var c in mapping.WritableIndexedColumns())
             {
-                var value = c.ReaderWriter.Read(document);
+                var value = c.PropertyHandler.Read(document);
                 if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
                 {
                     var attemptedLength = ((string) value).Length;
@@ -373,7 +373,7 @@ namespace Nevermore.Util
                 let related = (
                     from m in g
                     from i in documentAndIds
-                    from relId in (m.ReaderWriter.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
+                    from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
                     let relatedTableName = mappings.Resolve(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
                 ).Distinct().ToArray()

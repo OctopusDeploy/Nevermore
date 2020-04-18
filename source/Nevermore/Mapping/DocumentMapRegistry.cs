@@ -87,7 +87,7 @@ namespace Nevermore.Mapping
             if (!ResolveOptional(type, out var map))
                 throw NotRegistered(type);
 
-            var readerWriter = map.IdColumn.ReaderWriter;
+            var readerWriter = map.IdColumn.PropertyHandler;
             return inst => (string)readerWriter.Read(inst);
         }
 

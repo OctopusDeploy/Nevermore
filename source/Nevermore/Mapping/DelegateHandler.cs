@@ -2,16 +2,16 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    public class DelegateReaderWriter<TTarget, TProperty> : IPropertyReaderWriter
+    public class DelegateHandler<TTarget, TProperty> : IPropertyHandler
     {
         readonly Func<TTarget, TProperty> reader;
         readonly Action<TTarget, TProperty> writer;
 
-        public DelegateReaderWriter(Func<TTarget, TProperty> reader) : this(reader, null)
+        public DelegateHandler(Func<TTarget, TProperty> reader) : this(reader, null)
         {
         }
 
-        public DelegateReaderWriter(Func<TTarget, TProperty> reader, Action<TTarget, TProperty> writer)
+        public DelegateHandler(Func<TTarget, TProperty> reader, Action<TTarget, TProperty> writer)
         {
             this.reader = reader;
             this.writer = writer;

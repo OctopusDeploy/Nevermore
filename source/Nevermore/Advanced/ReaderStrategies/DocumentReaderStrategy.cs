@@ -275,7 +275,7 @@ namespace Nevermore.Advanced.ReaderStrategies
 
             public ReaderColumn Bind(int index)
             {
-                return new ReaderColumn(index, readerFunc, column.ReaderWriter, column.Direction == ColumnDirection.Both || column.Direction == ColumnDirection.FromDatabase);
+                return new ReaderColumn(index, readerFunc, column.PropertyHandler, column.Direction == ColumnDirection.Both || column.Direction == ColumnDirection.FromDatabase);
             }
         }
         
@@ -376,11 +376,11 @@ namespace Nevermore.Advanced.ReaderStrategies
         class ReaderColumn
         {
             readonly Func<DbDataReader, int, object> reader;
-            readonly IPropertyReaderWriter getterSetter;
+            readonly IPropertyHandler getterSetter;
             readonly bool writable;
             readonly int index;
 
-            public ReaderColumn(int index, Func<DbDataReader, int, object> reader, IPropertyReaderWriter getterSetter, bool writable)
+            public ReaderColumn(int index, Func<DbDataReader, int, object> reader, IPropertyHandler getterSetter, bool writable)
             {
                 this.index = index;
                 this.reader = reader;
