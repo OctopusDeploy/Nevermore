@@ -6,7 +6,7 @@ using Nevermore.Util;
 
 namespace Nevermore.Advanced.ReaderStrategies
 {
-    public class ReaderStrategyRegistry : IReaderStrategyRegistry
+    internal class ReaderStrategyRegistry : IReaderStrategyRegistry
     {
         readonly List<IReaderStrategy> strategies = new List<IReaderStrategy>();
         readonly ConcurrentDictionary<Type, object> cache = new ConcurrentDictionary<Type, object>();

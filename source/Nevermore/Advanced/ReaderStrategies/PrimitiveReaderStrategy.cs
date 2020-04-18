@@ -5,7 +5,7 @@ using Nevermore.Util;
 
 namespace Nevermore.Advanced.ReaderStrategies
 {
-    public class PrimitiveReaderStrategy : IReaderStrategy
+    internal class PrimitiveReaderStrategy : IReaderStrategy
     {
         readonly RelationalStoreConfiguration configuration;
 

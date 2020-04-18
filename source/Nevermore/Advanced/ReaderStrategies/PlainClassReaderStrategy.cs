@@ -17,7 +17,7 @@ namespace Nevermore.Advanced.ReaderStrategies
     ///  - If a column exists in the results, a property must exist on the class
     ///  - A property on the class, however, does not need to exist as a column (it will simply not be set)
     /// </summary>
-    public class PlainClassReaderStrategy : IReaderStrategy
+    internal class PlainClassReaderStrategy : IReaderStrategy
     {
         readonly RelationalStoreConfiguration configuration;
 
@@ -43,36 +43,24 @@ namespace Nevermore.Advanced.ReaderStrategies
             // Find the parameter-less constructor
             var constructors = typeof(TRecord).GetConstructors();
             var defaultConstructor = constructors.FirstOrDefault(p => p.GetParameters().Length == 0) ?? throw new InvalidOperationException("When reading query results to a class, the class must provide a default constructor with no parameters.");
-            var constructor = Expression.Lambda<Func<TRecord>>(Expression.New(defaultConstructor)).Compile();
+            var constructor = Expression.New(defaultConstructor);
+            var resultLocalVariable = Expression.Variable(typeof(TRecord), "result");
+            var createAndAssignResult = Expression.Assign(resultLocalVariable, constructor);
             
             // Create fast setters for all properties on the type
-            var setters = new Dictionary<string, Action<TRecord, DbDataReader, int>>(StringComparer.OrdinalIgnoreCase);
             var properties = typeof(TRecord).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
             
-            foreach (var property in properties)
-            {
-                // For each property we will create something like this:
-                //   (record, reader, i) => record.Name = reader.IsDBNull(i) ? null : reader.GetString();
-                var source = Expression.Parameter(typeof(TRecord), "source");
-                var reader = Expression.Parameter(typeof(DbDataReader), "reader");
-                var columnIndex = Expression.Parameter(typeof(int), "index");
+            var readerParameter = Expression.Parameter(typeof(DbDataReader), "reader");
+
                 
-                var assignPropertyToValue = Expression.Assign(
-                    Expression.Property(source, property),
-                    ExpressionHelper.GetValueFromReaderAsType(reader, columnIndex, property.PropertyType, configuration.TypeHandlerRegistry));
-                
-                var lambda = Expression.Lambda<Action<TRecord, DbDataReader, int>>(assignPropertyToValue, source, reader, columnIndex).Compile();
-                
-                setters[property.Name] = lambda;
-            }
+            // TODO: Cache this per query like in document strategy
+            Func<TRecord, DbDataReader, TRecord> compiledFunc = null;
+            // Called once for each time Stream() is called
+            var expectedFieldCount = 0;
             
             return command =>
             {
-                // Called once for each time Stream() is called
-                var expectedFieldCount = 0;
                 var currentRow = 0;
-                
-                var assigners = new Action<TRecord, DbDataReader, int>[0];
                 
                 return reader =>
                 {
@@ -83,23 +71,39 @@ namespace Nevermore.Advanced.ReaderStrategies
                     // will be in the SELECT statement, or if all properties are used. So the first chance we get, 
                     // we'll create an array of the property setters in the correct order based on the result set. We 
                     // do this on row 1, and store it in the `assigners` array.
-                    if (currentRow == 1)
+                    if (currentRow == 1 && compiledFunc == null)
                     {
                         expectedFieldCount = reader.FieldCount;
                         
-                        assigners = new Action<TRecord, DbDataReader, int>[reader.FieldCount];
+                        var expressions = new List<Expression>(expectedFieldCount + 2);
+                        expressions.Add(createAndAssignResult);
+                        
                         for (var i = 0; i < reader.FieldCount; i++)
                         {
                             var name = reader.GetName(i);
-                            if (setters.TryGetValue(name, out var setter))
+                            var property = properties.FirstOrDefault(p => p.Name == name);
+                            if (property != null)
                             {
-                                assigners[i] = setter;
+                                var assignPropertyToValue = Expression.Assign(
+                                    Expression.Property(resultLocalVariable, property),
+                                    ExpressionHelper.GetValueFromReaderAsType(readerParameter, Expression.Constant(i), property.PropertyType, configuration.TypeHandlerRegistry));
+                                
+                                expressions.Add(assignPropertyToValue);
                             }
                             else
                             {
                                 throw new Exception($"The query returned a column named '{name}' but no property by that name exists on the target type '{typeof(TRecord).Name}'");
                             }
                         }
+
+                        expressions.Add(resultLocalVariable);
+                        
+                        var block = Expression.Block(
+                            expressions
+                        );
+
+                        var lambda = Expression.Lambda<Func<TRecord, DbDataReader, TRecord>>(block, resultLocalVariable, readerParameter);
+                        compiledFunc = lambda.Compile();
                     }
                     else
                     {
@@ -107,27 +111,29 @@ namespace Nevermore.Advanced.ReaderStrategies
                         if (reader.FieldCount != expectedFieldCount)
                             throw new InvalidOperationException($"Row {currentRow} in the result set has {reader.FieldCount} columns, but the first row had {expectedFieldCount} columns. You cannot change the number of columns in a single result set. {typeof(TRecord).FullName}");
                     }
-                    
-                    // Create an instance of the object by calling our cached parameter-less constructor
-                    var instance = constructor();
-                    for (var i = 0; i < expectedFieldCount; i++)
-                    {
-                        try
-                        {
-                            // Assign all of the properties on the instance, according to the columns in the result set
-                            assigners[i](instance, reader, i);
-                        }
-                        catch (InvalidCastException ex)
-                        {
-                            var columnName = reader.GetName(i);
-                            var dataTypeName = reader.GetDataTypeName(i);
-                            var property = properties.FirstOrDefault(p => string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase));
-                            if (property == null) 
-                                throw;
 
-                            throw new InvalidCastException($"Invalid cast: Unable to assign value from column '{columnName}' (data type {dataTypeName}) to property {typeof(TRecord).Name}.{property.Name} (of type {property.PropertyType}). Row number in the result set: {currentRow}", ex);
-                        }
-                    }
+                    var instance = compiledFunc(default(TRecord), reader);
+                    
+                    // // Create an instance of the object by calling our cached parameter-less constructor
+                    // var instance = constructor();
+                    // for (var i = 0; i < expectedFieldCount; i++)
+                    // {
+                    //     try
+                    //     {
+                    //         // Assign all of the properties on the instance, according to the columns in the result set
+                    //         assigners[i](instance, reader, i);
+                    //     }
+                    //     catch (InvalidCastException ex)
+                    //     {
+                    //         var columnName = reader.GetName(i);
+                    //         var dataTypeName = reader.GetDataTypeName(i);
+                    //         var property = properties.FirstOrDefault(p => string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase));
+                    //         if (property == null) 
+                    //             throw;
+                    //
+                    //         throw new InvalidCastException($"Invalid cast: Unable to assign value from column '{columnName}' (data type {dataTypeName}) to property {typeof(TRecord).Name}.{property.Name} (of type {property.PropertyType}). Row number in the result set: {currentRow}", ex);
+                    //     }
+                    // }
 
                     return (instance, true);
                 };

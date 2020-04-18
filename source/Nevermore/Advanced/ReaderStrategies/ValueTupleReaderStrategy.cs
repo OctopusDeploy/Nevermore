@@ -6,7 +6,7 @@ using Nevermore.Util;
 
 namespace Nevermore.Advanced.ReaderStrategies
 {
-    public class ValueTupleReaderStrategy : IReaderStrategy
+    internal class ValueTupleReaderStrategy : IReaderStrategy
     {
         readonly RelationalStoreConfiguration configuration;
 
