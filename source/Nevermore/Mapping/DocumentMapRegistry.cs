@@ -37,18 +37,28 @@ namespace Nevermore.Mapping
 
         public bool ResolveOptional(Type type, out DocumentMap map)
         {
-            DocumentMap mapping = null;
+            var maps = new List<DocumentMap>();
 
-            // Walk up the inheritance chain until we find a mapping
+            // Walk up the inheritance chain and make sure there's only one map for the document.
             var currentType = type;
-            while (currentType != null && !mappings.TryGetValue(currentType, out mapping))
+            
+            while (true)
             {
+                if (mappings.TryGetValue(currentType, out var m))
+                {
+                    maps.Add(m);
+                }
+                
                 currentType = currentType.GetTypeInfo().BaseType;
+                if (currentType == typeof(object) || currentType == null)
+                    break;
             }
 
-            map = mapping;
-
-            return mapping != null;
+            if (maps.Count > 1)
+                throw new InvalidOperationException($"More than one document map is registered against the type '{type.FullName}'. The following maps could apply: " + string.Join(", ", maps.Select(m => m.GetType().FullName)));
+            
+            map = maps.SingleOrDefault();
+            return map != null;
         }
 
         public DocumentMap Resolve<TDocument>()
