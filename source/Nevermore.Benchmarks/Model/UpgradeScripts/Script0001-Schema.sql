@@ -33,6 +33,17 @@ Create Table Customer
     FirstName nvarchar(20) not null,    
     LastName nvarchar(20) not null,    
     Nickname nvarchar(200) null,    
+    CreationDate datetime not null, 
+    LastChangeDate datetime not null,
+    Counter1 int,
+    Counter2 int,
+    Counter3 int,
+    Counter4 int,
+    Counter5 int,
+    Counter6 int,
+    Counter7 int,
+    Counter8 int,
+    Counter9 int,
     [Rowversion] rowversion not null,
     [JSON] nvarchar(max) not null
 )
@@ -45,7 +56,7 @@ begin transaction
 declare @i int = 0
 While @i <= 50001
 Begin
-    Insert Customer (Id, FirstName, LastName, Nickname, [JSON]) values ('Customer-'+ convert(nvarchar(10), @i), 'Robert', 'Menzies ' + convert(nvarchar(10), @i), 'Bob', '{}')
+    Insert Customer (Id, FirstName, LastName, Nickname, CreationDate, LastChangeDate, Counter3, [JSON]) values ('Customer-'+ convert(nvarchar(10), @i), 'Robert', 'Menzies ' + convert(nvarchar(10), @i), 'Bob', (getdate()), (getdate()), @i, '{}')
     Set @i = @i + 1;
 End
 
