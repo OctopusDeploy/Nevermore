@@ -5,6 +5,8 @@ namespace Nevermore.Advanced.TypeHandlers
 {
     public interface ITypeHandler
     {
+        static Type HideType = typeof(void);
+        
         public int Priority
         {
             get { return 0; }

@@ -136,7 +136,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("update Account set [Type] = 'dunno' where Id = 'Accounts-1'");
 
-            Assert.Throws<InvalidOperationException>(() => transaction.Query<Account>().ToList()).Message.Should().Contain("The type column has a value of 'dunno' (String)");
+            Assert.Throws<InvalidOperationException>(() => transaction.Query<Account>().ToList()).Message.Should().Contain("The 'Type' column has a value of 'dunno' (String)");
         }
 
         [Test, Order(6)]
