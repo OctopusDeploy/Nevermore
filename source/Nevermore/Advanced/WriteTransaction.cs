@@ -130,9 +130,6 @@ namespace Nevermore.Advanced
 
         string AllocateId(DocumentMap mapping)
         {
-            if (!string.IsNullOrEmpty(mapping.SingletonId))
-                return mapping.SingletonId;
-
             return AllocateId(mapping.TableName, mapping.IdFormat);
         }
 

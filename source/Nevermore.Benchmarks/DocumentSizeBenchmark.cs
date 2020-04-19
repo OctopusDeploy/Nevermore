@@ -28,12 +28,12 @@ namespace Nevermore.Benchmarks
             var rand = new Random(42);
             var randomString = new Func<string>(() =>
             {
-                var buffer = new byte[256];
+                var buffer = new byte[3];
                 rand.NextBytes(buffer);
                 return Convert.ToBase64String(buffer);
             });
             var historyEntries = Enumerable.Range(1, DocumentSize / 256).Select(n => new BigObjectHistoryEntry
-                {Id = Guid.NewGuid(), Comment = randomString(), Date = DateTime.Today.AddDays(n)});
+                {Id = Guid.NewGuid(), Comment = randomString(), LuckyNumbers = Enumerable.Range(0, rand.Next(130, 330)).ToArray(), Date = DateTime.Today.AddDays(n)});
             writer.Insert(new BigObject {Id = "BigObject-1", History = historyEntries.OfType<object>().ToList()});
             writer.Commit();
         }

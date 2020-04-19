@@ -31,6 +31,7 @@ namespace Nevermore.Mapping
         {
             foreach (var mapping in mappingsToAdd)
             {
+                mapping.Validate();
                 mappings[mapping.Type] = mapping;
             }
         }

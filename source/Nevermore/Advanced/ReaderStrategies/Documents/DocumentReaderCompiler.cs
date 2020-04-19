@@ -34,7 +34,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             for (var i = 0; i < firstRow.FieldCount; i++)
             {
                 var fieldName = firstRow.GetName(i);
-                var column = map.IndexedColumns.FirstOrDefault(c => string.Equals(fieldName, c.ColumnName, StringComparison.OrdinalIgnoreCase));
+                var column = map.Columns.FirstOrDefault(c => string.Equals(fieldName, c.ColumnName, StringComparison.OrdinalIgnoreCase));
 
                 if (string.Equals(fieldName, idColumnName, StringComparison.OrdinalIgnoreCase))
                 {

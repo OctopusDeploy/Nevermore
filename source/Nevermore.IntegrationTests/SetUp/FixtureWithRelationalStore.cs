@@ -32,8 +32,6 @@ namespace Nevermore.IntegrationTests.SetUp
             
             config.UseJsonNetSerialization(settings =>
             {
-                settings.Converters.Add(new BrandConverter(config.Mappings));
-                settings.Converters.Add(new EndpointConverter());
                 settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
             

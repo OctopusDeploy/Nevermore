@@ -13,6 +13,7 @@ using Microsoft.Data.SqlClient.Server;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Nevermore.Advanced.PropertyHandlers;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 using Nevermore.Util;
@@ -75,8 +76,8 @@ namespace Nevermore
             var type = args.GetType();
             foreach (var property in type.GetTypeInfo().GetProperties())
             {
-                var rw = PropertyReaderFactory.Create<object>(type, property.Name);
-
+                // TODO: Cache these
+                var rw = new PropertyHandler(property);
                 var value = rw.Read(args);
                 this[property.Name] = value;
             }

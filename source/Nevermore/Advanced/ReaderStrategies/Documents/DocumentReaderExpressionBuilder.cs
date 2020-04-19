@@ -4,6 +4,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Nevermore.Advanced.PropertyHandlers;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
@@ -165,17 +167,19 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
 
         void AddAssigner(ColumnMapping column, ParameterExpression local)
         {
-            if (column.Direction == ColumnDirection.Both || column.Direction == ColumnDirection.FromDatabase)
+            if (column.Direction == ColumnDirection.ToDatabase)
+                // We don't read this field
+                return;
+
+            if (column.Property != null && column.PropertyHandler is PropertyHandler)
             {
-                if (true) //(column.PropertyHandler == null)
-                {
-                    // This is why it's better if property handlers are used sparingly - it's faster if we can just assign the property
-                    assigners.Add(Expression.Assign(Expression.Property(result, column.Property), local));
-                }
-                else
-                {
-                    assigners.Add(Expression.Call(Expression.Constant(column.PropertyHandler, typeof(IPropertyHandler)), propertyHandlerWriteMethod, result, Expression.Convert(local, typeof(object))));
-                }
+                // Optimization: Rather than call the property handler, we can embed the expression to assign the
+                // property directly. This avoids a few casts to and from object.
+                assigners.Add(Expression.Assign(Expression.Property(result, column.Property), local));
+            }
+            else
+            {
+                assigners.Add(Expression.Call(Expression.Constant(column.PropertyHandler, typeof(IPropertyHandler)), propertyHandlerWriteMethod, result, Expression.Convert(local, typeof(object))));
             }
         }
 
@@ -230,7 +234,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 }
             }
             
-            return lambda.Compile(false);
+            return lambda.Compile();
         }
         
         ParameterExpression DeclareLocal(Type type, string name)
@@ -245,7 +249,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             var storageFormat = map.JsonStorageFormat;
             var expectsJson = map.JsonStorageFormat != JsonStorageFormat.CompressedOnly;
             var expectsJsonBlob = map.JsonStorageFormat != JsonStorageFormat.TextOnly;
-            var expectsType = map.IndexedColumns.Any(c => c.ColumnName == "Type");
+            var expectsType = map.Columns.Any(c => c.ColumnName == "Type");
             var name = map.Type.Name;
 
             if (idIndex < 0)

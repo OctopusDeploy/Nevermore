@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Nevermore.Mapping
 {
-    
     public abstract class DocumentMap<TDocument> : DocumentMap
     {
         protected DocumentMap()
@@ -19,14 +18,14 @@ namespace Nevermore.Mapping
         protected IColumnMappingBuilder Column<T>(string columnName, IPropertyHandler handler)
         {
             var column = new ColumnMapping(columnName, typeof(T), handler);
-            IndexedColumns.Add(column);
+            Columns.Add(column);
             return column;
         }
         
         protected IColumnMappingBuilder Column<T>(Expression<Func<TDocument, T>> property, string columnName = null)
         {
             var column = new ColumnMapping(columnName, GetPropertyInfo(property));
-            IndexedColumns.Add(column);
+            Columns.Add(column);
             return column;
         }
 
@@ -75,7 +74,7 @@ namespace Nevermore.Mapping
         
         protected DocumentMap()
         {
-            IndexedColumns = new List<ColumnMapping>();
+            Columns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         }
@@ -99,13 +98,10 @@ namespace Nevermore.Mapping
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
         /// </summary>
-        public List<ColumnMapping> IndexedColumns { get; private set; }
+        public List<ColumnMapping> Columns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
         
-        // TODO: Obsolete
-        public string SingletonId { get; protected set; }
-
         protected void InitializeDefault(Type type)
         {
             Type = type;
@@ -124,6 +120,15 @@ namespace Nevermore.Mapping
                     IdColumn = new ColumnMapping("Id", property);
                 }
             }
+        }
+
+        public void Validate()
+        {
+            if (IdColumn == null)
+                throw new InvalidOperationException("There is no Id property on the document type " + Type.Name);
+            
+            foreach (var column in Columns)
+                column.Validate();
         }
     }
 }

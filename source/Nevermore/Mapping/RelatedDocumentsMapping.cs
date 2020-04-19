@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using Nevermore.Advanced.PropertyHandlers;
 
 namespace Nevermore.Mapping
 {
@@ -10,7 +11,7 @@ namespace Nevermore.Mapping
         public RelatedDocumentsMapping(PropertyInfo property, string tableName)
         {
             TableName = tableName;
-            Handler = PropertyReaderFactory.Create<IEnumerable<(string, Type)>>(property.DeclaringType, property.Name);
+            Handler = new PropertyHandler(property);
         }
         
         public string TableName { get; }

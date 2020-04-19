@@ -30,7 +30,7 @@ namespace Nevermore
             }
 
             // Indexed properties are stored as columns
-            if (map != null && map.IndexedColumns.Any(c => c.Property != null && c.Property.Name == member.Name))
+            if (map != null && map.Columns.Any(c => c.Property != null && c.Property.Name == member.Name))
             {
                 property.Ignored = true;
             }

@@ -60,18 +60,18 @@ namespace Nevermore.Advanced.ReaderStrategies
             
             return command =>
             {
-                var currentRow = 0;
+                var rowNumber = 0;
                 
                 return reader =>
                 {
                     // Called once per row
-                    currentRow++;
+                    rowNumber++;
                     
                     // We cached property setters for each property on the class, but we don't know what order they 
                     // will be in the SELECT statement, or if all properties are used. So the first chance we get, 
                     // we'll create an array of the property setters in the correct order based on the result set. We 
                     // do this on row 1, and store it in the `assigners` array.
-                    if (currentRow == 1 && compiledFunc == null)
+                    if (compiledFunc == null)
                     {
                         expectedFieldCount = reader.FieldCount;
                         
@@ -105,37 +105,20 @@ namespace Nevermore.Advanced.ReaderStrategies
                         var lambda = Expression.Lambda<Func<TRecord, DbDataReader, TRecord>>(block, resultLocalVariable, readerParameter);
                         compiledFunc = lambda.Compile();
                     }
-                    else
+
+                    // Assertion - in case the result set somehow returns rows with different numbers of columns
+                    if (reader.FieldCount != expectedFieldCount)
+                        throw new ReaderException($"Row {rowNumber} in the result set has {reader.FieldCount} columns, but the first row had {expectedFieldCount} columns. You cannot change the number of columns in a single result set. {typeof(TRecord).FullName}");
+
+                    try
                     {
-                        // Assertion - in case the result set somehow returns rows with different numbers of columns
-                        if (reader.FieldCount != expectedFieldCount)
-                            throw new InvalidOperationException($"Row {currentRow} in the result set has {reader.FieldCount} columns, but the first row had {expectedFieldCount} columns. You cannot change the number of columns in a single result set. {typeof(TRecord).FullName}");
+                        var instance = compiledFunc(default, reader);
+                        return (instance, true);
                     }
-
-                    var instance = compiledFunc(default(TRecord), reader);
-                    
-                    // // Create an instance of the object by calling our cached parameter-less constructor
-                    // var instance = constructor();
-                    // for (var i = 0; i < expectedFieldCount; i++)
-                    // {
-                    //     try
-                    //     {
-                    //         // Assign all of the properties on the instance, according to the columns in the result set
-                    //         assigners[i](instance, reader, i);
-                    //     }
-                    //     catch (InvalidCastException ex)
-                    //     {
-                    //         var columnName = reader.GetName(i);
-                    //         var dataTypeName = reader.GetDataTypeName(i);
-                    //         var property = properties.FirstOrDefault(p => string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase));
-                    //         if (property == null) 
-                    //             throw;
-                    //
-                    //         throw new InvalidCastException($"Invalid cast: Unable to assign value from column '{columnName}' (data type {dataTypeName}) to property {typeof(TRecord).Name}.{property.Name} (of type {property.PropertyType}). Row number in the result set: {currentRow}", ex);
-                    //     }
-                    // }
-
-                    return (instance, true);
+                    catch (Exception ex)
+                    {
+                        throw new ReaderException($"Error reading row {rowNumber}: {ex.Message}", ex);
+                    }
                 };
             };
             

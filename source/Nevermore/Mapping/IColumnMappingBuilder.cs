@@ -1,3 +1,5 @@
+using Nevermore.Advanced.TypeHandlers;
+
 namespace Nevermore.Mapping
 {
     public interface IColumnMappingBuilder
@@ -17,5 +19,14 @@ namespace Nevermore.Mapping
         /// a value, but don't make sense to set when querying the database.
         /// </summary>
         IColumnMappingBuilder SaveOnly();
+
+        /// <summary>
+        /// Nevermore will build an expression to read and write the property automatically. However, you can override
+        /// this behavior with your own property handler. Keep in mind that if you want to control how a type is mapped
+        /// from the database to a .NET object, you might want to use a <see cref="ITypeHandler"/> instead.
+        /// </summary>
+        /// <param name="propertyHandler">The property handler to use.</param>
+        /// <returns></returns>
+        IColumnMappingBuilder CustomPropertyHandler(IPropertyHandler propertyHandler);
     }
 }

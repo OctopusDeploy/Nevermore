@@ -37,27 +37,41 @@ namespace Nevermore.Advanced.ReaderStrategies
                     throw new InvalidOperationException("You cannot use a different DocumentMap when reading documents except for the map defined for the type.");
 
                 IDocumentReader documentReader = null;
-                
+
+                var rowNumber = 0;
                 return dbDataReader =>
                 {
-                    if (documentReader == null)
+                    rowNumber++;
+                    
+                    try
                     {
-                        // For each query, we create a plan. This involves looking at the columns returned from the query, 
-                        // matching them to the document map columns, then generating and compiling an expression optimized
-                        // for handling this query. It means that the first query will be slow, but every subsequent query
-                        // will be faster. 
-                        // Our cache uses the SQL statement, as that tells us what columns to expect ("select *..."),
-                        // and the field count (in case the schema or something else changes). The plans are also per type 
-                        // being queried.
-                        var cacheKey = HashCode.Combine(mapping, command.Statement, dbDataReader.FieldCount);
-                        var plan = plans.GetOrAdd(cacheKey, _ => DocumentReaderCompiler.CompilePlan(mapping, dbDataReader, configuration));
-                        documentReader = plan.CreateReader();
-                    }
+                        if (documentReader == null)
+                        {
+                            // For each query, we create a plan. This involves looking at the columns returned from the query, 
+                            // matching them to the document map columns, then generating and compiling an expression optimized
+                            // for handling this query. It means that the first query will be slow, but every subsequent query
+                            // will be faster. 
+                            // Our cache uses the SQL statement, as that tells us what columns to expect ("select *..."),
+                            // and the field count (in case the schema or something else changes). The plans are also per type 
+                            // being queried.
+                            var cacheKey = HashCode.Combine(mapping, command.Statement, dbDataReader.FieldCount);
+                            var plan = plans.GetOrAdd(cacheKey, _ => DocumentReaderCompiler.CompilePlan(mapping, dbDataReader, configuration));
+                            documentReader = plan.CreateReader();
+                        }
 
-                    var result = documentReader.Read(dbDataReader);
-                    if (result is TRecord record)
-                        return (record, true);
-                    return (default, false);
+                        var result = documentReader.Read(dbDataReader);
+                        if (result is TRecord record)
+                            return (record, true);
+                        return (default, false);
+                    }
+                    catch (ReaderException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ReaderException($"Error reading row {rowNumber}: " + ex.Message, ex);
+                    }
                 };
             };
         }

@@ -16,6 +16,7 @@ namespace Nevermore.Benchmarks.Model
     {
         public Guid Id { get; set; }
         public string Comment { get; set; }
+        public int[] LuckyNumbers { get; set; }
         public DateTime Date { get; set; }
     }
 }

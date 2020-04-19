@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Nevermore.Advanced.PropertyHandlers;
 
 namespace Nevermore.Mapping
 {
@@ -25,7 +26,7 @@ namespace Nevermore.Mapping
             Property = property;
             Type = property.PropertyType;
             ColumnName = columnName ?? property.Name;
-            PropertyHandler = PropertyReaderFactory.Create<object>(property.DeclaringType, property.Name);
+            PropertyHandler = new PropertyHandler(property);
 
             if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
             {
@@ -49,7 +50,7 @@ namespace Nevermore.Mapping
 
         public string ColumnName { get; }
         public Type Type { get; }
-        public IPropertyHandler PropertyHandler { get; }
+        public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
 
         public bool IsNullable => isNullable;
@@ -78,6 +79,26 @@ namespace Nevermore.Mapping
         {
             direction = ColumnDirection.ToDatabase;
             return this;
+        }
+
+        IColumnMappingBuilder IColumnMappingBuilder.CustomPropertyHandler(IPropertyHandler propertyHandler)
+        {
+            PropertyHandler = propertyHandler;
+            return this;
+        }
+
+        public void Validate()
+        {
+            if ((direction == ColumnDirection.FromDatabase || direction == ColumnDirection.Both) && PropertyHandler.CanWrite)
+            {
+                if (Property != null && PropertyHandler is PropertyHandler)
+                {
+                    // This is the most common cause of errors
+                    throw new InvalidOperationException($"The mapping for column '{ColumnName}' to property '{Property.Name}' is invalid. The property has no setter, but the column mapping is not declared with SaveOnly().");
+                }
+                
+                throw new InvalidOperationException($"The mapping for column '{ColumnName}' uses a property handler that returned false for CanWrite, and yet the column is declared as being both loaded from and saved to the database. Use `SaveOnly` if this column is intended to be saved, but not loaded from the database.");
+            }
         }
     }
 }

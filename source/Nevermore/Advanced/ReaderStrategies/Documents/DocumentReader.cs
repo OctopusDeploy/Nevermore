@@ -5,11 +5,6 @@ using Nevermore.Mapping;
 
 namespace Nevermore.Advanced.ReaderStrategies.Documents
 {
-    interface IDocumentReader
-    {
-        object Read(DbDataReader dataReader);
-    }
-    
     internal class DocumentReader<TDocument> : IDocumentReaderContext<TDocument>, IDocumentReader where TDocument : class
     {
         readonly IRelationalStoreConfiguration configuration;

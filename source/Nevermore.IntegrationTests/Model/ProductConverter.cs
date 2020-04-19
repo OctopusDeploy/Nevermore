@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Nevermore.Advanced.InstanceTypeResolvers;
-using Nevermore.Mapping;
-using Nevermore.Serialization;
 
 namespace Nevermore.IntegrationTests.Model
 {
