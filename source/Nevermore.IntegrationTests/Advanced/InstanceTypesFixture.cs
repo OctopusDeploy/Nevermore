@@ -131,6 +131,15 @@ namespace Nevermore.IntegrationTests.Advanced
         }
 
         [Test, Order(5)]
+        public void ReturnsNullWhenLoadedAsWrongType()
+        {
+            using var transaction = Store.BeginTransaction();
+            transaction.Load<AwsAccount>("Accounts-1").Should().NotBeNull();
+            transaction.Load<AzureAccount>("Accounts-1").Should().BeNull();
+            transaction.Load<Account>("Accounts-1").Should().BeOfType<AwsAccount>();
+        }
+
+        [Test, Order(5)]
         public void ThrowsWhenUnexpectedTypeIsEncountedByDefault()
         {
             using var transaction = Store.BeginTransaction();
