@@ -5,25 +5,26 @@ using Nevermore.Mapping;
 
 namespace Nevermore.Advanced.ReaderStrategies.Documents
 {
-    internal class DocumentReader<TDocument> : IDocumentReaderContext<TDocument>, IDocumentReader where TDocument : class
+    internal class DocumentReaderContext
     {
         readonly IRelationalStoreConfiguration configuration;
         readonly DocumentMap map;
-        readonly Func<DbDataReader, IDocumentReaderContext<TDocument>, TDocument> compiledFunc;
 
-        public DocumentReader(IRelationalStoreConfiguration configuration, DocumentMap map, Func<DbDataReader,IDocumentReaderContext<TDocument>,TDocument> compiledFunc)
+        public DocumentReaderContext(IRelationalStoreConfiguration configuration, DocumentMap map)
         {
             this.configuration = configuration;
             this.map = map;
-            this.compiledFunc = compiledFunc;
+            Column = -1;
         }
 
+        public int Column;
+        
         public Type ResolveType(object typeColumnValue)
         {
             // The type column can be null, which tells us to use the base type. If the base type is abstract or otherwise
             // can't be created, the serializer can deal with that (maybe a contract resolver or something will handle it). 
             if (typeColumnValue == null || typeColumnValue == DBNull.Value) 
-                return typeof(TDocument);
+                return map.Type;
 
             // But if there IS a value in the Type column, then we expect a type resolver to know how to deal with it. 
             var resolved = configuration.InstanceTypeRegistry.Resolve(map.Type, typeColumnValue);
@@ -33,7 +34,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             return resolved;
         }
 
-        public TDocument DeserializeText(DbDataReader reader, int index, Type concreteType)
+        public TDocument DeserializeText<TDocument>(DbDataReader reader, int index, Type concreteType) where TDocument : class
         {
             if (reader.IsDBNull(index))
                 return default;
@@ -64,17 +65,17 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                     // We'll know for next time!
                     map.ExpectLargeDocuments = true;
 
-                return AsDocument(concreteType, configuration.Serializer.DeserializeSmallText(text, concreteType));
+                return AsDocument<TDocument>(concreteType, configuration.Serializer.DeserializeSmallText(text, concreteType));
             }
 
             // Large documents will be streamed. Since it's a text column, we have to call GetChars.
             // DataReaderTextStream exposes that character stream as a stream that our serializer can read
             // (as serializers typically prefer byte[] streams)
             using var dataStream = new DataTextReader(reader, index);
-            return AsDocument(concreteType, configuration.Serializer.DeserializeLargeText(dataStream, concreteType));
+            return AsDocument<TDocument>(concreteType, configuration.Serializer.DeserializeLargeText(dataStream, concreteType));
         }
 
-        public TDocument DeserializeCompressed(DbDataReader reader, int index, Type concreteType)
+        public TDocument DeserializeCompressed<TDocument>(DbDataReader reader, int index, Type concreteType) where TDocument : class
         {
             if (reader.IsDBNull(index))
                 return default;
@@ -85,10 +86,10 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             
             using var stream = reader.GetStream(index);
             var result = configuration.Serializer.DeserializeCompressed(stream, concreteType);
-            return AsDocument(concreteType, result);
+            return AsDocument<TDocument>(concreteType, result);
         }
 
-        static TDocument AsDocument(Type concreteType, object result)
+        static TDocument AsDocument<TDocument>(Type concreteType, object result) where TDocument : class
         {
             if (result == null)
                 return default;
@@ -99,7 +100,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             throw new InvalidOperationException($"The type resolver returned type '{concreteType?.FullName}', and the serializer returned type '{result?.GetType().FullName}', but it cannot be converted to type '{typeof(TDocument).FullName}' which is the type of document being queried. This may mean there is type resolver returning an incorrect type.");
         }
 
-        public TDocument SelectPreferredResult(TDocument fromJson, TDocument fromJsonBlob)
+        public TDocument SelectPreferredResult<TDocument>(TDocument fromJson, TDocument fromJsonBlob)
         {
             // No matter what the document map says, if we've got one result, take it! Maybe the document map is just wrong.
             if (fromJsonBlob == null)
@@ -119,12 +120,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 return fromJsonBlob;
             }
             
-            return null;
-        }
-
-        public object Read(DbDataReader dataReader)
-        {
-            return compiledFunc(dataReader, this);
+            return default;
         }
     }
 }

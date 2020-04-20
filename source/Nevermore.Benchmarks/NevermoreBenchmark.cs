@@ -58,14 +58,12 @@ namespace Nevermore.Benchmarks
         }
 
         [Benchmark]
-        public List<Customer> List100CustomersStream()
+        public void List1000CustomersStream()
         {
-            var results = transaction.Stream<Customer>("select top 100 * from dbo.Customer").ToList();
+            var results = transaction.Stream<Customer>("select top 1000 * from dbo.Customer").Count();
             
-            if (results.Count != 100)
+            if (results != 1000)
                 throw new Exception("Incorrect results");
-
-            return results;
         }
         
         [Benchmark]

@@ -145,7 +145,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("update Account set [Type] = 'dunno' where Id = 'Accounts-1'");
 
-            Assert.Throws<InvalidOperationException>(() => transaction.Query<Account>().ToList()).Message.Should().Contain("The 'Type' column has a value of 'dunno' (String)");
+            Assert.Throws<ReaderException>(() => transaction.Query<Account>().ToList()).Message.Should().StartWith("Error reading row 0, column 2. The 'Type' column has a value of 'dunno' (String)");
         }
 
         [Test, Order(6)]
@@ -154,7 +154,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("update Account set [Type] = null where Id = 'Accounts-1'");
 
-            Assert.Throws<JsonSerializationException>(() => transaction.Query<Account>().ToList()).Message.Should().Contain("Type is an interface or abstract class and cannot be instantiated");
+            Assert.Throws<ReaderException>(() => transaction.Query<Account>().ToList()).Message.Should().StartWith("Error reading row 0, column 3. Could not create an instance of type Nevermore.IntegrationTests.Advanced.InstanceTypesFixture+Account. Type is an interface or abstract class and cannot be instantiated");
         }
 
         // Rather than throwing, you can add a "catch all" type resolver with a high Order number (this actually runs first)

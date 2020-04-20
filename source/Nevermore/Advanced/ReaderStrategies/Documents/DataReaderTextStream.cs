@@ -1,11 +1,7 @@
-using System;
-using System.Buffers;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 
-namespace Nevermore.Advanced.ReaderStrategies
+namespace Nevermore.Advanced.ReaderStrategies.Documents
 {
     internal class DataTextReader : TextReader
     {

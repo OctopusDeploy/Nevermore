@@ -29,6 +29,7 @@ namespace Nevermore.IntegrationTests.SetUp
             
             config.TypeHandlerRegistry.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeRegistry.Register(new ProductTypeResolver());
+            config.InstanceTypeRegistry.Register(new BrandTypeResolver());
             
             config.UseJsonNetSerialization(settings =>
             {

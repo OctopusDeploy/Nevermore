@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Nevermore.Advanced.PropertyHandlers;
+using Nevermore.Advanced.ReaderStrategies.Compilation;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
@@ -33,7 +34,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
     //   
     //   We want to generate something like:
     // 
-    //       (Contact, bool) ReadContact(DbDataReader reader, Context<Contact> context)
+    //       (DbDataReader reader, DocumentReaderContext context) =>
     //       {
     //           Contact result;
     //           
@@ -43,28 +44,35 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
     //           var temp2 = reader.GetString(1);                                     // LastName
     //           var temp3 = reader.IsDbNull(3) ? null : (int?)reader.GetInt32(3);    // Age
     //           var temp4 = // call type handler for URI                             // Website
-    //           var tempType = reader.GetString(5);                                  // Type
-    //           var deserializeAsType = context.ResolveType(tempType);
-    //           var jsonResult = context.DeserializeText(reader, tempType, 7);                    
-    //           var jsonBlobResult = context.DeserializeText(reader, tempType, 8);             
+    //           var tempTypeValue = reader.GetString(5);                                  // Type (special handling)
+    // 
+    //           var deserializeAsType = context.ResolveType(tempTypeValue);
+    //           var jsonResult = context.DeserializeText<Contact>(reader, 7, deserializeAsType);                       // If JSON column          
+    //           var jsonBlobResult = context.DeserializeCompressed<Contact>(reader, 8, deserializeAsType);             // If JSONBlob column
     //           
-    //           result = context.EnsureResult(jsonResult, jsonBlobResult);
-    //   
-    //           // 'assigners' section
-    //           result.Id = temp0;
-    //           result.FirstName = temp1;
-    //           result.LastName = temp2;
-    //           result.Age = temp3;
-    //           context.Handlers[4](result, temp4);                // assuming Website has a custom IPropertyHandler
-    //           result.Type = tempType;
+    //           result = context.SelectPreferredResult<Contact>(jsonResult, jsonBlobResult);                           // If JSON and JSONBlob column
+    //           
+    //           if (result != null)
+    //           {
+    //               // 'assigners' section
+    //               result.Id = temp0;
+    //               result.FirstName = temp1;
+    //               result.LastName = temp2;
+    //               result.Age = temp3;
+    //               propertyHandler1.Write(result, temp4);                // Assuming Website has a custom IPropertyHandler on the column mapping
+    //               result.Type = tempType;
+    //           }
+    //  
     //           return result;
     //       }
 
-    internal class DocumentReaderExpressionBuilder<TDocument> where TDocument : class
+    internal class DocumentReaderExpressionBuilder
     {
         const BindingFlags BindingFlags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+        readonly Type type;
         readonly DocumentMap map;
         readonly ITypeHandlerRegistry typeHandlers;
+        readonly bool trackCurrentColumn;
 
         // Arguments to the final func
         readonly ParameterExpression dataReaderArgument;
@@ -80,7 +88,8 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         readonly MethodInfo resolveTypeMethod;
         readonly MethodInfo selectPreferredResultMethod;
         readonly MethodInfo propertyHandlerWriteMethod;
-
+        readonly FieldInfo columnField;
+        
         // Locals that may or may not be declared, depending on whether they are in the result set
         ParameterExpression typeValueLocal;
         ParameterExpression jsonResult;
@@ -91,23 +100,25 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         int jsonIndex = -1;
         int jsonBlobIndex = -1;
 
-        public DocumentReaderExpressionBuilder(DocumentMap map, ITypeHandlerRegistry typeHandlers)
+        public DocumentReaderExpressionBuilder(DocumentMap map, ITypeHandlerRegistry typeHandlers, bool trackCurrentColumn)
         {
+            type = map.Type;
             this.map = map;
             this.typeHandlers = typeHandlers;
+            this.trackCurrentColumn = trackCurrentColumn;
 
-            var contextType = typeof(IDocumentReaderContext<TDocument>);
-            
+            var contextType = typeof(DocumentReaderContext);
             dataReaderArgument = Expression.Parameter(typeof(DbDataReader), "reader");
             contextArgument = Expression.Parameter(contextType, "context");
             result = DeclareLocal(map.Type, "result");
             deserializeAsLocal = DeclareLocal(typeof(Type), "deserializeAsType");
-            
-            deserializeTextMethod = contextType.GetMethod("DeserializeText", BindingFlags);
-            deserializeCompressedMethod = contextType.GetMethod("DeserializeCompressed", BindingFlags);
-            resolveTypeMethod = contextType.GetMethod("ResolveType", BindingFlags);
-            selectPreferredResultMethod = contextType.GetMethod("SelectPreferredResult", BindingFlags);
-            propertyHandlerWriteMethod = typeof(IPropertyHandler).GetMethod("Write", BindingFlags);
+
+            columnField = contextType.GetField(nameof(DocumentReaderContext.Column));
+            deserializeTextMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeText), BindingFlags).MakeGenericMethod(type);
+            deserializeCompressedMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeCompressed), BindingFlags).MakeGenericMethod(type);
+            resolveTypeMethod = contextType.GetMethod(nameof(DocumentReaderContext.ResolveType), BindingFlags);
+            selectPreferredResultMethod = contextType.GetMethod(nameof(DocumentReaderContext.SelectPreferredResult), BindingFlags).MakeGenericMethod(type);
+            propertyHandlerWriteMethod = typeof(IPropertyHandler).GetMethod(nameof(IPropertyHandler.Write), BindingFlags);
         }
 
         public void Id(int i, ColumnMapping column)
@@ -120,6 +131,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         {
             var local = Expression.Variable(column.Type, "temp" + i);
             locals.Add(local);
+            TrackColumn(i);
             readers.Add(Expression.Assign(local, ExpressionHelper.GetValueFromReaderAsType(dataReaderArgument, Expression.Constant(i), column.Type, typeHandlers)));
 
             AddAssigner(column, local);
@@ -132,6 +144,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             {
                 typeValueLocal = Expression.Variable(column.Type, "tempType");
                 locals.Add(typeValueLocal);
+                TrackColumn(i);
                 readers.Add(Expression.Assign(typeValueLocal, ExpressionHelper.GetValueFromReaderAsType(dataReaderArgument, Expression.Constant(i), column.Type, typeHandlers)));
                 
                 AddAssigner(column, typeValueLocal);
@@ -140,7 +153,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             {
                 typeValueLocal = Expression.Variable(typeof(string), "tempType");
                 locals.Add(typeValueLocal);
-                
+                TrackColumn(i);
                 readers.Add(Expression.Assign(typeValueLocal, ExpressionHelper.GetValueFromReaderAsType(dataReaderArgument, Expression.Constant(i), typeof(string), typeHandlers)));
             }
             
@@ -150,8 +163,9 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         public void JsonColumn(int i)
         {
             jsonIndex = i;
-            jsonResult = Expression.Variable(typeof(TDocument), "deserializedFromJson");
+            jsonResult = Expression.Variable(type, "deserializedFromJson");
             locals.Add(jsonResult);
+            TrackColumn(i);
             var deserialize = Expression.Call(contextArgument, deserializeTextMethod, dataReaderArgument, Expression.Constant(i), deserializeAsLocal);
             readers.Add(Expression.Assign(jsonResult, deserialize));
         }
@@ -159,8 +173,9 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         public void JsonBlobColumn(int i)
         {
             jsonBlobIndex = i;
-            jsonBlobResult = Expression.Variable(typeof(TDocument), "deserializedFromJsonBlob");
+            jsonBlobResult = Expression.Variable(type, "deserializedFromJsonBlob");
             locals.Add(jsonBlobResult);
+            TrackColumn(i);
             var deserialize = Expression.Call(contextArgument, deserializeCompressedMethod, dataReaderArgument, Expression.Constant(i), deserializeAsLocal);
             readers.Add(Expression.Assign(jsonBlobResult, deserialize));
         }
@@ -183,14 +198,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             }
         }
 
-        public Func<DbDataReader, IDocumentReaderContext<TDocument>, TDocument> Build()
+        public Expression<DocumentReaderFunc> Build()
         {
             AssertValidColumnOrdering();
             
             var body = new List<Expression>();
 
             if (typeValueLocal == null)
-                body.Add(Expression.Assign(deserializeAsLocal, Expression.Constant(typeof(TDocument))));
+                body.Add(Expression.Assign(deserializeAsLocal, Expression.Constant(type)));
             
             body.AddRange(readers);
 
@@ -207,7 +222,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 body.Add(Expression.Assign(result, Expression.Call(contextArgument, selectPreferredResultMethod, jsonResult, jsonBlobResult)));
             }
 
-            body.Add(Expression.IfThen(Expression.NotEqual(result, Expression.Constant(null, typeof(TDocument))), 
+            body.Add(Expression.IfThen(Expression.NotEqual(result, Expression.Constant(null, type)), 
                 Expression.Block(assigners)
                 ));
 
@@ -217,24 +232,8 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 locals,
                 body);
 
-            var lambda = Expression.Lambda<Func<DbDataReader, IDocumentReaderContext<TDocument>, TDocument>>(block, dataReaderArgument, contextArgument);
-            
-            Console.WriteLine("Compiled lambda:");
-            foreach (var expression in body)
-            {
-                Console.WriteLine(expression.ToString());
-                if (expression is ConditionalExpression ce && ce.IfTrue is BlockExpression be)
-                {
-                    Console.WriteLine("{");
-                    foreach (var expression2 in be.Expressions)
-                    {
-                        Console.WriteLine("  " + expression2.ToString());
-                    }
-                    Console.WriteLine("}");
-                }
-            }
-            
-            return lambda.Compile();
+            var lambda = Expression.Lambda<DocumentReaderFunc>(block, dataReaderArgument, contextArgument);
+            return lambda;
         }
         
         ParameterExpression DeclareLocal(Type type, string name)
@@ -242,6 +241,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             var local = Expression.Variable(type, name);
             locals.Add(local);
             return local;
+        }
+        
+        void TrackColumn(int i)
+        {
+            if (trackCurrentColumn)
+            {
+                readers.Add(Expression.Assign(Expression.Field(contextArgument, columnField), Expression.Constant(i)));
+            }
         }
 
         void AssertValidColumnOrdering()

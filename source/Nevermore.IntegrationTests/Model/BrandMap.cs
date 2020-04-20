@@ -7,6 +7,7 @@ namespace Nevermore.IntegrationTests.Model
         public BrandMap()
         {
             Column(m => m.Name);
+            Column(m => m.Type).SaveOnly();
         }
     }
 }

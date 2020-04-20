@@ -20,7 +20,7 @@ namespace Nevermore.Advanced.PropertyHandlers
                 var assign =
                     Expression.Assign(
                         Expression.Property(Expression.Convert(targetArgument, propertyInfo.DeclaringType), propertyInfo),
-                        Expression.Convert(targetArgument, propertyInfo.PropertyType));
+                        Expression.Convert(valueArgument, propertyInfo.PropertyType));
                 
                 var setter = Expression.Lambda<Action<object, object>>(assign, targetArgument, valueArgument);
                 setterCompiled = setter.Compile();

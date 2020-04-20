@@ -371,6 +371,7 @@ namespace Nevermore.Tests.Util
 
         class Other
         {
+            public string Id { get; set; }
         }
 
         class TestDocumentMap : DocumentMap<TestDocument>

@@ -89,7 +89,7 @@ namespace Nevermore.Mapping
 
         public void Validate()
         {
-            if ((direction == ColumnDirection.FromDatabase || direction == ColumnDirection.Both) && PropertyHandler.CanWrite)
+            if ((direction == ColumnDirection.FromDatabase || direction == ColumnDirection.Both) && !PropertyHandler.CanWrite)
             {
                 if (Property != null && PropertyHandler is PropertyHandler)
                 {

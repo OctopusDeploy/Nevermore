@@ -5,6 +5,10 @@ using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
+using Nevermore.Advanced.ReaderStrategies.ArbitraryClasses;
+using Nevermore.Advanced.ReaderStrategies.Documents;
+using Nevermore.Advanced.ReaderStrategies.Primitives;
+using Nevermore.Advanced.ReaderStrategies.ValueTuples;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
@@ -31,6 +35,9 @@ namespace Nevermore
         /// </summary>
         bool ForceMultipleActiveResultSets { get; set; }
 
+        bool IncludeColumnNumberInErrors { get; set; }
+        bool IncludeCompiledReadersInErrors { get; set; }
+        
         ISqlCommandFactory CommandFactory { get; set; }
     }
     
@@ -55,12 +62,15 @@ namespace Nevermore
             ReaderStrategyRegistry = new ReaderStrategyRegistry();
             ReaderStrategyRegistry.Register(new DocumentReaderStrategy(this));
             ReaderStrategyRegistry.Register(new ValueTupleReaderStrategy(this));
-            ReaderStrategyRegistry.Register(new PlainClassReaderStrategy(this));
+            ReaderStrategyRegistry.Register(new ArbitraryClassReaderStrategy(this));
             ReaderStrategyRegistry.Register(new PrimitiveReaderStrategy(this));
             
             HookRegistry = new HookRegistry();
 
             TypeHandlerRegistry = new TypeHandlerRegistry();
+
+            IncludeCompiledReadersInErrors = true;
+            IncludeColumnNumberInErrors = true;
             
             connectionString = new Lazy<string>(() =>
             {
@@ -90,7 +100,10 @@ namespace Nevermore
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
         /// </summary>
         public bool ForceMultipleActiveResultSets { get; set; }
-        
+
+        public bool IncludeColumnNumberInErrors { get; set; }
+        public bool IncludeCompiledReadersInErrors { get; set; }
+
         public ISqlCommandFactory CommandFactory { get; set; }
         public IHookRegistry HookRegistry { get; private set; }
 

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Nevermore.Advanced.TypeHandlers;
 
-namespace Nevermore.Advanced.ReaderStrategies
+namespace Nevermore.Advanced.ReaderStrategies.Compilation
 {
     internal static class ExpressionHelper
     {
