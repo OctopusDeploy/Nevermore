@@ -60,53 +60,25 @@ namespace Nevermore.Benchmarks
             writer.Commit();
         }
 
-        List<object> GenerateHistory()
+        static List<object> GenerateHistory()
         {
             return Enumerable.Range(1, 500).Select(n => new BigObjectHistoryEntry {Id = Guid.NewGuid(), Comment = new string('N', 256), Date = DateTime.Today.AddDays(n)}).OfType<object>().ToList();
         }
 
         [Benchmark]
-        public void AllWithoutLength()
+        public void QueryDocumentsManySizes()
         {
-            var all = readTransaction.Stream<BigObject>("select * from dbo.BigObject").ToList();
-            if (all.Count != 1000)
-                throw new Exception($"Didn't get 1000 items! Got {all.Count} instead?!");
-        }
-        
-        [Benchmark]
-        public void AllWithLength()
-        {
-            var all = readTransaction.Stream<BigObject>("select len([JSON]) as JSONLength, * from dbo.BigObject").ToList();
-            if (all.Count != 1000)
-                throw new Exception($"Didn't get 1000 items! Got {all.Count} instead?!");
+            var count = readTransaction.Stream<BigObject>("select * from dbo.BigObject").Count();
+            if (count != 1000)
+                throw new Exception($"Didn't get 1000 items! Got {count} instead?!");
         }
 
         [Benchmark]
-        public void SmallWithoutLength()
+        public void QueryDocumentsSmallOnly()
         {
-            var all = readTransaction.Stream<BigObject>("select * from dbo.BigObject where len([JSON]) < 1000").ToList();
-            if (all.Count == 0)
-                throw new Exception($"Didn't get any items! Got {all.Count} instead?!");
-        }
-        
-        [Benchmark]
-        public void SmallWithLength()
-        {
-            var all = readTransaction.Stream<BigObject>("select len([JSON]) as JSONLength, * from dbo.BigObject where len([JSON]) < 1000").ToList();
-            if (all.Count == 0)
-                throw new Exception($"Didn't get any items! Got {all.Count} instead?!");
-        }
-    }
-
-    class RandomStringGenerator
-    {
-        static Random rand = new Random(42);
-            
-        public static string Generate()
-        {
-            var buffer = new byte[256];
-            rand.NextBytes(buffer);
-            return Convert.ToBase64String(buffer);
+            var count = readTransaction.Stream<BigObject>("select * from dbo.BigObject where len([JSON]) < 1000").Count();
+            if (count == 0)
+                throw new Exception($"Didn't get any items! Got {count} instead?!");
         }
     }
 }

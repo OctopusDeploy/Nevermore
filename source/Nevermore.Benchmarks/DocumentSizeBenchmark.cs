@@ -38,7 +38,7 @@ namespace Nevermore.Benchmarks
             writer.Commit();
         }
 
-        [Params(JsonStorageFormat.TextOnly, JsonStorageFormat.CompressedOnly)]
+        [Params(JsonStorageFormat.TextOnly)]
         public JsonStorageFormat Format { get; set; }
 
         [Params(256, 1024, 4096, 16384 * 2, 65536*8)]

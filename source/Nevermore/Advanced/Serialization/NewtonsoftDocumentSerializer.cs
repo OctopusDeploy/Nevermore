@@ -12,6 +12,7 @@ namespace Nevermore.Advanced.Serialization
     public class NewtonsoftDocumentSerializer : IDocumentSerializer
     {
         static readonly RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager(1024 * 32, 4, 1024 * 1024 * 1);
+        readonly ArrayPoolAdapter arrayPoolAdapter = new ArrayPoolAdapter();
 
         public NewtonsoftDocumentSerializer(IDocumentMapRegistry mappings)
         {
@@ -40,7 +41,7 @@ namespace Nevermore.Advanced.Serialization
             var memoryStream = MemoryStreamManager.GetStream("JsonNetSerializer:SerializeCompressed:" + map.Type.Name);
             using (var gz = new GZipStream(memoryStream, CompressionLevel, true))
             {
-                // Buffer values before we GZIP them, this will 
+                // Buffer values before we GZIP them, this will help the compression
                 using var buf = new BufferedStream(gz, 16384);
                 using var writer = new StreamWriter(buf, EncodingForCompressedText);
                 
@@ -66,10 +67,12 @@ namespace Nevermore.Advanced.Serialization
             // The MemoryStream is not disposed/not in a using intentionally, since it will be sent to a DbParameter.
             // CommandExecutor disposes all parameters at the end of the execution.
             var memoryStream = MemoryStreamManager.GetStream("JsonNetSerializer:SerializeText:" + map.Type.Name);
-            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8, 1024, true))
+            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8, 2048, true))
             {
                 var serializer = JsonSerializer.Create(SerializerSettings);
-                serializer.Serialize(writer, instance);
+                using var jsonTextWriter = new JsonTextWriter(writer);
+                jsonTextWriter.ArrayPool = arrayPoolAdapter;
+                serializer.Serialize(jsonTextWriter, instance);
             }
                 
             memoryStream.Seek(0, SeekOrigin.Begin);
@@ -79,6 +82,7 @@ namespace Nevermore.Advanced.Serialization
         public object DeserializeSmallText(string text, Type type)
         {
             using var jsonTextReader = new JsonTextReader(new StringReader(text));
+            jsonTextReader.ArrayPool = arrayPoolAdapter;
             var serializer = JsonSerializer.Create(SerializerSettings);
             return serializer.Deserialize(jsonTextReader, type);
         }
@@ -86,6 +90,7 @@ namespace Nevermore.Advanced.Serialization
         public object DeserializeLargeText(TextReader reader, Type type)
         {
             using var jsonTextReader = new JsonTextReader(reader);
+            jsonTextReader.ArrayPool = arrayPoolAdapter;
             var serializer = JsonSerializer.Create(SerializerSettings);
             return serializer.Deserialize(jsonTextReader, type);
         }
@@ -93,7 +98,8 @@ namespace Nevermore.Advanced.Serialization
         public object DeserializeCompressed(Stream dataReaderStream, Type type)
         {
             using var gzip = new GZipStream(dataReaderStream, CompressionMode.Decompress);
-            using var jsonTextReader = new JsonTextReader(new StreamReader(gzip, EncodingForCompressedText, false, 1024));
+            using var jsonTextReader = new JsonTextReader(new StreamReader(gzip, EncodingForCompressedText, false, 2048));
+            jsonTextReader.ArrayPool = arrayPoolAdapter;
             var serializer = JsonSerializer.Create(SerializerSettings);
             return serializer.Deserialize(jsonTextReader, type);
         }
