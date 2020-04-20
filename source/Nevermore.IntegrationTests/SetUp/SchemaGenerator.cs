@@ -16,7 +16,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
             foreach (var column in mapping.WritableIndexedColumns())
             {
-                result.AppendFormat("  [{0}] {1} {2}, ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), column.IsNullable ? "NULL" : "NOT NULL").AppendLine();
+                result.AppendFormat("  [{0}] {1} {2}, ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), IsNullable(column) ? "NULL" : "NOT NULL").AppendLine();
             }
 
             result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine();
@@ -41,6 +41,13 @@ namespace Nevermore.IntegrationTests.SetUp
                 result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentTableColumnName}] nvarchar(50) NOT NULL ");
                 result.AppendLine("    )");
             }
+        }
+
+        static bool IsNullable(ColumnMapping column)
+        {
+            if (column.Property.PropertyType.IsClass)
+                return true;
+            return false;
         }
 
         static string GetDatabaseType(ColumnMapping column)
@@ -107,7 +114,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 return "";
             }
 
-            if (length == int.MaxValue)
+            if (length == int.MaxValue || length == null)
             {
                 return "(MAX)";
             }

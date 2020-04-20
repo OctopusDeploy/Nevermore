@@ -258,7 +258,7 @@ namespace Nevermore.Util
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.PropertyHandler.Read(document);
-                if (value != null && value != DBNull.Value && value is string && c.MaxLength > 0)
+                if (value != null && value != DBNull.Value && value is string && c.MaxLength != null && c.MaxLength.Value > 0)
                 {
                     var attemptedLength = ((string) value).Length;
                     if (attemptedLength > c.MaxLength)

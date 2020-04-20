@@ -8,7 +8,7 @@ namespace Nevermore.Benchmarks.Model
         {
             Column(m => m.FirstName).MaxLength(20);
             Column(m => m.LastName);
-            Column(m => m.Nickname).Nullable();
+            Column(m => m.Nickname);
             Column(m => m.CreationDate);
             Column(m => m.LastChangeDate);
             Column(m => m.Counter1);

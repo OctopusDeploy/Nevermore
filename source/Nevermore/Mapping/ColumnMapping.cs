@@ -6,13 +6,10 @@ namespace Nevermore.Mapping
 {
     public class ColumnMapping : IColumnMappingBuilder
     {
-        const int MaxStringLengthByDefault = 200;
         const int DefaultPrimaryKeyIdLength = 50;
         const int DefaultMaxForeignKeyIdLength = 50;
-        const int DefaultMaxEnumLength = 50;
         ColumnDirection direction;
         int? maxLength;
-        bool isNullable;
 
         internal ColumnMapping(string columnName, Type type, IPropertyHandler handler)
         {
@@ -28,11 +25,6 @@ namespace Nevermore.Mapping
             ColumnName = columnName ?? property.Name;
             PropertyHandler = new PropertyHandler(property);
 
-            if (property.PropertyType.GetTypeInfo().IsGenericType && typeof(Nullable<>).GetTypeInfo().IsAssignableFrom(property.PropertyType.GetGenericTypeDefinition()))
-            {
-                isNullable = true;
-            }
-            
             if (property.Name == "Id")
             {
                 maxLength = DefaultPrimaryKeyIdLength;
@@ -41,27 +33,15 @@ namespace Nevermore.Mapping
             {
                 maxLength = DefaultMaxForeignKeyIdLength;
             }
-
-            if (property.PropertyType.GetTypeInfo().IsEnum)
-            {
-                maxLength = DefaultMaxEnumLength;
-            }
         }
 
         public string ColumnName { get; }
         public Type Type { get; }
         public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
-
-        public bool IsNullable => isNullable;
-        public int MaxLength => maxLength ?? MaxStringLengthByDefault;
+        
+        public int? MaxLength => maxLength;
         public ColumnDirection Direction => direction;
-
-        IColumnMappingBuilder IColumnMappingBuilder.Nullable()
-        {
-            isNullable = true;
-            return this;
-        }
 
         IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {

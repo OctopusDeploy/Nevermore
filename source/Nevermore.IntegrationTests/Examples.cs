@@ -42,7 +42,7 @@ namespace Nevermore.IntegrationTests
             public PersonMap()
             {
                 Column(m => m.FirstName).MaxLength(20);
-                Column(m => m.LastName).Nullable();
+                Column(m => m.LastName);
                 Column(m => m.Email);
                 Unique("UniquePersonEmail", new[] { "Email" }, "People must have unique emails");
             }

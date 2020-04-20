@@ -160,7 +160,10 @@ namespace Nevermore
                 && columnType == DbType.String
                 && string.Equals(name, "Id", StringComparison.OrdinalIgnoreCase))
             {
-                param.Size = mapping.IdColumn.MaxLength;
+                if (mapping.IdColumn.MaxLength != null)
+                {
+                    param.Size = mapping.IdColumn.MaxLength.Value;
+                }
             }
 
             command.Parameters.Add(param);
