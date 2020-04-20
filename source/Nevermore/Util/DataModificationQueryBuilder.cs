@@ -72,7 +72,7 @@ namespace Nevermore.Util
             
             var updates = string.Join(", ", updateStatements);
             
-            var statement = $"UPDATE dbo.[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}";
+            var statement = $"UPDATE dbo.[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
@@ -232,7 +232,7 @@ namespace Nevermore.Util
 
             var result = new CommandParameterValues
             {
-                [$"{prefix}{IdVariableName}"] = id
+                [$"{prefix}{mapping.IdColumn.ColumnName}"] = id
             };
 
             switch (mapping.JsonStorageFormat)

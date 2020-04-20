@@ -13,7 +13,16 @@ namespace Nevermore.Mapping
             InitializeDefault(typeof (TDocument));
         }
 
-        protected new IColumnMappingBuilder IdColumn => base.IdColumn;
+        [Browsable(false)]
+        [Bindable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected internal new IColumnMappingBuilder IdColumn => base.IdColumn;
+
+        protected IColumnMappingBuilder Id<T>(Expression<Func<TDocument, T>> property, string columnName = null)
+        {
+            base.IdColumn = new ColumnMapping(columnName, GetPropertyInfo(property));
+            return base.IdColumn;
+        }
 
         protected IColumnMappingBuilder Column<T>(string columnName, IPropertyHandler handler)
         {
@@ -84,7 +93,7 @@ namespace Nevermore.Mapping
         public Func<int, string> IdFormat { get; protected set; }
 
         public Type Type { get; protected set; }
-        public ColumnMapping IdColumn { get; private set; }
+        public ColumnMapping IdColumn { get; protected set; }
         
         public JsonStorageFormat JsonStorageFormat { get; set; }
         

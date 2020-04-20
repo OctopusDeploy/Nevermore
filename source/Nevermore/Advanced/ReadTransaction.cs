@@ -312,7 +312,7 @@ namespace Nevermore.Advanced
             
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
-            var statement = $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}]";
+            var statement = $"SELECT s.* FROM dbo.[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
         
