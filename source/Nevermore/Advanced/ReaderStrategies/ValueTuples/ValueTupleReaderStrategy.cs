@@ -85,12 +85,8 @@ namespace Nevermore.Advanced.ReaderStrategies.ValueTuples
                 var local = Expression.Variable(parameter.ParameterType, "value" + parameter.Name);
                 locals.Add(local);
 
-                if (configuration.IncludeColumnNumberInErrors)
-                {
-                    body.Add(Expression.Assign(Expression.Field(contextArg, nameof(ValueTupleReaderContext.Column)), Expression.Constant(i)));
-                }
-                
-                body.Add(Expression.Assign(local, ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(i), parameter.ParameterType, configuration.TypeHandlerRegistry)));
+                body.Add(Expression.Assign(Expression.Field(contextArg, nameof(ValueTupleReaderContext.Column)), Expression.Constant(i)));
+                body.Add(Expression.Assign(local, ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(i), parameter.ParameterType, configuration.TypeHandlers)));
             }
             
             body.Add(Expression.New(tupleConstructor, locals));
@@ -99,7 +95,7 @@ namespace Nevermore.Advanced.ReaderStrategies.ValueTuples
                 Expression.Block(locals, body), readerArg, contextArg
             );
 
-            var compiled = ExpressionCompiler.Compile(lambda, configuration.IncludeCompiledReadersInErrors);
+            var compiled = ExpressionCompiler.Compile(lambda);
             return (compiled, parameters.Length);
         }
     }

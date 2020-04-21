@@ -24,7 +24,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         
         public bool CanRead(Type type)
         {
-            return configuration.Mappings.ResolveOptional(type, out _);
+            return configuration.DocumentMaps.ResolveOptional(type, out _);
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
@@ -33,7 +33,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             // and they could all have a base that is mapped. All the code we execute when reading will always be based
             // on the base type. The generated code will call any IInstanceTypeHandlers to deal with inheritance, 
             // but our assertion is that there's only one map for a given base type.
-            var mapping = configuration.Mappings.Resolve<TRecord>();
+            var mapping = configuration.DocumentMaps.Resolve<TRecord>();
             
             return command =>
             {
@@ -79,7 +79,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
 
         CompiledExpression<DocumentReaderFunc> Compile(DocumentMap map, IDataReader firstRow)
         {
-            var builder = new DocumentReaderExpressionBuilder(map, configuration.TypeHandlerRegistry, configuration.IncludeColumnNumberInErrors);
+            var builder = new DocumentReaderExpressionBuilder(map, configuration.TypeHandlers);
             
             var idColumnName = map.IdColumn.ColumnName;
             
@@ -111,7 +111,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             }
 
             var expression = builder.Build();
-            return ExpressionCompiler.Compile(expression, configuration.IncludeCompiledReadersInErrors);
+            return ExpressionCompiler.Compile(expression);
         }
     }
 }

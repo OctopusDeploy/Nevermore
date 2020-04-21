@@ -34,7 +34,7 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
             return 
                 type.IsClass 
                 && type.GetConstructors().Any(c => c.IsPublic && c.GetParameters().Length == 0)
-                && !configuration.Mappings.ResolveOptional(type, out _);
+                && !configuration.DocumentMaps.ResolveOptional(type, out _);
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
@@ -111,14 +111,11 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
                 var property = properties.FirstOrDefault(p => p.Name == name);
                 if (property != null)
                 {
-                    if (configuration.IncludeColumnNumberInErrors)
-                    {
-                        body.Add(Expression.Assign(Expression.Field(contextArg, nameof(ArbitraryClassReaderContext.Column)), Expression.Constant(i)));
-                    }
+                    body.Add(Expression.Assign(Expression.Field(contextArg, nameof(ArbitraryClassReaderContext.Column)), Expression.Constant(i)));
                     
                     body.Add(Expression.Assign(
                         Expression.Property(resultLocalVariable, property),
-                        ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(i), property.PropertyType, configuration.TypeHandlerRegistry)));
+                        ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(i), property.PropertyType, configuration.TypeHandlers)));
                 }
                 else
                 {
@@ -136,7 +133,7 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
 
             var lambda = Expression.Lambda<ArbitraryClassReaderFunc<TRecord>>(block, readerArg, contextArg);
             
-            return ExpressionCompiler.Compile(lambda, configuration.IncludeCompiledReadersInErrors);
+            return ExpressionCompiler.Compile(lambda);
         }
     }
 }

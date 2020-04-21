@@ -27,7 +27,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 return map.Type;
 
             // But if there IS a value in the Type column, then we expect a type resolver to know how to deal with it. 
-            var resolved = configuration.InstanceTypeRegistry.Resolve(map.Type, typeColumnValue);
+            var resolved = configuration.InstanceTypeResolvers.Resolve(map.Type, typeColumnValue);
             if (resolved == null)
                 throw new InvalidOperationException($"The 'Type' column has a value of '{typeColumnValue}' ({typeColumnValue.GetType().Name}), but no type resolver was able to map it to a concrete type to deserialize. Either register an instance type resolver that knows how to interpret the value, or consider fixing the data.");
 
@@ -65,14 +65,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                     // We'll know for next time!
                     map.ExpectLargeDocuments = true;
 
-                return AsDocument<TDocument>(concreteType, configuration.Serializer.DeserializeSmallText(text, concreteType));
+                return AsDocument<TDocument>(concreteType, configuration.DocumentSerializer.DeserializeSmallText(text, concreteType));
             }
 
             // Large documents will be streamed. Since it's a text column, we have to call GetChars.
             // DataReaderTextStream exposes that character stream as a stream that our serializer can read
             // (as serializers typically prefer byte[] streams)
             using var dataStream = new DataTextReader(reader, index);
-            return AsDocument<TDocument>(concreteType, configuration.Serializer.DeserializeLargeText(dataStream, concreteType));
+            return AsDocument<TDocument>(concreteType, configuration.DocumentSerializer.DeserializeLargeText(dataStream, concreteType));
         }
 
         public TDocument DeserializeCompressed<TDocument>(DbDataReader reader, int index, Type concreteType) where TDocument : class
@@ -85,7 +85,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 return default;
             
             using var stream = reader.GetStream(index);
-            var result = configuration.Serializer.DeserializeCompressed(stream, concreteType);
+            var result = configuration.DocumentSerializer.DeserializeCompressed(stream, concreteType);
             return AsDocument<TDocument>(concreteType, result);
         }
 

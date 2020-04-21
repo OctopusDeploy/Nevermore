@@ -7,24 +7,22 @@ namespace Nevermore.Advanced.ReaderStrategies.Compilation
 {
     internal static class ExpressionCompiler
     {
-        public static CompiledExpression<TExpression> Compile<TExpression>(Expression<TExpression> expression, bool includeCompiledReadersInErrors)
+        public static CompiledExpression<TExpression> Compile<TExpression>(Expression<TExpression> expression)
         {
-            var text = includeCompiledReadersInErrors 
-                ? new Lazy<string>(() => ExpressionToString(expression)) 
-                : new Lazy<string>(() => null);
+            var source = new Lazy<string>(() => FormatExpressionSource(expression));
             
             try
             {
                 var compiled = expression.Compile();
-                return new CompiledExpression<TExpression>(compiled, text);
+                return new CompiledExpression<TExpression>(compiled, source);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Error compiling reader expression: " + ex.Message + "\nThe expression being compiled was:\n" + text, ex);
+                throw new InvalidOperationException("Error compiling reader expression: " + ex.Message + "\nThe expression being compiled was:\n" + source, ex);
             }
         }
 
-        static string ExpressionToString<TExpression>(Expression<TExpression> expression)
+        static string FormatExpressionSource<TExpression>(Expression<TExpression> expression)
         {
             var output = new StringBuilder();
 

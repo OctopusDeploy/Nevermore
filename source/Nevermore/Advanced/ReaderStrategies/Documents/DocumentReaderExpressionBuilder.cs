@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Nevermore.Advanced.PropertyHandlers;
 using Nevermore.Advanced.ReaderStrategies.Compilation;
 using Nevermore.Advanced.TypeHandlers;
@@ -72,7 +71,6 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         readonly Type type;
         readonly DocumentMap map;
         readonly ITypeHandlerRegistry typeHandlers;
-        readonly bool trackCurrentColumn;
 
         // Arguments to the final func
         readonly ParameterExpression dataReaderArgument;
@@ -99,13 +97,12 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         int typeIndex = -1;
         int jsonIndex = -1;
         int jsonBlobIndex = -1;
-
-        public DocumentReaderExpressionBuilder(DocumentMap map, ITypeHandlerRegistry typeHandlers, bool trackCurrentColumn)
+        
+        public DocumentReaderExpressionBuilder(DocumentMap map, ITypeHandlerRegistry typeHandlers)
         {
             type = map.Type;
             this.map = map;
             this.typeHandlers = typeHandlers;
-            this.trackCurrentColumn = trackCurrentColumn;
 
             var contextType = typeof(DocumentReaderContext);
             dataReaderArgument = Expression.Parameter(typeof(DbDataReader), "reader");
@@ -114,11 +111,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             deserializeAsLocal = DeclareLocal(typeof(Type), "deserializeAsType");
 
             columnField = contextType.GetField(nameof(DocumentReaderContext.Column));
-            deserializeTextMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeText), BindingFlags).MakeGenericMethod(type);
-            deserializeCompressedMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeCompressed), BindingFlags).MakeGenericMethod(type);
+            deserializeTextMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeText), BindingFlags)?.MakeGenericMethod(type);
+            deserializeCompressedMethod = contextType.GetMethod(nameof(DocumentReaderContext.DeserializeCompressed), BindingFlags)?.MakeGenericMethod(type);
             resolveTypeMethod = contextType.GetMethod(nameof(DocumentReaderContext.ResolveType), BindingFlags);
-            selectPreferredResultMethod = contextType.GetMethod(nameof(DocumentReaderContext.SelectPreferredResult), BindingFlags).MakeGenericMethod(type);
+            selectPreferredResultMethod = contextType.GetMethod(nameof(DocumentReaderContext.SelectPreferredResult), BindingFlags)?.MakeGenericMethod(type);
             propertyHandlerWriteMethod = typeof(IPropertyHandler).GetMethod(nameof(IPropertyHandler.Write), BindingFlags);
+            
+            if (columnField == null || deserializeTextMethod == null || deserializeCompressedMethod == null || resolveTypeMethod == null || selectPreferredResultMethod == null || propertyHandlerWriteMethod == null)
+                throw new InvalidOperationException("Could not find one or more required methods.");
         }
 
         public void Id(int i, ColumnMapping column)
@@ -236,19 +236,16 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             return lambda;
         }
         
-        ParameterExpression DeclareLocal(Type type, string name)
+        ParameterExpression DeclareLocal(Type variableType, string name)
         {
-            var local = Expression.Variable(type, name);
+            var local = Expression.Variable(variableType, name);
             locals.Add(local);
             return local;
         }
         
         void TrackColumn(int i)
         {
-            if (trackCurrentColumn)
-            {
-                readers.Add(Expression.Assign(Expression.Field(contextArgument, columnField), Expression.Constant(i)));
-            }
+            readers.Add(Expression.Assign(Expression.Field(contextArgument, columnField), Expression.Constant(i)));
         }
 
         void AssertValidColumnOrdering()

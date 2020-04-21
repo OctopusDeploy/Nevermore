@@ -29,10 +29,10 @@ namespace Nevermore.Advanced.ReaderStrategies.Primitives
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
         {
             var readerArg = Expression.Parameter(typeof(DbDataReader), "reader");
-            var valueGetter = ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(0), typeof(TRecord), configuration.TypeHandlerRegistry);
+            var valueGetter = ExpressionHelper.GetValueFromReaderAsType(readerArg, Expression.Constant(0), typeof(TRecord), configuration.TypeHandlers);
 
             var lambda = Expression.Lambda<Func<DbDataReader, TRecord>>(valueGetter, readerArg);
-            var compiled = ExpressionCompiler.Compile(lambda, configuration.IncludeCompiledReadersInErrors);
+            var compiled = ExpressionCompiler.Compile(lambda);
 
             return command =>
             {
