@@ -116,7 +116,7 @@ namespace Nevermore.Advanced
             var results = Load<TDocument>(idList);
             if (results.Count != idList.Count)
             {
-                var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.Mappings.GetId(record) != id));
+                var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
             
@@ -145,7 +145,7 @@ namespace Nevermore.Advanced
 
         public ITableSourceQueryBuilder<TRecord> TableQuery<TRecord>() where TRecord : class
         {
-            return new TableSourceQueryBuilder<TRecord>(configuration.Mappings.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(configuration.DocumentMaps.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
@@ -180,7 +180,7 @@ namespace Nevermore.Advanced
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
             using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
-            var strategy = configuration.ReaderStrategyRegistry.Resolve<TRecord>(command);
+            var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             while (reader.Read())
             {
                 var (instance, success) = strategy(reader);
@@ -192,7 +192,7 @@ namespace Nevermore.Advanced
         async IAsyncEnumerable<TRecord> ProcessReaderAsync<TRecord>(DbDataReader reader, PreparedCommand command)
         {
             using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
-            var strategy = configuration.ReaderStrategyRegistry.Resolve<TRecord>(command);
+            var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
 
             while (await reader.ReadAsync())
             {
@@ -203,11 +203,11 @@ namespace Nevermore.Advanced
             }
         }
         
-        public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
+        public IEnumerable<TResult>  (string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
             using var reader = ExecuteReader(command);
-            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategyRegistry);
+            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
             while (reader.Read())
             {
                 yield return projectionMapper(mapper);
@@ -218,7 +218,7 @@ namespace Nevermore.Advanced
         {
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
             await using var reader = await ExecuteReaderAsync(command);
-            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategyRegistry);
+            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
             while (await reader.ReadAsync())
             {
                 yield return projectionMapper(mapper);
@@ -299,7 +299,7 @@ namespace Nevermore.Advanced
 
         PreparedCommand PrepareLoad<TDocument>(string id)
         {
-            var mapping = configuration.Mappings.Resolve(typeof(TDocument));
+            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
             return new PreparedCommand($"SELECT TOP 1 * FROM dbo.[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
@@ -307,7 +307,7 @@ namespace Nevermore.Advanced
 
         PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<string> idList)
         {
-            var mapping = configuration.Mappings.Resolve(typeof(TDocument));
+            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
             
             var param = new CommandParameterValues();
@@ -320,7 +320,7 @@ namespace Nevermore.Advanced
         {
             var operationName = command.Operation == RetriableOperation.None || command.Operation == RetriableOperation.All ? "Custom query" : command.Operation.ToString();
             var timedSection = new TimedSection(Log, ms => $"{operationName} took {ms}ms in transaction '{name}': {command.Statement}", 300);
-            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, transaction, command.Statement, command.ParameterValues, configuration.TypeHandlerRegistry, command.Mapping, command.CommandTimeout);
+            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
         }

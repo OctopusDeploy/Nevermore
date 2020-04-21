@@ -27,7 +27,7 @@ namespace Nevermore.Advanced
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
-            builder = new DataModificationQueryBuilder(configuration.Mappings, configuration.Serializer, AllocateId);
+            builder = new DataModificationQueryBuilder(configuration.DocumentMaps, configuration.DocumentSerializer, AllocateId);
         }
         
         public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
@@ -91,13 +91,13 @@ namespace Nevermore.Advanced
 
         public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
-            var id = configuration.Mappings.GetId(document);
+            var id = configuration.DocumentMaps.GetId(document);
             Delete<TDocument>(id, options);
         }
 
         public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
-            var id = configuration.Mappings.GetId(document);
+            var id = configuration.DocumentMaps.GetId(document);
             return DeleteAsync<TDocument>(id, options);
         }
 
@@ -124,7 +124,7 @@ namespace Nevermore.Advanced
 
         public string AllocateId(Type documentType)
         {
-            var mapping = configuration.Mappings.Resolve(documentType);
+            var mapping = configuration.DocumentMaps.Resolve(documentType);
             return AllocateId(mapping);
         }
 

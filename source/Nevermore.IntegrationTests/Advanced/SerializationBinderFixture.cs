@@ -36,7 +36,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             base.OneTimeSetUp();
             NoMonkeyBusiness();
-            Configuration.Mappings.Register(new OrderMap());
+            Configuration.DocumentMaps.Register(new OrderMap());
             ExecuteSql("create table OrderHistory(Id nvarchar(200) not null, OrderId nvarchar(200) not null, [JSON] nvarchar(max) not null)");
         }
 

@@ -18,29 +18,6 @@ using Newtonsoft.Json.Converters;
 
 namespace Nevermore
 {
-    public interface IRelationalStoreConfiguration
-    {
-        string ApplicationName { get; set; }
-        string ConnectionString { get; }
-        IDocumentMapRegistry Mappings { get; }
-        IDocumentSerializer Serializer { get; set; }
-        IRelatedDocumentStore RelatedDocumentStore { get; set; }
-        int KeyBlockSize { get; set; }
-        IReaderStrategyRegistry ReaderStrategyRegistry { get; }
-        ITypeHandlerRegistry TypeHandlerRegistry { get; }
-        IInstanceTypeRegistry InstanceTypeRegistry { get; }
-
-        /// <summary>
-        /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
-        /// </summary>
-        bool ForceMultipleActiveResultSets { get; set; }
-
-        bool IncludeColumnNumberInErrors { get; set; }
-        bool IncludeCompiledReadersInErrors { get; set; }
-        
-        ISqlCommandFactory CommandFactory { get; set; }
-    }
-    
     public class RelationalStoreConfiguration : IRelationalStoreConfiguration
     {
         readonly Lazy<string> connectionString;
@@ -52,26 +29,23 @@ namespace Nevermore
         public RelationalStoreConfiguration(Func<string> connectionStringFunc)
         {
             CommandFactory = new SqlCommandFactory();
-            Mappings = new DocumentMapRegistry();
+            DocumentMaps = new DocumentMapRegistry();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
-            InstanceTypeRegistry = new InstanceTypeRegistry();
+            InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
             
             this.UseJsonNetSerialization(s => {});
             
-            ReaderStrategyRegistry = new ReaderStrategyRegistry();
-            ReaderStrategyRegistry.Register(new DocumentReaderStrategy(this));
-            ReaderStrategyRegistry.Register(new ValueTupleReaderStrategy(this));
-            ReaderStrategyRegistry.Register(new ArbitraryClassReaderStrategy(this));
-            ReaderStrategyRegistry.Register(new PrimitiveReaderStrategy(this));
+            ReaderStrategies = new ReaderStrategyRegistry();
+            ReaderStrategies.Register(new DocumentReaderStrategy(this));
+            ReaderStrategies.Register(new ValueTupleReaderStrategy(this));
+            ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
+            ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
             
             HookRegistry = new HookRegistry();
 
-            TypeHandlerRegistry = new TypeHandlerRegistry();
+            TypeHandlers = new TypeHandlerRegistry();
 
-            IncludeCompiledReadersInErrors = true;
-            IncludeColumnNumberInErrors = true;
-            
             connectionString = new Lazy<string>(() =>
             {
                 var result = connectionStringFunc();
@@ -83,26 +57,23 @@ namespace Nevermore
 
         public string ConnectionString => connectionString.Value;
 
-        public IDocumentMapRegistry Mappings { get; }
+        public IDocumentMapRegistry DocumentMaps { get; }
         
-        public IDocumentSerializer Serializer { get; set; }
+        public IDocumentSerializer DocumentSerializer { get; set; }
         
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
         
         public int KeyBlockSize { get; set; }
         
-        public IReaderStrategyRegistry ReaderStrategyRegistry { get; }
+        public IReaderStrategyRegistry ReaderStrategies { get; }
         
-        public ITypeHandlerRegistry TypeHandlerRegistry { get; }
-        public IInstanceTypeRegistry InstanceTypeRegistry { get; }
+        public ITypeHandlerRegistry TypeHandlers { get; }
+        public IInstanceTypeRegistry InstanceTypeResolvers { get; }
 
         /// <summary>
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
         /// </summary>
         public bool ForceMultipleActiveResultSets { get; set; }
-
-        public bool IncludeColumnNumberInErrors { get; set; }
-        public bool IncludeCompiledReadersInErrors { get; set; }
 
         public ISqlCommandFactory CommandFactory { get; set; }
         public IHookRegistry HookRegistry { get; private set; }

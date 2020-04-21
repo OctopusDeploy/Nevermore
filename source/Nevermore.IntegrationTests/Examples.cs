@@ -58,7 +58,7 @@ namespace Nevermore.IntegrationTests
             
             // Your mappings define how your documents will be stored in the database. You need to tell Nevermore about
             // all your mappings.
-            config.Mappings.Register(new PersonMap());
+            config.DocumentMaps.Register(new PersonMap());
             
             // Create your store. You'll do this once when the application starts up.
             store = new RelationalStore(config);
@@ -284,7 +284,7 @@ namespace Nevermore.IntegrationTests
             using var transaction = store.BeginTransaction();
             
             // Call this before you first read records of this type
-            store.Configuration.TypeHandlerRegistry.Register(new UriTypeHandler());
+            store.Configuration.TypeHandlers.Register(new UriTypeHandler());
 
             var result = transaction.Stream<(Uri HomePage, Uri SignIn)>(
                 "select 'https://octopus.com' as Homepage, 'https://octopus.com/signin' as SignIn"

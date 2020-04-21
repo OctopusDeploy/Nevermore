@@ -78,7 +78,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             var error = Assert.Throws<InvalidOperationException>(delegate
             {
-                Configuration.Mappings.Register(new UserMap());
+                Configuration.DocumentMaps.Register(new UserMap());
             });
             error.Message.Should().Contain("'Prop2' is invalid. The property has no setter");
         }
@@ -89,7 +89,7 @@ namespace Nevermore.IntegrationTests.Advanced
             var map = new UserMap();
             // Pretend the user edited their document map to set it to SaveOnly
             ((IColumnMappingBuilder) map.Columns.Single(c => c.ColumnName == "Prop2")).SaveOnly();
-            Configuration.Mappings.Register(map);
+            Configuration.DocumentMaps.Register(map);
         }
 
         [Test, Order(3)]

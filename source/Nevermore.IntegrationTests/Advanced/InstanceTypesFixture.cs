@@ -80,9 +80,9 @@ namespace Nevermore.IntegrationTests.Advanced
             
             KeepDataBetweenTests();
             
-            Store.Configuration.Mappings.Register(new AccountMap());
-            Store.Configuration.InstanceTypeRegistry.Register(new AwsAccountTypeResolver());
-            Store.Configuration.InstanceTypeRegistry.Register(new AzureAccountTypeResolver());
+            Store.Configuration.DocumentMaps.Register(new AccountMap());
+            Store.Configuration.InstanceTypeResolvers.Register(new AwsAccountTypeResolver());
+            Store.Configuration.InstanceTypeResolvers.Register(new AzureAccountTypeResolver());
             
             ExecuteSql("create table Account (Id nvarchar(200), Name nvarchar(200), Type nvarchar(50), [JSON] nvarchar(max))");
         }
@@ -180,7 +180,7 @@ namespace Nevermore.IntegrationTests.Advanced
         [Test, Order(7)]
         public void CanGracefullyHandleUnknownTypes()
         {
-            Store.Configuration.InstanceTypeRegistry.Register(new UnknownAccountTypeResolver());
+            Store.Configuration.InstanceTypeResolvers.Register(new UnknownAccountTypeResolver());
             
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("update Account set [Type] = 'dunno' where Id = 'Accounts-1'");

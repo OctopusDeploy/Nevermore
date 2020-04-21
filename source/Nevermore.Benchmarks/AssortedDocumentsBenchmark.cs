@@ -19,8 +19,8 @@ namespace Nevermore.Benchmarks
         {
             base.SetUp();
             var config = new RelationalStoreConfiguration(ConnectionString);
-            config.Mappings.Register(new BigObjectMap(JsonStorageFormat.TextOnly));
-
+            config.DocumentMaps.Register(new BigObjectMap(JsonStorageFormat.TextOnly));
+            
             store = new RelationalStore(config);
             readTransaction = store.BeginReadTransaction();
 
@@ -64,7 +64,7 @@ namespace Nevermore.Benchmarks
         {
             return Enumerable.Range(1, 500).Select(n => new BigObjectHistoryEntry {Id = Guid.NewGuid(), Comment = new string('N', 256), Date = DateTime.Today.AddDays(n)}).OfType<object>().ToList();
         }
-
+        
         [Benchmark]
         public void QueryDocumentsManySizes()
         {

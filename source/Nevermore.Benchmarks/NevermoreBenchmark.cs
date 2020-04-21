@@ -18,7 +18,7 @@ namespace Nevermore.Benchmarks
             base.SetUp();
 
             var config = new RelationalStoreConfiguration(ConnectionString);
-            config.Mappings.Register(new CustomerMap());
+            config.DocumentMaps.Register(new CustomerMap());
             
             store = new RelationalStore(config);
             transaction = store.BeginReadTransaction();

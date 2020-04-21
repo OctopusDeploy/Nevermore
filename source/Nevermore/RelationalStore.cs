@@ -30,8 +30,8 @@ namespace Nevermore
 
         public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
 
-        public DocumentMap GetMappingFor(Type type) => Configuration.Mappings.Resolve(type);
-        public DocumentMap GetMappingFor<T>() => Configuration.Mappings.Resolve(typeof(T));
+        public DocumentMap GetMappingFor(Type type) => Configuration.DocumentMaps.Resolve(type);
+        public DocumentMap GetMappingFor<T>() => Configuration.DocumentMaps.Resolve(typeof(T));
 
         public RelationalStoreConfiguration Configuration { get; }
 

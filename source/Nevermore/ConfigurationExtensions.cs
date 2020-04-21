@@ -8,9 +8,9 @@ namespace Nevermore
     {
         public static void UseJsonNetSerialization(this IRelationalStoreConfiguration configuration, Action<JsonSerializerSettings> callback)
         {
-            if (!(configuration.Serializer is NewtonsoftDocumentSerializer jsonNet))
+            if (!(configuration.DocumentSerializer is NewtonsoftDocumentSerializer jsonNet))
             {
-                configuration.Serializer = jsonNet = new NewtonsoftDocumentSerializer(configuration.Mappings);
+                configuration.DocumentSerializer = jsonNet = new NewtonsoftDocumentSerializer(configuration.DocumentMaps);
             }
 
             callback(jsonNet.SerializerSettings);

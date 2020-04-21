@@ -19,7 +19,7 @@ namespace Nevermore.Benchmarks
         {
             base.SetUp();
             var config = new RelationalStoreConfiguration(ConnectionString);
-            config.Mappings.Register(new BigObjectMap(Format));
+            config.DocumentMaps.Register(new BigObjectMap(Format));
 
             store = new RelationalStore(config);
             readTransaction = store.BeginReadTransaction();

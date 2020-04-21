@@ -19,7 +19,7 @@ namespace Nevermore.IntegrationTests.SetUp
             var config = new RelationalStoreConfiguration(ConnectionString);
             config.CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory());
             config.ApplicationName = "Nevermore-IntegrationTests";
-            config.Mappings.Register(
+            config.DocumentMaps.Register(
                 new CustomerMap(),
                 new BrandMap(),
                 new ProductMap(),
@@ -27,9 +27,9 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MachineMap(),
                 new OrderMap());
             
-            config.TypeHandlerRegistry.Register(new ReferenceCollectionTypeHandler());
-            config.InstanceTypeRegistry.Register(new ProductTypeResolver());
-            config.InstanceTypeRegistry.Register(new BrandTypeResolver());
+            config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
+            config.InstanceTypeResolvers.Register(new ProductTypeResolver());
+            config.InstanceTypeResolvers.Register(new BrandTypeResolver());
             
             config.UseJsonNetSerialization(settings =>
             {
@@ -49,7 +49,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         public IRelationalStore Store { get; }
         public RelationalStoreConfiguration Configuration => Store.Configuration;
-        public IDocumentMapRegistry Mappings => Configuration.Mappings;
+        public IDocumentMapRegistry Mappings => Configuration.DocumentMaps;
 
         protected void NoMonkeyBusiness()
         {
