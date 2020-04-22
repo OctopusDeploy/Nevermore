@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using BenchmarkDotNet.Attributes;
 using Nevermore.Benchmarks.Model;
 using Nevermore.Benchmarks.SetUp;
@@ -57,22 +58,42 @@ namespace Nevermore.Benchmarks
             return results;
         }
 
-        [Benchmark]
-        public void List1000CustomersStream()
+        [Benchmark(Baseline = true)]
+        public List<Customer> List100CustomersStream()
         {
-            var results = transaction.Stream<Customer>("select top 1000 * from dbo.Customer").Count();
-            
-            if (results != 1000)
-                throw new Exception("Incorrect results");
+            return EnsureResults(
+                transaction.Stream<Customer>("select top 100 * from dbo.Customer where FirstName = @name", new CommandParameterValues { { "name", "Robert" } }).ToList()
+            );
         }
         
         [Benchmark]
-        public List<Customer> List100CustomersQuery()
+        public List<Customer> List100CustomersQueryWhereText()
         {
-            var results = transaction.Query<Customer>().Take(100).ToList();
-            
+            return EnsureResults(
+                transaction.TableQuery<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
+            );
+        }
+        
+        [Benchmark]
+        public List<Customer> List100CustomersQueryWhereOperand()
+        {
+            return EnsureResults(
+                transaction.TableQuery<Customer>().Where("FirstName", UnarySqlOperand.Equal, "Robert").Take(100).ToList()
+            );
+        }
+        
+        [Benchmark]
+        public List<Customer> List100CustomersQueryWhereLinq()
+        {
+            return EnsureResults(
+                transaction.TableQuery<Customer>().Where(c => c.FirstName == "Robert").Take(100).ToList()
+            );
+        }
+
+        static List<Customer> EnsureResults(List<Customer> results)
+        {
             if (results.Count != 100)
-                throw new Exception("Incorrect results");
+                throw new Exception("Expected 100 results, got: " + results.Count);
 
             return results;
         }

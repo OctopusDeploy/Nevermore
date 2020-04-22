@@ -1,8 +1,8 @@
 using System;
-using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
@@ -10,16 +10,9 @@ using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Transient;
-using Nevermore.Util;
 
 namespace Nevermore
 {
-    internal interface ITransactionDiagnostic
-    {
-        public string Name { get; }
-        public void WriteCurrentTransactions(StringBuilder output);
-    }
-    
     /// <summary>
     /// A nevermore query has two phases.
     ///  - Building the query, which results in a <see cref="PreparedCommand"/>
@@ -64,11 +57,11 @@ namespace Nevermore
             }
         }
 
-        public async Task<int> ExecuteNonQueryAsync()
+        public async Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
         {
             try
             {
-                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy);
+                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -100,11 +93,11 @@ namespace Nevermore
             }
         }
 
-        public async Task<object> ExecuteScalarAsync()
+        public async Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
         {
             try
             {
-                return await command.ExecuteScalarWithRetryAsync(retryPolicy);
+                return await command.ExecuteScalarWithRetryAsync(retryPolicy, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -122,7 +115,7 @@ namespace Nevermore
         {
             try
             {
-                return command.ExecuteReaderWithRetry(prepared.CommandBehavior, retryPolicy);
+                return command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior);
             }
             catch (SqlException ex)
             {
@@ -136,11 +129,11 @@ namespace Nevermore
             }
         }
         
-        public async Task<DbDataReader> ExecuteReaderAsync()
+        public async Task<DbDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
         {
             try
             {
-                return await command.ExecuteReaderAsyncWithRetry(prepared.CommandBehavior, retryPolicy);
+                return await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -176,7 +169,7 @@ namespace Nevermore
                 return;
             if (ex.Number == 2627 || ex.Number == 2601)
             {
-                var uniqueRule = mapping.UniqueConstraints.FirstOrDefault(u => ex.Message.Contains((string) u.ConstraintName));
+                var uniqueRule = mapping.UniqueConstraints.FirstOrDefault(u => ex.Message.Contains(u.ConstraintName));
                 if (uniqueRule != null)
                 {
                     throw new UniqueConstraintViolationException(uniqueRule.Message);
