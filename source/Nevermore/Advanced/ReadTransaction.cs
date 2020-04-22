@@ -152,7 +152,7 @@ namespace Nevermore.Advanced
             if (idList.Count == 0)
                 yield break;
 
-            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument>(idList)))
+            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument>(idList), cancellationToken))
             {
                 yield return item;
             }

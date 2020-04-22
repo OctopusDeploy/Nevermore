@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
@@ -36,9 +38,9 @@ namespace Nevermore.Advanced
             this.paramDefaults = paramDefaults;
         }
 
-        public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)
+        public ICompleteQuery<TRecord> WithTimeout(TimeSpan timeout)
         {
-            this.commandTimeout = commandTimeout;
+            commandTimeout = timeout;
             return this;
         }
 
@@ -238,7 +240,6 @@ namespace Nevermore.Advanced
             return this;
         }
 
-        [Pure]
         public int Count()
         {
             var clonedSelectBuilder = selectBuilder.Clone();
@@ -248,7 +249,15 @@ namespace Nevermore.Advanced
             return count;
         }
 
-        [Pure]
+        public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+        {
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+            var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
+            uniqueParameterNameGenerator.Pop();
+            return count;
+        }
+
         public bool Any()
         {
             const int trueValue = 1;
@@ -280,19 +289,56 @@ namespace Nevermore.Advanced
             }
         }
 
-        [Pure]
+        public async Task<bool> AnyAsync(CancellationToken cancellationToken = default)
+        {
+            const int trueValue = 1;
+            const int falseValue = 0;
+            var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
+            var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
+
+            var result = await readQueryExecutor.ExecuteScalarAsync<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout, cancellationToken);
+            uniqueParameterNameGenerator.Pop();
+
+            return result != falseValue;
+
+            CommandParameterValues CreateParameterValues()
+            {
+                return new CommandParameterValues(paramValues)
+                {
+                    {trueParameter.ParameterName, trueValue},
+                    {falseParameter.ParameterName, falseValue}
+                };
+            }
+
+            IExpression CreateQuery()
+            {
+                var clonedSelectBuilder = selectBuilder.Clone();
+                clonedSelectBuilder.RemoveOrderBys();
+                return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
+                    new SelectConstant(trueParameter),
+                    new SelectConstant(falseParameter));
+            }
+        }
+
         public TRecord First()
         {
             return FirstOrDefault();
         }
 
-        [Pure]
         public TRecord FirstOrDefault()
         {
             return Take(1).FirstOrDefault();
         }
 
-        [Pure]
+        public async Task<TRecord> FirstOrDefaultAsync(CancellationToken cancellationToken = default)
+        {
+            await foreach (var item in TakeAsync(1, cancellationToken))
+            {
+                return item;
+            }
+            return default;
+        }
+
         public IEnumerable<TRecord> Take(int take)
         {
             var clonedSelectBuilder = selectBuilder.Clone();
@@ -302,8 +348,40 @@ namespace Nevermore.Advanced
             return stream;
         }
 
-        [Pure]
+        public IAsyncEnumerable<TRecord> TakeAsync(int take, CancellationToken cancellationToken = default)
+        {
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddTop(take);
+            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            uniqueParameterNameGenerator.Pop();
+            return stream;
+        }
+
         public List<TRecord> ToList(int skip, int take)
+        {
+            var subqueryBuilder = BuildToList(skip, take, out var parmeterValues);
+
+            var result = readQueryExecutor.Stream<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
+            uniqueParameterNameGenerator.Pop();
+            return result;
+        }
+
+        public async Task<List<TRecord>> ToListAsync(int skip, int take, CancellationToken cancellationToken = default)
+        {
+            var subqueryBuilder = BuildToList(skip, take, out var parmeterValues);
+
+            var results = new List<TRecord>();
+            var enumerator = readQueryExecutor.StreamAsync<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout, cancellationToken);
+            await foreach (var item in enumerator.WithCancellation(cancellationToken))
+            {
+                results.Add(item);
+            }
+            
+            uniqueParameterNameGenerator.Pop();
+            return results;
+        }
+        
+        SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parmeterValues)
         {
             const string rowNumberColumnName = "RowNum";
             var minRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_minrow"));
@@ -315,20 +393,20 @@ namespace Nevermore.Advanced
             clonedSelectBuilder.AddRowNumberColumn(rowNumberColumnName, new List<Column>());
 
             var subqueryBuilder = CreateSubqueryBuilder(clonedSelectBuilder);
-            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
-            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual,
+                minRowParameter));
+            subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual,
+                maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
 
-            var parmeterValues = new CommandParameterValues(paramValues)
+            parmeterValues = new CommandParameterValues(paramValues)
             {
                 {minRowParameter.ParameterName, skip + 1},
                 {maxRowParameter.ParameterName, take + skip}
             };
-
-            var result = readQueryExecutor.Stream<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
-            uniqueParameterNameGenerator.Pop();
-            return result;
+            return subqueryBuilder;
         }
+
 
         [Pure]
         public List<TRecord> ToList(int skip, int take, out int totalResults)
@@ -337,10 +415,26 @@ namespace Nevermore.Advanced
             return ToList(skip, take);
         }
 
+        public Task<List<TRecord>> ToListAsync(int skip, int take, out int totalResults, CancellationToken cancellationToken = default)
+        {
+            totalResults = Count();
+            return ToListAsync(skip, take, cancellationToken);
+        }
+
         [Pure]
         public List<TRecord> ToList()
         {
             return Stream().ToList();
+        }
+
+        public async Task<List<TRecord>> ToListAsync(CancellationToken cancellationToken = default)
+        {
+            var results = new List<TRecord>();
+
+            await foreach (var item in StreamAsync(cancellationToken)) 
+                results.Add(item);
+
+            return results;
         }
 
         [Pure]
@@ -357,10 +451,22 @@ namespace Nevermore.Advanced
             return stream;
         }
 
+        public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
+        {
+            var stream = readQueryExecutor.StreamAsync<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            uniqueParameterNameGenerator.Pop();
+            return stream;
+        }
+
         [Pure]
         public IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector)
         {
             return Stream().ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+        }
+
+        public async Task<IDictionary<string, TRecord>> ToDictionaryAsync(Func<TRecord, string> keySelector, CancellationToken cancellationToken = default)
+        {
+            return (await ToListAsync(cancellationToken)).ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
         }
 
         public Parameters Parameters => new Parameters(@params);

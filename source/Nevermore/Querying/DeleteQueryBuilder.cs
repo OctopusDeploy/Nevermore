@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
 using Nevermore.Querying.AST;
@@ -114,9 +115,9 @@ namespace Nevermore.Querying
             queryExecutor.ExecuteNonQuery(PrepareDelete(options));
         }
 
-        public Task DeleteAsync(DeleteOptions options = null)
+        public Task DeleteAsync(DeleteOptions options = null, CancellationToken cancellationToken = default)
         {
-            return queryExecutor.ExecuteNonQueryAsync(PrepareDelete(options));
+            return queryExecutor.ExecuteNonQueryAsync(PrepareDelete(options), cancellationToken);
         }
     }
 }

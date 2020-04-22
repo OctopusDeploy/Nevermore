@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
@@ -441,9 +443,19 @@ namespace Nevermore.Advanced
             return Builder.Count();
         }
 
+        public Task<int> CountAsync(CancellationToken cancellationToken = default)
+        {
+            return Builder.CountAsync(cancellationToken);
+        }
+
         public bool Any()
         {
             return Builder.Any();
+        }
+
+        public Task<bool> AnyAsync(CancellationToken cancellationToken = default)
+        {
+            return Builder.AnyAsync(cancellationToken);
         }
 
         public TRecord First()
@@ -456,9 +468,19 @@ namespace Nevermore.Advanced
             return Builder.FirstOrDefault();
         }
 
+        public Task<TRecord> FirstOrDefaultAsync(CancellationToken cancellationToken = default)
+        {
+            return Builder.FirstOrDefaultAsync(cancellationToken);
+        }
+
         public IEnumerable<TRecord> Take(int take)
         {
             return Builder.Take(take);
+        }
+
+        public IAsyncEnumerable<TRecord> TakeAsync(int take, CancellationToken cancellationToken = default)
+        {
+            return Builder.TakeAsync(take, cancellationToken);
         }
 
         public List<TRecord> ToList(int skip, int take)
@@ -466,14 +488,29 @@ namespace Nevermore.Advanced
             return Builder.ToList(skip, take);
         }
 
+        public Task<List<TRecord>> ToListAsync(int skip, int take, CancellationToken cancellationToken = default)
+        {
+            return Builder.ToListAsync(skip, take, cancellationToken);
+        }
+
         public List<TRecord> ToList(int skip, int take, out int totalResults)
         {
             return Builder.ToList(skip, take, out totalResults);
         }
 
+        public Task<List<TRecord>> ToListAsync(int skip, int take, out int totalResults, CancellationToken cancellationToken = default)
+        {
+            return Builder.ToListAsync(skip, take, out totalResults, cancellationToken);
+        }
+
         public List<TRecord> ToList()
         {
             return Builder.ToList();
+        }
+
+        public Task<List<TRecord>> ToListAsync(CancellationToken cancellationToken = default)
+        {
+            return Builder.ToListAsync(cancellationToken);
         }
 
         public TRecord[] ToArray()
@@ -486,9 +523,19 @@ namespace Nevermore.Advanced
             return Builder.Stream();
         }
 
+        public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
+        {
+            return Builder.StreamAsync(cancellationToken);
+        }
+
         public IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector)
         {
             return Builder.ToDictionary(keySelector);
+        }
+
+        public Task<IDictionary<string, TRecord>> ToDictionaryAsync(Func<TRecord, string> keySelector, CancellationToken cancellationToken = default)
+        {
+            return Builder.ToDictionaryAsync(keySelector, cancellationToken);
         }
 
         public Parameters Parameters => Builder.Parameters;

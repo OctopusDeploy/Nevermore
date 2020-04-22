@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Mapping;
 using Nevermore.Querying;
@@ -39,11 +40,11 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
         }
 
-        public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
+        public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {instance}, options);
             await configuration.HookRegistry.BeforeInsertAsync(instance, command.Mapping, this);
-            await ExecuteNonQueryAsync(command);
+            await ExecuteNonQueryAsync(command, cancellationToken);
             await configuration.HookRegistry.AfterInsertAsync(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
         }
@@ -60,14 +61,14 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
         }
 
-        public async Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null) where TDocument : class
+        public async Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             IReadOnlyList<object> instanceList = documents.ToArray();
             if (!instanceList.Any()) return;
 
             var command = builder.PrepareInsert(instanceList, options);
             foreach (var instance in instanceList) await configuration.HookRegistry.BeforeInsertAsync(instance, command.Mapping, this);
-            await ExecuteNonQueryAsync(command);
+            await ExecuteNonQueryAsync(command, cancellationToken);
             foreach (var instance in instanceList) await configuration.HookRegistry.AfterInsertAsync(instance, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
         }
@@ -81,11 +82,11 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
-        public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
+        public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareUpdate(document, options);
             await configuration.HookRegistry.BeforeUpdateAsync(document, command.Mapping, this);
-            await ExecuteNonQueryAsync(command);
+            await ExecuteNonQueryAsync(command, cancellationToken);
             await configuration.HookRegistry.AfterUpdateAsync(document, command.Mapping, this);
         }
 
@@ -95,10 +96,10 @@ namespace Nevermore.Advanced
             Delete<TDocument>(id, options);
         }
 
-        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
+        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             var id = configuration.DocumentMaps.GetId(document);
-            return DeleteAsync<TDocument>(id, options);
+            return DeleteAsync<TDocument>(id, options, cancellationToken);
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
@@ -109,11 +110,11 @@ namespace Nevermore.Advanced
             configuration.HookRegistry.AfterDelete(id, command.Mapping, this);
         }
 
-        public async Task DeleteAsync<TDocument>(string id, DeleteOptions options = null) where TDocument : class
+        public async Task DeleteAsync<TDocument>(string id, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             await configuration.HookRegistry.BeforeDeleteAsync(id, command.Mapping, this);
-            await ExecuteNonQueryAsync(command);
+            await ExecuteNonQueryAsync(command, cancellationToken);
             await configuration.HookRegistry.AfterDeleteAsync(id, command.Mapping, this);
         }
 
@@ -151,10 +152,10 @@ namespace Nevermore.Advanced
             configuration.HookRegistry.AfterCommit(this);
         }
 
-        public async Task CommitAsync()
+        public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
             await configuration.HookRegistry.BeforeCommitAsync(this);
-            await Transaction.CommitAsync();
+            await Transaction.CommitAsync(cancellationToken);
             await configuration.HookRegistry.AfterCommitAsync(this);
         }
     }

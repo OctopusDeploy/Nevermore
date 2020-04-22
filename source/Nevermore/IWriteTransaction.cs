@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nevermore
@@ -5,6 +6,6 @@ namespace Nevermore
     public interface IWriteTransaction : IReadTransaction, IWriteQueryExecutor
     {
         void Commit();
-        Task CommitAsync();
+        Task CommitAsync(CancellationToken cancellationToken = default);
     }
 }
