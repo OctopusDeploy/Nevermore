@@ -67,6 +67,8 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
             {
                 case ArraySqlOperand.In:
                     return "IN";
+                case ArraySqlOperand.NotIn:
+                    return "NOT IN";
                 default:
                     throw new ArgumentOutOfRangeException("Operand " + operand + " is not supported!");
             }

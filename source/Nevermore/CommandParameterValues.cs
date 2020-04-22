@@ -121,12 +121,16 @@ namespace Nevermore
             {
                 var inClauseNames = new List<string>();
                 var i = 0;
-                foreach (var inClauseValue in (IEnumerable)value)
+
+                var inClauseValues = ((IEnumerable) value).Cast<object>().ToList();
+                ListExtender.ExtendListRepeatingLastValue(inClauseValues);
+                
+                foreach (var inClauseValue in inClauseValues)
                 {
+                    i++;
                     var inClauseName = name + "_" + i;
                     inClauseNames.Add(inClauseName);
                     ContributeParameter(command, typeHandlers, inClauseName, inClauseValue);
-                    i++;
                 }
 
                 if (i == 0)
@@ -135,7 +139,6 @@ namespace Nevermore
                     inClauseNames.Add(inClauseName);
                     ContributeParameter(command, typeHandlers, inClauseName, null);
                 }
-
 
                 var originalParameter = Regex.Escape("@" + name.TrimStart('@')) + @"(?=[^\w\$@#_]|$)";
                 var replacementParameters = "(" + string.Join(", ", inClauseNames.Select(x => "@" + x)) + ")";
@@ -152,6 +155,15 @@ namespace Nevermore
             param.DbType = columnType.Value;
             param.Value = value;
 
+            if (columnType == DbType.String && value is string text)
+            {
+                var size = GetBestSizeBucket(text);
+                if (size > 0)
+                {
+                    param.Size = size; 
+                }
+            }
+
             // To assist SQL's query plan caching, assign a parameter size for our 
             // common id lookups where possible.
             if (mapping != null
@@ -167,6 +179,26 @@ namespace Nevermore
             }
 
             command.Parameters.Add(param);
+        }
+
+        
+
+        // By default all string parameters have their size automatically assigned based on the length of the string.
+        // This results in a different query plan depending on the size of the text used. The query plan ends up like this:
+        // 
+        //   (@firstname nvarchar(24))SELECT TOP 100 *  FROM dbo.[Customer]  WHERE ([FirstName] <> @firstname)  ORDER BY [Id]
+        //   (@firstname nvarchar(44))SELECT TOP 100 *  FROM dbo.[Customer]  WHERE ([FirstName] <> @firstname)  ORDER BY [Id]
+        //   (@firstname nvarchar(47))SELECT TOP 100 *  FROM dbo.[Customer]  WHERE ([FirstName] <> @firstname)  ORDER BY [Id]
+        //
+        // So, we will always add a size. We do it in buckets.
+        static int GetBestSizeBucket(string text)
+        {
+            var length = text.Length;
+            if (length < 100) return 100;
+            if (length < 200) return 200;
+            if (length < 600) return 600;
+            if (length < 1000) return 1000;
+            return 0;    // Use default plan
         }
 
         public void AddRange(CommandParameterValues other)

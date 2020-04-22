@@ -2,7 +2,8 @@ namespace Nevermore
 {
     public enum ArraySqlOperand
     {
-        In
+        In,
+        NotIn
     }
 
     public enum BinarySqlOperand

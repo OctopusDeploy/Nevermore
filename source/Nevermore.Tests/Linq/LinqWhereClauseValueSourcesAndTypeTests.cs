@@ -23,7 +23,6 @@ namespace Nevermore.Tests.Linq
             AssertResult(result, captures);
         }
 
-
         [Test]
         public void WithLocalVariable()
         {
@@ -222,11 +221,51 @@ ORDER BY [Id]");
                 .Should()
                 .Be(@"SELECT *
 FROM dbo.[Foo]
-WHERE ([Enum] IN (@enum0, @enum1))
+WHERE ([Enum] IN (@enum1, @enum2))
 ORDER BY [Id]");
 
-            paramValues.Should().Contain("enum0", "A");
-            paramValues.Should().Contain("enum1", "B");
+            paramValues.Should().Contain("enum1", Bar.A);
+            paramValues.Should().Contain("enum2", Bar.B);
+        }
+        
+        [Test]
+        public void WithEnumIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new[] {Bar.A, Bar.B};
+            
+            var result = builder.Where(f => f.Enum.In(input));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] IN (@enum1, @enum2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("enum1", Bar.A);
+            paramValues.Should().Contain("enum2", Bar.B);
+        }
+        
+        [Test]
+        public void WithEnumNotIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new[] {Bar.A, Bar.B};
+            
+            var result = builder.Where(f => f.Enum.NotIn(input));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT *
+FROM dbo.[Foo]
+WHERE ([Enum] NOT IN (@enum1, @enum2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("enum1", Bar.A);
+            paramValues.Should().Contain("enum2", Bar.B);
         }
     
         static void AssertResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures)

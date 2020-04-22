@@ -28,23 +28,6 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
-
-        [Test]
-        public void ShouldGenerateSelectInterpolated()
-        {
-            var price = 10;
-            var queryBuilder = CreateQueryBuilder<object>("Orders")
-                .Where($"[Price] > {price}")
-                .OrderBy("Name");
-
-            const string expected = @"SELECT *
-FROM dbo.[Orders]
-WHERE ([Price] > @arg0)
-ORDER BY [Name]";
-
-            queryBuilder.DebugViewRawQuery().Should().Be(expected);
-            queryBuilder.ParameterValues["arg0"].Should().Be(10);
-        }
         
         [Test]
         public void ShouldGenerateSelect()
@@ -768,7 +751,7 @@ WHERE ([Title] IN (@nevermore, @octofront))";
         {
             const string expectedSql = @"SELECT *
 FROM dbo.[Project]
-WHERE ([State] IN (@state0, @state1))
+WHERE ([State] IN (@state1, @state2))
 ORDER BY [Id]";
 
             var queryBuilder = CreateQueryBuilder<object>("Project")
@@ -787,7 +770,7 @@ ORDER BY [Id]";
             };
             const string expectedSql = @"SELECT *
 FROM dbo.[Project]
-WHERE ([State] IN (@state0, @state1))
+WHERE ([State] IN (@state1, @state2))
 ORDER BY [Id]";
             var queryBuilder = CreateQueryBuilder<object>("Project")
                 .Where("State", ArraySqlOperand.In, matches);
@@ -815,7 +798,7 @@ ORDER BY [Id]";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[TodoItem]
-WHERE ([Title] IN (@title0, @title1))";
+WHERE ([Title] IN (@title1, @title2))";
 
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -828,8 +811,8 @@ WHERE ([Title] IN (@title0, @title1))";
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp =>
-                    cp["title0"].ToString() == "nevermore"
-                    && cp["title1"].ToString() == "octofront"));
+                    cp["title1"].ToString() == "nevermore"
+                    && cp["title2"].ToString() == "octofront"));
 
             result.Should().Be(1);
         }

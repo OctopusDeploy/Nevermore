@@ -90,6 +90,7 @@ namespace Nevermore.Advanced
             {
                 return new ArrayParametersQueryBuilder<TRecord>(AddAlwaysFalseWhere(), parameterNamesList);
             }
+            
             selectBuilder.AddWhere(new ArrayWhereParameter(fieldName, operand, parameterNamesList));
             IQueryBuilder<TRecord> builder = this;
             return new ArrayParametersQueryBuilder<TRecord>(parameterNamesList.Aggregate(builder, (b, p) => b.Parameter(p)), parameterNamesList);

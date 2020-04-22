@@ -1,9 +1,12 @@
 using System;
 using System.CodeDom;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Nevermore.Util;
 
 namespace Nevermore
 {
@@ -63,6 +66,12 @@ namespace Nevermore
 
                 if (methExpr.Method.Name == "Contains")
                     return AddContainsFromExpression(queryBuilder, methExpr);
+                
+                if (methExpr.Method.Name == "In")
+                    return AddInExpression(ArraySqlOperand.In, queryBuilder, methExpr);
+                
+                if (methExpr.Method.Name == "NotIn")
+                    return AddInExpression(ArraySqlOperand.NotIn, queryBuilder, methExpr);
 
                 throw new NotSupportedException("Only method calls that take a single string argument and Enumerable.Contains methods are supported");
             }
@@ -89,14 +98,21 @@ namespace Nevermore
             throw new NotSupportedException($"The predicate supplied is not supported. Only simple BinaryExpressions, LogicalBinaryExpressions and some MethodCallExpressions are supported. The predicate is a {expr.GetType()}.");
         }
 
-        static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
+        static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
         {
-            var property = GetProperty(methExpr.Arguments.Count == 1 ? methExpr.Arguments[0] : methExpr.Arguments[1]);
-            var value = (IEnumerable) GetValueFromExpression(methExpr.Arguments.Count == 1 ? methExpr.Object : methExpr.Arguments[0], property.PropertyType);
+            var property = GetProperty(call.Arguments.Count == 1 ? call.Arguments[0] : call.Arguments[1]);
+            var value = (IEnumerable) GetValueFromExpression(call.Arguments.Count == 1 ? call.Object : call.Arguments[0], property.PropertyType);
 
             return queryBuilder.Where(property.Name, ArraySqlOperand.In, value);
         }
 
+        static IQueryBuilder<TRecord> AddInExpression<TRecord>(ArraySqlOperand operand, IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
+        {
+            var property = GetProperty(call.Arguments[0]);
+            var value = (IEnumerable) GetValueFromExpression(call.Arguments[1], property.PropertyType);
+            
+            return queryBuilder.Where(property.Name, operand, value);
+        }
 
         static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
         {
@@ -235,10 +251,11 @@ namespace Nevermore
         public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             ArraySqlOperand operand, IEnumerable values) where TRecord : class
         {
-            var stringValues = values.OfType<object>().Select(v => v.ToString()).ToArray();
-            var parameters = stringValues.Select((v, i) => new Parameter($"{fieldName}{i}")).ToArray();
-            return queryBuilder.WhereParameterised(fieldName, operand, parameters)
-                .ParameterValues(stringValues);
+            var valuesList = values.OfType<object>().ToList();
+            ListExtender.ExtendListRepeatingLastValue(valuesList);
+            
+            var parameters = valuesList.Select((v, i) => new Parameter($"{fieldName}{i + 1}")).ToArray();
+            return queryBuilder.WhereParameterised(fieldName, operand, parameters).ParameterValues(valuesList);
         }
 
         /// <summary>

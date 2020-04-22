@@ -48,10 +48,8 @@ namespace Nevermore.Tests.Linq
             AssertContainsResult(result, captures);
         }
 
-     
-
         [Test]
-        public void IListArrayContains()
+        public void ListArrayContains()
         {
             var (builder, captures) = NewQueryBuilder();
 
@@ -95,12 +93,12 @@ namespace Nevermore.Tests.Linq
                 .Should()
                 .Be(@"SELECT *
 FROM dbo.[Foo]
-WHERE ([String] IN (@string0, @string1, @string2))
+WHERE ([String] IN (@string1, @string2, @string3))
 ORDER BY [Id]");
 
-            paramValues.Should().Contain("string0", "a");
-            paramValues.Should().Contain("string1", "B");
-            paramValues.Should().Contain("string2", "3");
+            paramValues.Should().Contain("string1", "a");
+            paramValues.Should().Contain("string2", "B");
+            paramValues.Should().Contain("string3", "3");
         }
 
         static void AssertLikeResult(IQueryBuilder<Foo> result, (Parameters, CommandParameterValues) captures, string expected)
@@ -124,12 +122,12 @@ ORDER BY [Id]");
                 .Should()
                 .Be(@"SELECT *
 FROM dbo.[Foo]
-WHERE ([Int] IN (@int0, @int1, @int2))
+WHERE ([Int] IN (@int1, @int2, @int3))
 ORDER BY [Id]");
 
-            paramValues.Should().Contain("int0", "1");
-            paramValues.Should().Contain("int1", "2");
-            paramValues.Should().Contain("int2", "3");
+            paramValues.Should().Contain("int1", 1);
+            paramValues.Should().Contain("int2", 2);
+            paramValues.Should().Contain("int3", 3);
         }
 
  
