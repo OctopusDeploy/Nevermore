@@ -160,11 +160,13 @@ namespace Nevermore.Advanced
 
         public ITableSourceQueryBuilder<TRecord> TableQuery<TRecord>() where TRecord : class
         {
+            uniqueParameterNameGenerator.Push();
             return new TableSourceQueryBuilder<TRecord>(configuration.DocumentMaps.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
+            uniqueParameterNameGenerator.Push();
             return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
