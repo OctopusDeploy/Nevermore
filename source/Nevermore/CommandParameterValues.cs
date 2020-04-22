@@ -123,6 +123,7 @@ namespace Nevermore
                 var i = 0;
 
                 var inClauseValues = ((IEnumerable) value).Cast<object>().ToList();
+                
                 ListExtender.ExtendListRepeatingLastValue(inClauseValues);
                 
                 foreach (var inClauseValue in inClauseValues)

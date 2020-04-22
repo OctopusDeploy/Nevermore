@@ -75,6 +75,11 @@ namespace Nevermore
         /// </summary>
         public bool ForceMultipleActiveResultSets { get; set; }
 
+        /// <summary>
+        /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
+        /// </summary>
+        public bool DetectQueryPlanThrashing { get; set; }
+
         public ISqlCommandFactory CommandFactory { get; set; }
         public IHookRegistry HookRegistry { get; private set; }
 

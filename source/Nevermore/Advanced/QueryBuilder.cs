@@ -48,7 +48,7 @@ namespace Nevermore.Advanced
         {
             if (!String.IsNullOrWhiteSpace(whereClause))
             {
-                var whereClauseNormalised = Regex.Replace(whereClause, @"@\w+", m => new Parameter(m.Value).ParameterName);
+                var whereClauseNormalised = Regex.Replace(whereClause, @"@\w+", m => Nevermore.Parameter.Normalize(m.Value));
                 selectBuilder.AddWhere(whereClauseNormalised);
             }
             return this;

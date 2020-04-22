@@ -354,6 +354,12 @@ namespace Nevermore.Advanced
                 var keys = command.ParameterValues.Keys.ToArray();
                 ParameterNameGenerator.Return(keys);
             }
+
+            if (configuration.DetectQueryPlanThrashing)
+            {
+                QueryPlanThrashingDetector.Detect(command.Statement);
+            }
+            
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
         }
 

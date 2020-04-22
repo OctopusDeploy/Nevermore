@@ -26,10 +26,10 @@ namespace Nevermore.Util
             else if (inClauseValues.Count <= 50) finalSize = 50;
             else if (inClauseValues.Count <= 75) finalSize = 75;
             else if (inClauseValues.Count <= 100) finalSize = 100;
-            else if (inClauseValues.Count <= 130) finalSize = 130;
-            else if (inClauseValues.Count <= 160) finalSize = 160;
+            else if (inClauseValues.Count <= 150) finalSize = 150;
             else if (inClauseValues.Count <= 200) finalSize = 200;
             else if (inClauseValues.Count <= 500) finalSize = 500;
+            else if (inClauseValues.Count <= 750) finalSize = 750;
             else if (inClauseValues.Count <= 1000) finalSize = 1000;
 
             if (inClauseValues.Count == finalSize)

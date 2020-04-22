@@ -30,6 +30,12 @@ namespace Nevermore
         /// </summary>
         /// <remarks>https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15</remarks>
         bool ForceMultipleActiveResultSets { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether to actively detect similar queries being executed in a way that is slightly different,
+        /// resulting in duplicate query plans being created.
+        /// </summary>
+        public bool DetectQueryPlanThrashing { get; set; }
 
         /// <summary>
         /// Gets or sets the factory that creates SQL commands. Set this if you want to control how commands are set up,
