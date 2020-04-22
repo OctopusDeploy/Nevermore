@@ -17,13 +17,13 @@ namespace Nevermore
             this.parameterName = parameterName;
         }
 
-        public string ParameterName => Normalise(parameterName);
+        public string ParameterName => Normalize(parameterName);
 
         // Only certain characters are allowed in SQL parameter names: https://msdn.microsoft.com/en-us/library/ms175874.aspx?f=255&mspperror=-2147217396#Anchor_1
         // but for now we will keep it simple (e.g by not using a generic regex here) 
         // to make sure we don't put any unnecessary load on our Server that is already struggling in certain scenarios.  
         // https://blogs.msdn.microsoft.com/debuggingtoolbox/2008/04/02/comparing-regex-replace-string-replace-and-stringbuilder-replace-which-has-better-performance/
-        static string Normalise(string value)
+        public static string Normalize(string value)
         {
             return value
                 .Replace('-', '_')

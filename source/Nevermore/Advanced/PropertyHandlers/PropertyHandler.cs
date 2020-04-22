@@ -130,15 +130,20 @@ namespace Nevermore.Advanced.PropertyHandlers
 
         static Type GetGenericListArgumentType(Type propertyType)
         {
-            var collectionType = propertyType;
-            while (collectionType != null && collectionType != typeof(object))
+            var interfaces = propertyType.GetInterfaces();
+
+            foreach (var implementedInterface in interfaces)
             {
-                if (collectionType.IsGenericType && collectionType.GenericTypeArguments.Length == 1)
-                    return collectionType.GenericTypeArguments[0];
+                if (!implementedInterface.IsGenericType)
+                    continue;
 
-                collectionType = collectionType.BaseType;
+                var definition = implementedInterface.GetGenericTypeDefinition();
+                if (definition == typeof(ICollection<>))
+                {
+                    return implementedInterface.GenericTypeArguments[0];
+                }
             }
-
+            
             return null;
         }
 

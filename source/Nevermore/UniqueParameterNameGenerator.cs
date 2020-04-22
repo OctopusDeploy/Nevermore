@@ -1,37 +1,43 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Nevermore
 {
     public interface IUniqueParameterNameGenerator
     {
-        void Push();
         string GenerateUniqueParameterName(string parameterName);
-        void Pop();
+        void Return(IEnumerable<string> names);
     }
 
     internal class UniqueParameterNameGenerator : IUniqueParameterNameGenerator
     {
-        readonly Stack<int> scopeStack = new Stack<int>();
-        int parameterCount;
+        readonly HashSet<string> assigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         
         public string GenerateUniqueParameterName(string parameterName)
         {
-            return $"{new Parameter(parameterName).ParameterName}_{parameterCount++}";
-        }
-
-        public void Push()
-        {
-            scopeStack.Push(parameterCount);
-        }
-
-        public void Pop()
-        {
-            if (scopeStack.Count > 0)
+            var original = Parameter.Normalize(parameterName);
+            var candidate = original;
+            var counter = 0;
+            
+            while (true)
             {
-                parameterCount = scopeStack.Pop();
+                if (!assigned.Contains(candidate))
+                {
+                    assigned.Add(candidate);
+                    return candidate;
+                }
+                
+                counter++;
+                candidate = original + "_" + counter;
             }
-
-            parameterCount = 0;
+        }
+    
+        public void Return(IEnumerable<string> names)
+        {
+            foreach (var name in names)
+            {
+                assigned.Remove(name);
+            }
         }
     }
 }

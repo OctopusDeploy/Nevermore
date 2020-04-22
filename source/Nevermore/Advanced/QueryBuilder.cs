@@ -245,7 +245,6 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
             var count = readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
-            uniqueParameterNameGenerator.Pop();
             return count;
         }
 
@@ -254,7 +253,6 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
             var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
-            uniqueParameterNameGenerator.Pop();
             return count;
         }
 
@@ -266,7 +264,6 @@ namespace Nevermore.Advanced
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
             var result = readQueryExecutor.ExecuteScalar<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout);
-            uniqueParameterNameGenerator.Pop();
 
             return result != falseValue;
 
@@ -297,7 +294,6 @@ namespace Nevermore.Advanced
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
             var result = await readQueryExecutor.ExecuteScalarAsync<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout, cancellationToken);
-            uniqueParameterNameGenerator.Pop();
 
             return result != falseValue;
 
@@ -344,7 +340,6 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
             var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
-            uniqueParameterNameGenerator.Pop();
             return stream;
         }
 
@@ -353,7 +348,6 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
             var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
-            uniqueParameterNameGenerator.Pop();
             return stream;
         }
 
@@ -362,7 +356,6 @@ namespace Nevermore.Advanced
             var subqueryBuilder = BuildToList(skip, take, out var parmeterValues);
 
             var result = readQueryExecutor.Stream<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout).ToList();
-            uniqueParameterNameGenerator.Pop();
             return result;
         }
 
@@ -377,7 +370,6 @@ namespace Nevermore.Advanced
                 results.Add(item);
             }
             
-            uniqueParameterNameGenerator.Pop();
             return results;
         }
         
@@ -447,14 +439,12 @@ namespace Nevermore.Advanced
         public IEnumerable<TRecord> Stream()
         {
             var stream = readQueryExecutor.Stream<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
-            uniqueParameterNameGenerator.Pop();
             return stream;
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
         {
             var stream = readQueryExecutor.StreamAsync<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
-            uniqueParameterNameGenerator.Pop();
             return stream;
         }
 

@@ -10,6 +10,6 @@ FROM (
     INNER JOIN dbo.[Customers] ALIAS_Customers_1
     ON ALIAS_GENERATED_2.[CustomerId] = ALIAS_Customers_1.[Id]
 ) ALIAS_GENERATED_3
-WHERE ([RowNum] >= @_minrow_0)
-AND ([RowNum] <= @_maxrow_1)
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]

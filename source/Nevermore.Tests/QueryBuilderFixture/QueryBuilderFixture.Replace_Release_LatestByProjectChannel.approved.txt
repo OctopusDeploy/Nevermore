@@ -4,5 +4,5 @@ FROM (
     ROW_NUMBER() OVER (PARTITION BY [SpaceId], [ProjectId], [ChannelId] ORDER BY [Assembled] DESC) AS RowNum
     FROM dbo.[Release]
 ) rs
-WHERE ([RowNum] = @rownum_0)
+WHERE ([RowNum] = @rownum)
 ORDER BY rs.[Id]

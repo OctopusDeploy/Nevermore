@@ -21,6 +21,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             tableAliasGenerator = new TableAliasGenerator();
             uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
+            transaction.ClearReceivedCalls();
         }
         
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
@@ -28,6 +29,23 @@ namespace Nevermore.Tests.QueryBuilderFixture
             return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
+        [Test]
+        public void ShouldGenerateSelectInterpolated()
+        {
+            var price = 10;
+            var queryBuilder = CreateQueryBuilder<object>("Orders")
+                .Where($"[Price] > {price}")
+                .OrderBy("Name");
+
+            const string expected = @"SELECT *
+FROM dbo.[Orders]
+WHERE ([Price] > @arg0)
+ORDER BY [Name]";
+
+            queryBuilder.DebugViewRawQuery().Should().Be(expected);
+            queryBuilder.ParameterValues["arg0"].Should().Be(10);
+        }
+        
         [Test]
         public void ShouldGenerateSelect()
         {
@@ -337,9 +355,9 @@ ORDER BY [Id]";
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT @true_0
+    SELECT @true
 ELSE
-    SELECT @false_1";
+    SELECT @false";
 
             transaction.ClearReceivedCalls();
 
@@ -354,8 +372,8 @@ ELSE
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => (int)cp["completed"] == 5
-                                                     && (int) cp["true_0"] == 1
-                                                     && (int) cp["false_1"] == 0));
+                                                     && (int) cp["true"] == 1
+                                                     && (int) cp["false"] == 0));
 
             result.Should().Be(true);
         }
@@ -366,9 +384,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT @true_0
+    SELECT @true
 ELSE
-    SELECT @false_1";
+    SELECT @false";
 
             transaction.ClearReceivedCalls();
 
@@ -383,8 +401,8 @@ ELSE
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => (int)cp["completed"] == 5
-                                                     && (int) cp["true_0"] == 1
-                                                     && (int) cp["false_1"] == 0));
+                                                     && (int) cp["true"] == 1
+                                                     && (int) cp["false"] == 0));
 
             result.Should().Be(false);
         }
@@ -395,9 +413,9 @@ ELSE
             const string expectedSql = @"IF EXISTS(SELECT *
 FROM dbo.[Todos]
 WHERE ([Completed] < @completed))
-    SELECT @true_0
+    SELECT @true
 ELSE
-    SELECT @false_1";
+    SELECT @false";
 
             transaction.ClearReceivedCalls();
 
@@ -413,8 +431,8 @@ ELSE
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp => (int) cp["completed"] == 5
-                                                     && (int) cp["true_0"] == 1
-                                                     && (int) cp["false_1"] == 0));
+                                                     && (int) cp["true"] == 1
+                                                     && (int) cp["false"] == 0));
 
             result.Should().Be(false);
         }
@@ -446,7 +464,7 @@ WHERE ([Completed] < @completed)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] < @completed_0)";
+WHERE ([Completed] < @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(2);
@@ -457,7 +475,7 @@ WHERE ([Completed] < @completed_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             result.Should().Be(2);
         }
@@ -489,7 +507,7 @@ WHERE ([Completed] <= @completed)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] <= @completed_0)";
+WHERE ([Completed] <= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(10);
@@ -500,7 +518,7 @@ WHERE ([Completed] <= @completed_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             result.Should().Be(10);
         }
@@ -532,9 +550,8 @@ WHERE ([Title] = @title)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[TodoItem]
-WHERE ([Title] = @title_0)";
-
-
+WHERE ([Title] = @title)";
+            
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
@@ -544,7 +561,7 @@ WHERE ([Title] = @title_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             result.Should().Be(1);
         }
@@ -576,7 +593,7 @@ WHERE ([Title] <> @title)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[TodoItem]
-WHERE ([Title] <> @title_0)";
+WHERE ([Title] <> @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
@@ -587,7 +604,7 @@ WHERE ([Title] <> @title_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "nevermore"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "nevermore"));
 
             result.Should().Be(1);
         }
@@ -619,7 +636,7 @@ WHERE ([Completed] > @completed)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] > @completed_0)";
+WHERE ([Completed] > @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(3);
@@ -630,7 +647,7 @@ WHERE ([Completed] > @completed_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             result.Should().Be(3);
         }
@@ -662,7 +679,7 @@ WHERE ([Completed] >= @completed)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] >= @completed_0)";
+WHERE ([Completed] >= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(21);
@@ -673,7 +690,7 @@ WHERE ([Completed] >= @completed_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed_0"].ToString()) == 5));
+                Arg.Is<CommandParameterValues>(cp => int.Parse(cp["completed"].ToString()) == 5));
 
             result.Should().Be(21);
         }
@@ -705,7 +722,7 @@ WHERE ([Title] LIKE @title)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[TodoItem]
-WHERE ([Title] LIKE @title_0)";
+WHERE ([Title] LIKE @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
@@ -716,7 +733,7 @@ WHERE ([Title] LIKE @title_0)";
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
-                Arg.Is<CommandParameterValues>(cp => cp["title_0"].ToString() == "%nevermore%"));
+                Arg.Is<CommandParameterValues>(cp => cp["title"].ToString() == "%nevermore%"));
 
             result.Should().Be(1);
         }
@@ -751,7 +768,7 @@ WHERE ([Title] IN (@nevermore, @octofront))";
         {
             const string expectedSql = @"SELECT *
 FROM dbo.[Project]
-WHERE ([State] IN (@state0_0, @state1_1))
+WHERE ([State] IN (@state0, @state1))
 ORDER BY [Id]";
 
             var queryBuilder = CreateQueryBuilder<object>("Project")
@@ -770,7 +787,7 @@ ORDER BY [Id]";
             };
             const string expectedSql = @"SELECT *
 FROM dbo.[Project]
-WHERE ([State] IN (@state0_0, @state1_1))
+WHERE ([State] IN (@state0, @state1))
 ORDER BY [Id]";
             var queryBuilder = CreateQueryBuilder<object>("Project")
                 .Where("State", ArraySqlOperand.In, matches);
@@ -798,7 +815,7 @@ ORDER BY [Id]";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[TodoItem]
-WHERE ([Title] IN (@title0_0, @title1_1))";
+WHERE ([Title] IN (@title0, @title1))";
 
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -811,8 +828,8 @@ WHERE ([Title] IN (@title0_0, @title1_1))";
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp =>
-                    cp["title0_0"].ToString() == "nevermore"
-                    && cp["title1_1"].ToString() == "octofront"));
+                    cp["title0"].ToString() == "nevermore"
+                    && cp["title1"].ToString() == "octofront"));
 
             result.Should().Be(1);
         }
@@ -848,7 +865,7 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] BETWEEN @startvalue_0 AND @endvalue_1)";
+WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
@@ -860,8 +877,8 @@ WHERE ([Completed] BETWEEN @startvalue_0 AND @endvalue_1)";
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp =>
-                    int.Parse(cp["startvalue_0"].ToString()) == 5 &&
-                    int.Parse(cp["endvalue_1"].ToString()) == 10));
+                    int.Parse(cp["startvalue"].ToString()) == 5 &&
+                    int.Parse(cp["endvalue"].ToString()) == 10));
 
             result.Should().Be(1);
         }
@@ -896,8 +913,8 @@ WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
         {
             const string expectedSql = @"SELECT COUNT(*)
 FROM dbo.[Todos]
-WHERE ([Completed] >= @startvalue_0)
-AND ([Completed] <= @endvalue_1)";
+WHERE ([Completed] >= @startvalue)
+AND ([Completed] <= @endvalue)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
@@ -909,8 +926,8 @@ AND ([Completed] <= @endvalue_1)";
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
                 Arg.Is<CommandParameterValues>(cp =>
-                    int.Parse(cp["startvalue_0"].ToString()) == 5 &&
-                    int.Parse(cp["endvalue_1"].ToString()) == 10));
+                    int.Parse(cp["startvalue"].ToString()) == 5 &&
+                    int.Parse(cp["endvalue"].ToString()) == 10));
 
             result.Should().Be(1);
         }
@@ -1210,7 +1227,7 @@ ORDER BY [Title] DESC";
                 .Union(account)
                 .ToList();
 
-            parameterValues.Should().Contain("Name_0", "ABC");
+            parameterValues.Should().Contain("Name", "ABC");
         }
 
         [Test]
@@ -1480,7 +1497,7 @@ ORDER BY [Title] DESC";
 
             query.ToList();
 
-            parameterValues.Should().Contain("Name_0", "Bob");
+            parameterValues.Should().Contain("Name", "Bob");
         }
 
         [Test]
@@ -1513,16 +1530,16 @@ FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
     FROM dbo.[Orders]
-    WHERE ([Id] = @id_0)
+    WHERE ([Id] = @id)
 ) ALIAS_GENERATED_1
-WHERE ([RowNum] >= @_minrow_1)
-AND ([RowNum] <= @_maxrow_2)
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
             parameterValues.Count.ShouldBeEquivalentTo(3);
-            parameterValues["id_0"].ShouldBeEquivalentTo("1");
-            parameterValues["_minrow_1"].ShouldBeEquivalentTo(11);
-            parameterValues["_maxrow_2"].ShouldBeEquivalentTo(30);
+            parameterValues["id"].ShouldBeEquivalentTo("1");
+            parameterValues["_minrow"].ShouldBeEquivalentTo(11);
+            parameterValues["_maxrow"].ShouldBeEquivalentTo(30);
         }
 
         [Test]
@@ -1543,12 +1560,12 @@ ORDER BY [RowNum]");
 
             const string expected = @"SELECT TOP 1 *
 FROM dbo.[Todos]
-WHERE ([AddedDate] > @addeddate_0)
+WHERE ([AddedDate] > @addeddate)
 AND ([AddedDate] < @addeddate_1)
 ORDER BY [Id]";
 
             parameters.Values.Count.ShouldBeEquivalentTo(2);
-            parameters["addeddate_0"].ShouldBeEquivalentTo(earlyDate);
+            parameters["addeddate"].ShouldBeEquivalentTo(earlyDate);
             parameters["addeddate_1"].ShouldBeEquivalentTo(laterDate);
 
             actual.ShouldBeEquivalentTo(expected);
@@ -1587,13 +1604,13 @@ FROM (
 INNER JOIN (
     SELECT *
     FROM dbo.[Orders]
-    WHERE ([Date] = @date_0)
+    WHERE ([Date] = @date)
 ) ALIAS_GENERATED_1
 ON ALIAS_GENERATED_2.[Id] = ALIAS_GENERATED_1.[CustomerId]
 ORDER BY ALIAS_GENERATED_2.[Id]";
 
             parameters.Values.Count.ShouldBeEquivalentTo(2);
-            parameters["date_0"].ShouldBeEquivalentTo(createdDate);
+            parameters["date"].ShouldBeEquivalentTo(createdDate);
             parameters["date_1"].ShouldBeEquivalentTo(joinDate);
 
             actual.ShouldBeEquivalentTo(expected);
@@ -1634,13 +1651,13 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
 
             const string expected = @"SELECT *
 FROM dbo.[Customers]
-WHERE ([Name] <> @name_0)
+WHERE ([Name] <> @name)
 AND ([Name] <> @name_1)
 ORDER BY [Id]";
 
             actual.Should().BeEquivalentTo(expected);
             parameters.Count.ShouldBeEquivalentTo(2);
-            parameters.Should().Contain("name_0", "Alice");
+            parameters.Should().Contain("name", "Alice");
             parameters.Should().Contain("name_1", "Bob");
         }
 

@@ -32,7 +32,7 @@ ORDER BY [Id]");
                 .Should()
                 .Be(@"SELECT *
 FROM dbo.[Foo]
-WHERE ([Int] > @int_0)
+WHERE ([Int] > @int)
 AND ([Int] < @int_1)
 ORDER BY [Id]");
         }

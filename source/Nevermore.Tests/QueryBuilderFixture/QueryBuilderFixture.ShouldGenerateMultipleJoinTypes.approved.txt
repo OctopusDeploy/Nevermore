@@ -3,7 +3,7 @@ FROM dbo.[Orders] ALIAS_Orders_2
 INNER JOIN (
     SELECT *
     FROM dbo.[Customers]
-    WHERE ([Name] LIKE @name_0)
+    WHERE ([Name] LIKE @name)
 ) ALIAS_GENERATED_1
 ON ALIAS_Orders_2.[CustomerId] = ALIAS_GENERATED_1.[Id]
 LEFT HASH JOIN dbo.[Account] ALIAS_Account_3

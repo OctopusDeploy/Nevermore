@@ -64,8 +64,8 @@ namespace Nevermore.Tests.Delete
                 .ParameterValue(5)
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] > @price_0)");
-            parameters["price_0"].Should().Be(5);
+            query.Should().Contain(@"WHERE ([Price] > @price)");
+            parameters["price"].Should().Be(5);
         }
 
         [Test]
@@ -76,9 +76,9 @@ namespace Nevermore.Tests.Delete
                 .ParameterValues(5, 10)
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] BETWEEN @lowerprice_0 AND @upperprice_1)");
-            parameters["lowerprice_0"].Should().Be(5);
-            parameters["upperprice_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] BETWEEN @lowerprice AND @upperprice)");
+            parameters["lowerprice"].Should().Be(5);
+            parameters["upperprice"].Should().Be(10);
         }
 
         [Test]
@@ -89,9 +89,9 @@ namespace Nevermore.Tests.Delete
                 .ParameterValues(new object[] {5, 10})
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] IN (@lowerprice_0, @upperprice_1))");
-            parameters["lowerprice_0"].Should().Be(5);
-            parameters["upperprice_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] IN (@lowerprice, @upperprice))");
+            parameters["lowerprice"].Should().Be(5);
+            parameters["upperprice"].Should().Be(10);
         }
 
         [Test]
@@ -101,8 +101,8 @@ namespace Nevermore.Tests.Delete
                 .Where("Price", UnarySqlOperand.GreaterThan, 5)
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] > @price_0)");
-            parameters["price_0"].Should().Be(5);
+            query.Should().Contain(@"WHERE ([Price] > @price)");
+            parameters["price"].Should().Be(5);
         }
 
         [Test]
@@ -112,9 +112,9 @@ namespace Nevermore.Tests.Delete
                 .Where("Price", BinarySqlOperand.Between, 5, 10)
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] BETWEEN @startvalue_0 AND @endvalue_1)");
-            parameters["startvalue_0"].Should().Be(5);
-            parameters["endvalue_1"].Should().Be(10);
+            query.Should().Contain(@"WHERE ([Price] BETWEEN @startvalue AND @endvalue)");
+            parameters["startvalue"].Should().Be(5);
+            parameters["endvalue"].Should().Be(10);
         }
 
         [Test]
@@ -124,10 +124,10 @@ namespace Nevermore.Tests.Delete
                 .Where("Price", ArraySqlOperand.In, new [] { 5, 10, 15 })
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] IN (@price0_0, @price1_1, @price2_2))");
-            parameters["price0_0"].Should().Be("5");
-            parameters["price1_1"].Should().Be("10");
-            parameters["price2_2"].Should().Be("15");
+            query.Should().Contain(@"WHERE ([Price] IN (@price0, @price1, @price2))");
+            parameters["price0"].Should().Be("5");
+            parameters["price1"].Should().Be("10");
+            parameters["price2"].Should().Be("15");
         }
 
         [Test]
@@ -138,9 +138,9 @@ namespace Nevermore.Tests.Delete
                 .Where("Price", UnarySqlOperand.LessThan, 10)
                 .Delete();
 
-            query.Should().Contain(@"WHERE ([Price] > @price_0)
+            query.Should().Contain(@"WHERE ([Price] > @price)
 AND ([Price] < @price_1)");
-            parameters["price_0"].Should().Be(5);
+            parameters["price"].Should().Be(5);
             parameters["price_1"].Should().Be(10);
         }
 

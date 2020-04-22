@@ -3,7 +3,7 @@ FROM dbo.[Orders] ALIAS_Orders_2
 LEFT HASH JOIN (
     SELECT *
     FROM dbo.[Account]
-    WHERE ([Name] = @name_0)
+    WHERE ([Name] = @name)
 ) ALIAS_GENERATED_1
 ON ALIAS_Orders_2.[AccountId] = ALIAS_GENERATED_1.[Id]
 LEFT HASH JOIN (

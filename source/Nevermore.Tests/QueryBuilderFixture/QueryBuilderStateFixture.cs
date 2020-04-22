@@ -52,9 +52,9 @@ ORDER BY [Id]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
 FROM dbo.[Accounts])
-    SELECT @true_0
+    SELECT @true
 ELSE
-    SELECT @false_1");
+    SELECT @false");
 
             queryBuilder.ToList();
 
@@ -112,8 +112,8 @@ FROM (
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
     FROM dbo.[Accounts]
 ) ALIAS_GENERATED_1
-WHERE ([RowNum] >= @_minrow_0)
-AND ([RowNum] <= @_maxrow_1)
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
             queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
@@ -141,8 +141,8 @@ FROM (
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
     FROM dbo.[Accounts]
 ) ALIAS_GENERATED_1
-WHERE ([RowNum] >= @_minrow_0)
-AND ([RowNum] <= @_maxrow_1)
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
             queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
@@ -221,7 +221,7 @@ ORDER BY [Id]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM dbo.[Accounts]
-WHERE ([Id] = @id_0)
+WHERE ([Id] = @id)
 ORDER BY [Id]");
         }
 

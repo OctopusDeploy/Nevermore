@@ -9,5 +9,5 @@ FROM (
     ON eventRelatedDocuments.[EventId] = e.[Id]
     WHERE (e.category = 'DeploymentSucceeded')
 ) d
-WHERE ([Rank] = @rank_0)
+WHERE ([Rank] = @rank)
 ORDER BY d.[Id]

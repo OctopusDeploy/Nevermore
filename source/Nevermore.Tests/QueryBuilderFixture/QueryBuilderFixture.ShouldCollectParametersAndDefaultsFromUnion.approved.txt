@@ -1,6 +1,6 @@
 CREATE PROCEDURE dbo.[ShouldCollectParametersAndDefaultsFromUnion]
 (
-    @name_0 NVARCHAR(MAX) = 'ABC'
+    @name NVARCHAR(MAX) = 'ABC'
 )
 AS
 BEGIN (
@@ -11,7 +11,7 @@ BEGIN (
         UNION
         SELECT [Id] AS [Id]
         FROM dbo.[Account]
-        WHERE ([Name] = @name_0)
+        WHERE ([Name] = @name)
     ) ALIAS_GENERATED_1
     ORDER BY ALIAS_GENERATED_1.[Id]
 )

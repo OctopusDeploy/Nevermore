@@ -120,7 +120,7 @@ namespace Nevermore.Advanced
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), builder, this);
+            return new DeleteQueryBuilder<TDocument>(ParameterNameGenerator, builder, this);
         }
 
         public string AllocateId(Type documentType)

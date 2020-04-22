@@ -30,8 +30,7 @@ namespace Nevermore.Advanced
         
         DbConnection connection;
 
-        // TODO: Keeping this here results in a different query plan in SQL for every query! Need to figure out a better way 
-        readonly UniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
+        protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
 
         // To help track deadlocks
         readonly List<string> commandTrace = new List<string>();
@@ -160,14 +159,12 @@ namespace Nevermore.Advanced
 
         public ITableSourceQueryBuilder<TRecord> TableQuery<TRecord>() where TRecord : class
         {
-            uniqueParameterNameGenerator.Push();
-            return new TableSourceQueryBuilder<TRecord>(configuration.DocumentMaps.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(configuration.DocumentMaps.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            uniqueParameterNameGenerator.Push();
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
@@ -352,6 +349,11 @@ namespace Nevermore.Advanced
             var timedSection = new TimedSection(Log, ms => $"{operationName} took {ms}ms in transaction '{name}': {command.Statement}", 300);
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
+            if (command.ParameterValues != null)
+            {
+                var keys = command.ParameterValues.Keys.ToArray();
+                ParameterNameGenerator.Return(keys);
+            }
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
         }
 

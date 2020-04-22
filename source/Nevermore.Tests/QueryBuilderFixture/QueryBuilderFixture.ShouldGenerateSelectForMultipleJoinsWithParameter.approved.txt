@@ -2,18 +2,18 @@ SELECT ALIAS_GENERATED_2.*
 FROM (
     SELECT *
     FROM dbo.[Orders]
-    WHERE ([CustomerId] = @customerid_0)
+    WHERE ([CustomerId] = @customerid)
 ) ALIAS_GENERATED_2
 INNER JOIN (
     SELECT *
     FROM dbo.[Customers]
-    WHERE ([Name] = @name_1)
+    WHERE ([Name] = @name)
 ) ALIAS_GENERATED_1
 ON ALIAS_GENERATED_2.[CustomerId] = ALIAS_GENERATED_1.[Id]
 INNER JOIN (
     SELECT *
     FROM dbo.[Accounts]
-    WHERE ([Name] = @name_2)
+    WHERE ([Name] = @name_1)
 ) ALIAS_GENERATED_3
 ON ALIAS_GENERATED_2.[AccountId] = ALIAS_GENERATED_3.[Id]
 ORDER BY ALIAS_GENERATED_2.[Id]

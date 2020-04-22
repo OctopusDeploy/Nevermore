@@ -127,15 +127,15 @@ namespace Nevermore.Tests.Mapping
         [Test]
         public void ShouldSetProperty10()
         {
-            var value = new List<string> {"hello", "goodbye", "HELLO"};
+            var value = new string[] {"hello", "goodbye", "HELLO"};
             var handler = CreatePropertyHandler("Property10");
             handler.Read(instance).Should().NotBeNull();
-            handler.Read(instance).Should().BeOfType<ReferenceCollection>().Which.Count.Should().Be(0);
+            handler.Read(instance).Should().BeOfType<RefCollection>().Which.Count.Should().Be(0);
             handler.Write(instance, value);
-            handler.Read(instance).Should().BeOfType<ReferenceCollection>().Which.Should().NotBeSameAs(value);
-            handler.Read(instance).Should().BeOfType<ReferenceCollection>().Which.Count.Should().Be(2);
-            handler.Read(instance).Should().BeOfType<ReferenceCollection>().Which.Contains("hello").Should().BeTrue();
-            handler.Read(instance).Should().BeOfType<ReferenceCollection>().Which.Contains("goodbye").Should().BeTrue();
+            handler.Read(instance).Should().BeOfType<RefCollection>().Which.Should().NotBeSameAs(value);
+            handler.Read(instance).Should().BeOfType<RefCollection>().Which.Count.Should().Be(2);
+            handler.Read(instance).Should().BeOfType<RefCollection>().Which.Contains("hello").Should().BeTrue();
+            handler.Read(instance).Should().BeOfType<RefCollection>().Which.Contains("goodbye").Should().BeTrue();
         }
 
         IPropertyHandler CreatePropertyHandler(string propertyName)
@@ -157,7 +157,15 @@ namespace Nevermore.Tests.Mapping
             public HashSet<string> Property7 { get; private set; }
             public HashSet<string> Property8 { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             public List<string> Property9 { get; } = new List<string>();
-            public ReferenceCollection Property10 { get; } = new ReferenceCollection();
+            public RefCollection Property10 { get; } = new RefCollection();
+        }
+    }
+
+    internal class RefCollection : HashSet<string>
+    {
+        public RefCollection() : base(StringComparer.OrdinalIgnoreCase)
+        {
+            
         }
     }
 }
