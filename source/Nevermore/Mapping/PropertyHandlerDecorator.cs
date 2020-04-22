@@ -1,10 +1,10 @@
 namespace Nevermore.Mapping
 {
-    public class PropertyHandlerDecorator : IPropertyHandler
+    public abstract class PropertyHandlerDecorator : IPropertyHandler
     {
         readonly IPropertyHandler original;
 
-        public PropertyHandlerDecorator(IPropertyHandler original)
+        protected PropertyHandlerDecorator(IPropertyHandler original)
         {
             this.original = original;
         }

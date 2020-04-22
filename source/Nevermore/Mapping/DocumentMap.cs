@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using Nevermore.Advanced.PropertyHandlers;
 
 namespace Nevermore.Mapping
 {
@@ -18,22 +19,50 @@ namespace Nevermore.Mapping
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected internal new IColumnMappingBuilder IdColumn => base.IdColumn;
 
-        protected IColumnMappingBuilder Id<T>(Expression<Func<TDocument, T>> property, string columnName = null)
+        protected IColumnMappingBuilder Id<T>(Expression<Func<TDocument, T>> property)
         {
-            base.IdColumn = new ColumnMapping(columnName, GetPropertyInfo(property));
+            return Id<T>(null, property);
+        }
+
+        protected IColumnMappingBuilder Id<T>(string columnName, Expression<Func<TDocument, T>> property)
+        {
+            var prop = GetPropertyInfo(property)
+                ?? throw new Exception("The expression for the Id column must be a property.");
+            base.IdColumn = new ColumnMapping(columnName ?? prop.Name, typeof(T), new PropertyHandler(prop));
             return base.IdColumn;
         }
 
-        protected IColumnMappingBuilder Column<T>(string columnName, IPropertyHandler handler)
+        protected IColumnMappingBuilder Column<TProperty>(Expression<Func<TDocument, TProperty>> getter)
         {
-            var column = new ColumnMapping(columnName, typeof(T), handler);
+            return Column(null, getter, null);
+        }
+
+        protected IColumnMappingBuilder Column<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> getter)
+        {
+            return Column(columnName, getter, null);
+        }
+
+        protected IColumnMappingBuilder Column<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> getter, Action<TDocument, TProperty> setter)
+        {
+            var property = GetPropertyInfo(getter ?? throw new ArgumentNullException(nameof(getter)));
+            if (property != null && setter == null)
+            {
+                return Column(columnName ?? property.Name, typeof(TProperty), new PropertyHandler(property));
+            }
+
+            return Column(columnName ?? throw new ArgumentNullException(nameof(columnName)), typeof(TProperty), new DelegatePropertyHandler<TDocument, TProperty>(getter.Compile(), setter));
+        }
+
+        protected IColumnMappingBuilder Column(string columnName, Type propertyType, IPropertyHandler handler)
+        {
+            var column = new ColumnMapping(columnName, propertyType, handler);
             Columns.Add(column);
             return column;
         }
-        
-        protected IColumnMappingBuilder Column<T>(Expression<Func<TDocument, T>> property, string columnName = null)
+
+        protected IColumnMappingBuilder Column<TProperty>(string columnName, Func<TDocument, TProperty> getter, Action<TDocument, TProperty> setter = null)
         {
-            var column = new ColumnMapping(columnName, GetPropertyInfo(property));
+            var column = new ColumnMapping(columnName, typeof(TProperty), new DelegatePropertyHandler<TDocument, TProperty>(getter, setter));
             Columns.Add(column);
             return column;
         }
@@ -49,15 +78,11 @@ namespace Nevermore.Mapping
         {
             var member = propertyLambda.Body as MemberExpression;
             if (member == null)
-                throw new ArgumentException(string.Format(
-                    "Expression '{0}' refers to a method, not a property.",
-                    propertyLambda));
+                return null;
 
             var propInfo = member.Member as PropertyInfo;
             if (propInfo == null)
-                throw new ArgumentException(string.Format(
-                    "Expression '{0}' refers to a field, not a property.",
-                    propertyLambda));
+                return null;
 
             return propInfo;
         }
@@ -126,7 +151,7 @@ namespace Nevermore.Mapping
             {
                 if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    IdColumn = new ColumnMapping("Id", property);
+                    IdColumn = new ColumnMapping("Id", property.PropertyType, new PropertyHandler(property));
                 }
             }
         }

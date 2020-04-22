@@ -6,11 +6,13 @@ namespace Nevermore.Advanced.PropertyHandlers
 {
     internal sealed class PropertyHandler : IPropertyHandler
     {
+        readonly PropertyInfo propertyInfo;
         readonly Action<object, object> setterCompiled;
         readonly Func<object, object> getterCompiled;
 
         public PropertyHandler(PropertyInfo propertyInfo)
         {
+            this.propertyInfo = propertyInfo;
             var targetArgument = Expression.Parameter(typeof(object), "target");
 
             var setterMethod = propertyInfo.GetSetMethod(true);
@@ -45,7 +47,7 @@ namespace Nevermore.Advanced.PropertyHandlers
         public object Read(object target)
         {
             if (!CanRead)
-                throw new InvalidOperationException("Cannot read a property value without a getter. If the property is meant to be write-only, mark it with LoadOnly() on the column definition in the DocumentMap.");
+                throw new InvalidOperationException($"Cannot read a property value without a getter ({propertyInfo.Name} on {propertyInfo.DeclaringType?.Name ?? "?"}). If the property is meant to be write-only, mark it with LoadOnly() on the column definition in the DocumentMap.");
 
             return getterCompiled(target);
         }
@@ -55,7 +57,7 @@ namespace Nevermore.Advanced.PropertyHandlers
         public void Write(object target, object value)
         {
             if (!CanWrite)
-                throw new InvalidOperationException("Cannot write to a property without a setter. If the property is meant to be read-only, mark it with StoreOnly() on the column definition in the DocumentMap.");
+                throw new InvalidOperationException($"Cannot write to a property without a setter ({propertyInfo.Name} on {propertyInfo.DeclaringType?.Name ?? "?"}). If the property is meant to be read-only, mark it with StoreOnly() on the column definition in the DocumentMap.");
 
             setterCompiled(target, value);
         }

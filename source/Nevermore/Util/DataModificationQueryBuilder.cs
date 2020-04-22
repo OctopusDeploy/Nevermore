@@ -7,6 +7,7 @@ using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
+#pragma warning disable 618
 
 namespace Nevermore.Util
 {
@@ -375,7 +376,7 @@ namespace Nevermore.Util
                     from i in documentAndIds
                     from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
                     let relatedTableName = mappings.Resolve(relId.type).TableName
-                    select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName: relatedTableName)
+                    select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName)
                 ).Distinct().ToArray()
                 select new RelatedDocumentTableData
                 {

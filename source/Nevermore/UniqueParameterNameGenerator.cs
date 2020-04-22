@@ -5,9 +5,10 @@
         string GenerateUniqueParameterName(string parameterName);
     }
 
-    class UniqueParameterNameGenerator : IUniqueParameterNameGenerator
+    internal class UniqueParameterNameGenerator : IUniqueParameterNameGenerator
     {
-        int parameterCount = 0;
+        int parameterCount;
+        
         public string GenerateUniqueParameterName(string parameterName)
         {
             return $"{new Parameter(parameterName).ParameterName}_{parameterCount++}";

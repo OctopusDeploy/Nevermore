@@ -16,20 +16,12 @@ namespace Nevermore.Mapping
             Type = type ?? throw new ArgumentNullException(nameof(type));
             ColumnName = columnName ?? throw new ArgumentNullException(nameof(columnName));
             PropertyHandler = handler ?? throw new ArgumentNullException(nameof(handler));
-        }
-        
-        internal ColumnMapping(string columnName, PropertyInfo property)
-        {
-            Property = property;
-            Type = property.PropertyType;
-            ColumnName = columnName ?? property.Name;
-            PropertyHandler = new PropertyHandler(property);
-
-            if (property.Name == "Id")
+            
+            if (columnName == "Id")
             {
                 maxLength = DefaultPrimaryKeyIdLength;
             }
-            else if (property.Name.EndsWith("Id")) // Foreign keys
+            else if (columnName.EndsWith("Id")) // Foreign keys
             {
                 maxLength = DefaultMaxForeignKeyIdLength;
             }
