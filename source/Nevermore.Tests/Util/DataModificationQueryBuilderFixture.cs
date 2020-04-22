@@ -10,6 +10,7 @@ using Nevermore.Querying.AST;
 using Nevermore.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
+#pragma warning disable 618
 
 namespace Nevermore.Tests.Util
 {

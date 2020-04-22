@@ -119,7 +119,7 @@ namespace Nevermore.Advanced
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(uniqueParameterNameGenerator, builder, this);
+            return new DeleteQueryBuilder<TDocument>(new UniqueParameterNameGenerator(), builder, this);
         }
 
         public string AllocateId(Type documentType)
@@ -147,14 +147,14 @@ namespace Nevermore.Advanced
         public void Commit()
         {
             configuration.HookRegistry.BeforeCommit(this);
-            transaction.Commit();
+            Transaction.Commit();
             configuration.HookRegistry.AfterCommit(this);
         }
 
         public async Task CommitAsync()
         {
             await configuration.HookRegistry.BeforeCommitAsync(this);
-            await transaction.CommitAsync();
+            await Transaction.CommitAsync();
             await configuration.HookRegistry.AfterCommitAsync(this);
         }
     }
