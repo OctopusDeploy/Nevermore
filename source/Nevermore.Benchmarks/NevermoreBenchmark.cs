@@ -86,7 +86,7 @@ namespace Nevermore.Benchmarks
         public List<Customer> List100CustomersQueryWhereLinq()
         {
             return EnsureResults(
-                transaction.TableQuery<Customer>().Where(c => c.FirstName == "Robert").Take(100).ToList()
+                transaction.TableQuery<Customer>().WhereParameterised("Foo", UnarySqlOperand.Equal, new Parameter("P")).ParameterValue("Robert").Take(100).ToList()
             );
         }
 
