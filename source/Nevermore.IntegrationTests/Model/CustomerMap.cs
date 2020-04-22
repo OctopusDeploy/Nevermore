@@ -8,7 +8,7 @@ namespace Nevermore.IntegrationTests.Model
         {
             Id().MaxLength(100);
             Column(m => m.FirstName).MaxLength(20);
-            Column(m => m.LastName);
+            Column(m => m.LastName).MaxLength(50);
             Column(m => m.Nickname);
             Column(m => m.Roles);
             Column(m => m.RowVersion).LoadOnly();
