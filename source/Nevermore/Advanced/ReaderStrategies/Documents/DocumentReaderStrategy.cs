@@ -15,7 +15,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
     internal class DocumentReaderStrategy : IReaderStrategy
     {
         readonly RelationalStoreConfiguration configuration;
-        readonly ConcurrentDictionary<int, CompiledExpression<DocumentReaderFunc>> cache = new ConcurrentDictionary<int, CompiledExpression<DocumentReaderFunc>>();
+        readonly ConcurrentDictionary<string, CompiledExpression<DocumentReaderFunc>> cache = new ConcurrentDictionary<string, CompiledExpression<DocumentReaderFunc>>();
         
         public DocumentReaderStrategy(RelationalStoreConfiguration configuration)
         {
@@ -45,22 +45,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
 
                 var rowNumber = 0;
                 return dbDataReader =>
-                {   
+                {
+                    rowNumber++;
+                    context.Column = -1;
+
                     if (compiled == null)
                     {
-                        // For each query, we create a plan. This involves looking at the columns returned from the query, 
-                        // matching them to the document map columns, then generating and compiling an expression optimized
-                        // for handling this query. It means that the first query will be slow, but every subsequent query
-                        // will be faster. 
-                        // Our cache uses the SQL statement, as that tells us what columns to expect ("select *..."),
-                        // and the field count (in case the schema or something else changes). The plans are also per
-                        // mapped type being queried. Note that this is the type that the map uses - the actual class 
-                        // being queried might be e.g., AzureAccount, while the type mapped is the Account base class.
-                        var cacheKey = HashCode.Combine(mapping.Type, command.Statement, dbDataReader.FieldCount);
-                        compiled = cache.GetOrAdd(cacheKey, _ => Compile(mapping, dbDataReader));
+                        compiled = GetCachedCompiledExpression(dbDataReader, mapping);
                     }
-
-                    context.Column = -1;
 
                     try
                     {
@@ -75,6 +67,26 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                     }
                 };
             };
+        }
+
+        // For each query, we create and compile an expression. This involves looking at the columns returned from the query, 
+        // matching them to the document map columns, then generating and compiling an expression optimized for handling
+        // this query. It means that the first query will be slow, but every subsequent query will be faster. 
+        // Our cache key is based on the columns being returned in the data reader, plus the type. Note that
+        // this is the type that the map uses - the actual class being queried might be e.g., AzureAccount,
+        // while the type mapped is the Account base class.
+        CompiledExpression<DocumentReaderFunc> GetCachedCompiledExpression(IDataReader dbDataReader, DocumentMap mapping)
+        {
+            var fieldCount = dbDataReader.FieldCount;
+            var fieldNames = new string[fieldCount + 1];
+            for (var i = 0; i < fieldCount; i++)
+            {
+                fieldNames[i] = dbDataReader.GetName(i);
+            }
+
+            fieldNames[fieldCount] = mapping.Type.Name;
+            var cacheKey = string.Join("|", fieldNames);
+            return cache.GetOrAdd(cacheKey, _ => Compile(mapping, dbDataReader));
         }
 
         CompiledExpression<DocumentReaderFunc> Compile(DocumentMap map, IDataReader firstRow)
