@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 foreach (var item in StartingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.RelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
 
                 trn.Commit();
             }
@@ -61,7 +61,7 @@ namespace Nevermore.IntegrationTests
             {
                 trn.ExecuteNonQuery($"INSERT INTO [Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
                 foreach (var reference in referenceIds)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.DefaultRelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
+                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.RelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
 
                 trn.Commit();
             }
@@ -243,7 +243,7 @@ namespace Nevermore.IntegrationTests
 
         RelatedDocumentRow[] GetReferencesFromDb()
         {
-            var map = new OrderMap().RelatedDocumentsMappings.First();
+            var map = ((IDocumentMap)new OrderMap()).Build().RelatedDocumentsMappings.First();
 
             Func<IDataReader, RelatedDocumentRow> Callback()
                 => reader
@@ -258,7 +258,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 return trn.Stream(
-                        $"SELECT * FROM [{DocumentMap.DefaultRelatedDocumentTableName}]",
+                        $"SELECT * FROM [{DocumentMap.RelatedDocumentTableName}]",
                         new CommandParameterValues(),
                         m => m.Read(Callback())
                     )

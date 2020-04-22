@@ -22,13 +22,11 @@ namespace Nevermore.Tests.Util
         public DataModificationQueryBuilderFixture()
         {
             var mappings = new DocumentMapRegistry();
-            mappings.Register(new DocumentMap[]
-            {
+            mappings.Register(
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
                 new TestDocumentWithMultipleRelatedDocumentsMap(),
-                new OtherMap()
-            });
+                new OtherMap());
             builder = new DataModificationQueryBuilder(
                 mappings,
                 new NewtonsoftDocumentSerializer(mappings),

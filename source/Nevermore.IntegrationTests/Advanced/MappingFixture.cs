@@ -86,7 +86,7 @@ namespace Nevermore.IntegrationTests.Advanced
         [Test, Order(2)]
         public void ShouldWorkIfProp2IsSaveOnly()
         {
-            var map = new UserMap();
+            var map = ((IDocumentMap)new UserMap()).Build();
             // Pretend the user edited their document map to set it to SaveOnly
             ((IColumnMappingBuilder) map.Columns.Single(c => c.ColumnName == "Prop2")).SaveOnly();
             Configuration.DocumentMaps.Register(map);

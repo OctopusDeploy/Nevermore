@@ -19,20 +19,25 @@ namespace Nevermore.Mapping
 
         public void Register(DocumentMap map)
         {
-            Register(new List<DocumentMap> { map });
+            map.Validate();
+            mappings[map.Type] = map;
         }
 
-        public void Register(params DocumentMap[] mappingsToAdd)
+        public void Register(IDocumentMap map)
+        {
+            Register(new List<IDocumentMap> { map });
+        }
+
+        public void Register(params IDocumentMap[] mappingsToAdd)
         {
             Register(mappingsToAdd.AsEnumerable());
         }
         
-        public void Register(IEnumerable<DocumentMap> mappingsToAdd)
+        public void Register(IEnumerable<IDocumentMap> mappingsToAdd)
         {
             foreach (var mapping in mappingsToAdd)
             {
-                mapping.Validate();
-                mappings[mapping.Type] = mapping;
+                Register(mapping.Build());
             }
         }
 

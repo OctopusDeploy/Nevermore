@@ -7,70 +7,167 @@ using Nevermore.Advanced.PropertyHandlers;
 
 namespace Nevermore.Mapping
 {
-    public abstract class DocumentMap<TDocument> : DocumentMap
+    public abstract class DocumentMap<TDocument> : IDocumentMap
     {
+        readonly DocumentMap map = InitializeDefault();
+
         protected DocumentMap()
         {
-            InitializeDefault(typeof (TDocument));
         }
-
-        [Browsable(false)]
-        [Bindable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        protected internal new IColumnMappingBuilder IdColumn => base.IdColumn;
-
-        protected IColumnMappingBuilder Id<T>(Expression<Func<TDocument, T>> property)
+        
+        /// <summary>
+        /// Gets or sets the name of the table that this document will be stored in.
+        /// </summary>
+        protected string SchemaName
         {
-            return Id<T>(null, property);
+            get => map.SchemaName;
+            set => map.SchemaName = value;
         }
 
-        protected IColumnMappingBuilder Id<T>(string columnName, Expression<Func<TDocument, T>> property)
+        /// <summary>
+        /// Gets or sets the name of the table that this document will be stored in.
+        /// </summary>
+        protected string TableName
+        {
+            get => map.TableName;
+            set => map.TableName = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the prefix to be used before IDs. If you override <see cref="IdFormat"/>, this property won't
+        /// be used.
+        /// </summary>
+        protected string IdPrefix
+        {
+            get => map.IdPrefix;
+            set => map.IdPrefix = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a formatting function used to format generated document IDs. Examples: i => "C" + i;
+        /// </summary>
+        protected Func<int, string> IdFormat
+        {
+            get => map.IdFormat;
+            set => map.IdFormat = value;
+        }
+        
+        /// <summary>
+        /// Tells Nevermore whether to expect large documents or not. Defaults to false, since most tables tend to only
+        /// have small documents. However, this property is self-tuning: if Nevermore reads or writes a document
+        /// larger than 1K, it will set this to true.
+        /// </summary>
+        protected bool ExpectLargeDocuments
+        {
+            get => map.ExpectLargeDocuments;
+            set => map.ExpectLargeDocuments = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the JSON storage mode. See https://github.com/OctopusDeploy/Nevermore/wiki/Compression for details.
+        /// </summary>
+        protected JsonStorageFormat JsonStorageFormat
+        {
+            get => map.JsonStorageFormat;
+            set => map.JsonStorageFormat = value;
+        }
+        
+        /// <summary>
+        /// Configures the ID of the document.
+        /// </summary>
+        /// <returns>A builder to further configure the ID.</returns>
+        protected IColumnMappingBuilder Id()
+        {
+            return map.IdColumn;
+        }
+        
+        /// <summary>
+        /// Configures the ID of the document.
+        /// </summary>
+        /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the Id column.</typeparam>
+        /// <returns>A builder to further configure the ID.</returns>
+        protected IColumnMappingBuilder Id<TProperty>(Expression<Func<TDocument, TProperty>> property)
+        {
+            return Id<TProperty>(null, property);
+        }
+
+        /// <summary>
+        /// Configures the ID of the document.
+        /// </summary>
+        /// <param name="columnName">The name of the column that the ID is stored in.</param>
+        /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the Id column.</typeparam>
+        /// <returns>A builder to further configure the ID.</returns>
+        protected IColumnMappingBuilder Id<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> property)
         {
             var prop = GetPropertyInfo(property)
                 ?? throw new Exception("The expression for the Id column must be a property.");
-            base.IdColumn = new ColumnMapping(columnName ?? prop.Name, typeof(T), new PropertyHandler(prop));
-            return base.IdColumn;
+            map.IdColumn = new ColumnMapping(columnName ?? prop.Name, typeof(TProperty), new PropertyHandler(prop), prop);
+            return map.IdColumn;
         }
 
+        /// <summary>
+        /// Defines a column. The column name will be the name of the property.
+        /// </summary>
+        /// <param name="getter">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the column.</typeparam>
+        /// <returns>A builder to further configure the column mapping.</returns>
         protected IColumnMappingBuilder Column<TProperty>(Expression<Func<TDocument, TProperty>> getter)
         {
             return Column(null, getter, null);
         }
 
+        /// <summary>
+        /// Defines a column. The column name will be the name of the property.
+        /// </summary>
+        /// <param name="columnName">The name of the column that the property will be stored in.</param>
+        /// <param name="getter">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the column.</typeparam>
+        /// <returns>A builder to further configure the column mapping.</returns>
         protected IColumnMappingBuilder Column<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> getter)
         {
             return Column(columnName, getter, null);
         }
 
+        /// <summary>
+        /// Defines a column. The column name will be the name of the property.
+        /// </summary>
+        /// <param name="columnName">The name of the column that the property will be stored in.</param>
+        /// <param name="getter">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <param name="setter">A func called when reading data from the database and setting it on the object.</param>
+        /// <typeparam name="TProperty">The property type of the column.</typeparam>
+        /// <returns>A builder to further configure the column mapping.</returns>
         protected IColumnMappingBuilder Column<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> getter, Action<TDocument, TProperty> setter)
         {
             var property = GetPropertyInfo(getter ?? throw new ArgumentNullException(nameof(getter)));
             if (property != null && setter == null)
             {
-                return Column(columnName ?? property.Name, typeof(TProperty), new PropertyHandler(property));
+                return Column(columnName ?? property.Name, typeof(TProperty), new PropertyHandler(property), property);
             }
 
-            return Column(columnName ?? throw new ArgumentNullException(nameof(columnName)), typeof(TProperty), new DelegatePropertyHandler<TDocument, TProperty>(getter.Compile(), setter));
+            return Column(columnName ?? throw new ArgumentNullException(nameof(columnName)), typeof(TProperty), new DelegatePropertyHandler<TDocument, TProperty>(getter.Compile(), setter), property);
         }
 
-        protected IColumnMappingBuilder Column(string columnName, Type propertyType, IPropertyHandler handler)
+        /// <summary>
+        /// Defines a column. The column name will be the name of the property.
+        /// </summary>
+        /// <param name="columnName">The name of the column that the property will be stored in.</param>
+        /// <param name="propertyType">The type of the property being read or written. This helps Nevermore to work out how to read it from the database, and which type handlers to call.</param>
+        /// <param name="handler">A custom property handler.</param>
+        /// <param name="prop">If handler uses a property, the property, so it can be excluded from JSON. Can be null.</param>
+        /// <returns>A builder to further configure the column mapping.</returns>
+        protected IColumnMappingBuilder Column(string columnName, Type propertyType, IPropertyHandler handler, PropertyInfo prop = null)
         {
-            var column = new ColumnMapping(columnName, propertyType, handler);
-            Columns.Add(column);
+            var column = new ColumnMapping(columnName, propertyType, handler, prop);
+            map.Columns.Add(column);
             return column;
         }
 
-        protected IColumnMappingBuilder Column<TProperty>(string columnName, Func<TDocument, TProperty> getter, Action<TDocument, TProperty> setter = null)
-        {
-            var column = new ColumnMapping(columnName, typeof(TProperty), new DelegatePropertyHandler<TDocument, TProperty>(getter, setter));
-            Columns.Add(column);
-            return column;
-        }
-
-        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DefaultRelatedDocumentTableName)
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName)
         {
             var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
-            RelatedDocumentsMappings.Add(mapping);
+            map.RelatedDocumentsMappings.Add(mapping);
             return mapping;
         }
 
@@ -87,46 +184,86 @@ namespace Nevermore.Mapping
             return propInfo;
         }
 
+        /// <summary>
+        /// Defines a unique constraint. Nevermore will provide friendly error details if the unique constraint is violated.
+        /// </summary>
+        /// <param name="constraintName">The name of the constraint in SQL (or at least a partial match).</param>
+        /// <param name="columnName">The name of the column that the constraint relates to.</param>
+        /// <param name="errorMessage">An error message to put in the exception when the unique constraint is violated.</param>
+        /// <returns>A builder to further configure the unique constraint.</returns>
         protected UniqueRule Unique(string constraintName, string columnName, string errorMessage)
         {
             var unique = new UniqueRule(constraintName, columnName) {Message = errorMessage};
-            UniqueConstraints.Add(unique);
+            map.UniqueConstraints.Add(unique);
             return unique;
         }
 
+        /// <summary>
+        /// Defines a unique constraint. Nevermore will provide friendly error details if the unique constraint is violated.
+        /// </summary>
+        /// <param name="constraintName">The name of the constraint in SQL (or at least a partial match).</param>
+        /// <param name="columnNames">The name of the columns that the constraint relates to.</param>
+        /// <param name="errorMessage">An error message to put in the exception when the unique constraint is violated.</param>
+        /// <returns>A builder to further configure the unique constraint.</returns>
         protected UniqueRule Unique(string constraintName, string[] columnNames, string errorMessage)
         {
             var unique = new UniqueRule(constraintName, columnNames) {Message = errorMessage};
-            UniqueConstraints.Add(unique);
+            map.UniqueConstraints.Add(unique);
             return unique;
+        }
+        
+        static DocumentMap InitializeDefault()
+        {
+            return new DocumentMap
+            {
+                Type = typeof(TDocument),
+                IdColumn = GetDefaultIdColumn(),
+                SchemaName = "dbo",
+                TableName = typeof(TDocument).Name,
+                IdPrefix = typeof(TDocument).Name + "s",
+                JsonStorageFormat = JsonStorageFormat.TextOnly
+            };
+        }
+
+        static ColumnMapping GetDefaultIdColumn()
+        {
+            var properties = typeof(TDocument).GetProperties();
+            foreach (var property in properties)
+            {
+                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ColumnMapping("Id", property.PropertyType, new PropertyHandler(property), property);
+                }
+            }
+
+            return null;
+        }
+
+        DocumentMap IDocumentMap.Build()
+        {
+            return map;
         }
     }
 
-    public abstract class DocumentMap
+    public class DocumentMap
     {
-        public const string DefaultRelatedDocumentTableName = "RelatedDocument";
+        public const string RelatedDocumentTableName = "RelatedDocument";
         
-        protected DocumentMap()
+        public DocumentMap()
         {
             Columns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
+            IdFormat = key => $"{IdPrefix}-{key}";
         }
 
-        public string TableName { get; protected set; }
-        public string IdPrefix { get; protected set; }
-        public Func<int, string> IdFormat { get; protected set; }
-
-        public Type Type { get; protected set; }
-        public ColumnMapping IdColumn { get; protected set; }
-        
+        public Type Type { get; set; }
+        public ColumnMapping IdColumn { get; set; }
         public JsonStorageFormat JsonStorageFormat { get; set; }
-        
-        /// <summary>
-        /// Tells Nevermore whether to expect large documents or not. Defaults to false, since most tables tend to only
-        /// have small documents. However, this property is self-tuning: if Nevermore reads or writes a document
-        /// larger than  
-        /// </summary>
+        public string TableName { get; set; }
+        public string IdPrefix { get; set; }
+        public Func<int, string> IdFormat { get; set; }
+
         public bool ExpectLargeDocuments { get; set; }
 
         /// <summary>
@@ -135,26 +272,7 @@ namespace Nevermore.Mapping
         public List<ColumnMapping> Columns { get; private set; }
         public List<UniqueRule> UniqueConstraints { get; private set; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
-        
-        protected void InitializeDefault(Type type)
-        {
-            Type = type;
-            TableName = type.Name;
-            IdPrefix = TableName + "s";
-            IdFormat = key => $"{IdPrefix}-{key}";
-
-            var properties = type.GetTypeInfo().GetProperties();
-
-            JsonStorageFormat = JsonStorageFormat.TextOnly;
-
-            foreach (var property in properties)
-            {
-                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
-                {
-                    IdColumn = new ColumnMapping("Id", property.PropertyType, new PropertyHandler(property));
-                }
-            }
-        }
+        public string SchemaName { get; set; }
 
         public void Validate()
         {

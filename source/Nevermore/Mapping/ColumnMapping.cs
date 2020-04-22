@@ -11,17 +11,20 @@ namespace Nevermore.Mapping
         ColumnDirection direction;
         int? maxLength;
 
-        internal ColumnMapping(string columnName, Type type, IPropertyHandler handler)
+        internal ColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
         {
             Type = type ?? throw new ArgumentNullException(nameof(type));
             ColumnName = columnName ?? throw new ArgumentNullException(nameof(columnName));
             PropertyHandler = handler ?? throw new ArgumentNullException(nameof(handler));
-            
-            if (columnName == "Id")
+            Property = property;
+
+            if (Property == null) 
+                return;
+            if (Property.Name == "Id")
             {
                 maxLength = DefaultPrimaryKeyIdLength;
             }
-            else if (columnName.EndsWith("Id")) // Foreign keys
+            else if (Property.Name.EndsWith("Id")) // Foreign keys
             {
                 maxLength = DefaultMaxForeignKeyIdLength;
             }

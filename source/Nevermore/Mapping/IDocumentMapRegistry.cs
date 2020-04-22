@@ -6,8 +6,9 @@ namespace Nevermore.Mapping
     public interface IDocumentMapRegistry
     {
         void Register(DocumentMap map);
-        void Register(params DocumentMap[] mappingsToAdd);
-        void Register(IEnumerable<DocumentMap> mappingsToAdd);
+        void Register(IDocumentMap map);
+        void Register(params IDocumentMap[] mappingsToAdd);
+        void Register(IEnumerable<IDocumentMap> mappingsToAdd);
 
         bool ResolveOptional(Type type, out DocumentMap map);
         DocumentMap Resolve(Type type);

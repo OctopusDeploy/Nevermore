@@ -76,14 +76,14 @@ namespace Nevermore.IntegrationTests.SetUp
             resetBetweenTests = false;
         }
 
-        void GenerateSchemaAutomatically(params DocumentMap[] mappings)
+        void GenerateSchemaAutomatically(params IDocumentMap[] mappings)
         {
             try
             {
                 var schema = new StringBuilder();
                 foreach (var map in mappings)
                 {
-                    SchemaGenerator.WriteTableSchema(map, null, schema);
+                    SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
                 }
                 schema.AppendLine($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
