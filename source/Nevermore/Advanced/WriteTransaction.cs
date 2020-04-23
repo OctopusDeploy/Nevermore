@@ -105,17 +105,17 @@ namespace Nevermore.Advanced
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
-            configuration.HookRegistry.BeforeDelete(id, command.Mapping, this);
+            configuration.HookRegistry.BeforeDelete<TDocument>(id, command.Mapping, this);
             ExecuteNonQuery(command);
-            configuration.HookRegistry.AfterDelete(id, command.Mapping, this);
+            configuration.HookRegistry.AfterDelete<TDocument>(id, command.Mapping, this);
         }
 
         public async Task DeleteAsync<TDocument>(string id, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
-            await configuration.HookRegistry.BeforeDeleteAsync(id, command.Mapping, this);
+            await configuration.HookRegistry.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);
             await ExecuteNonQueryAsync(command, cancellationToken);
-            await configuration.HookRegistry.AfterDeleteAsync(id, command.Mapping, this);
+            await configuration.HookRegistry.AfterDeleteAsync<TDocument>(id, command.Mapping, this);
         }
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class

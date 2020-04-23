@@ -63,16 +63,14 @@ namespace Nevermore.IntegrationTests.Advanced
                 this.log = log;
             }
             
-            public void BeforeInsert(object document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeInsert));
-            public void AfterInsert(object document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterInsert));
-            public void BeforeUpdate(object document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeUpdate));
-            public void AfterUpdate(object document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterUpdate));
-            public void BeforeDelete(string id, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeDelete));
-            public void AfterDelete(string id, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterDelete));
+            public void BeforeInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeInsert));
+            public void AfterInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterInsert));
+            public void BeforeUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeUpdate));
+            public void AfterUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterUpdate));
+            public void BeforeDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(BeforeDelete));
+            public void AfterDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) => log.AppendLine(nameof(AfterDelete));
             public void BeforeCommit(IWriteTransaction transaction) => log.AppendLine(nameof(BeforeCommit));
             public void AfterCommit(IWriteTransaction transaction) => log.AppendLine(nameof(AfterCommit));
         }
-        
-        
     }
 }
