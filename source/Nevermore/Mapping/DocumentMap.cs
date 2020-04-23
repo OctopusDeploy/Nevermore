@@ -277,10 +277,17 @@ namespace Nevermore.Mapping
         public void Validate()
         {
             if (IdColumn == null)
-                throw new InvalidOperationException("There is no Id property on the document type " + Type.Name);
-            
-            foreach (var column in Columns)
-                column.Validate();
+                throw new InvalidOperationException($"There is no Id property on the document type {Type.FullName}");
+
+            try
+            {
+                foreach (var column in Columns)
+                    column.Validate();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Validation error on document map for type {Type.FullName}: " + ex.Message, ex);
+            }
         }
     }
 }
