@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Nevermore.Advanced.PropertyHandlers
 {
-    internal sealed class PropertyHandler : IPropertyHandler
+    public sealed class PropertyHandler : IPropertyHandler
     {
         readonly PropertyInfo propertyInfo;
         readonly Action<object, object> setterCompiled;
