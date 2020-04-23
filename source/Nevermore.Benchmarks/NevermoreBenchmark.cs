@@ -70,7 +70,7 @@ namespace Nevermore.Benchmarks
         public List<Customer> List100CustomersQueryWhereText()
         {
             return EnsureResults(
-                transaction.TableQuery<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
+                transaction.Query<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
             );
         }
         
@@ -78,7 +78,7 @@ namespace Nevermore.Benchmarks
         public List<Customer> List100CustomersQueryWhereOperand()
         {
             return EnsureResults(
-                transaction.TableQuery<Customer>().Where("FirstName", UnarySqlOperand.Equal, "Robert").Take(100).ToList()
+                transaction.Query<Customer>().Where("FirstName", UnarySqlOperand.Equal, "Robert").Take(100).ToList()
             );
         }
         
@@ -86,7 +86,7 @@ namespace Nevermore.Benchmarks
         public List<Customer> List100CustomersQueryWhereLinq()
         {
             return EnsureResults(
-                transaction.TableQuery<Customer>().Where(c => c.FirstName == "Robert").Take(100).ToList()
+                transaction.Query<Customer>().Where(c => c.FirstName == "Robert").Take(100).ToList()
             );
         }
 

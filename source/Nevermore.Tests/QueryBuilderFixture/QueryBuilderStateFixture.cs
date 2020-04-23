@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
 using NSubstitute;
 using NUnit.Framework;
-// ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
 namespace Nevermore.Tests.QueryBuilderFixture
 {
@@ -17,6 +17,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         {
             transaction = Substitute.For<IReadTransaction>();
             transaction.ExecuteScalar<int>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
+            // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
             transaction.Stream<object>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
         }
 
@@ -211,18 +212,16 @@ ORDER BY [Id]");
         [Test]
         public void ShouldAddWhereClauseToExistingQueryBuilder()
         {
-            transaction.TableQuery<object>().Returns(TableQueryBuilder("Accounts"));
+            transaction.Query<object>().Returns(TableQueryBuilder("Accounts"));
 
             var query = transaction.Query<object>();
 
-            // Don't capture the new query builder here - there is code in Octopus that is structured this way
+            // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
             query.Where("Id", UnarySqlOperand.Equal, 1);
-            query.ToList();
-
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
-WHERE ([Id] = @id)
-ORDER BY [Id]");
+            
+            // Old versions of Query returned a stateful object, while now each call is stateless - it returns a new object.
+            // It's invalid to call a method twice
+            Assert.Throws<Exception>(() => query.ToList());
         }
 
         string LastExecutedQuery() => executedQueries.Last();

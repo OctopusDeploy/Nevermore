@@ -66,14 +66,14 @@ namespace Nevermore.Advanced
             return this;
         }
 
-        public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
+        public IUnaryParameterQueryBuilder<TRecord> WhereParameterized(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
             var uniqueParameter = new UniqueParameter(uniqueParameterNameGenerator, parameter);
             selectBuilder.AddWhere(new UnaryWhereParameter(fieldName, operand, uniqueParameter));
             return new UnaryParameterQueryBuilder<TRecord>(Parameter(uniqueParameter), uniqueParameter);
         }
 
-        public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
+        public IBinaryParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, BinarySqlOperand operand,
             Parameter startValueParameter, Parameter endValueParameter)
         {
             var uniqueStartParameter = new UniqueParameter(uniqueParameterNameGenerator, startValueParameter);
@@ -82,7 +82,7 @@ namespace Nevermore.Advanced
             return new BinaryParametersQueryBuilder<TRecord>(Parameter(uniqueStartParameter).Parameter(uniqueEndParameter), uniqueStartParameter, uniqueEndParameter);
         }
 
-        public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+        public IArrayParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, ArraySqlOperand operand,
             IEnumerable<Parameter> parameterNames)
         {
             var parameterNamesList = parameterNames.Select(p => new UniqueParameter(uniqueParameterNameGenerator, p)).ToList();

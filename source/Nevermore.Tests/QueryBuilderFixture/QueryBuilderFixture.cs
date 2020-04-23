@@ -1218,7 +1218,7 @@ ORDER BY [Title] DESC";
         {
             var parameter = new Parameter("Name", new NVarCharMax());
             var account = CreateQueryBuilder<object>("Account")
-                .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
+                .WhereParameterized("Name", UnarySqlOperand.Equal, parameter)
                 .ParameterDefault("ABC")
                 .Column("Id", "Id");
             var query = CreateQueryBuilder<object>("Orders")
@@ -1489,7 +1489,7 @@ ORDER BY [Title] DESC";
             var parameter = new Parameter("Name", new NVarCharMax());
             var query = CreateQueryBuilder<object>("Orders")
                 .InnerJoin(CreateQueryBuilder<object>("Customers")
-                    .WhereParameterised("Name", UnarySqlOperand.Equal, parameter)
+                    .WhereParameterized("Name", UnarySqlOperand.Equal, parameter)
                     .ParameterDefault("Bob")
                     .Subquery())
                 .On("CustomerId", JoinOperand.Equal, "Id");
@@ -1603,7 +1603,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
         {
             CreateQueryBuilder<object>("Todo")
-                .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
+                .WhereParameterized("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
 
@@ -1611,7 +1611,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         public void ShouldThrowIfDifferentNumberOfParameterDefaultsProvided()
         {
             CreateQueryBuilder<object>("Todo")
-                .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
+                .WhereParameterized("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
                 .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
         }
 

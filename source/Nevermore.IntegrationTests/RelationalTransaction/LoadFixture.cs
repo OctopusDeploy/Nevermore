@@ -154,12 +154,12 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert<SpecialProduct>(originalSpecial);
                 trn.Insert<DodgyProduct>(originalDud);
 
-                var allProducts = trn.TableQuery<Product>().ToList();
+                var allProducts = trn.Query<Product>().ToList();
                 Assert.True(allProducts.Exists(p =>
                     p is SpecialProduct sp && sp.BonusMaterial == originalSpecial.BonusMaterial), "Special product didn't load correctly");
                 Assert.True(allProducts.Exists(p => p is DodgyProduct dp && dp.Tax == originalDud.Tax), "Dodgy product didn't load correctly");
 
-                var onlySpecial = trn.TableQuery<SpecialProduct>().ToList();
+                var onlySpecial = trn.Query<SpecialProduct>().ToList();
                 onlySpecial.Count.Should().Be(1);
                 onlySpecial[0].BonusMaterial.Should().Be(originalSpecial.BonusMaterial);
             }
@@ -197,7 +197,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert<Brand>(brandB);
                 trn.Commit();
 
-                var allBrands = trn.TableQuery<Brand>().ToList();
+                var allBrands = trn.Query<Brand>().ToList();
 
                 allBrands.SingleOrDefault(x => x.Name == "Brand A").Should().NotBeNull("Didn't retrieve BrandA");
                 allBrands.Single(x => x.Name == "Brand A").Should().BeOfType<BrandA>();
@@ -216,7 +216,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(machineB);
                 trn.Commit();
 
-                var allMachines = trn.TableQuery<Machine>().ToList();
+                var allMachines = trn.Query<Machine>().ToList();
 
                 allMachines.SingleOrDefault(x => x.Name == "Machine A").Should().NotBeNull("Didn't retrieve Machine A");
                 allMachines.Single(x => x.Name == "Machine A").Endpoint.Should().BeOfType<PassiveTentacleEndpoint>();

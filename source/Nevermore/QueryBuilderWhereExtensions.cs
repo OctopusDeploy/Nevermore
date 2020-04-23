@@ -2,6 +2,7 @@ using System;
 using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder</param>
         /// <param name="expression">The expression that will be converted into a where clause in the query</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression)
+        [Pure] public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, string>> expression)
             where TRecord : class => queryBuilder.Where((string) GetValueFromExpression(expression.Body, typeof(string)));
 
         /// <summary>
@@ -29,7 +30,7 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder</param>
         /// <param name="predicate">A predicate which will be converted into a where clause in the query</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate)
+        [Pure] public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, Expression<Func<TRecord, bool>> predicate)
             where TRecord : class => AddWhereClauseFromExpression(queryBuilder, predicate.Body);
 
 
@@ -197,10 +198,10 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="value">The value to compare against the column values. It will be added to the query as a parameter.</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+        [Pure] public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             UnarySqlOperand operand, object value) where TRecord : class
         {
-            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter(fieldName)).ParameterValue(value);
+            return queryBuilder.WhereParameterized(fieldName, operand, new Parameter(fieldName)).ParameterValue(value);
         }
 
         /// <summary>
@@ -213,10 +214,10 @@ namespace Nevermore
         /// <param name="startValue">The first or starting value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
         /// <param name="endValue">The second or ending value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+        [Pure] public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             BinarySqlOperand operand, object startValue, object endValue) where TRecord : class
         {
-            return queryBuilder.WhereParameterised(fieldName, operand, new Parameter("StartValue"), new Parameter("EndValue"))
+            return queryBuilder.WhereParameterized(fieldName, operand, new Parameter("StartValue"), new Parameter("EndValue"))
                 .ParameterValues(startValue, endValue);
         }
 
@@ -230,12 +231,12 @@ namespace Nevermore
         /// <param name="startValue">The first or starting value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
         /// <param name="endValue">The second or ending value to be used to compare against the column values in the where clause. It will be added to the query as a parameter.</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> WhereBetweenOrEqual<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
+        [Pure] public static IQueryBuilder<TRecord> WhereBetweenOrEqual<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string fieldName, object startValue, object endValue) where TRecord : class
         {
-            return queryBuilder.WhereParameterised(fieldName, UnarySqlOperand.GreaterThanOrEqual, new Parameter("StartValue"))
+            return queryBuilder.WhereParameterized(fieldName, UnarySqlOperand.GreaterThanOrEqual, new Parameter("StartValue"))
                 .ParameterValue(startValue)
-                .WhereParameterised(fieldName, UnarySqlOperand.LessThanOrEqual, new Parameter("EndValue"))
+                .WhereParameterized(fieldName, UnarySqlOperand.LessThanOrEqual, new Parameter("EndValue"))
                 .ParameterValue(endValue);
         }
 
@@ -248,14 +249,14 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="values">The values to compare against the column values. Each value will be added to the query as a separate parameter.</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
+        [Pure] public static IQueryBuilder<TRecord> Where<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string fieldName,
             ArraySqlOperand operand, IEnumerable values) where TRecord : class
         {
             var valuesList = values.OfType<object>().ToList();
             ListExtender.ExtendListRepeatingLastValue(valuesList);
             
             var parameters = valuesList.Select((v, i) => new Parameter($"{fieldName}{i + 1}")).ToArray();
-            return queryBuilder.WhereParameterised(fieldName, operand, parameters).ParameterValues(valuesList);
+            return queryBuilder.WhereParameterized(fieldName, operand, parameters).ParameterValues(valuesList);
         }
 
         /// <summary>
@@ -266,7 +267,7 @@ namespace Nevermore
         /// <param name="name">The name of the parameter for which the value applies</param>
         /// <param name="value">The value of the parameter</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> Parameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name,
+        [Pure] public static IQueryBuilder<TRecord> Parameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string name,
             object value) where TRecord : class
         {
             var parameter = new Parameter(name);
@@ -282,7 +283,7 @@ namespace Nevermore
         /// <param name="name">The name of the parameter for which the value applies</param>
         /// <param name="value">The value of the parameter</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
+        [Pure] public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string name, object value) where TRecord : class
         {
             return queryBuilder.Parameter(name,
@@ -298,7 +299,7 @@ namespace Nevermore
         /// <param name="name">The name of the parameter for which the value applies</param>
         /// <param name="value">The value of the parameter</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecord> LikePipedParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
+        [Pure] public static IQueryBuilder<TRecord> LikePipedParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string name, object value) where TRecord : class
         {
             return queryBuilder.Parameter(name,

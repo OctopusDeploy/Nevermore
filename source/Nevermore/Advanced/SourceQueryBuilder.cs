@@ -279,6 +279,7 @@ namespace Nevermore.Advanced
         protected readonly CommandParameterValues ParamValues;
         protected readonly Parameters Params;
         protected readonly ParameterDefaults ParamDefaults;
+        bool finished;
 
         protected SourceQueryBuilder(IReadQueryExecutor readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
@@ -318,48 +319,48 @@ namespace Nevermore.Advanced
 
         public IQueryBuilder<TRecord> Where(string whereClause)
         {
-            return Builder.Where(whereClause);
+            return Final(Builder.Where(whereClause));
         }
 
-        public IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter)
+        public IUnaryParameterQueryBuilder<TRecord> WhereParameterized(string fieldName, UnarySqlOperand operand, Parameter parameter)
         {
-            return Builder.WhereParameterised(fieldName, operand, parameter);
+            return Final(Builder.WhereParameterized(fieldName, operand, parameter));
         }
 
-        public IQueryBuilder<TRecord> WhereNull(string fieldName) => Builder.WhereNull(fieldName);
+        public IQueryBuilder<TRecord> WhereNull(string fieldName) => Final(Builder.WhereNull(fieldName));
 
-        public IQueryBuilder<TRecord> WhereNotNull(string fieldName) => Builder.WhereNotNull(fieldName);
+        public IQueryBuilder<TRecord> WhereNotNull(string fieldName) => Final(Builder.WhereNotNull(fieldName));
 
-        public IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand,
+        public IBinaryParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, BinarySqlOperand operand,
             Parameter startValueParameter, Parameter endValueParameter)
         {
-            return Builder.WhereParameterised(fieldName, operand, startValueParameter, endValueParameter);
+            return Final(Builder.WhereParameterized(fieldName, operand, startValueParameter, endValueParameter));
         }
 
-        public IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand,
+        public IArrayParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, ArraySqlOperand operand,
             IEnumerable<Parameter> parameterNames)
         {
-            return Builder.WhereParameterised(fieldName, operand, parameterNames);
+            return Final(Builder.WhereParameterized(fieldName, operand, parameterNames));
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)
         {
-            return Builder.OrderBy(fieldName);
+            return Final(Builder.OrderBy(fieldName));
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName, string tableAlias)
         {
-            return Builder.OrderBy(fieldName, tableAlias);
+            return Final(Builder.OrderBy(fieldName, tableAlias));
         }
 
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName)
         {
-            return Builder.OrderByDescending(fieldName);
+            return Final(Builder.OrderByDescending(fieldName));
         }
 
         public IOrderedQueryBuilder<TRecord> OrderByDescending(string fieldName, string tableAlias)
         {
-            return Builder.OrderByDescending(fieldName, tableAlias);
+            return Final(Builder.OrderByDescending(fieldName, tableAlias));
         }
 
         public IQueryBuilder<TRecord> Column(string name)
@@ -440,107 +441,117 @@ namespace Nevermore.Advanced
 
         public int Count()
         {
-            return Builder.Count();
+            return Final(Builder.Count());
         }
 
         public Task<int> CountAsync(CancellationToken cancellationToken = default)
         {
-            return Builder.CountAsync(cancellationToken);
+            return Final(Builder.CountAsync(cancellationToken));
         }
 
         public bool Any()
         {
-            return Builder.Any();
+            return Final(Builder.Any());
         }
 
         public Task<bool> AnyAsync(CancellationToken cancellationToken = default)
         {
-            return Builder.AnyAsync(cancellationToken);
+            return Final(Builder.AnyAsync(cancellationToken));
         }
 
         public TRecord First()
         {
-            return Builder.FirstOrDefault();
+            return Final(Builder.FirstOrDefault());
         }
 
         public TRecord FirstOrDefault()
         {
-            return Builder.FirstOrDefault();
+            return Final(Builder.FirstOrDefault());
         }
 
         public Task<TRecord> FirstOrDefaultAsync(CancellationToken cancellationToken = default)
         {
-            return Builder.FirstOrDefaultAsync(cancellationToken);
+            return Final(Builder.FirstOrDefaultAsync(cancellationToken));
         }
 
         public IEnumerable<TRecord> Take(int take)
         {
-            return Builder.Take(take);
+            return Final(Builder.Take(take));
         }
 
         public IAsyncEnumerable<TRecord> TakeAsync(int take, CancellationToken cancellationToken = default)
         {
-            return Builder.TakeAsync(take, cancellationToken);
+            return Final(Builder.TakeAsync(take, cancellationToken));
         }
 
         public List<TRecord> ToList(int skip, int take)
         {
-            return Builder.ToList(skip, take);
+            return Final(Builder.ToList(skip, take));
         }
 
         public Task<List<TRecord>> ToListAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
-            return Builder.ToListAsync(skip, take, cancellationToken);
+            return Final(Builder.ToListAsync(skip, take, cancellationToken));
         }
 
         public List<TRecord> ToList(int skip, int take, out int totalResults)
         {
-            return Builder.ToList(skip, take, out totalResults);
+            return Final(Builder.ToList(skip, take, out totalResults));
         }
 
         public Task<List<TRecord>> ToListAsync(int skip, int take, out int totalResults, CancellationToken cancellationToken = default)
         {
-            return Builder.ToListAsync(skip, take, out totalResults, cancellationToken);
+            return Final(Builder.ToListAsync(skip, take, out totalResults, cancellationToken));
         }
 
         public List<TRecord> ToList()
         {
-            return Builder.ToList();
+            return Final(Builder.ToList());
         }
 
         public Task<List<TRecord>> ToListAsync(CancellationToken cancellationToken = default)
         {
-            return Builder.ToListAsync(cancellationToken);
+            return Final(Builder.ToListAsync(cancellationToken));
         }
 
         public TRecord[] ToArray()
         {
-            return Builder.ToArray();
+            return Final(Builder.ToArray());
         }
 
         public IEnumerable<TRecord> Stream()
         {
-            return Builder.Stream();
+            return Final(Builder.Stream());
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
         {
-            return Builder.StreamAsync(cancellationToken);
+            return Final(Builder.StreamAsync(cancellationToken));
         }
 
         public IDictionary<string, TRecord> ToDictionary(Func<TRecord, string> keySelector)
         {
-            return Builder.ToDictionary(keySelector);
+            return Final(Builder.ToDictionary(keySelector));
         }
 
         public Task<IDictionary<string, TRecord>> ToDictionaryAsync(Func<TRecord, string> keySelector, CancellationToken cancellationToken = default)
         {
-            return Builder.ToDictionaryAsync(keySelector, cancellationToken);
+            return Final(Builder.ToDictionaryAsync(keySelector, cancellationToken));
         }
 
         public Parameters Parameters => Builder.Parameters;
         public ParameterDefaults ParameterDefaults => Builder.ParameterDefaults;
         public CommandParameterValues ParameterValues => Builder.ParameterValues;
+
+        T Final<T>(T value)
+        {
+            if (finished)
+            {
+                throw new Exception("This query builder is finished. Calls like Where etc. return a new object, and methods should be chained together or assigned to a new variable. Change the structure of the query so that you are not calling multiple methods on the same object."); 
+            }
+            finished = true;
+            return value;
+        }
 
         public string DebugViewRawQuery()
         {

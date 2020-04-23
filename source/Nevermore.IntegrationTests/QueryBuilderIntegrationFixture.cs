@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.TableQuery<Product>()
+                trn.Query<Product>()
                     .Where("[Id] IN @ids")
                     .Parameter("ids", new[] {"A", "B"})
                     .ToList();
@@ -25,7 +25,7 @@ namespace Nevermore.IntegrationTests
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.TableQuery<Product>()
+                trn.Query<Product>()
                     .Where("[Id] IN @Ids")
                     .Parameter("ids", new[] {"A", "B"})
                     .ToList();
@@ -46,11 +46,11 @@ namespace Nevermore.IntegrationTests
                     t.Insert(c);
                 t.Commit();
                 
-                var customersNull = t.TableQuery<Customer>()
+                var customersNull = t.Query<Customer>()
                     .Where(c => c.Nickname == null)
                     .ToList();
                 
-                var customersNotNull = t.TableQuery<Customer>()
+                var customersNotNull = t.Query<Customer>()
                     .Where(c => c.Nickname != null)
                     .ToList();
 

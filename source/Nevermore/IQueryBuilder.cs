@@ -108,7 +108,7 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="parameter">The parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
-        IUnaryParameterQueryBuilder<TRecord> WhereParameterised(string fieldName, UnarySqlOperand operand, Parameter parameter);
+        IUnaryParameterQueryBuilder<TRecord> WhereParameterized(string fieldName, UnarySqlOperand operand, Parameter parameter);
 
         /// <summary>
         /// Adds a parameterised binary where clause to the query. This does not add a values for the parameters, and is therefore useful for Functions and Stored Procedures.
@@ -119,7 +119,7 @@ namespace Nevermore
         /// <param name="startValueParameter">The first parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <param name="endValueParameter">The second parameter that will be included in the where clause. Requires a data type if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
-        IBinaryParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
+        IBinaryParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, BinarySqlOperand operand, Parameter startValueParameter, Parameter endValueParameter);
 
         /// <summary>
         /// Adds a parameterised array where clause to the query. This does not add a values for the parameters, and is therefore useful for Functions and Stored Procedures.
@@ -129,7 +129,7 @@ namespace Nevermore
         /// <param name="operand">The SQL operator to be used in the where clause</param>
         /// <param name="parameterNames">The parameters that will be included in the where clause. Requires data types if used as part of a Function or Stored Procedure</param>
         /// <returns>The query builder that can be used to add parameters to the query, and then further modify the query, or execute the query</returns>
-        IArrayParametersQueryBuilder<TRecord> WhereParameterised(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
+        IArrayParametersQueryBuilder<TRecord> WhereParameterized(string fieldName, ArraySqlOperand operand, IEnumerable<Parameter> parameterNames);
         
         IQueryBuilder<TRecord> WhereNull(string fieldName);
         IQueryBuilder<TRecord> WhereNotNull(string fieldName);
@@ -303,8 +303,8 @@ namespace Nevermore
         /// Converts the current query into a subquery.
         /// </summary>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        ISubquerySourceBuilder<TRecord> Subquery(); 
-    
+        ISubquerySourceBuilder<TRecord> Subquery();
+
         /// <summary>
         /// Used internally. Can also be used for testing, debugging, and for extension methods. Avoid using directly
         /// </summary>

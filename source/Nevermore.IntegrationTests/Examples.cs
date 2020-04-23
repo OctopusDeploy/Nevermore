@@ -141,7 +141,7 @@ namespace Nevermore.IntegrationTests
             // properties that you "map" are stored as columns, you can query against those columns.
             // Here are some different ways to query.
             // TableQuery gives you a strongly typed collection:
-            var person = transaction.TableQuery<Person>()
+            var person = transaction.Query<Person>()
                 .Where("FirstName = @name and Email is not null")                // This becomes the SQL "where" clause
                 .Parameter("name", "Donald")
                 .FirstOrDefault();
@@ -149,7 +149,7 @@ namespace Nevermore.IntegrationTests
             person.LastName.Should().Be("Duck");
             
             // If for some reason you want to query a SQL database but SQL scares you, you can also use LINQ support: 
-            person = transaction.TableQuery<Person>()
+            person = transaction.Query<Person>()
                 .Where(m => m.FirstName == "Donald")
                 .FirstOrDefault();
 
@@ -169,7 +169,7 @@ namespace Nevermore.IntegrationTests
             // For example, you can use JSON_VALUE to query a single field within the JSON. Or you can use OPENJSON
             // to query values in an array. The only downside to doing this of course is that you won't get to take 
             // much advantage of indexes.
-            person = transaction.TableQuery<Person>()
+            person = transaction.Query<Person>()
                 .Where("exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag1) and exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag2)")
                 .Parameter("tag1", "wb")
                 .Parameter("tag2", "duck")

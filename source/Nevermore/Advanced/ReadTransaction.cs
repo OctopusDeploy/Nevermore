@@ -157,7 +157,7 @@ namespace Nevermore.Advanced
             }
         }
 
-        public ITableSourceQueryBuilder<TRecord> TableQuery<TRecord>() where TRecord : class
+        public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             return new TableSourceQueryBuilder<TRecord>(configuration.DocumentMaps.Resolve(typeof(TRecord)).TableName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }

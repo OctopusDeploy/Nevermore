@@ -109,7 +109,7 @@ namespace Nevermore
          /// </summary>
          /// <typeparam name="TRecord">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <returns>A stream of resulting documents.</returns>
-         [Pure] ITableSourceQueryBuilder<TRecord> TableQuery<TRecord>() where TRecord : class;
+         [Pure] ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class;
  
          /// <summary>
          /// Returns strongly typed documents from the specified raw SQL query.
