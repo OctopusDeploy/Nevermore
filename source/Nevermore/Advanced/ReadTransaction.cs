@@ -39,6 +39,7 @@ namespace Nevermore.Advanced
         
         public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, RelationalStoreConfiguration configuration, string name = null)
         {
+            State = new Dictionary<string, object>();
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
@@ -400,5 +401,7 @@ namespace Nevermore.Advanced
             connection?.Dispose();
             registry.Remove(this);
         }
+
+        public IDictionary<string, object> State { get; }
     }
 }
