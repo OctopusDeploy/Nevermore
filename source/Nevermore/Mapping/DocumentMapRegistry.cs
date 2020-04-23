@@ -10,7 +10,6 @@ namespace Nevermore.Mapping
     public class DocumentMapRegistry : IDocumentMapRegistry
     {
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
-        readonly ConcurrentDictionary<Type, Func<object, string>> idReaders = new ConcurrentDictionary<Type, Func<object, string>>();
 
         public List<DocumentMap> GetAll()
         {
@@ -94,19 +93,12 @@ namespace Nevermore.Mapping
                 throw new ArgumentNullException(nameof(instance));
 
             var type = instance.GetType();
-            var reader = idReaders.GetOrAdd(type, CreateIdReader);
-            return reader(instance);
-        }
-
-        Func<object, string> CreateIdReader(Type type)
-        {
             if (!ResolveOptional(type, out var map))
                 throw NotRegistered(type);
 
-            var readerWriter = map.IdColumn.PropertyHandler;
-            return inst => (string)readerWriter.Read(inst);
+            return map.GetId(instance);
         }
-
+        
         static Exception NotRegistered(Type type)
         {
             return new InvalidOperationException($"To be used for this operation, the class '{type.FullName}' must have a document map that is registered with this relational store. Types without a document map cannot be used for this operation.");

@@ -289,5 +289,14 @@ namespace Nevermore.Mapping
                 throw new InvalidOperationException($"Validation error on document map for type {Type.FullName}: " + ex.Message, ex);
             }
         }
+
+        public string GetId(object document)
+        {
+            if (document == null)
+                return null;
+            
+            var readerWriter = IdColumn.PropertyHandler;
+            return (string)readerWriter.Read(document);
+        }
     }
 }
