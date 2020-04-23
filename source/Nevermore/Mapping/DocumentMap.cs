@@ -269,9 +269,9 @@ namespace Nevermore.Mapping
         /// <summary>
         /// Columns containing data that could be indexed (but are not necessarily indexed)
         /// </summary>
-        public List<ColumnMapping> Columns { get; private set; }
-        public List<UniqueRule> UniqueConstraints { get; private set; }
-        public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; private set; }
+        public List<ColumnMapping> Columns { get; }
+        public List<UniqueRule> UniqueConstraints { get; }
+        public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; }
         public string SchemaName { get; set; }
 
         public void Validate()
