@@ -18,22 +18,16 @@ namespace Nevermore
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly Lazy<KeyAllocator> keyAllocator;
 
-        public RelationalStore(RelationalStoreConfiguration configuration)
+        public RelationalStore(IRelationalStoreConfiguration configuration)
         {
             Configuration = configuration;
             registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
             keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize));
         }
 
-        public string ConnectionString => registry.Value.ConnectionString;
-        public int MaxPoolSize => registry.Value.MaxPoolSize;
+        public void WriteCurrentTransactions(StringBuilder output) => registry.Value.WriteCurrentTransactions(output);
 
-        public void WriteCurrentTransactions(StringBuilder sb) => registry.Value.WriteCurrentTransactions(sb);
-
-        public DocumentMap GetMappingFor(Type type) => Configuration.DocumentMaps.Resolve(type);
-        public DocumentMap GetMappingFor<T>() => Configuration.DocumentMaps.Resolve(typeof(T));
-
-        public RelationalStoreConfiguration Configuration { get; }
+        public IRelationalStoreConfiguration Configuration { get; }
 
         public void Reset()
         {

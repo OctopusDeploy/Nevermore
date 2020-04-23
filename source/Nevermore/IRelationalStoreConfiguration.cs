@@ -1,3 +1,4 @@
+using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Advanced.Serialization;
@@ -19,6 +20,17 @@ namespace Nevermore
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         
         /// <summary>
+        /// Hooks can be used to apply general logic when documents are inserted, updated or deleted.
+        /// </summary>
+        IHookRegistry Hooks { get; }
+        
+        /// <summary>
+        /// Gets or sets the factory that creates SQL commands. Set this if you want to control how commands are set up,
+        /// or add a decorator to capture diagnostic information. 
+        /// </summary>
+        ISqlCommandFactory CommandFactory { get; set; }
+        
+        /// <summary>
         /// Gets or sets the key block size that will be used for the key allocator. A higher number enables less
         /// SQL queries to get new blocks, but increases fragmentation.
         /// </summary>
@@ -36,11 +48,5 @@ namespace Nevermore
         /// resulting in duplicate query plans being created.
         /// </summary>
         public bool DetectQueryPlanThrashing { get; set; }
-
-        /// <summary>
-        /// Gets or sets the factory that creates SQL commands. Set this if you want to control how commands are set up,
-        /// or add a decorator to capture diagnostic information. 
-        /// </summary>
-        ISqlCommandFactory CommandFactory { get; set; }
     }
 }

@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests.SetUp
         }
 
         public IRelationalStore Store { get; }
-        public RelationalStoreConfiguration Configuration => Store.Configuration;
+        public IRelationalStoreConfiguration Configuration => Store.Configuration;
         public IDocumentMapRegistry Mappings => Configuration.DocumentMaps;
 
         protected void NoMonkeyBusiness()

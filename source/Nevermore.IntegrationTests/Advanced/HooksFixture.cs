@@ -15,7 +15,7 @@ namespace Nevermore.IntegrationTests.Advanced
         public void ShouldCallHooks()
         {
             var log = new StringBuilder();
-            Configuration.HookRegistry.Register(new AuditHook(log));
+            Configuration.Hooks.Register(new AuditHook(log));
 
             using var transaction = Store.BeginTransaction();
 

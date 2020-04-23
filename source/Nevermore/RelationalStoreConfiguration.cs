@@ -42,7 +42,7 @@ namespace Nevermore
             ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
             ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
             
-            HookRegistry = new HookRegistry();
+            Hooks = new HookRegistry();
 
             TypeHandlers = new TypeHandlerRegistry();
 
@@ -62,7 +62,8 @@ namespace Nevermore
         public IDocumentSerializer DocumentSerializer { get; set; }
         
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
-        
+
+        public IHookRegistry Hooks { get; }
         public int KeyBlockSize { get; set; }
         
         public IReaderStrategyRegistry ReaderStrategies { get; }
@@ -81,7 +82,6 @@ namespace Nevermore
         public bool DetectQueryPlanThrashing { get; set; }
 
         public ISqlCommandFactory CommandFactory { get; set; }
-        public IHookRegistry HookRegistry { get; private set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {

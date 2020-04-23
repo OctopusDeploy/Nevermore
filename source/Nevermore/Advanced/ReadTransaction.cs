@@ -24,7 +24,7 @@ namespace Nevermore.Advanced
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
-        readonly RelationalStoreConfiguration configuration;
+        readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
         
@@ -37,7 +37,7 @@ namespace Nevermore.Advanced
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
         
-        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, RelationalStoreConfiguration configuration, string name = null)
+        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
