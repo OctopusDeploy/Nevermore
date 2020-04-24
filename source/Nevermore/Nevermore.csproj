@@ -18,8 +18,8 @@
     <PackageIcon>logo.png</PackageIcon>
     <PackageTags>nevermore;orm;sql;micro-orm</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <WarningsAsErrors />
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">True</ContinuousIntegrationBuild>
     <Deterministic Condition="'$(Configuration)' == 'Release'">True</Deterministic>
