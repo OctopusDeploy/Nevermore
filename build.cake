@@ -107,30 +107,30 @@ Task("Publish")
 {
     
 	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget/index.json",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.snupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget/index.json",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 	NuGetPush($"{artifactsDir}Nevermore.Analyzers.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget/index.json",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 	
     if (gitVersionInfo.PreReleaseTag == "")
     {
         NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
-            Source = "https://www.nuget.org/api/v2/package",
+            Source = "https://api.nuget.org/v3/index.json",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
         NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.snupkg", new NuGetPushSettings {
-            Source = "https://www.nuget.org/api/v2/package",
+            Source = "https://api.nuget.org/v3/index.json",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
         NuGetPush($"{artifactsDir}Nevermore.Analyzers.{nugetVersion}.nupkg", new NuGetPushSettings {
-            Source = "https://www.nuget.org/api/v2/package",
+            Source = "https://api.nuget.org/v3/index.json",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
     }
