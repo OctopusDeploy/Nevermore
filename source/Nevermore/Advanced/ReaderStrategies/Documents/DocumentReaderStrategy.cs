@@ -94,6 +94,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             var builder = new DocumentReaderExpressionBuilder(map, configuration.TypeHandlers);
             
             var idColumnName = map.IdColumn.ColumnName;
+            var typeResolutionColumnName = map.TypeResolutionColumn?.ColumnName;
             
             for (var i = 0; i < firstRow.FieldCount; i++)
             {
@@ -104,7 +105,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 {
                     builder.Id(i, map.IdColumn);
                 }
-                else if (string.Equals(fieldName, "Type", StringComparison.OrdinalIgnoreCase))
+                else if (typeResolutionColumnName != null && string.Equals(fieldName, typeResolutionColumnName, StringComparison.OrdinalIgnoreCase))
                 {
                     builder.TypeColumn(i, column);
                 }

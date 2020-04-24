@@ -253,7 +253,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             var storageFormat = map.JsonStorageFormat;
             var expectsJson = map.JsonStorageFormat != JsonStorageFormat.CompressedOnly;
             var expectsJsonBlob = map.JsonStorageFormat != JsonStorageFormat.TextOnly;
-            var expectsType = map.Columns.Any(c => c.ColumnName == "Type");
+            var expectsType = map.TypeResolutionColumn != null;
             var name = map.Type.Name;
 
             if (idIndex < 0)
@@ -269,7 +269,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 throw Fail($"The class '{name}' has a document map with JSON storage set to {storageFormat.ToString()}, but the query does not include the 'JSONBlob' column. Queries against this type must include the JSONBlob in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support.");
 
             if (expectsType && typeIndex < 0)
-                throw Fail($"When querying the document '{name}', the 'Type' column must always be included. Change the select clause to include the 'Type' column.");
+                throw Fail($"When querying the document '{name}', the '{map.TypeResolutionColumn.ColumnName}' column must always be included. Change the select clause to include the '{map.TypeResolutionColumn.ColumnName}' column.");
 
             if (typeIndex >= 0 && expectsJson && typeIndex > jsonIndex)
                 throw Fail($"When querying the document '{name}', the 'Type' column must always appear before the 'JSON' column. Change the order in the SELECT clause, or if selecting '*', change the order of columns in the table.");

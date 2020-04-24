@@ -7,7 +7,7 @@ namespace Nevermore.IntegrationTests.Model
         public ProductMap()
         {
             Column(m => m.Name);
-            Column(m => m.Type);
+            TypeResolutionColumn(m => m.Type);
         }
     }
 }

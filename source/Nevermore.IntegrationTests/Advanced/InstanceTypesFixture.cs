@@ -42,7 +42,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 // You could define the property with a different name, and just map it to a column called Type
                 // if you want
                 Column(a => a.Name);
-                Column(a => a.Type).SaveOnly();
+                TypeResolutionColumn(a => a.Type).SaveOnly();
             }
         }
 

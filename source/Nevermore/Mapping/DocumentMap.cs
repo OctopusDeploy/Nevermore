@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.PropertyHandlers;
 
 namespace Nevermore.Mapping
@@ -16,7 +17,7 @@ namespace Nevermore.Mapping
         }
         
         /// <summary>
-        /// Gets or sets the name of the table that this document will be stored in.
+        /// Gets or sets the name of the schema containing the table that this document will be stored in.
         /// </summary>
         protected string SchemaName
         {
@@ -105,6 +106,36 @@ namespace Nevermore.Mapping
                 ?? throw new Exception("The expression for the Id column must be a property.");
             map.IdColumn = new ColumnMapping(columnName ?? prop.Name, typeof(TProperty), new PropertyHandler(prop), prop);
             return map.IdColumn;
+        }
+
+        /// <summary>
+        /// Defines a column that will be used to resolve the type of object to create. Nevermore will then locate an
+        /// <see cref="IInstanceTypeResolver"/> that can resolve concrete instances of that type based on the value
+        /// in this column.
+        /// </summary>
+        /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the column.</typeparam>
+        /// <returns>A builder to further configure the column mapping.</returns>
+        protected IColumnMappingBuilder TypeResolutionColumn<TProperty>(Expression<Func<TDocument, TProperty>> property)
+        {
+            return TypeResolutionColumn(null, property);
+        }
+
+        /// <summary>
+        /// Defines a column that will be used to resolve the type of object to create. Nevermore will then locate an
+        /// <see cref="IInstanceTypeResolver"/> that can resolve concrete instances of that type based on the value
+        /// in this column.
+        /// </summary>
+        /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
+        /// <typeparam name="TProperty">The property type of the column.</typeparam>
+        /// <returns>A builder to further configure the column mapping.</returns>
+        protected IColumnMappingBuilder TypeResolutionColumn<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> property)
+        {
+            var prop = GetPropertyInfo(property)
+                       ?? throw new Exception("The expression for the Type Resolution column must be a property.");
+            map.TypeResolutionColumn = new ColumnMapping(columnName ?? prop.Name, typeof(TProperty), new PropertyHandler(prop), prop);
+            map.Columns.Add(map.TypeResolutionColumn);
+            return map.TypeResolutionColumn; 
         }
 
         /// <summary>
@@ -259,6 +290,7 @@ namespace Nevermore.Mapping
 
         public Type Type { get; set; }
         public ColumnMapping IdColumn { get; set; }
+        public ColumnMapping TypeResolutionColumn { get; set; }
         public JsonStorageFormat JsonStorageFormat { get; set; }
         public string TableName { get; set; }
         public string IdPrefix { get; set; }
