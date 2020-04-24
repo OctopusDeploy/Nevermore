@@ -16,6 +16,7 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageLicense>LICENSE.txt</PackageLicense>
     <PackageIcon>logo.png</PackageIcon>
+    <PackageTags>nevermore;orm;sql;micro-orm</PackageTags>
     <RepositoryUrl>https://github.com/OctopusDeploy/Nevermore.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <WarningsAsErrors />

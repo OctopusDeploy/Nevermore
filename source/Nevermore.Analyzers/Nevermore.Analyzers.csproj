@@ -16,6 +16,7 @@
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageLicense>LICENSE.txt</PackageLicense>
         <PackageIcon>logo.png</PackageIcon>
+        <PackageTags>nevermore;orm;sql;micro-orm;analyzers;roslyn</PackageTags>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     </PropertyGroup>
