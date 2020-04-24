@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Nevermore.IntegrationTests.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
@@ -13,7 +12,7 @@ namespace Nevermore.IntegrationTests.Model
         public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public ReferenceCollection Roles { get; private set; }
+        public ReferenceCollection Roles { get; }
         public string Nickname { get; set; }
         public int[] LuckyNumbers { get; set; }
         public string ApiKey { get; set; }
