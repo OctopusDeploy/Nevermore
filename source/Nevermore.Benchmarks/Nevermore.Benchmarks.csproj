@@ -4,6 +4,10 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <Analyzer Include="..\Nevermore\bin\**\Nevermore.dll" />
+    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Nevermore\Nevermore.csproj" />

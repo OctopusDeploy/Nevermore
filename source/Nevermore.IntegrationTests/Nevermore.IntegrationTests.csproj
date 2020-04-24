@@ -19,6 +19,9 @@
     <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Analyzer Include="..\Nevermore\bin\**\Nevermore.dll" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
