@@ -17,8 +17,10 @@
         <PackageLicense>LICENSE.txt</PackageLicense>
         <PackageIcon>logo.png</PackageIcon>
         <PackageTags>nevermore;orm;sql;micro-orm;analyzers;roslyn</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
+        <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">True</ContinuousIntegrationBuild>
     </PropertyGroup>
 
     <ItemGroup>
