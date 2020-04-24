@@ -22,6 +22,7 @@
     <WarningsAsErrors />
     <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">True</ContinuousIntegrationBuild>
+    <Deterministic Condition="'$(Configuration)' == 'Release'">True</Deterministic>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -39,9 +40,6 @@
     <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
