@@ -186,6 +186,14 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 // We don't read this field
                 return;
 
+            if (!column.Property.CanWrite && column.PropertyHandler.CanWrite)
+            {
+                // if the property itself can't be written directly, but the PropertyHandler says it can write then it
+                // is handling this case and no assigner is required here. This can happen with properties that are
+                // collection types.
+                return;
+            } 
+
             if (column.Property != null && column.PropertyHandler is PropertyHandler)
             {
                 // Optimization: Rather than call the property handler, we can embed the expression to assign the

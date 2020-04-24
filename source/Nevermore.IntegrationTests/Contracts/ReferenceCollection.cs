@@ -6,7 +6,7 @@ namespace Nevermore.IntegrationTests.Contracts
     /// <summary>
     /// A case-insensitive collection of unique strings used for holding document ID's.
     /// </summary>
-    public class ReferenceCollection : HashSet<string>, IReadOnlyCollection<string>
+    public class ReferenceCollection : HashSet<string>
     {
         public ReferenceCollection()
             : base(StringComparer.OrdinalIgnoreCase)
