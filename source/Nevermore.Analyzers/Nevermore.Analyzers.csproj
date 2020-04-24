@@ -17,6 +17,7 @@
         <PackageLicense>LICENSE.txt</PackageLicense>
         <PackageIcon>logo.png</PackageIcon>
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>

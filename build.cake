@@ -87,6 +87,7 @@ Task("CopyToArtifacts")
     .Does(() => {
 		CreateDirectory(artifactsDir);
 		CopyFiles($"./source/**/*.nupkg", artifactsDir);
+		CopyFiles($"./source/**/*.snupkg", artifactsDir);
 	});
 
 Task("CopyToLocalPackages")
@@ -95,6 +96,7 @@ Task("CopyToLocalPackages")
     .Does(() => {
 		CreateDirectory(localPackagesDir);
 		CopyFiles($"./source/**/*.nupkg", localPackagesDir);
+		CopyFiles($"./source/**/*.snupkg", localPackagesDir);
 	});
 
 	
@@ -108,10 +110,26 @@ Task("Publish")
 		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
+	NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.snupkg", new NuGetPushSettings {
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		ApiKey = EnvironmentVariable("FeedzIoApiKey")
+	});
+	NuGetPush($"{artifactsDir}Nevermore.Analyzers.{nugetVersion}.nupkg", new NuGetPushSettings {
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		ApiKey = EnvironmentVariable("FeedzIoApiKey")
+	});
 	
     if (gitVersionInfo.PreReleaseTag == "")
     {
         NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
+            Source = "https://www.nuget.org/api/v2/package",
+            ApiKey = EnvironmentVariable("NuGetApiKey")
+        });
+        NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.snupkg", new NuGetPushSettings {
+            Source = "https://www.nuget.org/api/v2/package",
+            ApiKey = EnvironmentVariable("NuGetApiKey")
+        });
+        NuGetPush($"{artifactsDir}Nevermore.Analyzers.{nugetVersion}.nupkg", new NuGetPushSettings {
             Source = "https://www.nuget.org/api/v2/package",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
