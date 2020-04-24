@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{8FCDD3A3-1FF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Benchmarks", "Nevermore.Benchmarks\Nevermore.Benchmarks.csproj", "{BE37C675-CA40-466D-B5F1-71199C7A0D31}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Analyzers", "Nevermore.Analyzers\Nevermore.Analyzers.csproj", "{47EA1F4A-49A7-4691-A455-2A96FDDB2276}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE37C675-CA40-466D-B5F1-71199C7A0D31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

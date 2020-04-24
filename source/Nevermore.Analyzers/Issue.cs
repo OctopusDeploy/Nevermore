@@ -4,13 +4,13 @@ namespace Nevermore.Analyzers
 {
     internal class Issue
     {
-        public Issue(string message, SyntaxNode node)
+        public Issue(string message, Location location)
         {
             Message = message;
-            Node = node;
+            Location = location;
         }
         
         public string Message { get; }
-        public SyntaxNode Node { get; }
+        public Location Location { get; }
     }
 }

@@ -55,7 +55,7 @@ namespace Nevermore.Analyzers
                 }
                 
                 if (!understoodBinaryOperators.Contains(operatorToken))
-                    return new Issue($"Cannot translate token \"{operatorToken}\". Only the following tokens are understood: " + string.Join(", ", understoodBinaryOperators.Select(s => "\"" + s + "\"")), node);
+                    return new Issue($"Cannot translate token \"{operatorToken}\". Only the following tokens are understood: " + string.Join(", ", understoodBinaryOperators.Select(s => "\"" + s + "\"")), binaryExpressionSyntax.OperatorToken.GetLocation());
 
                 return DefaultVisit(binaryExpressionSyntax.Left);
             }
@@ -64,12 +64,12 @@ namespace Nevermore.Analyzers
             {
                 var symbolInfo = model.GetSymbolInfo(invocationExpressionSyntax);
                 if (symbolInfo.Symbol?.Kind != SymbolKind.Method)
-                    return new Issue("Cannot translate: " + invocationExpressionSyntax.Expression, node);
+                    return new Issue("Cannot translate: " + invocationExpressionSyntax.Expression, node.GetLocation());
 
                 var methodSymbol = (IMethodSymbol)symbolInfo.Symbol;
 
                 if (methodSymbol.ContainingType == null)
-                    return new Issue("Cannot translate method  " + invocationExpressionSyntax, invocationExpressionSyntax);
+                    return new Issue("Cannot translate method  " + invocationExpressionSyntax, node.GetLocation());
 
                 // We don't care about the arguments to the method, as Nevermore calls Compile() to get the results. So we just need to make sure the left
                 // (the thing being called on) is a property. "Yoda methods" are the opposite, like "myList.Contains(c.FirstName)", where we care about the 
@@ -91,33 +91,33 @@ namespace Nevermore.Analyzers
                 }
                 else
                 {
-                    return new Issue($"Cannot translate call to method '{methodSymbol.Name}'. Nevermore can only translate: " + string.Join(", ", understoodNormalMethods.Concat(understoodYodaMethods).Concat(understoodStringMethods).Distinct().Select(s => "\"" + s + "\"")), node);
+                    return new Issue($"Cannot translate call to method '{methodSymbol.Name}'. Nevermore can only translate: " + string.Join(", ", understoodNormalMethods.Concat(understoodYodaMethods).Concat(understoodStringMethods).Distinct().Select(s => "\"" + s + "\"")), node.GetLocation());
                 }
                 
                 var me = mustBeProperty as MemberAccessExpressionSyntax;
                 if (me != null)
                     return DefaultVisit(me.Expression);
 
-                return new Issue($"Unexpected expression ({mustBeProperty?.GetType().Name}): " + mustBeProperty, node);   
+                return new Issue($"Unexpected expression ({mustBeProperty?.GetType().Name}): " + mustBeProperty, node.GetLocation());   
             }
             
             if (node is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
             {
                 if (memberAccessExpressionSyntax.Expression.ToString() != expressionArgumentParameter.Identifier.Text)
                 {
-                    return new Issue("Property accessors can only be on the left side of an expression, and only a property on the document being queried. " + memberAccessExpressionSyntax.Expression, node);
+                    return new Issue("Property accessors can only be on the left side of an expression, and only a property on the document being queried. " + memberAccessExpressionSyntax.Expression, node.GetLocation());
                 }
                 
                 var symbolInfo = model.GetSymbolInfo(memberAccessExpressionSyntax);
                 var propertySymbol = symbolInfo.Symbol as IPropertySymbol;
                 if (propertySymbol == null)
                 {
-                    return new Issue("You can only query against public properties", node);
+                    return new Issue("You can only query against public properties", node.GetLocation());
                 }
                 
                 if (propertySymbol.GetMethod == null)
                 {
-                    return new Issue("You can only query against public properties with getters", node);
+                    return new Issue("You can only query against public properties with getters", node.GetLocation());
                 }
 
                 // OK!
@@ -128,13 +128,13 @@ namespace Nevermore.Analyzers
             {
                 if (prefixUnaryExpressionSyntax.OperatorToken.Text != "!")
                 {
-                    return new Issue("Cannot translate token " + prefixUnaryExpressionSyntax.OperatorToken.Text, node);
+                    return new Issue("Cannot translate token " + prefixUnaryExpressionSyntax.OperatorToken.Text, node.GetLocation());
                 }
 
                 return DefaultVisit(prefixUnaryExpressionSyntax.Operand);
             }
 
-            return new Issue($"Cannot understand expression ({node.GetType().Name}) " + node, node);
+            return new Issue($"Cannot understand expression ({node.GetType().Name}) " + node, node.GetLocation());
         }
     }
 }

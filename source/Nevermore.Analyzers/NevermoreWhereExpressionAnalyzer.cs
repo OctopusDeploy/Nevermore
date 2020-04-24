@@ -3,10 +3,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Nevermore.Analyzers;
-using Nevermore.Querying;
 
-namespace Nevermore.Advanced
+namespace Nevermore.Analyzers
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NevermoreWhereExpressionAnalyzer : DiagnosticAnalyzer
@@ -16,10 +14,7 @@ namespace Nevermore.Advanced
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
             context.EnableConcurrentExecution();
 
-            context.RegisterCompilationStartAction(compilationStartContext =>
-            {
-                AnalyzeCompilation(compilationStartContext);
-            });
+            context.RegisterCompilationStartAction(AnalyzeCompilation);
         }
 
         void AnalyzeCompilation(CompilationStartAnalysisContext compilationStartContext)
@@ -42,7 +37,7 @@ namespace Nevermore.Advanced
                 if (methodSymbol.ContainingType == null)
                     return;
                 
-                if (!(methodSymbol.ContainingType.Name == typeof(QueryBuilderWhereExtensions).Name || methodSymbol.ContainingType.Name == typeof(DeleteQueryBuilderExtensions).Name))
+                if (!(methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Nevermore") || methodSymbol.ContainingType.Name == "QueryBuilderWhereExtensions" || methodSymbol.ContainingType.Name == "DeleteQueryBuilderExtensions"))
                     return;
                 
                 if (invocation.ArgumentList.Arguments.Count != 1)
@@ -53,8 +48,8 @@ namespace Nevermore.Advanced
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
-                            MyDescriptor,
-                            invocation.GetLocation(), invocation.ArgumentList));
+                            ErrorDescriptor,
+                            invocation.GetLocation(), "Cannot translate expression argument: " + invocation.ArgumentList));
                     return;
                 }
 
@@ -63,15 +58,16 @@ namespace Nevermore.Advanced
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
-                            MyDescriptor,
-                            invocation.GetLocation(), result.Message));
+                            ErrorDescriptor,
+                            result.Location ?? invocation.GetLocation(), 
+                            result.Message));
                 }
 
             }, SyntaxKind.InvocationExpression);
         }
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(MyDescriptor);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(ErrorDescriptor);
         
-        static DiagnosticDescriptor MyDescriptor = new DiagnosticDescriptor("NV0001", "Nevermore LINQ expression", "Nevermore LINQ support will not be able to translate this expression: {0}", "Design", DiagnosticSeverity.Error, true);
+        static readonly DiagnosticDescriptor ErrorDescriptor = new DiagnosticDescriptor("NV0001", "Nevermore LINQ expression", "Nevermore LINQ support will not be able to translate this expression: {0}", "Usage", DiagnosticSeverity.Error, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
     }
 }

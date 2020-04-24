@@ -6,7 +6,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <Analyzer Include="..\Nevermore\bin\**\Nevermore.dll" />
+        <Analyzer Include="..\Nevermore.Analyzers\bin\**\Nevermore.Analyzers.dll" />
     </ItemGroup>
 
     <ItemGroup>
