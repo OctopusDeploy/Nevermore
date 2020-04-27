@@ -289,6 +289,19 @@ namespace Nevermore.Analyzers
                 return string.Join(", ", initializerExpressionSyntax.Expressions.Take(1).Select(e => "@" + GetStringValue(e, model).TrimStart('@')));
             }
             
+            if (expression is AssignmentExpressionSyntax assignmentExpressionSyntax)
+            {
+                return GetStringValue(assignmentExpressionSyntax.Left, model);
+            }
+            
+            if (expression is ImplicitElementAccessSyntax implicitElementAccessSyntax)
+            {
+                if (implicitElementAccessSyntax.ArgumentList.Arguments.Count >= 1)
+                {
+                    return GetStringValue(implicitElementAccessSyntax.ArgumentList.Arguments[0].Expression, model);
+                }
+            }
+            
             return expression.GetType().Name + " -- " + expression;
         }
 
