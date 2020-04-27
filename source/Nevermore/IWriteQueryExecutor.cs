@@ -11,7 +11,7 @@ namespace Nevermore
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
         /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
-        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <see cref="options"/> parameter.
+        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
@@ -21,7 +21,7 @@ namespace Nevermore
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
         /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
-        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <see cref="options"/> parameter.
+        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>

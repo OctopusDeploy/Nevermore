@@ -126,6 +126,7 @@ namespace Nevermore.Mapping
         /// <see cref="IInstanceTypeResolver"/> that can resolve concrete instances of that type based on the value
         /// in this column.
         /// </summary>
+        /// <param name="columnName">The name of the column that the property will be stored in.</param>
         /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
         /// <typeparam name="TProperty">The property type of the column.</typeparam>
         /// <returns>A builder to further configure the column mapping.</returns>

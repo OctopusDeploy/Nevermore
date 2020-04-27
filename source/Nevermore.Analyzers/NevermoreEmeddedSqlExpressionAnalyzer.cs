@@ -16,7 +16,7 @@ namespace Nevermore.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NevermoreEmbeddedSqlExpressionAnalyzer : DiagnosticAnalyzer
     {
-        readonly HashSet<string> methodsWeCareAbout = new HashSet<string> {"Where", "Parameter", "LikeParameter", "ToList", "Stream", "First", "FirstOrDefault", "Take"};
+        readonly HashSet<string> methodsWeCareAbout = new HashSet<string> {"Where", "Parameter", "LikeParameter", "LikePipedParameter", "ToList", "Stream", "First", "FirstOrDefault", "Take"};
         
         public override void Initialize(AnalysisContext context)
         {
@@ -161,7 +161,24 @@ namespace Nevermore.Analyzers
                 var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
                 currentQuery.AddQueryText(query, invocation.ArgumentList.Arguments[0].Expression);
             }
-            else if (methodSymbol.Name == "Parameter" || methodSymbol.Name == "LikeParameter")
+            else if (methodSymbol.Name == "Stream")
+            {
+                if (methodSymbol.MethodKind != MethodKind.Ordinary)
+                    return;
+
+                if (invocation.ArgumentList.Arguments.Count < 1)
+                    return;
+
+                var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
+                currentQuery.AddQueryText(query, invocation.ArgumentList.Arguments[0].Expression);
+                
+                if (invocation.ArgumentList.Arguments.Count < 2)
+                    return;
+
+                FindCommandValueParameters(invocation.ArgumentList.Arguments[1].Expression,
+                    context.SemanticModel, currentQuery);
+            }
+            else if (methodSymbol.Name == "Parameter" || methodSymbol.Name == "LikeParameter" || methodSymbol.Name == "LikePipedParameter")
             {
                 if (invocation.ArgumentList.Arguments.Count < 1)
                     return;
@@ -175,6 +192,12 @@ namespace Nevermore.Analyzers
                     context.ReportDiagnostic(Diagnostic.Create(ErrorDescriptor, invocation.GetLocation(), "Could not understand parameter: " + firstArg));
                 }
             }
+        }
+
+        void FindCommandValueParameters(ExpressionSyntax expression, SemanticModel model, QueryAnalysisUnit currentQuery)
+        {
+            var value = GetStringValue(expression, model);
+            currentQuery.AddSuppliedParameter(value);
         }
 
         static SyntaxNode FindStartOfMethodChain(SyntaxNode subject)
@@ -247,10 +270,23 @@ namespace Nevermore.Analyzers
             {
                 var typeInfo = model.GetSymbolInfo(creationExpressionSyntax.Type);
 
-                if (typeInfo.Symbol is ITypeSymbol typeSymbol && typeSymbol.Name == "Parameter" && creationExpressionSyntax.ArgumentList.Arguments.Count > 0)
+                if (typeInfo.Symbol is ITypeSymbol typeSymbol)
                 {
-                    return GetStringValue(creationExpressionSyntax.ArgumentList.Arguments[0].Expression, model);
+                    if (typeSymbol.Name == "Parameter" && creationExpressionSyntax.ArgumentList.Arguments.Count > 0)
+                    {
+                        return GetStringValue(creationExpressionSyntax.ArgumentList.Arguments[0].Expression, model);
+                    }
+                    
+                    if (typeSymbol.Name == "CommandParameterValues" && creationExpressionSyntax.Initializer != null)
+                    {
+                        return string.Join(", ", creationExpressionSyntax.Initializer.Expressions.Select(e => "@" + GetStringValue(e, model).TrimStart('@')));
+                    }
                 }
+            }
+            
+            if (expression is InitializerExpressionSyntax initializerExpressionSyntax)
+            {
+                return string.Join(", ", initializerExpressionSyntax.Expressions.Take(1).Select(e => "@" + GetStringValue(e, model).TrimStart('@')));
             }
             
             return expression.GetType().Name + " -- " + expression;

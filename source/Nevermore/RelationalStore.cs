@@ -34,35 +34,35 @@ namespace Nevermore
             keyAllocator.Value.Reset();
         }
 
-        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
+        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             txn.Open(isolationLevel);
             return txn;
         }
 
-        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             await txn.OpenAsync(isolationLevel);
             return txn;
         }
 
-        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
+        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             txn.Open(isolationLevel);
             return txn;
         }
 
-        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             await txn.OpenAsync(isolationLevel);
             return txn;
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation, string name)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             return (IRelationalTransaction)BeginWriteTransaction(isolationLevel, retriableOperation, name);
         }
