@@ -202,7 +202,7 @@ namespace Nevermore.Mapping
             return mapping;
         }
 
-        static PropertyInfo GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
+        PropertyInfo GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
         {
             var member = propertyLambda.Body as MemberExpression;
             if (member == null)
@@ -212,7 +212,12 @@ namespace Nevermore.Mapping
             if (propInfo == null)
                 return null;
 
-            return propInfo;
+            if (propInfo.DeclaringType != null && (map.Type == propInfo.DeclaringType || propInfo.DeclaringType.IsAssignableFrom(map.Type)))
+            {
+                return propInfo;
+            }
+
+            return null;
         }
 
         /// <summary>
