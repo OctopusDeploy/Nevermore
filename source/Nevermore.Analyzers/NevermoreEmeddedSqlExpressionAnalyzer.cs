@@ -30,10 +30,12 @@ namespace Nevermore.Analyzers
             static Regex parameterDetectionRegex = new Regex(@"@\w+", RegexOptions.Compiled);
             StringBuilder queryBuilder = new StringBuilder();
             HashSet<string> actualParameters = new HashSet<string>();
+            List<SyntaxNode> nodes = new List<SyntaxNode>();
 
-            public void AddQueryText(string query)
+            public void AddQueryText(string query, SyntaxNode node)
             {
                 queryBuilder.AppendLine(query);
+                nodes.Add(node);
             }
 
             public void AddSuppliedParameter(string name)
@@ -52,17 +54,17 @@ namespace Nevermore.Analyzers
                 }
             }
 
-            public (bool Valid, string Message, DiagnosticDescriptor DiagnosticDescriptor) Validate()
+            public (bool Valid, string Message, DiagnosticDescriptor DiagnosticDescriptor, SyntaxNode node) Validate()
             {
                 var query = queryBuilder.ToString();
                 if (string.IsNullOrWhiteSpace(query))
-                    return (true, null, null);
+                    return (true, null, null, null);
                 
                 var expectedParameters = parameterDetectionRegex.Matches(query).Select(m => m.Value.TrimStart('@')).ToList();
                 
                 var notSupplied = expectedParameters.Where(p => !actualParameters.Contains(p)).ToArray();
                 if (notSupplied.Length == 0)
-                    return (true, null, null);
+                    return (true, null, null, null);
 
                 var suppliedMessage = actualParameters.Count == 0 ? "Did not detect any parameters supplied." : "Detected the following parameters: " + string.Join(", ", actualParameters.Select(p => "@" + p));
 
@@ -72,15 +74,15 @@ namespace Nevermore.Analyzers
                 if (notSuppliedIfCasingIgnored.Length == 0)
                 {
                     if (notSupplied.Length == 1)
-                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, WarningDescriptor);
+                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, WarningDescriptor, nodes.First());
 
-                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, WarningDescriptor);
+                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, WarningDescriptor, nodes.First());
                 }
 
                 if (notSupplied.Length == 1)
-                    return (false, $"The query refers to the parameter '@{notSupplied[0]}', but no value for the parameter is being passed to the query. Make sure you add a call to '.Parameter(\"{notSupplied[0]}\", ...)' to the query. " + suppliedMessage, ErrorDescriptor);
+                    return (false, $"The query refers to the parameter '@{notSupplied[0]}', but no value for the parameter is being passed to the query. Make sure you add a call to '.Parameter(\"{notSupplied[0]}\", ...)' to the query. " + suppliedMessage, ErrorDescriptor, nodes.First());
 
-                return (false, $"The following parameters appear in the SQL query string, but have not been passed to the query as parameters. Check the spelling and try again. Missing parameters: {string.Join(", ", notSupplied)}. " + suppliedMessage, ErrorDescriptor);
+                return (false, $"The following parameters appear in the SQL query string, but have not been passed to the query as parameters. Check the spelling and try again. Missing parameters: {string.Join(", ", notSupplied)}. " + suppliedMessage, ErrorDescriptor, nodes.First());
             }
         }
         
@@ -101,11 +103,11 @@ namespace Nevermore.Analyzers
                 {
                     foreach (var (node, unit) in discovered)
                     {
-                        var (success, message, level) = unit.Validate();
+                        var (success, message, level, syntaxNode) = unit.Validate();
 
                         if (!success)
                         {
-                            analysisContext.ReportDiagnostic(Diagnostic.Create(level, node.GetLocation(), message));
+                            analysisContext.ReportDiagnostic(Diagnostic.Create(level, syntaxNode.GetLocation(), message));
                         }
                     }
                 });
@@ -157,7 +159,7 @@ namespace Nevermore.Analyzers
                     return;
 
                 var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
-                currentQuery.AddQueryText(query);
+                currentQuery.AddQueryText(query, invocation.ArgumentList.Arguments[0].Expression);
             }
             else if (methodSymbol.Name == "Parameter" || methodSymbol.Name == "LikeParameter")
             {
