@@ -45,7 +45,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         static bool IsNullable(ColumnMapping column)
         {
-            if (column.Property.PropertyType.IsClass)
+            if (column.Type.IsClass)
                 return true;
             return false;
         }
