@@ -159,7 +159,7 @@ namespace Nevermore.Analyzers
                     return;
 
                 var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
-                currentQuery.AddQueryText(query, invocation.ArgumentList.Arguments[0].Expression);
+                currentQuery.AddQueryText(query, invocation);
             }
             else if (methodSymbol.Name == "Stream")
             {
@@ -170,7 +170,7 @@ namespace Nevermore.Analyzers
                     return;
 
                 var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
-                currentQuery.AddQueryText(query, invocation.ArgumentList.Arguments[0].Expression);
+                currentQuery.AddQueryText(query, invocation);
                 
                 if (invocation.ArgumentList.Arguments.Count < 2)
                     return;
