@@ -40,7 +40,12 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
         }
 
-        public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
+        public Task InsertAsync<TDocument>(TDocument instance, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return InsertAsync(instance, null, cancellationToken);
+        }
+
+        public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {instance}, options);
             await configuration.Hooks.BeforeInsertAsync(instance, command.Mapping, this);
@@ -61,7 +66,12 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
         }
 
-        public async Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
+        public Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return InsertManyAsync(documents, null, cancellationToken);
+        }
+
+        public async Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             IReadOnlyList<object> instanceList = documents.ToArray();
             if (!instanceList.Any()) return;
@@ -82,7 +92,12 @@ namespace Nevermore.Advanced
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
-        public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
+        public Task UpdateAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return UpdateAsync(document, null, cancellationToken);
+        }
+
+        public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareUpdate(document, options);
             await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
@@ -96,7 +111,12 @@ namespace Nevermore.Advanced
             Delete<TDocument>(id, options);
         }
 
-        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return DeleteAsync(document, null, cancellationToken);
+        }
+
+        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var id = configuration.DocumentMaps.GetId(document);
             return DeleteAsync<TDocument>(id, options, cancellationToken);
@@ -110,7 +130,12 @@ namespace Nevermore.Advanced
             configuration.Hooks.AfterDelete<TDocument>(id, command.Mapping, this);
         }
 
-        public async Task DeleteAsync<TDocument>(string id, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return DeleteAsync(id, null, cancellationToken);
+        }
+
+        public async Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);

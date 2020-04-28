@@ -251,8 +251,7 @@ namespace Nevermore.Advanced
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
             }
         }
-
-
+        
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));

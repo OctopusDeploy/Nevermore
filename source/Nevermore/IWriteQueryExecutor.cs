@@ -25,9 +25,19 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task InsertAsync<TDocument>(TDocument instance, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
+        /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
+        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
+        /// <param name="instance">The document instance to insert.</param>
         /// <param name="options">Advanced options for the insert operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task InsertAsync<TDocument>(TDocument instance, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class;
+        Task InsertAsync<TDocument>(TDocument instance, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Immediately inserts multiple items into a specific table. Useful for up to a few hundred items, but not more
@@ -44,9 +54,18 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="documents">The document instances to insert (will be formed into a multiple VALUES for a single SQL INSERT.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Immediately inserts multiple items into a specific table. Useful for up to a few hundred items, but not more
+        /// (depends on the number of properties in each item).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
+        /// <param name="documents">The document instances to insert (will be formed into a multiple VALUES for a single SQL INSERT.</param>
         /// <param name="options">Advanced options for the insert operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null, CancellationToken cancellationToken = default) where TDocument : class;
+        Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Updates an existing document in the database. 
@@ -55,7 +74,15 @@ namespace Nevermore
         /// <param name="document">The document to update.</param>
         /// <param name="options">Advanced options for the update operation.</param>
         void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class;
-        
+
+        /// <summary>
+        /// Updates an existing document in the database. 
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being updated.</typeparam>
+        /// <param name="document">The document to update.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task UpdateAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
+
         /// <summary>
         /// Updates an existing document in the database. 
         /// </summary>
@@ -63,7 +90,7 @@ namespace Nevermore
         /// <param name="document">The document to update.</param>
         /// <param name="options">Advanced options for the update operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options = null, CancellationToken cancellationToken = default) where TDocument : class;
+        Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Deletes an existing document from the database.
@@ -80,7 +107,16 @@ namespace Nevermore
         /// <param name="document">The document to delete.</param>
         /// <param name="options">Advanced options for the delete operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class;
+        Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="document">The document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Deletes an existing document from the database by its ID.
@@ -95,9 +131,17 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="id">The id of the document to delete.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
         /// <param name="options">Advanced options for the delete operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task DeleteAsync<TDocument>(string id, DeleteOptions options = null, CancellationToken cancellationToken = default) where TDocument : class;
+        Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
         
         /// <summary>
         /// Creates a deletion query for a strongly typed document.
