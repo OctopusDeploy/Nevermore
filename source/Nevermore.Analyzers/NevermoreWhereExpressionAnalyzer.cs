@@ -68,6 +68,6 @@ namespace Nevermore.Analyzers
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(ErrorDescriptor);
         
-        static readonly DiagnosticDescriptor ErrorDescriptor = new DiagnosticDescriptor("NV0001", "Nevermore LINQ expression", "Nevermore LINQ support will not be able to translate this expression: {0}", "Usage", DiagnosticSeverity.Error, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
+        static readonly DiagnosticDescriptor ErrorDescriptor = new DiagnosticDescriptor("NV0001", "Nevermore LINQ expression", "Nevermore LINQ support will not be able to translate this expression: {0}", "Nevermore", DiagnosticSeverity.Error, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
     }
 }

@@ -34,11 +34,14 @@ namespace Nevermore.Tests.QueryBuilderFixture
         [Test]
         public void VariablesCasingIsNormalisedForWhere()
         {
+            #pragma warning disable NV0006
             CreateQueryBuilder()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
                 .ToList();
+            
+            #pragma warning restore NV0006
 
             parameters.Count.Should().Be(2);
             foreach (var parameter in parameters)

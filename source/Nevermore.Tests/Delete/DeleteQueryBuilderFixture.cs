@@ -155,12 +155,14 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhere()
         {
+#pragma warning disable NV0006
             CreateQueryBuilder<object>()
                 .Where("fOo = @myVAriabLe AND Baz = @OthervaR")
                 .Parameter("MyVariable", "Bar")
                 .Parameter("OTHERVAR", "Bar")
                 .Delete();
-
+#pragma warning restore NV0006
+            
             parameters.Count.Should().Be(2);
             foreach (var parameter in parameters)
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);
@@ -169,9 +171,11 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereSingleParam()
         {
+#pragma warning disable NV0006
             CreateQueryBuilder<object>()
                 .Where("fOo", UnarySqlOperand.GreaterThan, "Bar")
                 .Delete();
+#pragma warning restore NV0006
 
             parameters.Count.Should().Be(1);
             var parameter = "@" + parameters.Keys.Single();
@@ -181,9 +185,11 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereTwoParam()
         {
+#pragma warning disable NV0006
             CreateQueryBuilder<object>()
                 .Where("fOo", BinarySqlOperand.Between, 1, 2)
                 .Delete();
+#pragma warning restore NV0006
 
             parameters.Count.Should().Be(2);
             foreach (var parameter in parameters)
@@ -193,9 +199,11 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereParamArray()
         {
+#pragma warning disable NV0006
             CreateQueryBuilder<object>()
                 .Where("fOo", UnarySqlOperand.Like, new[] { 1, 2, 3 })
                 .Delete();
+#pragma warning restore NV0006
 
             parameters.Count.Should().Be(1);
             var parameter = "@" + parameters.Keys.Single();
@@ -205,9 +213,11 @@ AND ([Price] < @price_1)");
         [Test]
         public void VariablesCasingIsNormalisedForWhereIn()
         {
+#pragma warning disable NV0006
             CreateQueryBuilder<object>()
                 .Where("fOo", ArraySqlOperand.In, new[] { "BaR", "BaZ" })
                 .Delete();
+#pragma warning restore NV0006
 
             parameters.Count.Should().Be(2);
             foreach (var parameter in parameters)

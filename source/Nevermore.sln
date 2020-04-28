@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Benchmarks", "Nev
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Analyzers", "Nevermore.Analyzers\Nevermore.Analyzers.csproj", "{47EA1F4A-49A7-4691-A455-2A96FDDB2276}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nevermore.Analyzers.Tests", "Nevermore.Analyzers.Tests\Nevermore.Analyzers.Tests.csproj", "{76F1F747-68DB-4461-8DF9-76BCA1A455C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47EA1F4A-49A7-4691-A455-2A96FDDB2276}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76F1F747-68DB-4461-8DF9-76BCA1A455C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76F1F747-68DB-4461-8DF9-76BCA1A455C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76F1F747-68DB-4461-8DF9-76BCA1A455C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76F1F747-68DB-4461-8DF9-76BCA1A455C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +60,6 @@ Global
 		{10E71E20-EBBD-4F03-87E8-5958B7E7B996} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 		{8D1B7168-CA5C-4E36-B401-C3F4A695C6CB} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 		{BE37C675-CA40-466D-B5F1-71199C7A0D31} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
+		{76F1F747-68DB-4461-8DF9-76BCA1A455C5} = {17DF319F-FF0B-4584-8BD4-C5C6B4EDF14A}
 	EndGlobalSection
 EndGlobal

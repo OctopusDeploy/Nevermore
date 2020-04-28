@@ -828,11 +828,13 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
+#pragma warning disable NV0006
             var result = CreateQueryBuilder<Todos>("Todos")
                 .Where("[Completed] BETWEEN @startvalue AND @endvalue")
                 .Parameter("StartValue", 5)
                 .Parameter("EndValue", 10)
                 .Count();
+#pragma warning restore NV0006
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),
@@ -876,11 +878,13 @@ WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
                 .Returns(1);
 
+#pragma warning disable NV0006
             var result = CreateQueryBuilder<Todos>("Todos")
                 .Where("[Completed] >= @startvalue AND [Completed] <= @endvalue")
                 .Parameter("StartValue", 5)
                 .Parameter("EndValue", 10)
                 .Count();
+#pragma warning restore NV0006
 
             transaction.Received(1).ExecuteScalar<int>(
                 Arg.Is(expectedSql),

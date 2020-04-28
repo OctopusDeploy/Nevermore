@@ -74,9 +74,9 @@ namespace Nevermore.Analyzers
                 if (notSuppliedIfCasingIgnored.Length == 0)
                 {
                     if (notSupplied.Length == 1)
-                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, WarningDescriptor, nodes.First());
+                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, ErrorDescriptor, nodes.First());
 
-                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, WarningDescriptor, nodes.First());
+                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, ErrorDescriptor, nodes.First());
                 }
 
                 if (notSupplied.Length == 1)
@@ -236,6 +236,15 @@ namespace Nevermore.Analyzers
                         return GetStringValue(variableDeclaratorSyntax.Initializer.Value, model);
                     }
                 }
+                
+                if (symbol.Symbol is IPropertySymbol propertySymbol)
+                {
+                    var references = propertySymbol.DeclaringSyntaxReferences;
+                    if (references.Length != 1)
+                        return null;
+
+                    return propertySymbol.Name;
+                }
             }
 
             if (expression is InterpolatedStringExpressionSyntax interpolatedStringExpressionSyntax)
@@ -277,10 +286,23 @@ namespace Nevermore.Analyzers
                         return GetStringValue(creationExpressionSyntax.ArgumentList.Arguments[0].Expression, model);
                     }
                     
-                    if (typeSymbol.Name == "CommandParameterValues" && creationExpressionSyntax.Initializer != null)
+                    if (typeSymbol.Name == "CommandParameterValues")
                     {
-                        return string.Join(", ", creationExpressionSyntax.Initializer.Expressions.Select(e => "@" + GetStringValue(e, model).TrimStart('@')));
+                        var values = new List<string>();
+                        if (creationExpressionSyntax.Initializer != null && creationExpressionSyntax.Initializer.Expressions.Count > 0)
+                        {
+                            values.AddRange(creationExpressionSyntax.Initializer.Expressions.Select(e => GetStringValue(e, model)));
+                        }
+
+                        if (creationExpressionSyntax.ArgumentList != null && creationExpressionSyntax.ArgumentList.Arguments.Count > 0)
+                        {
+                            values.AddRange(creationExpressionSyntax.ArgumentList.Arguments.Select(e => GetStringValue(e.Expression, model)));
+                        }
+                        
+                        return string.Join(", ", values.Select(v => '@' + v.TrimStart('@')));
                     }
+
+                    return "???? " + typeSymbol.Name;
                 }
             }
             
@@ -300,6 +322,11 @@ namespace Nevermore.Analyzers
                 {
                     return GetStringValue(implicitElementAccessSyntax.ArgumentList.Arguments[0].Expression, model);
                 }
+            }
+            
+            if (expression is AnonymousObjectCreationExpressionSyntax anonymousObjectCreationExpressionSyntax)
+            {
+                return string.Join(", ", anonymousObjectCreationExpressionSyntax.Initializers.Select(e => "@" + (e.NameEquals == null ? e.Expression.ToString() : GetStringValue(e.NameEquals.Name, model)).TrimStart('@')));
             }
             
             return expression.GetType().Name + " -- " + expression;

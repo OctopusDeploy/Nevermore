@@ -25,10 +25,12 @@ namespace Nevermore.IntegrationTests
         {
             using (var trn = Store.BeginTransaction())
             {
+                #pragma warning disable NV0006
                 trn.Query<Product>()
                     .Where("[Id] IN @Ids")
                     .Parameter("ids", new[] {"A", "B"})
                     .ToList();
+                #pragma warning restore NV0006
             }
         }
 

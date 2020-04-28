@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NUnit" Version="3.10.1" />
+        <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
+        <PackageReference Include="TeamCity.VSTest.TestAdapter" Version="1.0.20" />
+        <PackageReference Include="FluentAssertions" Version="4.19.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.5.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="3.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Nevermore.Analyzers\Nevermore.Analyzers.csproj" />
+      <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
+    </ItemGroup>
+</Project>
