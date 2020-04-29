@@ -59,13 +59,20 @@ namespace Nevermore
         public void AddTable(string name, IEnumerable<string> ids)
         {
             var idColumnMetadata = new SqlMetaData("ParameterValue", SqlDbType.NVarChar, 300);
-            
-            Add(name, ids.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v =>
+
+            var dataRecords = ids.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v =>
             {
                 var record = new SqlDataRecord(idColumnMetadata);
                 record.SetValue(0, v);
                 return record;
-            }).ToList());
+            }).ToList();
+            
+            AddTable(name, new TableValuedParameter("dbo.[ParameterList]", dataRecords));
+        }
+        
+        public void AddTable(string name, TableValuedParameter tvp)
+        {
+            Add(name, tvp);
         }
         
         void AddFromParametersObject(object args)
@@ -109,11 +116,11 @@ namespace Nevermore
                 return;
             }
             
-            if (value is List<SqlDataRecord> dr && command is SqlCommand sqlCommand)
+            if (value is TableValuedParameter tvp && command is SqlCommand sqlCommand)
             {
                 var p = sqlCommand.Parameters.Add(name, SqlDbType.Structured);
-                p.Value = dr;
-                p.TypeName = "dbo.[ParameterList]";
+                p.Value = tvp.DataRecords;
+                p.TypeName = tvp.TypeName;
                 return;
             }
 
