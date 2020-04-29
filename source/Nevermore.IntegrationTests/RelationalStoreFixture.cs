@@ -212,5 +212,23 @@ namespace Nevermore.IntegrationTests
                 dbCustomer.RowVersion.All(v => v == 0).Should().BeFalse();
             }
         }
+        
+        [Test]
+        public void ShouldPersistAndLoadReferenceCollectionsOnSingleDocuments()
+        {
+            var customerId = string.Empty;
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer);
+                customerId = customer.Id;
+                transaction.Commit();
+            }
+            using (var transaction = Store.BeginTransaction())
+            {
+                var loadedCustomer = transaction.Load<Customer>(customerId);
+                loadedCustomer.Roles.Count.Should().Be(2);
+            }
+        }
     }
 }
