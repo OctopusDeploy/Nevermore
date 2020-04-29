@@ -131,6 +131,36 @@ namespace Nevermore.IntegrationTests
                             lines[2].Product is SpecialProduct sp && sp.BonusMaterial == "Out-takes");
             }
         }
+        
+        [Test]
+        public void ShouldAllowNoPrefixOnProjectionMapping()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                transaction.Insert(new Product {Name = "Talking Elmo", Price = 100}, new InsertOptions { CustomAssignedId = "product-1"});
+                transaction.Insert(new SpecialProduct() {Name = "Lego set", Price = 200, BonusMaterial = "Out-takes"}, new InsertOptions { CustomAssignedId = "product-2"});
+
+                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 1", Quantity = 10});
+                transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = 10});
+                transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20});
+
+                transaction.Commit();
+            }
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                var lines = transaction.Stream("SELECT line.*, prod.Name as prod_name from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
+                {
+                    LineItem = map.Map<LineItem>(string.Empty),
+                    Product = map.Read(reader => reader["prod_name"].ToString())
+                }).ToList();
+
+                lines.Count.Should().Be(3);
+                Assert.True(lines[0].LineItem.Name == "Line 1" && lines[0].Product == "Talking Elmo");
+                Assert.True(lines[1].LineItem.Name == "Line 2" && lines[1].Product == "Talking Elmo");
+                Assert.True(lines[2].LineItem.Name == "Line 3" && lines[2].Product == "Lego set");
+            }
+        }
 
         [Test]
         public void ShouldInsertOneRecordWithInsertMany()
