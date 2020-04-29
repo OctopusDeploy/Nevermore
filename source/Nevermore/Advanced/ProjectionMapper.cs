@@ -24,7 +24,7 @@ namespace Nevermore.Advanced
         {
             if (!readers.ContainsKey(prefix))
             {
-                var prefixedReader = new PrefixedDataReader(prefix + "_", reader);
+                var prefixedReader = new PrefixedDataReader(string.IsNullOrWhiteSpace(prefix) ? string.Empty : prefix + "_", reader);
                 var func = readerStrategies.Resolve<TResult>(command);
                 readers.Add(prefix, new ProjectingReader<TResult>(func, prefixedReader));
             }
