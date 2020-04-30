@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Nevermore.Advanced.PropertyHandlers;
-using Nevermore.Contracts;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.Mapping

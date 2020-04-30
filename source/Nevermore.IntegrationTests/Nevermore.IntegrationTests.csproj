@@ -15,7 +15,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj" />
     <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
   </ItemGroup>
   <ItemGroup>

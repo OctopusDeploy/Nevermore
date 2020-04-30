@@ -16,7 +16,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nevermore\Nevermore.csproj" />
-    <ProjectReference Include="..\Nevermore.Contracts\Nevermore.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\Nevermore.Analyzers\bin\**\Nevermore.Analyzers.dll" />
