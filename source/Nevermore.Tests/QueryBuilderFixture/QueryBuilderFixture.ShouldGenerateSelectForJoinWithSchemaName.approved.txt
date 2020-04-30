@@ -1,0 +1,9 @@
+SELECT ALIAS_GENERATED_2.*
+FROM (
+    SELECT *
+    FROM [schema1].[Orders]
+    WHERE ([Price] > 5)
+) ALIAS_GENERATED_2
+INNER JOIN [schema2].[Customers] ALIAS_Customers_1
+ON ALIAS_GENERATED_2.[CustomerId] = ALIAS_Customers_1.[Id]
+ORDER BY ALIAS_GENERATED_2.[Id]
