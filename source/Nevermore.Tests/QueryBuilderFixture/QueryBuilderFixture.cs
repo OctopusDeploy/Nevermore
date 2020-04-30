@@ -38,7 +38,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 .DebugViewRawQuery();
 
             const string expected = @"SELECT *
-FROM dbo.[Orders]
+FROM [dbo].[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Name]";
 
@@ -53,7 +53,7 @@ ORDER BY [Name]";
                 .DebugViewRawQuery();
 
             const string expected = @"SELECT *
-FROM dbo.[Orders]
+FROM [dbo].[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
@@ -68,7 +68,7 @@ ORDER BY [Id]";
              .DebugViewRawQuery();
 
             const string expected = @"SELECT *
-FROM dbo.[Orders]
+FROM [dbo].[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
@@ -170,7 +170,7 @@ ORDER BY [Id]";
                 .Count();
 
             var expected = @"SELECT COUNT(*)
-FROM dbo.[Orders]";
+FROM [dbo].[Orders]";
 
             actual.Should().Be(expected);
         }
@@ -187,7 +187,7 @@ FROM dbo.[Orders]";
                 .Count();
 
             var expected = @"SELECT COUNT(*)
-FROM dbo.[Orders] NOLOCK
+FROM [dbo].[Orders] NOLOCK
 WHERE ([Price] > 5)";
 
             actual.Should().Be(expected);
@@ -205,7 +205,7 @@ WHERE ([Price] > 5)";
                 .Count();
 
             const string expected = @"SELECT COUNT(*)
-FROM dbo.[Orders] NOLOCK
+FROM [dbo].[Orders] NOLOCK
 WHERE ([Price] > 5)";
 
             actual.Should().Be(expected);
@@ -268,7 +268,7 @@ WHERE ([Price] > 5)";
                 .Take(100);
 
             var expected = @"SELECT TOP 100 *
-FROM dbo.[Orders] NOLOCK
+FROM [dbo].[Orders] NOLOCK
 WHERE ([Price] > 5)
 ORDER BY [Id]";
 
@@ -336,7 +336,7 @@ ORDER BY [Id]";
         public void ShouldGetCorrectSqlQueryForAnyWithResults()
         {
             const string expectedSql = @"IF EXISTS(SELECT *
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
 ELSE
@@ -365,7 +365,7 @@ ELSE
         public void ShouldGetCorrectSqlQueryForAnyWithNoResults()
         {
             const string expectedSql = @"IF EXISTS(SELECT *
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
 ELSE
@@ -394,7 +394,7 @@ ELSE
         public void ShouldGetCorrectSqlQueryForAnyIgnoreOrderBy()
         {
             const string expectedSql = @"IF EXISTS(SELECT *
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
 ELSE
@@ -424,7 +424,7 @@ ELSE
         public void ShouldGetCorrectSqlQueryForWhereLessThan()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] < @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -446,7 +446,7 @@ WHERE ([Completed] < @completed)";
         public void ShouldGetCorrectSqlQueryForWhereLessThanExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] < @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -467,7 +467,7 @@ WHERE ([Completed] < @completed)";
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] <= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -489,7 +489,7 @@ WHERE ([Completed] <= @completed)";
         public void ShouldGetCorrectSqlQueryForWhereLessThanOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] <= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -510,7 +510,7 @@ WHERE ([Completed] <= @completed)";
         public void ShouldGetCorrectSqlQueryForWhereEquals()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] = @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -532,7 +532,7 @@ WHERE ([Title] = @title)";
         public void ShouldGetCorrectSqlQueryForWhereEqualsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] = @title)";
             
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -553,7 +553,7 @@ WHERE ([Title] = @title)";
         public void ShouldGetCorrectSqlQueryForWhereNotEquals()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] <> @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -575,7 +575,7 @@ WHERE ([Title] <> @title)";
         public void ShouldGetCorrectSqlQueryForWhereNotEqualsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] <> @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -596,7 +596,7 @@ WHERE ([Title] <> @title)";
         public void ShouldGetCorrectSqlQueryForWhereGreaterThan()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] > @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -618,7 +618,7 @@ WHERE ([Completed] > @completed)";
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] > @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -639,7 +639,7 @@ WHERE ([Completed] > @completed)";
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] >= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -661,7 +661,7 @@ WHERE ([Completed] >= @completed)";
         public void ShouldGetCorrectSqlQueryForWhereGreaterThanOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] >= @completed)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -682,7 +682,7 @@ WHERE ([Completed] >= @completed)";
         public void ShouldGetCorrectSqlQueryForWhereContains()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] LIKE @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -704,7 +704,7 @@ WHERE ([Title] LIKE @title)";
         public void ShouldGetCorrectSqlQueryForWhereContainsExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] LIKE @title)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -725,7 +725,7 @@ WHERE ([Title] LIKE @title)";
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereString()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] IN (@nevermore, @octofront))";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -750,7 +750,7 @@ WHERE ([Title] IN (@nevermore, @octofront))";
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereArray()
         {
             const string expectedSql = @"SELECT *
-FROM dbo.[Project]
+FROM [dbo].[Project]
 WHERE ([State] IN (@state1, @state2))
 ORDER BY [Id]";
 
@@ -769,7 +769,7 @@ ORDER BY [Id]";
                 State.Running
             };
             const string expectedSql = @"SELECT *
-FROM dbo.[Project]
+FROM [dbo].[Project]
 WHERE ([State] IN (@state1, @state2))
 ORDER BY [Id]";
             var queryBuilder = CreateQueryBuilder<object>("Project")
@@ -782,7 +782,7 @@ ORDER BY [Id]";
         public void ShouldGetCorrectSqlQueryForWhereInUsingEmptyList()
         {
             const string expextedSql = @"SELECT *
-FROM dbo.[Project]
+FROM [dbo].[Project]
 WHERE (0 = 1)
 ORDER BY [Id]";
 
@@ -797,7 +797,7 @@ ORDER BY [Id]";
         public void ShouldGetCorrectSqlQueryForWhereInExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 WHERE ([Title] IN (@title1, @title2))";
 
 
@@ -821,7 +821,7 @@ WHERE ([Title] IN (@title1, @title2))";
         public void ShouldGetCorrectSqlQueryForWhereBetween()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
 
@@ -849,7 +849,7 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
         public void ShouldGetCorrectSqlQueryForWhereBetweenExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -872,7 +872,7 @@ WHERE ([Completed] BETWEEN @startvalue AND @endvalue)";
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqual()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
 
             transaction.ExecuteScalar<int>(Arg.Is<string>(s => s.Equals(expectedSql)), Arg.Any<CommandParameterValues>())
@@ -899,7 +899,7 @@ WHERE ([Completed] >= @startvalue AND [Completed] <= @endvalue)";
         public void ShouldGetCorrectSqlQueryForWhereBetweenOrEqualExtension()
         {
             const string expectedSql = @"SELECT COUNT(*)
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([Completed] >= @startvalue)
 AND ([Completed] <= @endvalue)";
 
@@ -923,7 +923,7 @@ AND ([Completed] <= @endvalue)";
         public void ShouldGetCorrectSqlQueryForOrderBy()
         {
             const string expectedSql = @"SELECT TOP 1 *
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 ORDER BY [Title]";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
@@ -946,7 +946,7 @@ ORDER BY [Title]";
         public void ShouldGetCorrectSqlQueryForOrderByDescending()
         {
             const string expectedSql = @"SELECT TOP 1 *
-FROM dbo.[TodoItem]
+FROM [dbo].[TodoItem]
 ORDER BY [Title] DESC";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
 
@@ -1516,7 +1516,7 @@ ORDER BY [Title] DESC";
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
-    FROM dbo.[Orders]
+    FROM [dbo].[Orders]
     WHERE ([Id] = @id)
 ) ALIAS_GENERATED_1
 WHERE ([RowNum] >= @_minrow)
@@ -1546,7 +1546,7 @@ ORDER BY [RowNum]");
             query.FirstOrDefault();
 
             const string expected = @"SELECT TOP 1 *
-FROM dbo.[Todos]
+FROM [dbo].[Todos]
 WHERE ([AddedDate] > @addeddate)
 AND ([AddedDate] < @addeddate_1)
 ORDER BY [Id]";
@@ -1585,12 +1585,12 @@ ORDER BY [Id]";
                 @"SELECT TOP 1 ALIAS_GENERATED_2.*
 FROM (
     SELECT *
-    FROM dbo.[Customer]
+    FROM [dbo].[Customer]
     WHERE ([Date] = @date_1)
 ) ALIAS_GENERATED_2
 INNER JOIN (
     SELECT *
-    FROM dbo.[Orders]
+    FROM [dbo].[Orders]
     WHERE ([Date] = @date)
 ) ALIAS_GENERATED_1
 ON ALIAS_GENERATED_2.[Id] = ALIAS_GENERATED_1.[CustomerId]
@@ -1637,7 +1637,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
                 .ToList();
 
             const string expected = @"SELECT *
-FROM dbo.[Customers]
+FROM [dbo].[Customers]
 WHERE ([Name] <> @name)
 AND ([Name] <> @name_1)
 ORDER BY [Id]";

@@ -1,5 +1,5 @@
 SELECT ORD.[Foo] AS [F],
 ORD.[Bar] AS [B],
 ORD.[Baz] AS [B2]
-FROM dbo.[Orders] ORD
+FROM [dbo].[Orders] ORD
 ORDER BY [Id]

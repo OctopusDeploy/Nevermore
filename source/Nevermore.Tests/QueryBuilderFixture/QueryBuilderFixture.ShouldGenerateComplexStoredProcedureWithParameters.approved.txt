@@ -1,4 +1,4 @@
-CREATE PROCEDURE dbo.[LatestSuccessfulDeploymentsToMachine]
+CREATE PROCEDURE [dbo].[LatestSuccessfulDeploymentsToMachine]
 (
     @machineid NVARCHAR(MAX)
 )
@@ -8,12 +8,12 @@ BEGIN (
     FROM (
         SELECT ALIAS_Deployment_2.*,
         ROW_NUMBER() OVER (PARTITION BY ALIAS_Deployment_2.[EnvironmentId], ALIAS_Deployment_2.[ProjectId], ALIAS_Deployment_2.[TenantId] ORDER BY ALIAS_Deployment_2.[[Event].[Occurred]] DESC) AS Rank
-        FROM dbo.[Deployment] ALIAS_Deployment_2
-        INNER JOIN dbo.[DeploymentRelatedMachine] ALIAS_DeploymentRelatedMachine_1
+        FROM [dbo].[Deployment] ALIAS_Deployment_2
+        INNER JOIN [dbo].[DeploymentRelatedMachine] ALIAS_DeploymentRelatedMachine_1
         ON ALIAS_Deployment_2.[Id] = ALIAS_DeploymentRelatedMachine_1.[DeploymentId]
-        INNER JOIN dbo.[EventRelatedDocument] ALIAS_EventRelatedDocument_3
+        INNER JOIN [dbo].[EventRelatedDocument] ALIAS_EventRelatedDocument_3
         ON ALIAS_Deployment_2.[Id] = ALIAS_EventRelatedDocument_3.[RelatedDocumentId]
-        INNER JOIN dbo.[Event] Event
+        INNER JOIN [dbo].[Event] Event
         ON ALIAS_Deployment_2.[Id] = Event.[EventId]
         WHERE ([DeploymentRelatedMachine].MachineId = @machineid)
         AND ([Event].Category = 'DeploymentSucceeded')

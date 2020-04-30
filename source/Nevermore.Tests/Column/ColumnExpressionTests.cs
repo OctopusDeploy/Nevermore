@@ -20,7 +20,7 @@ namespace Nevermore.Tests.Column
             actual.ShouldBeEquivalentTo(@"SELECT [Foo],
 [Bar],
 [Baz]
-FROM dbo.[Records]
+FROM [dbo].[Records]
 ORDER BY [Id]");
         }
 
@@ -36,7 +36,7 @@ ORDER BY [Id]");
             actual.ShouldBeEquivalentTo(@"SELECT [Foo] AS [A],
 [Bar] AS [B],
 [Baz] AS [C]
-FROM dbo.[Records]
+FROM [dbo].[Records]
 ORDER BY [Id]");
         }
 
@@ -54,7 +54,7 @@ ORDER BY [Id]");
             actual.ShouldBeEquivalentTo(@"SELECT MyTable.[Foo] AS [A],
 MyTable.[Bar] AS [B],
 MyTable.[Baz] AS [C]
-FROM dbo.[Records] MyTable
+FROM [dbo].[Records] MyTable
 ORDER BY [Id]");
         }
 

@@ -1,8 +1,8 @@
 SELECT Orders.*
-FROM dbo.[Orders] Orders
-INNER JOIN dbo.[Customers] Customers
+FROM [dbo].[Orders] Orders
+INNER JOIN [dbo].[Customers] Customers
 ON Orders.[CustomerId] = Customers.[Id]
-INNER JOIN dbo.[Accounts] Accounts
+INNER JOIN [dbo].[Accounts] Accounts
 ON Customers.[Id] = Accounts.[CustomerId]
 AND Orders.[AccountId] = Accounts.[Id]
 ORDER BY Orders.[Id]

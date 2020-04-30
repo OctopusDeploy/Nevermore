@@ -1,9 +1,9 @@
 SELECT TOP 100 ALIAS_GENERATED_2.*
 FROM (
     SELECT *
-    FROM dbo.[Orders]
+    FROM [dbo].[Orders]
     WHERE ([Price] > 5)
 ) ALIAS_GENERATED_2
-INNER JOIN dbo.[Customers] ALIAS_Customers_1
+INNER JOIN [dbo].[Customers] ALIAS_Customers_1
 ON ALIAS_GENERATED_2.[CustomerId] = ALIAS_Customers_1.[Id]
 ORDER BY ALIAS_GENERATED_2.[Id]

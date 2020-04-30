@@ -1,14 +1,14 @@
 SELECT ALIAS_Orders_2.*
-FROM dbo.[Orders] ALIAS_Orders_2
+FROM [dbo].[Orders] ALIAS_Orders_2
 LEFT HASH JOIN (
     SELECT *
-    FROM dbo.[Account]
+    FROM [dbo].[Account]
     WHERE ([Name] = @name)
 ) ALIAS_GENERATED_1
 ON ALIAS_Orders_2.[AccountId] = ALIAS_GENERATED_1.[Id]
 LEFT HASH JOIN (
     SELECT *
-    FROM dbo.[Company]
+    FROM [dbo].[Company]
     WHERE ([Name] = @name_1)
 ) ALIAS_GENERATED_3
 ON ALIAS_Orders_2.[CompanyId] = ALIAS_GENERATED_3.[CompanyId]

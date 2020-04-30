@@ -1,5 +1,5 @@
 SELECT *
 FROM (
     SELECT *
-    FROM dbo.[Accounts]
+    FROM [dbo].[Accounts]
 ) ALIAS_GENERATED_1
