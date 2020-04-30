@@ -214,7 +214,6 @@ namespace Nevermore.Advanced
                 var (instance, success) = strategy(reader);
                 if (success)
                     yield return instance;
-                yield return instance;
             }
         }
         
