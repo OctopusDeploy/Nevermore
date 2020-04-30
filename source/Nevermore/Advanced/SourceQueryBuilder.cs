@@ -196,8 +196,10 @@ namespace Nevermore.Advanced
     {
         string tableOrViewName;
         string alias;
+        string schemaName;
 
         public TableSourceQueryBuilder(string tableOrViewName,
+            string schemaName,
             IReadTransaction readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
@@ -206,6 +208,7 @@ namespace Nevermore.Advanced
             ParameterDefaults parameterDefaults)
             : base(readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
+            this.schemaName = schemaName;
             this.tableOrViewName = tableOrViewName;
         }
 
@@ -260,14 +263,14 @@ namespace Nevermore.Advanced
         {
             if (alias == null)
             {
-                return new SimpleTableSource(tableOrViewName);
+                return new SimpleTableSource(tableOrViewName, schemaName);
             }
-            return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias);
+            return new AliasedTableSource(new SimpleTableSource(tableOrViewName, schemaName), alias);
         }
 
         AliasedTableSource CreateAliasedTableSource()
         {
-            return new AliasedTableSource(new SimpleTableSource(tableOrViewName), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
+            return new AliasedTableSource(new SimpleTableSource(tableOrViewName, schemaName), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
         }
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using Nevermore.Advanced;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.PropertyHandlers;
 
@@ -255,7 +256,7 @@ namespace Nevermore.Mapping
             {
                 Type = typeof(TDocument),
                 IdColumn = GetDefaultIdColumn(),
-                SchemaName = "dbo",
+                SchemaName = NevermoreDefaults.DefaultSchemaName,
                 TableName = typeof(TDocument).Name,
                 IdPrefix = typeof(TDocument).Name + "s",
                 JsonStorageFormat = JsonStorageFormat.TextOnly

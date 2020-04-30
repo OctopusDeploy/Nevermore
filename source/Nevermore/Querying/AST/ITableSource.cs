@@ -1,4 +1,6 @@
-﻿namespace Nevermore.Querying.AST
+﻿using Nevermore.Advanced;
+
+namespace Nevermore.Querying.AST
 {
     public interface ITableSource : ISelectSource
     {
@@ -11,13 +13,15 @@
     public class SimpleTableSource : ISimpleTableSource
     {
         readonly string tableOrViewName;
+        readonly string schemaName;
 
-        public SimpleTableSource(string tableOrViewName)
+        public SimpleTableSource(string tableOrViewName, string schemaName = NevermoreDefaults.DefaultSchemaName)
         {
             this.tableOrViewName = tableOrViewName;
+            this.schemaName = schemaName;
         }
 
-        public string GenerateSql() => $"dbo.[{tableOrViewName}]";
+        public string GenerateSql() => $"[{schemaName}].[{tableOrViewName}]";
         public override string ToString() => GenerateSql();
     }
 
