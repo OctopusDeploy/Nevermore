@@ -46,6 +46,22 @@ ORDER BY [Name]";
         }
 
         [Test]
+        public void ShouldGenerateSelectWithSchemaName()
+        {
+            var actual = CreateQueryBuilder<object>("Orders", "schema")
+                .Where("[Price] > 5")
+                .OrderBy("Name")
+                .DebugViewRawQuery();
+
+            const string expected = @"SELECT *
+FROM [schema].[Orders]
+WHERE ([Price] > 5)
+ORDER BY [Name]";
+
+            actual.Should().Be(expected);
+        }
+
+        [Test]
         public void ShouldGenerateSelectNoOrder()
         {
             var actual = CreateQueryBuilder<object>("Orders")
@@ -81,6 +97,21 @@ ORDER BY [Id]";
             var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5");
             var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
+
+            var actual = leftQueryBuilder
+                .InnerJoin(rightQueryBuilder)
+                .On("CustomerId", JoinOperand.Equal, "Id")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectForJoinWithSchemaName()
+        {
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders", "schema1")
+                .Where("[Price] > 5");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers", "schema2");
 
             var actual = leftQueryBuilder
                 .InnerJoin(rightQueryBuilder)
