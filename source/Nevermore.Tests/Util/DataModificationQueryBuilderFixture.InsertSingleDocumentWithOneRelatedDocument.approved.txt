@@ -1,4 +1,4 @@
-INSERT INTO dbo.[TestDocumentTbl]  ([Id], [AColumn], [JSON]) VALUES 
+INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) VALUES 
 (@Id, @AColumn, @JSON)
 INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
 (@Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')

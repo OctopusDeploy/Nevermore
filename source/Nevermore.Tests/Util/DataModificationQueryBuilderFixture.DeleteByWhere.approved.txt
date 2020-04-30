@@ -1,2 +1,2 @@
-DELETE FROM [TestDocumentTbl] 
+DELETE FROM [dbo].[TestDocumentTbl] 
 WHERE [Foo] > @1

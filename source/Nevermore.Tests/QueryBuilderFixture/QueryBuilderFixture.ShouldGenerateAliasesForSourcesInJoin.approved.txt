@@ -1,8 +1,8 @@
 SELECT ORD.*
-FROM dbo.[Orders] ORD
+FROM [dbo].[Orders] ORD
 INNER JOIN (
     SELECT *
-    FROM dbo.[Accounts]
+    FROM [dbo].[Accounts]
 ) ACC
 ON ORD.[AccountId] = ACC.[Id]
 WHERE (ORD.[Id] = @id)

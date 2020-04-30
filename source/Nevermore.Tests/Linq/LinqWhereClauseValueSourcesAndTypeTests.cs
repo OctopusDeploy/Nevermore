@@ -87,7 +87,7 @@ namespace Nevermore.Tests.Linq
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Int] = @int)
 ORDER BY [Id]");
 
@@ -105,7 +105,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Bool] = @bool)
 ORDER BY [Id]");
 
@@ -123,7 +123,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Bool] = @bool)
 ORDER BY [Id]");
 
@@ -141,7 +141,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Bool] = @bool)
 ORDER BY [Id]");
 
@@ -159,7 +159,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([DateTime] = @datetime)
 ORDER BY [Id]");
 
@@ -177,7 +177,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Enum] = @enum)
 ORDER BY [Id]");
 
@@ -200,7 +200,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Enum] = @enum)
 ORDER BY [Id]");
 
@@ -220,7 +220,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Enum] IN (@enum1, @enum2))
 ORDER BY [Id]");
 
@@ -240,7 +240,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Enum] IN (@enum1, @enum2))
 ORDER BY [Id]");
 
@@ -260,7 +260,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([Enum] NOT IN (@enum1, @enum2))
 ORDER BY [Id]");
 
@@ -274,7 +274,7 @@ ORDER BY [Id]");
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([String] = @string)
 ORDER BY [Id]");
 

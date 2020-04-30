@@ -42,7 +42,7 @@ namespace Nevermore.Tests.Linq
             result.DebugViewRawQuery()
                 .Should()
                 .Be(@"SELECT *
-FROM dbo.[Foo]
+FROM [dbo].[Foo]
 WHERE ([String] LIKE @string)
 ORDER BY [Id]");
 

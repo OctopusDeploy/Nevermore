@@ -1,4 +1,4 @@
-INSERT INTO dbo.[TestDocument]  (AColumn, Id, JSON) VALUES 
+INSERT INTO [dbo].[TestDocument]  (AColumn, Id, JSON) VALUES 
 (@AColumn, @Id, @JSON)
 
 @Id=SuppliedId

@@ -2,7 +2,7 @@ SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (PARTITION BY [SpaceId], [ProjectId], [ChannelId] ORDER BY [Assembled] DESC) AS RowNum
-    FROM dbo.[Release]
+    FROM [dbo].[Release]
 ) rs
 WHERE ([RowNum] = @rownum)
 ORDER BY rs.[Id]

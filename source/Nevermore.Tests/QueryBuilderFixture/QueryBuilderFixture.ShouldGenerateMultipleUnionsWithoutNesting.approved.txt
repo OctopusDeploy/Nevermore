@@ -1,12 +1,12 @@
 SELECT *
 FROM (
     SELECT [Id] AS [Id]
-    FROM dbo.[Orders]
+    FROM [dbo].[Orders]
     UNION
     SELECT [Id] AS [Id]
-    FROM dbo.[Account]
+    FROM [dbo].[Account]
     UNION
     SELECT [Id] AS [Id]
-    FROM dbo.[Customers]
+    FROM [dbo].[Customers]
 ) ALIAS_GENERATED_1
 ORDER BY ALIAS_GENERATED_1.[Id]

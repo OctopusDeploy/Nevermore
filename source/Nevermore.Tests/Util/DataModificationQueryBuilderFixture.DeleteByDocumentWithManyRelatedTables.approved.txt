@@ -1,4 +1,4 @@
-DELETE FROM [TestDocumentTbl] WITH (ROWLOCK) WHERE [Id] = @Id
+DELETE FROM [dbo].[TestDocumentTbl] WITH (ROWLOCK) WHERE [Id] = @Id
 DELETE FROM [RelatedDocument] WITH (ROWLOCK) WHERE [Id] = @Id
 DELETE FROM [OtherRelatedTable] WITH (ROWLOCK) WHERE [Id] = @Id
 

@@ -35,12 +35,12 @@ namespace Nevermore.Tests.QueryBuilderFixture
             queryBuilder.Count();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT COUNT(*)
-FROM dbo.[Accounts]");
+FROM [dbo].[Accounts]");
 
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -52,7 +52,7 @@ ORDER BY [Id]");
             queryBuilder.Any();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
-FROM dbo.[Accounts])
+FROM [dbo].[Accounts])
     SELECT @true
 ELSE
     SELECT @false");
@@ -60,7 +60,7 @@ ELSE
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -72,13 +72,13 @@ ORDER BY [Id]");
             queryBuilder.Take(1);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -90,13 +90,13 @@ ORDER BY [Id]");
             queryBuilder.FirstOrDefault();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -111,7 +111,7 @@ ORDER BY [Id]");
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
-    FROM dbo.[Accounts]
+    FROM [dbo].[Accounts]
 ) ALIAS_GENERATED_1
 WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
@@ -121,7 +121,7 @@ ORDER BY [RowNum]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -134,13 +134,13 @@ ORDER BY [Id]");
 
             executedQueries.Count.ShouldBeEquivalentTo(2);
             executedQueries.First().ShouldBeEquivalentTo(@"SELECT COUNT(*)
-FROM dbo.[Accounts]");
+FROM [dbo].[Accounts]");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
-    FROM dbo.[Accounts]
+    FROM [dbo].[Accounts]
 ) ALIAS_GENERATED_1
 WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
@@ -151,7 +151,7 @@ ORDER BY [RowNum]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -163,13 +163,13 @@ ORDER BY [Id]");
             queryBuilder.ToList();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -181,13 +181,13 @@ ORDER BY [Id]");
             queryBuilder.Stream();
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 
@@ -199,13 +199,13 @@ ORDER BY [Id]");
             queryBuilder.ToDictionary(d => d.GetHashCode().ToString());
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
-FROM dbo.[Accounts]
+FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
 

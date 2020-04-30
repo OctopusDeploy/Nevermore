@@ -1,4 +1,4 @@
-CREATE VIEW dbo.[Dashboard] AS
+CREATE VIEW [dbo].[Dashboard] AS
     SELECT d.[Id] AS [Id],
     d.[Created] AS [Created],
     d.[ProjectId] AS [ProjectId],
@@ -24,8 +24,8 @@ CREATE VIEW dbo.[Dashboard] AS
         d.[TaskId] AS [TaskId],
         d.[ChannelId] AS [ChannelId],
         ROW_NUMBER() OVER (PARTITION BY d.[EnvironmentId], d.[ProjectId] ORDER BY d.[Created] DESC) AS Rank
-        FROM dbo.[Deployment] d
-        INNER JOIN dbo.[ServerTask] t
+        FROM [dbo].[Deployment] d
+        INNER JOIN [dbo].[ServerTask] t
         ON d.[TaskId] = t.[Id]
         WHERE (NOT ((t.State = 'Canceled' OR t.State = 'Cancelling') AND t.StartTime IS NULL))
         UNION
@@ -38,16 +38,16 @@ CREATE VIEW dbo.[Dashboard] AS
         d.[TaskId] AS [TaskId],
         d.[ChannelId] AS [ChannelId],
         ROW_NUMBER() OVER (PARTITION BY d.[EnvironmentId], d.[ProjectId] ORDER BY d.[Created] DESC) AS Rank
-        FROM dbo.[Deployment] d
-        INNER JOIN dbo.[ServerTask] t
+        FROM [dbo].[Deployment] d
+        INNER JOIN [dbo].[ServerTask] t
         ON d.[TaskId] = t.[Id]
         LEFT HASH JOIN (
             SELECT [Id]
             FROM (
                 SELECT d.[Id] AS [Id],
                 ROW_NUMBER() OVER (PARTITION BY d.[EnvironmentId], d.[ProjectId] ORDER BY d.[Created] DESC) AS Rank
-                FROM dbo.[Deployment] d
-                INNER JOIN dbo.[ServerTask] t
+                FROM [dbo].[Deployment] d
+                INNER JOIN [dbo].[ServerTask] t
                 ON d.[TaskId] = t.[Id]
                 WHERE (NOT ((t.State = 'Canceled' OR t.State = 'Cancelling') AND t.StartTime IS NULL))
             ) LatestDeployment
@@ -57,9 +57,9 @@ CREATE VIEW dbo.[Dashboard] AS
         WHERE (t.State = 'Success')
         AND (l.Id is null)
     ) d
-    INNER JOIN dbo.[ServerTask] t
+    INNER JOIN [dbo].[ServerTask] t
     ON d.[TaskId] = t.[Id]
-    INNER JOIN dbo.[Release] r
+    INNER JOIN [dbo].[Release] r
     ON d.[ReleaseId] = r.[Id]
     WHERE (([Rank]=1 AND CurrentOrPrevious='P') OR ([Rank]=1 AND CurrentOrPrevious='C'))
     ORDER BY d.[Id]
