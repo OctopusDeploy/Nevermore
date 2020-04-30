@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nevermore.Advanced;
+using System;
 using System.Linq;
 
 namespace Nevermore.Querying.AST
@@ -9,8 +10,9 @@ namespace Nevermore.Querying.AST
         readonly Parameters parameters;
         readonly ParameterDefaults defaults;
         readonly string functionName;
+        readonly string schemaName;
 
-        public Function(ISelect @select, Parameters parameters, ParameterDefaults defaults, string functionName)
+        public Function(ISelect @select, Parameters parameters, ParameterDefaults defaults, string functionName, string schemaName = NevermoreDefaults.DefaultSchemaName)
         {
             if (parameters.Any(p => p.DataType == null))
             {
@@ -21,11 +23,12 @@ namespace Nevermore.Querying.AST
             this.parameters = parameters;
             this.defaults = defaults;
             this.functionName = functionName;
+            this.schemaName = schemaName;
         }
 
         public string GenerateSql()
         {
-            return $@"CREATE FUNCTION dbo.[{functionName}]
+            return $@"CREATE FUNCTION [{schemaName}].[{functionName}]
 (
 {Format.IndentLines(string.Join("\r\n", parameters.Select(ParameterSql)))}
 )

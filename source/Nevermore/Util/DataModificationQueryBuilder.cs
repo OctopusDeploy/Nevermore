@@ -37,7 +37,7 @@ namespace Nevermore.Util
             var mapping = GetMapping(documents);
 
             var sb = new StringBuilder();
-            AppendInsertStatement(sb, mapping, options.TableName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
+            AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
             var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping);
 
             AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
@@ -73,7 +73,7 @@ namespace Nevermore.Util
             
             var updates = string.Join(", ", updateStatements);
             
-            var statement = $"UPDATE dbo.[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
+            var statement = $"UPDATE [{mapping.SchemaName}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
@@ -103,8 +103,12 @@ namespace Nevermore.Util
         static PreparedCommand PrepareDelete(DocumentMap mapping, string id, DeleteOptions options = null)
         {
             options ??= DeleteOptions.Default;
+
+            var actualTableName = options.TableName ?? mapping.TableName;
+            var actualSchemaName = options.SchemaName ?? mapping.SchemaName;
+
             var statement = new StringBuilder();
-            statement.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
+            statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
@@ -121,20 +125,23 @@ namespace Nevermore.Util
         public PreparedCommand PrepareDelete(DocumentMap mapping, Where where, CommandParameterValues parameters, DeleteOptions options = null)
         {
             options ??= DeleteOptions.Default;
-            
+
+            var actualTableName = options.TableName ?? mapping.TableName;
+            var actualSchemaName = options.SchemaName ?? mapping.SchemaName;
+
             if (!mapping.RelatedDocumentsMappings.Any())
-                return new PreparedCommand($"DELETE FROM [{options.TableName ?? mapping.TableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
+                return new PreparedCommand($"DELETE FROM [{actualSchemaName}].[{actualTableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
 
             var statement = new StringBuilder();
             statement.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
             statement.AppendLine();
             statement.AppendLine("INSERT INTO @Ids");
             statement.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
-            statement.AppendLine($"FROM [{mapping.TableName}] WITH (ROWLOCK)");
+            statement.AppendLine($"FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK)");
             statement.AppendLine(where.GenerateSql());
             statement.AppendLine();
 
-            statement.AppendLine($"DELETE FROM [{mapping.TableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
+            statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
 
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
@@ -154,7 +161,7 @@ namespace Nevermore.Util
         }
 
         // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
-        void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
+        void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string schemaName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
             var columns = new List<string>();
             
@@ -184,8 +191,9 @@ namespace Nevermore.Util
             var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
             var actualTableName = tableName ?? mapping.TableName;
+            var actualSchemaName = schemaName ?? mapping.SchemaName;
 
-            sb.AppendLine($"INSERT INTO dbo.[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
 
             void Append(string prefix)
             {

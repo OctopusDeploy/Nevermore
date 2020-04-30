@@ -24,9 +24,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ClearReceivedCalls();
         }
         
-        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName) where TDocument : class
+        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo") where TDocument : class
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         [Test]
