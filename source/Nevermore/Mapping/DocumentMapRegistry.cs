@@ -9,8 +9,14 @@ namespace Nevermore.Mapping
 {
     public class DocumentMapRegistry : IDocumentMapRegistry
     {
+        readonly string defaultSchema;
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
 
+        public DocumentMapRegistry(string defaultSchema)
+        {
+            this.defaultSchema = defaultSchema;
+        }
+        
         public List<DocumentMap> GetAll()
         {
             return new List<DocumentMap>(mappings.Values);
@@ -19,6 +25,8 @@ namespace Nevermore.Mapping
         public void Register(DocumentMap map)
         {
             map.Validate();
+            if (map.SchemaName == null)
+                map.SchemaName = defaultSchema;
             mappings[map.Type] = map;
         }
 

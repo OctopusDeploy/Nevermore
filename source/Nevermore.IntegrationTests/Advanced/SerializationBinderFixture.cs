@@ -37,7 +37,7 @@ namespace Nevermore.IntegrationTests.Advanced
             base.OneTimeSetUp();
             NoMonkeyBusiness();
             Configuration.DocumentMaps.Register(new OrderMap());
-            ExecuteSql("create table OrderHistory(Id nvarchar(200) not null, OrderId nvarchar(200) not null, [JSON] nvarchar(max) not null)");
+            ExecuteSql("create table TestSchema.OrderHistory(Id nvarchar(200) not null, OrderId nvarchar(200) not null, [JSON] nvarchar(max) not null)");
         }
 
         [Test, Order(1)]
@@ -52,7 +52,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.Insert(orderHistory);
 
-            var json = transaction.Stream<string>("select top 1 JSON from OrderHistory").Single();
+            var json = transaction.Stream<string>("select top 1 JSON from TestSchema.OrderHistory").Single();
             var token = JToken.Parse(json);
             var events = token.Value<JArray>("AuditEvents");
             events.Count.Should().Be(3);
@@ -121,7 +121,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.Insert(orderHistory);
 
-            var json = transaction.Stream<string>("select top 1 JSON from OrderHistory").Single();
+            var json = transaction.Stream<string>("select top 1 JSON from TestSchema.OrderHistory").Single();
             var token = JToken.Parse(json);
             var events = token.Value<JArray>("AuditEvents");
             events.Count.Should().Be(3);

@@ -201,6 +201,8 @@ namespace Nevermore.Advanced
             this.RowSelection = rowSelection;
             this.ColumnSelection = columnSelection;
         }
+        
+        public ISelectSource SelectSource { get; }
 
         protected abstract ISelectColumns DefaultSelect { get; }
 

@@ -14,8 +14,8 @@ namespace Nevermore.IntegrationTests.Advanced
             base.OneTimeSetUp();
             NoMonkeyBusiness();
             
-            ExecuteSql("create table dbo.SomeTable ([Id] nvarchar(50), [Name] nvarchar(50), [References] nvarchar(50))");
-            ExecuteSql("create type dbo.SomeTableInsertData as table ([Id] nvarchar(50), [Name] nvarchar(50), [References] nvarchar(50))");
+            ExecuteSql("create table TestSchema.SomeTable ([Id] nvarchar(50), [Name] nvarchar(50), [References] nvarchar(50))");
+            ExecuteSql("create type TestSchema.SomeTableInsertData as table ([Id] nvarchar(50), [Name] nvarchar(50), [References] nvarchar(50))");
         }
 
         [Test]
@@ -38,11 +38,11 @@ namespace Nevermore.IntegrationTests.Advanced
             }
 
             var parameters = new CommandParameterValues();
-            parameters.AddTable("bulkInsertData", new TableValuedParameter("dbo.SomeTableInsertData", records));
+            parameters.AddTable("bulkInsertData", new TableValuedParameter("TestSchema.SomeTableInsertData", records));
             
-            writer.ExecuteNonQuery("insert into dbo.SomeTable ([Id], [Name], [References]) select [Id], [Name], [References] from @bulkInsertData", parameters);
+            writer.ExecuteNonQuery("insert into TestSchema.SomeTable ([Id], [Name], [References]) select [Id], [Name], [References] from @bulkInsertData", parameters);
 
-            var count = writer.ExecuteScalar<int>("select count(*) from dbo.SomeTable");
+            var count = writer.ExecuteScalar<int>("select count(*) from TestSchema.SomeTable");
             count.Should().Be(100000);
             
             writer.Commit();

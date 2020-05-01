@@ -16,6 +16,11 @@
 
         public string Alias { get; }
 
+        public string Schema
+        {
+            get => source.Schema;
+        }
+
         public string GenerateSql()
         {
             var alias = string.IsNullOrEmpty(Alias) ? string.Empty : $" {Alias}";

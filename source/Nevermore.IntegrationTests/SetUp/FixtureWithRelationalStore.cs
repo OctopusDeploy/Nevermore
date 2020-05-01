@@ -19,6 +19,7 @@ namespace Nevermore.IntegrationTests.SetUp
             var config = new RelationalStoreConfiguration(ConnectionString);
             config.CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory());
             config.ApplicationName = "Nevermore-IntegrationTests";
+            config.DocumentMaps = new DocumentMapRegistry("TestSchema");
             config.DocumentMaps.Register(
                 new CustomerMap(),
                 new BrandMap(),
@@ -85,7 +86,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 {
                     SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
                 }
-                schema.AppendLine($"alter table [{nameof(Customer)}] add [RowVersion] rowversion");
+                schema.AppendLine($"alter table [TestSchema].[{nameof(Customer)}] add [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }
             catch (Exception ex)

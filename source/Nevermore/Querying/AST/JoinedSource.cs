@@ -16,6 +16,8 @@ namespace Nevermore.Querying.AST
             Source = source;
         }
 
+        public string Schema => Source.Schema;
+
         public string GenerateSql()
         {
             var sourceParts = new [] {Source.GenerateSql()}.Concat(joins.Select(j => j.GenerateSql()));

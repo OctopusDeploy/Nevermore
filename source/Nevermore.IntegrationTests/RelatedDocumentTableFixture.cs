@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 foreach (var item in StartingRecords)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.RelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
+                    trn.ExecuteNonQuery($"INSERT INTO TestSchema.[{DocumentMap.RelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
 
                 trn.Commit();
             }
@@ -59,9 +59,9 @@ namespace Nevermore.IntegrationTests
             orderId = "Order-1";
             using (var trn = Store.BeginTransaction())
             {
-                trn.ExecuteNonQuery($"INSERT INTO [Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
+                trn.ExecuteNonQuery($"INSERT INTO TestSchema.[Order] (Id, JSON) VALUES ('{orderId}', '{{}}')");
                 foreach (var reference in referenceIds)
-                    trn.ExecuteNonQuery($"INSERT INTO [{DocumentMap.RelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
+                    trn.ExecuteNonQuery($"INSERT INTO TestSchema.[{DocumentMap.RelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
 
                 trn.Commit();
             }
@@ -258,7 +258,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 return trn.Stream(
-                        $"SELECT * FROM [{DocumentMap.RelatedDocumentTableName}]",
+                        $"SELECT * FROM TestSchema.[{DocumentMap.RelatedDocumentTableName}]",
                         new CommandParameterValues(),
                         m => m.Read(Callback())
                     )

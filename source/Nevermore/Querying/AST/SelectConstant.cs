@@ -9,6 +9,8 @@
             this.parameter = parameter;
         }
 
+        public string Schema => null;
+
         public string GenerateSql()
         {
             return $"SELECT @{parameter.ParameterName}";

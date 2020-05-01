@@ -17,6 +17,8 @@
             this.orderBy = orderBy;
         }
 
+        public string Schema => @from.Schema;
+
         public string GenerateSql()
         {
             var orderByString = orderBy != null ? $@"

@@ -9,6 +9,9 @@ namespace Nevermore.Querying.AST
             this.rawSql = rawSql;
         }
 
+
+        public string Schema => null;
+
         public string GenerateSql()
         {
             return rawSql;

@@ -9,17 +9,16 @@ namespace Nevermore
 {
     public class RelationalJsonContractResolver : DefaultContractResolver
     {
-        private IDocumentMapRegistry mappings;
+        readonly IRelationalStoreConfiguration configuration;
 
-        public RelationalJsonContractResolver(IDocumentMapRegistry mappings)
+        public RelationalJsonContractResolver(IRelationalStoreConfiguration configuration)
         {
-            this.mappings = mappings;
+            this.configuration = configuration;
         }
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
-            DocumentMap map;
-            mappings.ResolveOptional(member.DeclaringType, out map);
+            configuration.DocumentMaps.ResolveOptional(member.DeclaringType, out var map);
 
             var property = base.CreateProperty(member, memberSerialization);
 

@@ -118,7 +118,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.Stream("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.Type as prod_type, prod.JSON as prod_json from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
+                var lines = transaction.Stream("SELECT line.Id as line_id, line.Name as line_name, line.PurchaseDate as line_PurchaseDate, line.ProductId as line_productid, line.JSON as line_json, prod.Id as prod_id, prod.Name as prod_name, prod.Type as prod_type, prod.JSON as prod_json from TestSchema.LineItem line inner join TestSchema.Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
                 {
                     LineItem = map.Map<LineItem>("line"),
                     Product = map.Map<Product>("prod")
@@ -149,7 +149,7 @@ namespace Nevermore.IntegrationTests
 
             using (var transaction = Store.BeginTransaction())
             {
-                var lines = transaction.Stream("SELECT line.*, prod.Name as prod_name from LineItem line inner join Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
+                var lines = transaction.Stream("SELECT line.*, prod.Name as prod_name from TestSchema.LineItem line inner join TestSchema.Product prod on prod.Id = line.ProductId", new CommandParameterValues(), map => new
                 {
                     LineItem = map.Map<LineItem>(string.Empty),
                     Product = map.Read(reader => reader["prod_name"].ToString())

@@ -84,7 +84,7 @@ namespace Nevermore.IntegrationTests.Advanced
             Store.Configuration.InstanceTypeResolvers.Register(new AwsAccountTypeResolver());
             Store.Configuration.InstanceTypeResolvers.Register(new AzureAccountTypeResolver());
             
-            ExecuteSql("create table Account (Id nvarchar(200), Name nvarchar(200), Type nvarchar(50), [JSON] nvarchar(max))");
+            ExecuteSql("create table TestSchema.Account (Id nvarchar(200), Name nvarchar(200), Type nvarchar(50), [JSON] nvarchar(max))");
         }
 
         [Test, Order(1)]
@@ -143,7 +143,7 @@ namespace Nevermore.IntegrationTests.Advanced
         public void ThrowsWhenUnexpectedTypeIsEncountedByDefault()
         {
             using var transaction = Store.BeginTransaction();
-            transaction.ExecuteNonQuery("update Account set [Type] = 'dunno' where Id = 'Accounts-1'");
+            transaction.ExecuteNonQuery("update TestSchema.Account set [Type] = 'dunno' where Id = 'Accounts-1'");
 
             Assert.Throws<ReaderException>(() => transaction.Query<Account>().ToList()).Message.Should().StartWith("Error reading row 1, column 2. The 'Type' column has a value of 'dunno' (String)");
         }
@@ -152,7 +152,7 @@ namespace Nevermore.IntegrationTests.Advanced
         public void ThrowsWhenNullTypeIfBaseIsAbstract()
         {
             using var transaction = Store.BeginTransaction();
-            transaction.ExecuteNonQuery("update Account set [Type] = null where Id = 'Accounts-1'");
+            transaction.ExecuteNonQuery("update TestSchema.Account set [Type] = null where Id = 'Accounts-1'");
 
             Assert.Throws<ReaderException>(() => transaction.Query<Account>().ToList()).Message.Should().StartWith("Error reading row 1, column 3. Could not create an instance of type Nevermore.IntegrationTests.Advanced.InstanceTypesFixture+Account. Type is an interface or abstract class and cannot be instantiated");
         }
@@ -183,7 +183,7 @@ namespace Nevermore.IntegrationTests.Advanced
             Store.Configuration.InstanceTypeResolvers.Register(new UnknownAccountTypeResolver());
             
             using var transaction = Store.BeginTransaction();
-            transaction.ExecuteNonQuery("update Account set [Type] = 'dunno' where Id = 'Accounts-1'");
+            transaction.ExecuteNonQuery("update TestSchema.Account set [Type] = 'dunno' where Id = 'Accounts-1'");
 
             var accounts = transaction.Query<Account>().ToList();
             accounts[0].Should().BeOfType<UnknownAccount>().Which.Name.Should().Be("My AWS account");

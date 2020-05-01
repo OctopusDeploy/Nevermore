@@ -10,7 +10,7 @@ namespace Nevermore
         {
             if (!(configuration.DocumentSerializer is NewtonsoftDocumentSerializer jsonNet))
             {
-                configuration.DocumentSerializer = jsonNet = new NewtonsoftDocumentSerializer(configuration.DocumentMaps);
+                configuration.DocumentSerializer = jsonNet = new NewtonsoftDocumentSerializer(configuration);
             }
 
             callback(jsonNet.SerializerSettings);

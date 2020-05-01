@@ -17,7 +17,7 @@ namespace Nevermore.IntegrationTests.Advanced
             
             NoMonkeyBusiness();
             KeepDataBetweenTests();
-            ExecuteSql("create table Person (Id nvarchar(200), [JSON] nvarchar(max), [JSONBlob] varbinary(max))");
+            ExecuteSql("create table TestSchema.Person (Id nvarchar(200), [JSON] nvarchar(max), [JSONBlob] varbinary(max))");
             Mappings.Register(new PersonMap());
         }
 
@@ -41,9 +41,9 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             using (var transaction = Store.BeginTransaction())
             {
-                transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
-                transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSON]) values ('Persons-2', N'{\"Name\":\"Ben\",\"Text\":\"BBB\"}')");
-                transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSON]) values ('Persons-3', N'{\"Name\":\"Bob\",\"Text\":\"BBB\"}')");
+                transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
+                transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-2', N'{\"Name\":\"Ben\",\"Text\":\"BBB\"}')");
+                transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-3', N'{\"Name\":\"Bob\",\"Text\":\"BBB\"}')");
                 transaction.Commit();
             }
             
@@ -106,8 +106,8 @@ namespace Nevermore.IntegrationTests.Advanced
 
             using (var transaction = Store.BeginTransaction())
             {
-                transaction.ExecuteNonQuery("update dbo.Person set JSONBlob = COMPRESS([JSON]) where Id = 'Persons-3'");
-                transaction.ExecuteNonQuery("update dbo.Person set [JSON] = null where Id = 'Persons-3'");
+                transaction.ExecuteNonQuery("update TestSchema.Person set JSONBlob = COMPRESS([JSON]) where Id = 'Persons-3'");
+                transaction.ExecuteNonQuery("update TestSchema.Person set [JSON] = null where Id = 'Persons-3'");
                 transaction.Commit();
             }
             
@@ -124,15 +124,15 @@ namespace Nevermore.IntegrationTests.Advanced
         public void BothColumnsAreAlwaysRequired()
         {
             using var transaction = Store.BeginTransaction();
-            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id from dbo.Person").ToList()).Message.Should().Contain("query does not include either the 'JSON' or 'JSONBlob' column");
-            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id,[JSON] from dbo.Person").ToList()).Message.Should().Contain("query does not include the 'JSONBlob' column");
-            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id,[JSONBlob] from dbo.Person").ToList()).Message.Should().Contain("query does not include the 'JSON' column");
+            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id from TestSchema.Person").ToList()).Message.Should().Contain("query does not include either the 'JSON' or 'JSONBlob' column");
+            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id,[JSON] from TestSchema.Person").ToList()).Message.Should().Contain("query does not include the 'JSONBlob' column");
+            Assert.Throws<InvalidOperationException>(() => transaction.Stream<Person>("select Id,[JSONBlob] from TestSchema.Person").ToList()).Message.Should().Contain("query does not include the 'JSON' column");
         }
 
         (string Json, byte[] JsonBlob) GetCompression(string id)
         {
             using var transaction = Store.BeginTransaction();
-            return transaction.Stream<(string Json, byte[] JsonBlob)>("select [JSON],[JSONBlob] from dbo.Person where Id = @id", new CommandParameterValues { { "id", id} }).Single();
+            return transaction.Stream<(string Json, byte[] JsonBlob)>("select [JSON],[JSONBlob] from TestSchema.Person where Id = @id", new CommandParameterValues { { "id", id} }).Single();
         }
         
         void AssertCompressed(string id)

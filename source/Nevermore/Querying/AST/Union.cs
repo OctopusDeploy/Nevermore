@@ -12,6 +12,8 @@ namespace Nevermore.Querying.AST
             this.selects = selects;
         }
 
+        public string Schema => selects.Select(s => s.Schema).FirstOrDefault(s => s != null);
+
         public string GenerateSql()
         {
             return string.Join("\r\nUNION\r\n", selects.Select(s => s.GenerateSql()));

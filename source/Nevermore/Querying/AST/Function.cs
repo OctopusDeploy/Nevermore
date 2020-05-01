@@ -12,7 +12,7 @@ namespace Nevermore.Querying.AST
         readonly string functionName;
         readonly string schemaName;
 
-        public Function(ISelect @select, Parameters parameters, ParameterDefaults defaults, string functionName, string schemaName = NevermoreDefaults.DefaultSchemaName)
+        public Function(ISelect @select, Parameters parameters, ParameterDefaults defaults, string functionName, string schemaName)
         {
             if (parameters.Any(p => p.DataType == null))
             {

@@ -60,7 +60,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             trn.Insert(customer);
 
-            var customers = trn.Stream<(string Id, string FirstName, string Nickname, string JSON)>("select Id, FirstName, Nickname, [JSON] from Customer").ToList();
+            var customers = trn.Stream<(string Id, string FirstName, string Nickname, string JSON)>("select Id, FirstName, Nickname, [JSON] from TestSchema.Customer").ToList();
 
             var c = customers.Single(p => p.Id == "Customers-01");
             c.FirstName.Should().Be("Bob", "Type isn't serializing into column correctly");
@@ -82,7 +82,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 trn.Insert(originalNormal);
 
-                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from Product").ToList();
+                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from TestSchema.Product").ToList();
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Normal", "Type isn't serializing into column correctly");
@@ -114,7 +114,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(originalSpecial);
                 trn.Insert(originalDud);
 
-                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from Product").ToList();
+                var allProducts = trn.Stream<(string Id, string Type, string JSON)>("select Id, Type, [JSON] from TestSchema.Product").ToList();
 
                 var special = allProducts.Single(p => p.Id == "UD-01");
                 special.Type.Should().Be("Special", "Type isn't serializing into column correctly");
@@ -177,7 +177,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert<Brand>(brandB);
                 trn.Commit();
 
-                var allBrands = trn.Stream<(string Name, string JSON)>("select Name, [JSON] from Brand").ToList();
+                var allBrands = trn.Stream<(string Name, string JSON)>("select Name, [JSON] from TestSchema.Brand").ToList();
 
                 allBrands.SingleOrDefault(x => x.Name == "Brand A").Should().NotBeNull("Didn't retrieve BrandA");
                 var brandToTestSerialization = allBrands.Single(x => x.Name == "Brand A");
@@ -249,14 +249,14 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                                                         SELECT
                                                             ProductId,
                                                             CAST(JSON_VALUE([JSON], '$.Quantity') AS int) Quantity
-                                                        FROM LineItem
+                                                        FROM TestSchema.LineItem
                                                     ) l
                                                     INNER JOIN (
                                                     SELECT 
                                                         Id ProductId,
                                                         [Name] ProductName,
                                                         CAST(JSON_VALUE([JSON], '$.Price') AS decimal) Price
-                                                        FROM Product
+                                                        FROM TestSchema.Product
                                                     ) p ON p.ProductId = l.ProductId
                                                     GROUP BY p.ProductId, p.ProductName
                                                 ) p3

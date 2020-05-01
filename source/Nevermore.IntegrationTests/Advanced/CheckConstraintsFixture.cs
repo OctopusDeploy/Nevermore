@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests.Advanced
             base.OneTimeSetUp();
 
             ExecuteSql(@"
-                create table Person (
+                create table TestSchema.Person (
                     Id nvarchar(200) not null,
                     [JSON] nvarchar(max) null constraint CK_Person_JSON check ([JSON] is null or IsJson([JSON]) > 0),
                     [JSONBlob] varbinary(max) null constraint CK_Person_JSONBlob check ([JSONBlob] is null or IsJson(cast(DECOMPRESS([JSONBlob]) as nvarchar(max))) > 0)
@@ -39,8 +39,8 @@ namespace Nevermore.IntegrationTests.Advanced
         public void CanInsertValidJson()
         {
             using var transaction = Store.BeginTransaction();
-            transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
-            transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}'))");
+            transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
+            transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}'))");
             transaction.Commit();
         }
         
@@ -48,14 +48,14 @@ namespace Nevermore.IntegrationTests.Advanced
         public void CannotInsertInvalidJson()
         {
             using var transaction = Store.BeginTransaction();
-            Assert.Throws<Exception>(() => transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSON]) values ('Persons-1', N'osiv9dsi')"));
+            Assert.Throws<Exception>(() => transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-1', N'osiv9dsi')"));
         }
         
         [Test]
         public void CannotInsertInvalidJsonBlob()
         {
             using var transaction = Store.BeginTransaction();
-            Assert.Throws<Exception>(() => transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'akjsjaisj'))"));
+            Assert.Throws<Exception>(() => transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'akjsjaisj'))"));
         }
         
         

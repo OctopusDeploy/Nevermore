@@ -158,7 +158,7 @@ namespace Nevermore.IntegrationTests
             // Or, you can use a perfectly good language for querying SQL, called... SQL!
             // Nevermore handles the mapping of the result set to the object type
             person = transaction.Stream<Person>(
-                "select * from dbo.Person where FirstName = @name",
+                "select * from Person where FirstName = @name",
                 new CommandParameterValues {{"name", "Donald"}}
                 ).Single();
 
@@ -186,14 +186,14 @@ namespace Nevermore.IntegrationTests
             // The results of your queries don't always have to be documents. You can just query an arbitrary type if
             // you want. The ID and JSON columns don't need to appear in the result set.
             var customer = transaction.Stream<(string Email, string FirstName)>(
-                "select Email, FirstName from dbo.Person where Email = @email", new CommandParameterValues { { "email", "donald.duck@disney.com" } }
+                "select Email, FirstName from Person where Email = @email", new CommandParameterValues { { "email", "donald.duck@disney.com" } }
             ).Single();
 
             customer.Email.Should().Be("donald.duck@disney.com");
             
             // This pattern can be used for just about any quick query
             var result = transaction.Stream<(string LastName, int Count)>(
-                "select LastName, count(*) from dbo.Person group by LastName order by count(*) desc, len(LastName) desc"
+                "select LastName, count(*) from Person group by LastName order by count(*) desc, len(LastName) desc"
             ).ToList();
 
             result.Count.Should().Be(3);
@@ -212,7 +212,7 @@ namespace Nevermore.IntegrationTests
             
             // Just need a single column? No problem, you can stream primitives (Strings, numbers, and so on)
             var names = transaction.Stream<string>(
-                "select FirstName from dbo.Person order by FirstName"
+                "select FirstName from Person order by FirstName"
             ).ToList();
 
             string.Join(", ", names).Should().Be("Buggs, Daffy, Donald, Prince");
@@ -234,7 +234,7 @@ namespace Nevermore.IntegrationTests
             // This pattern can be used for just about any quick query. For this to work, property names on the type
             // must match the name of columns from the result set.
             var result = transaction.Stream<Result>(
-                "select FirstName + ' ' + LastName as FullName, Email from dbo.Person order by FirstName"
+                "select FirstName + ' ' + LastName as FullName, Email from Person order by FirstName"
             ).First();
             
             result.FullName.Should().Be("Buggs Bunny");

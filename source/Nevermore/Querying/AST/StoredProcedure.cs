@@ -12,7 +12,7 @@ namespace Nevermore.Querying.AST
         readonly string procedureName;
         readonly string schemaName;
 
-        public StoredProcedure(ISelect select, Parameters parameters, ParameterDefaults defaults, string procedureName, string schemaName = NevermoreDefaults.DefaultSchemaName)
+        public StoredProcedure(ISelect select, Parameters parameters, ParameterDefaults defaults, string procedureName, string schemaName)
         {
             if (parameters.Any(p => p.DataType == null))
             {

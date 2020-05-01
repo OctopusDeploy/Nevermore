@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             base.OneTimeSetUp();
             
-            ExecuteSql("create table Person (Id nvarchar(200),[JSONBlob] varbinary(max))");
+            ExecuteSql("create table TestSchema.Person (Id nvarchar(200),[JSONBlob] varbinary(max))");
             Mappings.Register(new PersonMap());
         }
 
@@ -50,9 +50,9 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.Insert(new Person() { Name = "Paul ¥ⶀＦ", Text = new string('A', 20000)});
 
-            var jsonLength = transaction.ExecuteScalar<long>("select max(datalength([JSONBlob])) from dbo.Person");
+            var jsonLength = transaction.ExecuteScalar<long>("select max(datalength([JSONBlob])) from TestSchema.Person");
             jsonLength.Should().BeInRange(10, 350);
-            var jsonCompressed = transaction.Stream<byte[]>("select [JSONBlob] from dbo.Person").First();
+            var jsonCompressed = transaction.Stream<byte[]>("select [JSONBlob] from TestSchema.Person").First();
             jsonCompressed.Length.Should().BeInRange(10, 350);
         }
 
@@ -62,7 +62,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.Insert(new Person() { Name = "Paul ¥ⶀＦ", Text = new string('A', 20000)});
             
-            var count = transaction.ExecuteScalar<int>("select count(*) from dbo.Person where JSON_VALUE(CAST(DECOMPRESS([JSONBlob]) as nvarchar(max)), '$.Name') = N'Paul ¥ⶀＦ'", new CommandParameterValues { { "name", "Paul ¥ⶀＦ"} });
+            var count = transaction.ExecuteScalar<int>("select count(*) from TestSchema.Person where JSON_VALUE(CAST(DECOMPRESS([JSONBlob]) as nvarchar(max)), '$.Name') = N'Paul ¥ⶀＦ'", new CommandParameterValues { { "name", "Paul ¥ⶀＦ"} });
             count.Should().Be(1);
         }
 
@@ -70,9 +70,9 @@ namespace Nevermore.IntegrationTests.Advanced
         public void CanReadDataSetDirectlyInSql()
         {
             using var transaction = Store.BeginTransaction();
-            transaction.ExecuteNonQuery("insert into dbo.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'{\"Name\":\"Fred ¥ⶀＦ\",\"Text\":\"BBB\"}'))");
+            transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'{\"Name\":\"Fred ¥ⶀＦ\",\"Text\":\"BBB\"}'))");
 
-            var count = transaction.ExecuteScalar<int>("select count(*) from dbo.Person where JSON_VALUE(CAST(DECOMPRESS([JSONBlob]) as nvarchar(max)), '$.Name') = @name", new CommandParameterValues { { "name", "Fred ¥ⶀＦ"} });
+            var count = transaction.ExecuteScalar<int>("select count(*) from TestSchema.Person where JSON_VALUE(CAST(DECOMPRESS([JSONBlob]) as nvarchar(max)), '$.Name') = @name", new CommandParameterValues { { "name", "Fred ¥ⶀＦ"} });
             count.Should().Be(1);
             
             var loaded = transaction.Load<Person>("Persons-1");

@@ -11,7 +11,7 @@ namespace Nevermore.IntegrationTests.SetUp
         public static void WriteTableSchema(DocumentMap mapping, string tableNameOverride, StringBuilder result)
         {
             var tableName = tableNameOverride ?? mapping.TableName;
-            result.AppendLine("CREATE TABLE [" + tableName + "] (");
+            result.AppendLine("CREATE TABLE [TestSchema].[" + tableName + "] (");
             result.AppendFormat("  [Id] NVARCHAR(50) NOT NULL CONSTRAINT [PK_{0}_Id] PRIMARY KEY CLUSTERED, ", tableName).AppendLine();
 
             foreach (var column in mapping.WritableIndexedColumns())
@@ -20,12 +20,11 @@ namespace Nevermore.IntegrationTests.SetUp
             }
 
             result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine();
-
             result.AppendLine(")");
 
             foreach (var unique in mapping.UniqueConstraints)
             {
-                result.AppendFormat("ALTER TABLE [{0}] ADD CONSTRAINT [UQ_{1}] UNIQUE({2})", tableName,
+                result.AppendFormat("ALTER TABLE [TestSchema].[{0}] ADD CONSTRAINT [UQ_{1}] UNIQUE({2})", tableName,
                     unique.ConstraintName,
                     string.Join(", ", unique.Columns.Select(ix => "[" + ix + "]"))).AppendLine();
             }
@@ -34,7 +33,7 @@ namespace Nevermore.IntegrationTests.SetUp
             {
                 var refTblName = referencedDocumentMap.TableName;
                 result.AppendLine($"IF NOT EXISTS (SELECT name from sys.tables WHERE name = '{refTblName}')");
-                result.AppendLine($"    CREATE TABLE [{refTblName}] (");
+                result.AppendLine($"    CREATE TABLE [TestSchema].[{refTblName}] (");
                 result.AppendLine($"        [{referencedDocumentMap.IdColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.IdTableColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentIdColumnName}] nvarchar(50) NOT NULL,");

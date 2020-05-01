@@ -15,12 +15,17 @@ namespace Nevermore.Querying.AST
         readonly string tableOrViewName;
         readonly string schemaName;
 
-        public SimpleTableSource(string tableOrViewName, string schemaName = NevermoreDefaults.DefaultSchemaName)
+        public SimpleTableSource(string tableOrViewName, string schemaName)
         {
             this.tableOrViewName = tableOrViewName;
             this.schemaName = schemaName;
         }
 
+        public string Schema
+        {
+            get => schemaName;
+        }
+        
         public string GenerateSql() => $"[{schemaName}].[{tableOrViewName}]";
         public override string ToString() => GenerateSql();
     }
@@ -37,6 +42,8 @@ namespace Nevermore.Querying.AST
 
         public string Alias { get; }
 
+        public string Schema => source.Schema;
+
         public string GenerateSql() => $"{source.GenerateSql()} {Alias}";
         public override string ToString() => GenerateSql();
     }
@@ -51,6 +58,8 @@ namespace Nevermore.Querying.AST
             this.tableSource = tableSource;
             this.tableHint = tableHint;
         }
+
+        public string Schema => tableSource.Schema;
 
         public string GenerateSql()
         {

@@ -51,6 +51,7 @@ namespace Nevermore.IntegrationTests.SetUp
         void CreateDatabase()
         {
             ExecuteScript(@"create database [" + testDatabaseName + "] COLLATE SQL_Latin1_General_CP1_CS_AS", GetMaster());
+            ExecuteScript(@"create schema TestSchema");
         }
 
         void InstallSchema()

@@ -256,7 +256,6 @@ namespace Nevermore.Mapping
             {
                 Type = typeof(TDocument),
                 IdColumn = GetDefaultIdColumn(),
-                SchemaName = NevermoreDefaults.DefaultSchemaName,
                 TableName = typeof(TDocument).Name,
                 IdPrefix = typeof(TDocument).Name + "s",
                 JsonStorageFormat = JsonStorageFormat.TextOnly

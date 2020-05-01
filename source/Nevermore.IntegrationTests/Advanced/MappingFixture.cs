@@ -41,7 +41,7 @@ namespace Nevermore.IntegrationTests.Advanced
             NoMonkeyBusiness();
             KeepDataBetweenTests();
 
-            ExecuteSql(@"create table [User] (
+            ExecuteSql(@"create table TestSchema.[User] (
                 UserId nvarchar(200) not null,
                 FirstName nvarchar(200) not null,
                 Age int not null,

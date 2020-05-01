@@ -8,7 +8,7 @@ namespace Nevermore.Querying.AST
         readonly string viewName;
         readonly string schemaName;
 
-        public View(ISelect select, string viewName, string schemaName = NevermoreDefaults.DefaultSchemaName)
+        public View(ISelect select, string viewName, string schemaName)
         {
             this.select = @select;
             this.viewName = viewName;

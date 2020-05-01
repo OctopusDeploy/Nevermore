@@ -21,7 +21,7 @@ namespace Nevermore.Tests.Util
 
         public DataModificationQueryBuilderFixture()
         {
-            var mappings = new DocumentMapRegistry();
+            var mappings = new DocumentMapRegistry("dbo");
             mappings.Register(
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),

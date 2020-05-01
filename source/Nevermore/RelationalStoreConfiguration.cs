@@ -29,7 +29,7 @@ namespace Nevermore
         public RelationalStoreConfiguration(Func<string> connectionStringFunc)
         {
             CommandFactory = new SqlCommandFactory();
-            DocumentMaps = new DocumentMapRegistry();
+            DocumentMaps = new DocumentMapRegistry(NevermoreDefaults.FallbackDefaultSchemaName);
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
             InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
@@ -44,6 +44,8 @@ namespace Nevermore
             
             Hooks = new HookRegistry();
 
+            DefaultSchema = NevermoreDefaults.FallbackDefaultSchemaName;
+
             TypeHandlers = new TypeHandlerRegistry();
 
             connectionString = new Lazy<string>(() =>
@@ -56,8 +58,9 @@ namespace Nevermore
         public string ApplicationName { get; set; }
 
         public string ConnectionString => connectionString.Value;
+        public string DefaultSchema { get; set; }
 
-        public IDocumentMapRegistry DocumentMaps { get; }
+        public IDocumentMapRegistry DocumentMaps { get; set; }
         
         public IDocumentSerializer DocumentSerializer { get; set; }
         

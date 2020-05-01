@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,9 +8,13 @@ namespace Nevermore.Advanced.ReaderStrategies.Compilation
 {
     internal static class ExpressionCompiler
     {
+        public static readonly List<string> Expressions = new List<string>();
+        
         public static CompiledExpression<TExpression> Compile<TExpression>(Expression<TExpression> expression)
         {
             var source = new Lazy<string>(() => FormatExpressionSource(expression));
+            
+            Expressions.Add(source.Value);
             
             try
             {

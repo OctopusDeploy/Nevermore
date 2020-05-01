@@ -12,6 +12,12 @@ namespace Nevermore
     {
         string ApplicationName { get; set; }
         string ConnectionString { get; }
+        
+        /// <summary>
+        /// Gets or sets the default schema name (e.g., 'dbo') that will be used as a prefix on all statements.
+        /// </summary>
+        string DefaultSchema { get; set; }
+        
         IDocumentMapRegistry DocumentMaps { get; }
         IDocumentSerializer DocumentSerializer { get; set; }
         IReaderStrategyRegistry ReaderStrategies { get; }
