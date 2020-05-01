@@ -38,7 +38,7 @@ namespace Nevermore.Util
 
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
-            var parameters = GetDocumentParameters(m => string.IsNullOrEmpty(options.CustomAssignedId) ? keyAllocator(m) : options.CustomAssignedId, documents, mapping);
+            var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping);
 
             AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
             return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
@@ -77,6 +77,8 @@ namespace Nevermore.Util
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
+                null,
+                null,
                 document,
                 mapping
             );
@@ -206,28 +208,37 @@ namespace Nevermore.Util
             }
         }
 
-
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, IReadOnlyList<object> documents, DocumentMap mapping)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping)
         {
             if (documents.Count == 1)
-                return GetDocumentParameters(allocateId, documents[0], mapping, "");
+                return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, "");
 
             var parameters = new CommandParameterValues();
             for (var x = 0; x < documents.Count; x++)
             {
-                var instanceParameters = GetDocumentParameters(allocateId, documents[x], mapping, $"{x}__");
+                var instanceParameters = GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.IgnoreCustomIdIfIdAlreadySet, documents[x], mapping, $"{x}__");
                 parameters.AddRange(instanceParameters);
             }
 
             return parameters;
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object document, DocumentMap mapping, string prefix = null)
+        enum CustomIdAssignmentBehavior
+        {
+            ThrowIfIdAlreadySetToDifferentValue,
+            IgnoreCustomIdIfIdAlreadySet
+        }
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
         {
             var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
+            
+            if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
+                customAssignedId != null && id != null && customAssignedId != id)
+                throw new ArgumentException("Do not pass a different Id when one is already set on the document");
+
             if (string.IsNullOrWhiteSpace(id))
             {
-                id = allocateId(mapping);
+                id = string.IsNullOrWhiteSpace(customAssignedId) ? allocateId(mapping) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);
             }
 
