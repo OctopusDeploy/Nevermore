@@ -260,5 +260,41 @@ namespace Nevermore.IntegrationTests
                 loadedCustomer.Roles.Count.Should().Be(2);
             }
         }
+        
+        
+        [Test]
+        public void ShouldUseIdPassedInToInsertMethod()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
+                Assert.That(customer.Id, Is.EqualTo("12345"), "Id passed in should be used");
+            }
+        }
+
+        [Test]
+        public void ShouldUseIdPassedInIfSame()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer = new Customer {Id = "12345", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
+                Assert.That(customer.Id, Is.EqualTo("12345"), "Id passed in should be used if same");
+            }
+        }
+
+        [Test]
+        public void ShouldThrowIfConflictingIdsPassedIn()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                Assert.Throws<ArgumentException>(() =>
+                {
+                    var customer = new Customer {Id = "123456", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                    transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
+                });
+            }
+        }
     }
 }
