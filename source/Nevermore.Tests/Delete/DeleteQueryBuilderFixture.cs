@@ -41,7 +41,7 @@ namespace Nevermore.Tests.Delete
         {
             return new DeleteQueryBuilder<TDocument>(
                 new UniqueParameterNameGenerator(),
-                new DataModificationQueryBuilder(mappings, new NewtonsoftDocumentSerializer(mappings), s => null),
+                new DataModificationQueryBuilder(mappings, new NewtonsoftDocumentSerializer(new RelationalStoreConfiguration("a") { DocumentMaps = mappings }), s => null),
                 queryExecutor
             );
         }

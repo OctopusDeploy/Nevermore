@@ -29,7 +29,7 @@ namespace Nevermore.Tests.Util
                 new OtherMap());
             builder = new DataModificationQueryBuilder(
                 mappings,
-                new NewtonsoftDocumentSerializer(mappings),
+                new NewtonsoftDocumentSerializer(new RelationalStoreConfiguration("") { DocumentMaps = mappings}),
                 m => idAllocator() 
             );
         }

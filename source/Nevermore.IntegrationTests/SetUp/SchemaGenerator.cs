@@ -32,8 +32,9 @@ namespace Nevermore.IntegrationTests.SetUp
             foreach (var referencedDocumentMap in mapping.RelatedDocumentsMappings)
             {
                 var refTblName = referencedDocumentMap.TableName;
+                var refSchemaName = referencedDocumentMap.SchemaName;
                 result.AppendLine($"IF NOT EXISTS (SELECT name from sys.tables WHERE name = '{refTblName}')");
-                result.AppendLine($"    CREATE TABLE [TestSchema].[{refTblName}] (");
+                result.AppendLine($"    CREATE TABLE TestSchema.[{refTblName}] (");
                 result.AppendLine($"        [{referencedDocumentMap.IdColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.IdTableColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentIdColumnName}] nvarchar(50) NOT NULL,");

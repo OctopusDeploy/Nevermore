@@ -27,6 +27,13 @@ namespace Nevermore.Mapping
             map.Validate();
             if (map.SchemaName == null)
                 map.SchemaName = defaultSchema;
+
+            foreach (var related in map.RelatedDocumentsMappings)
+            {
+                if (related.SchemaName == null)
+                    related.SchemaName = defaultSchema;
+            }
+            
             mappings[map.Type] = map;
         }
 

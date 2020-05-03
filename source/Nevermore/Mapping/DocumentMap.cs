@@ -197,9 +197,9 @@ namespace Nevermore.Mapping
             return column;
         }
 
-        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName)
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName, string schemaName = null)
         {
-            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName);
+            var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName, schemaName);
             map.RelatedDocumentsMappings.Add(mapping);
             return mapping;
         }
