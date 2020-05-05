@@ -2,7 +2,7 @@ INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) VALUES
 (@0__Id, @0__AColumn, @0__JSON)
 ,(@1__Id, @1__AColumn, @1__JSON)
 ,(@2__Id, @2__AColumn, @2__JSON)
-INSERT INTO [RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
+INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
 (@0__Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')
 ,(@0__Id, 'TestDocumentTbl', @relateddocument_1, 'OtherTbl')
 ,(@2__Id, 'TestDocumentTbl', @relateddocument_2, 'OtherTbl')

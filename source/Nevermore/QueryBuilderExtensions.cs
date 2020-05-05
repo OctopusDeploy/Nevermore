@@ -15,7 +15,9 @@ namespace Nevermore
         /// <returns>A plain SQL string representing a create stored procedure query</returns>
         public static string AsStoredProcedure<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string storedProcedureName, string schemaName = null) where TRecord : class
         {
-            return new StoredProcedure(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, storedProcedureName, schemaName).GenerateSql();
+            var select = queryBuilder.GetSelectBuilder().GenerateSelect();
+            schemaName ??= select.Schema;
+            return new StoredProcedure(select, queryBuilder.Parameters, queryBuilder.ParameterDefaults, storedProcedureName, schemaName).GenerateSql();
         }
 
         /// <summary>
@@ -28,8 +30,9 @@ namespace Nevermore
         /// <returns>A plain SQL string representing a create view query</returns>
         public static string AsView<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string viewName, string schemaName = null) where TRecord : class
         {
-            schemaName ??= queryBuilder.GetSelectBuilder().GenerateSelect().Schema;
-            return new View(queryBuilder.GetSelectBuilder().GenerateSelect(), viewName, schemaName).GenerateSql();
+            var select = queryBuilder.GetSelectBuilder().GenerateSelect();
+            schemaName ??= select.Schema;
+            return new View(select, viewName, schemaName).GenerateSql();
         }
 
         /// <summary>
@@ -42,8 +45,9 @@ namespace Nevermore
         /// <returns>A plain SQL string representing a create function query</returns>
         public static string AsFunction<TRecord>(this IQueryBuilder<TRecord> queryBuilder, string functionName, string schemaName = null) where TRecord : class
         {
-            schemaName ??= queryBuilder.GetSelectBuilder().GenerateSelect().Schema;
-            return new Function(queryBuilder.GetSelectBuilder().GenerateSelect(), queryBuilder.Parameters, queryBuilder.ParameterDefaults, functionName, schemaName).GenerateSql();
+            var select = queryBuilder.GetSelectBuilder().GenerateSelect();
+            schemaName ??= select.Schema;
+            return new Function(select, queryBuilder.Parameters, queryBuilder.ParameterDefaults, functionName, schemaName).GenerateSql();
         }
     }
 }
