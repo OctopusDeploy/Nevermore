@@ -29,20 +29,24 @@ namespace Nevermore
         readonly RetryPolicy retryPolicy;
         readonly TimedSection timedSection;
         readonly ITransactionDiagnostic transaction;
+        readonly bool allowSynchronousOperations;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations)
         {
             this.command = command;
             this.prepared = prepared;
             this.retryPolicy = retryPolicy;
             this.timedSection = timedSection;
             this.transaction = transaction;
+            this.allowSynchronousOperations = allowSynchronousOperations;
         }
 
         public int ExecuteNonQuery()
         {
+            AssertSynchronousOperation();
             try
             {
+                AssertSynchronousOperation();
                 return command.ExecuteNonQueryWithRetry(retryPolicy);
             }
             catch (SqlException ex)
@@ -77,6 +81,7 @@ namespace Nevermore
 
         public object ExecuteScalar()
         {
+            AssertSynchronousOperation();
             try
             {
                 return command.ExecuteScalarWithRetry(retryPolicy);
@@ -113,6 +118,7 @@ namespace Nevermore
 
         public DbDataReader ExecuteReader()
         {
+            AssertSynchronousOperation();
             try
             {
                 return command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior);
@@ -175,6 +181,12 @@ namespace Nevermore
                     throw new UniqueConstraintViolationException(uniqueRule.Message);
                 }
             }
+        }
+
+        void AssertSynchronousOperation()
+        {
+            if (!allowSynchronousOperations)
+                throw new SynchronousOperationsDisabledException();
         }
             
         public void Dispose()

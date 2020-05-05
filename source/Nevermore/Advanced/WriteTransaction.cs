@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
@@ -172,6 +173,8 @@ namespace Nevermore.Advanced
 
         public void Commit()
         {
+            if (!configuration.AllowSynchronousOperations)
+                throw new SynchronousOperationsDisabledException();
             configuration.Hooks.BeforeCommit(this);
             Transaction.Commit();
             configuration.Hooks.AfterCommit(this);

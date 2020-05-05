@@ -408,10 +408,12 @@ namespace Nevermore.Advanced
             return ToList(skip, take);
         }
 
-        public Task<List<TRecord>> ToListAsync(int skip, int take, out int totalResults, CancellationToken cancellationToken = default)
+        [Pure]
+        public async Task<(List<TRecord>, int)> ToListWithCountAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
-            totalResults = Count();
-            return ToListAsync(skip, take, cancellationToken);
+            var count = await CountAsync(cancellationToken);
+            var list = await ToListAsync(skip, take, cancellationToken);
+            return (list, count);
         }
 
         [Pure]

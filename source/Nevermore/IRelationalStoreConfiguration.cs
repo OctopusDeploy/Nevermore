@@ -3,6 +3,7 @@ using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Advanced.TypeHandlers;
+using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 
@@ -14,7 +15,15 @@ namespace Nevermore
         string ConnectionString { get; }
         
         /// <summary>
-        /// Gets or sets the default schema name (e.g., 'dbo') that will be used as a prefix on all statements.
+        /// Gets or sets whether synchronous operations are allowed. The default is <value>true</value>. Set to
+        /// <value>false</value> to have Nevermore throw a <see cref="SynchronousOperationsDisabledException"/> when
+        /// calling a synchronous operation.
+        /// </summary>
+        public bool AllowSynchronousOperations { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the default schema name (e.g., 'dbo') that will be used as a prefix on all statements. Can be
+        /// overridden on each document map.
         /// </summary>
         string DefaultSchema { get; set; }
         

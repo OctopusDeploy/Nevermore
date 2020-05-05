@@ -48,6 +48,8 @@ namespace Nevermore
 
             TypeHandlers = new TypeHandlerRegistry();
 
+            AllowSynchronousOperations = true;
+
             connectionString = new Lazy<string>(() =>
             {
                 var result = connectionStringFunc();
@@ -58,6 +60,9 @@ namespace Nevermore
         public string ApplicationName { get; set; }
 
         public string ConnectionString => connectionString.Value;
+        
+        public bool AllowSynchronousOperations { get; set; }
+        
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }

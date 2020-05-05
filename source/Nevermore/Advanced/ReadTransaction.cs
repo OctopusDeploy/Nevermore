@@ -53,6 +53,9 @@ namespace Nevermore.Advanced
 
         public void Open(IsolationLevel isolationLevel)
         {
+            if (!configuration.AllowSynchronousOperations)
+                throw new SynchronousOperationsDisabledException();
+            
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
             Transaction = connection.BeginTransaction(isolationLevel);
@@ -360,7 +363,7 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
             
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this);
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)

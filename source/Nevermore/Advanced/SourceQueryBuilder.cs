@@ -502,9 +502,9 @@ namespace Nevermore.Advanced
             return Final(Builder.ToList(skip, take, out totalResults));
         }
 
-        public Task<List<TRecord>> ToListAsync(int skip, int take, out int totalResults, CancellationToken cancellationToken = default)
+        public Task<(List<TRecord>, int)> ToListWithCountAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
-            return Final(Builder.ToListAsync(skip, take, out totalResults, cancellationToken));
+            return Final(Builder.ToListWithCountAsync(skip, take, cancellationToken));
         }
 
         public List<TRecord> ToList()
