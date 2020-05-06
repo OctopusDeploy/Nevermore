@@ -22,6 +22,12 @@ namespace Nevermore.Mapping
         /// Use when you have both [JSONBlob] and [JSON] columns, and want data in the [JSONBlob] column to be migrated
         /// to the [JSON] column.
         /// </summary>
-        MixedPreferText
+        MixedPreferText,
+        
+        /// <summary>
+        /// Use when there is no JSON column on the document table. The class must have a public, parameterless constructor
+        /// instead. 
+        /// </summary>
+        NoJson
     }
 }

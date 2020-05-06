@@ -317,6 +317,9 @@ namespace Nevermore.Mapping
             if (IdColumn == null)
                 throw new InvalidOperationException($"There is no Id property on the document type {Type.FullName}");
 
+            if (TypeResolutionColumn != null && JsonStorageFormat == JsonStorageFormat.NoJson)
+                throw new InvalidOperationException($"The document map for type {Type.FullName} has a TypeColumn, but also uses the NoJson storage mode, which is not allowed.");
+            
             try
             {
                 foreach (var column in Columns)

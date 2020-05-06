@@ -67,6 +67,9 @@ namespace Nevermore.Util
                     updateStatements.Add($"[{JsonVariableName}] = @{JsonVariableName}");
                     updateStatements.Add($"[{JsonBlobVariableName}] = @{JsonBlobVariableName}");
                     break;
+                case JsonStorageFormat.NoJson:
+                    // Nothing to set
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -270,6 +273,9 @@ namespace Nevermore.Util
                 case JsonStorageFormat.MixedPreferText:
                     result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
                     result[$"{prefix}{JsonBlobVariableName}"] = null;
+                    break;
+                case JsonStorageFormat.NoJson:
+                    // Nothing to serialize
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

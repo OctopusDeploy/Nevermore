@@ -219,7 +219,13 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             }
             else if (jsonResult != null && jsonBlobResult != null)
             {
+                // If both columns have data, choose our preference
                 body.Add(Expression.Assign(result, Expression.Call(contextArgument, selectPreferredResultMethod, jsonResult, jsonBlobResult)));
+            }
+            else
+            {
+                // New it up
+                body.Add(Expression.Assign(result, Expression.New(type)));
             }
 
             body.Add(Expression.IfThen(Expression.NotEqual(result, Expression.Constant(null, type)), 
@@ -251,14 +257,18 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         void AssertValidColumnOrdering()
         {
             var storageFormat = map.JsonStorageFormat;
-            var expectsJson = map.JsonStorageFormat != JsonStorageFormat.CompressedOnly;
-            var expectsJsonBlob = map.JsonStorageFormat != JsonStorageFormat.TextOnly;
+            var expectsNoJson = map.JsonStorageFormat == JsonStorageFormat.NoJson;
+            var expectsJson = map.JsonStorageFormat == JsonStorageFormat.TextOnly || map.JsonStorageFormat == JsonStorageFormat.MixedPreferText || map.JsonStorageFormat == JsonStorageFormat.MixedPreferCompressed;
+            var expectsJsonBlob = map.JsonStorageFormat == JsonStorageFormat.CompressedOnly || map.JsonStorageFormat == JsonStorageFormat.MixedPreferText || map.JsonStorageFormat == JsonStorageFormat.MixedPreferCompressed;
             var expectsType = map.TypeResolutionColumn != null;
             var name = map.Type.Name;
 
             if (idIndex < 0)
                 throw Fail($"The class '{name}' has a document map, but the query does not include the '{map.IdColumn.ColumnName}' column. Queries against this type must include the '{map.IdColumn.ColumnName}' in the select clause.");
             
+            if (expectsNoJson && (jsonIndex > 0 || jsonBlobIndex > 0))
+                throw Fail($"The class '{name}' has a document map with JSON storage set to {storageFormat.ToString()}, but the query includes either 'JSON' or 'JSONBlob' columns. This table should not have a JSON or JSONBlob column. If storing JSON is intended, the document map should specify a different JsonStorageMode.");
+
             if (expectsJson && jsonIndex < 0 && expectsJsonBlob && jsonBlobIndex < 0)
                 throw Fail($"The class '{name}' has a document map with JSON storage set to {storageFormat.ToString()}, but the query does not include either the 'JSON' or 'JSONBlob' column. Queries against this type must include both columns in the select clause. If you just want a few columns, use Nevermores' 'plain class' or tuple support.");
 
