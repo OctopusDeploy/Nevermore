@@ -164,7 +164,7 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, map.SchemaName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
@@ -332,7 +332,7 @@ namespace Nevermore.Advanced
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
-            return new PreparedCommand($"SELECT TOP 1 * FROM [{mapping.SchemaName}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
+            return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<string> idList)
@@ -342,7 +342,7 @@ namespace Nevermore.Advanced
             
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
-            var statement = $"SELECT s.* FROM [{mapping.SchemaName}].[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
+            var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
         

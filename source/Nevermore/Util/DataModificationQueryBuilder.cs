@@ -22,12 +22,14 @@ namespace Nevermore.Util
 
         readonly IDocumentMapRegistry mappings;
         readonly IDocumentSerializer serializer;
+        readonly IRelationalStoreConfiguration configuration;
         readonly Func<DocumentMap, string> keyAllocator;
 
-        public DataModificationQueryBuilder(IDocumentMapRegistry mappings, IDocumentSerializer serializer, Func<DocumentMap, string> keyAllocator)
+        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, string> keyAllocator)
         {
-            this.mappings = mappings;
-            this.serializer = serializer;
+            this.mappings = configuration.DocumentMaps;
+            this.serializer = configuration.DocumentSerializer;
+            this.configuration = configuration;
             this.keyAllocator = keyAllocator;
         }
 
@@ -76,7 +78,7 @@ namespace Nevermore.Util
             
             var updates = string.Join(", ", updateStatements);
             
-            var statement = $"UPDATE [{mapping.SchemaName}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
+            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
@@ -103,17 +105,17 @@ namespace Nevermore.Util
             return PrepareDelete(mapping, id, options);
         }
 
-        static PreparedCommand PrepareDelete(DocumentMap mapping, string id, DeleteOptions options = null)
+        private PreparedCommand PrepareDelete(DocumentMap mapping, string id, DeleteOptions options = null)
         {
             options ??= DeleteOptions.Default;
 
             var actualTableName = options.TableName ?? mapping.TableName;
-            var actualSchemaName = options.SchemaName ?? mapping.SchemaName;
+            var actualSchemaName = options.SchemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
             var statement = new StringBuilder();
             statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
-            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: m.SchemaName, idColumnName: m.IdColumnName)).Distinct())
+            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
             var parameters = new CommandParameterValues {{IdVariableName, id}};
@@ -130,7 +132,7 @@ namespace Nevermore.Util
             options ??= DeleteOptions.Default;
 
             var actualTableName = options.TableName ?? mapping.TableName;
-            var actualSchemaName = options.SchemaName ?? mapping.SchemaName;
+            var actualSchemaName = options.SchemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
             if (!mapping.RelatedDocumentsMappings.Any())
                 return new PreparedCommand($"DELETE FROM [{actualSchemaName}].[{actualTableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
@@ -146,7 +148,7 @@ namespace Nevermore.Util
 
             statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
 
-            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: m.SchemaName, idColumnName: m.IdColumnName)).Distinct())
+            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
 
             return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
@@ -194,7 +196,7 @@ namespace Nevermore.Util
             var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
             var actualTableName = tableName ?? mapping.TableName;
-            var actualSchemaName = schemaName ?? mapping.SchemaName;
+            var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
             sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
 
@@ -393,7 +395,7 @@ namespace Nevermore.Util
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
             
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
-                group m by new { Table = m.TableName, Schema = m.SchemaName }
+                group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
                 into g
                 let related = (
                     from m in g

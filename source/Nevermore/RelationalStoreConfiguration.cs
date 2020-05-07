@@ -29,7 +29,7 @@ namespace Nevermore
         public RelationalStoreConfiguration(Func<string> connectionStringFunc)
         {
             CommandFactory = new SqlCommandFactory();
-            DocumentMaps = new DocumentMapRegistry(NevermoreDefaults.FallbackDefaultSchemaName);
+            DocumentMaps = new DocumentMapRegistry();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
             InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
