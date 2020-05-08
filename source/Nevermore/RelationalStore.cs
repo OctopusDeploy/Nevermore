@@ -33,6 +33,20 @@ namespace Nevermore
         {
             keyAllocator.Value.Reset();
         }
+        
+        public IReadTransaction BeginReadTransaction(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
+            var txn = CreateReadTransaction(retriableOperation, name);
+            txn.Open();
+            return txn;
+        }
+
+        public async Task<IReadTransaction> BeginReadTransactionAsync(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
+            var txn = CreateReadTransaction(retriableOperation, name);
+            await txn.OpenAsync();
+            return txn;
+        }
 
         public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {

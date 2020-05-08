@@ -10,8 +10,11 @@ namespace Nevermore
         IRelationalStoreConfiguration Configuration { get; }
         void WriteCurrentTransactions(StringBuilder output);
         
-        IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
-        Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null);
+        IReadTransaction BeginReadTransaction(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
+        Task<IReadTransaction> BeginReadTransactionAsync(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
+
+        IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
+        Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
 
         IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
         Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);

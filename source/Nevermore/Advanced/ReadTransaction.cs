@@ -37,6 +37,8 @@ namespace Nevermore.Advanced
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
         
+        public IDictionary<string, object> State { get; }
+
         public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
         {
             State = new Dictionary<string, object>();
@@ -51,21 +53,31 @@ namespace Nevermore.Advanced
 
         protected DbTransaction Transaction { get; private set; }
 
-        public void Open(IsolationLevel isolationLevel)
+        public void Open()
         {
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
             
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
+        }
+
+        public async Task OpenAsync()
+        {
+            connection = new SqlConnection(registry.ConnectionString);
+            await connection.OpenWithRetryAsync();
+        }
+        
+        public void Open(IsolationLevel isolationLevel)
+        {
+            Open();
             Transaction = connection.BeginTransaction(isolationLevel);
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
-            connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
-            Transaction = connection.BeginTransaction(isolationLevel);
+            await OpenAsync();
+            Transaction = await connection.BeginTransactionAsync(isolationLevel);
         }
         
         [Pure]
@@ -403,7 +415,5 @@ namespace Nevermore.Advanced
             connection?.Dispose();
             registry.Remove(this);
         }
-
-        public IDictionary<string, object> State { get; }
     }
 }

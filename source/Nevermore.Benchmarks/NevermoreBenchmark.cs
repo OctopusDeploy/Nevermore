@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using BenchmarkDotNet.Attributes;
@@ -87,6 +88,24 @@ namespace Nevermore.Benchmarks
         {
             return EnsureResults(
                 transaction.Query<Customer>().Where(c => c.FirstName == "Robert").Take(100).ToList()
+            );
+        }
+        
+        [Benchmark]
+        public List<Customer> SelectWithoutTransaction()
+        {
+            using var reader = store.BeginReadTransaction();
+            return EnsureResults(
+                reader.Query<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
+            );
+        }
+        
+        [Benchmark]
+        public List<Customer> SelectWithTransaction()
+        {
+            using var reader = store.BeginReadTransaction(IsolationLevel.ReadCommitted);
+            return EnsureResults(
+                reader.Query<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
             );
         }
 

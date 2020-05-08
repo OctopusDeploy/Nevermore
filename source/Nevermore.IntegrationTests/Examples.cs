@@ -93,7 +93,7 @@ namespace Nevermore.IntegrationTests
         public void Load()
         {
             // If you know the document ID you want, you can load it back
-            using var transaction = store.BeginTransaction();
+            using var transaction = store.BeginReadTransaction();
             var person = transaction.Load<Person>("Persons-1");
             person.FirstName.Should().Be("Donald");
         }
