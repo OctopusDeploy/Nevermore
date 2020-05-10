@@ -16,7 +16,7 @@ namespace Nevermore.Mapping
         }
         
         public string TableName { get; }
-        public string SchemaName { get; set; }
+        public string SchemaName { get; }
         public string IdColumnName => "Id";
         public string IdTableColumnName => "Table";
         public string RelatedDocumentIdColumnName => "RelatedDocumentId";

@@ -1,5 +1,7 @@
 using System;
+using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
+using Nevermore.Mapping;
 using Newtonsoft.Json;
 
 namespace Nevermore
@@ -15,5 +17,18 @@ namespace Nevermore
 
             callback(jsonNet.SerializerSettings);
         }
+
+        internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, string schemaName)
+        {
+            return schemaName 
+                ?? configuration.DefaultSchema 
+                ?? NevermoreDefaults.FallbackDefaultSchemaName;
+        }
+
+        internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, DocumentMap documentMap)
+            => GetSchemaNameOrDefault(configuration, documentMap.SchemaName);
+
+        internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, RelatedDocumentsMapping relatedDocumentsMapping)
+            => GetSchemaNameOrDefault(configuration, relatedDocumentsMapping.SchemaName);
     }
 }

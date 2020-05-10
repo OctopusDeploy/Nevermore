@@ -21,15 +21,15 @@ namespace Nevermore.Tests.Util
 
         public DataModificationQueryBuilderFixture()
         {
-            var mappings = new DocumentMapRegistry("dbo");
-            mappings.Register(
+            var configuration = new RelationalStoreConfiguration("");
+            configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
+            configuration.DocumentMaps.Register(
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
                 new TestDocumentWithMultipleRelatedDocumentsMap(),
                 new OtherMap());
             builder = new DataModificationQueryBuilder(
-                mappings,
-                new NewtonsoftDocumentSerializer(new RelationalStoreConfiguration("") { DocumentMaps = mappings}),
+                configuration,
                 m => idAllocator() 
             );
         }

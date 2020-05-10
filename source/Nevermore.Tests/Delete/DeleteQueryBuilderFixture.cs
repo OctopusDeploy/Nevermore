@@ -39,9 +39,11 @@ namespace Nevermore.Tests.Delete
 
         IDeleteQueryBuilder<TDocument> CreateQueryBuilder<TDocument>() where TDocument : class
         {
+            var configuration = new RelationalStoreConfiguration("a") { DocumentMaps = mappings };
+            configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
             return new DeleteQueryBuilder<TDocument>(
                 new UniqueParameterNameGenerator(),
-                new DataModificationQueryBuilder(mappings, new NewtonsoftDocumentSerializer(new RelationalStoreConfiguration("a") { DocumentMaps = mappings }), s => null),
+                new DataModificationQueryBuilder(configuration, s => null),
                 queryExecutor
             );
         }

@@ -19,7 +19,7 @@ namespace Nevermore.IntegrationTests.SetUp
             var config = new RelationalStoreConfiguration(ConnectionString);
             config.CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory());
             config.ApplicationName = "Nevermore-IntegrationTests";
-            config.DocumentMaps = new DocumentMapRegistry("TestSchema");
+            config.DefaultSchema = "TestSchema";
             config.DocumentMaps.Register(
                 new CustomerMap(),
                 new BrandMap(),
