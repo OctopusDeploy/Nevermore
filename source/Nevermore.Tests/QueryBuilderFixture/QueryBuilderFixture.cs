@@ -1692,7 +1692,7 @@ ORDER BY [Id]";
         }
 
         [Test]
-        public void ShouldGenerateSubqueryThing()
+        public void ShouldGenerateSubqueryAsSource()
         {
             var innerQuery = CreateQueryBuilder<object>("Orders")
                 .Where("[Price] > 5")

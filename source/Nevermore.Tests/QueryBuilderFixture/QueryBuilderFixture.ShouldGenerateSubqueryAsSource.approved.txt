@@ -1,0 +1,7 @@
+SELECT *
+FROM (
+    SELECT *
+    FROM [dbo].[Orders]
+    WHERE ([Price] > 5)
+) ALIAS_GENERATED_2
+ORDER BY ALIAS_GENERATED_2.[Id]
