@@ -181,7 +181,14 @@ namespace Nevermore.Advanced
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), "", this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+        }
+
+        public ISubquerySourceBuilder<TRecord> FromSubquery<TRecord>(ISubquerySourceBuilder<TRecord> subquerySourceBuilder)
+            where TRecord : class
+        {
+            var source = subquerySourceBuilder.AsSource();
+            return new SubquerySourceBuilder<TRecord>(source.Select, source.Alias, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)

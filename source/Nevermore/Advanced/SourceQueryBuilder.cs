@@ -71,7 +71,8 @@ namespace Nevermore.Advanced
         readonly ISelect select;
         string alias;
 
-        public SubquerySourceBuilder(ISelect select,
+        public SubquerySourceBuilder(ISelect select, 
+            string alias,
             IReadQueryExecutor readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,

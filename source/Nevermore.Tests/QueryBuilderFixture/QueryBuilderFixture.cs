@@ -1690,6 +1690,21 @@ ORDER BY [Id]";
 
             this.Assent(subquerySql);
         }
+
+        [Test]
+        public void ShouldGenerateSubqueryThing()
+        {
+            var innerQuery = CreateQueryBuilder<object>("Orders")
+                .Where("[Price] > 5")
+                .Subquery();
+            
+            var source = innerQuery.AsSource();
+
+            var subquerySourceBuilder =  new SubquerySourceBuilder<object>(source.Select, source.Alias, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            var result = subquerySourceBuilder.DebugViewRawQuery();
+
+            this.Assent(result);
+        }
     }
 
     public class Todos

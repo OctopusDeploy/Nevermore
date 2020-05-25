@@ -180,7 +180,7 @@ namespace Nevermore.Advanced
 
         public ISubquerySourceBuilder<TRecord> Subquery()
         {
-            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(),
+            return new SubquerySourceBuilder<TRecord>(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), null,
                 readQueryExecutor,
                 tableAliasGenerator,
                 uniqueParameterNameGenerator,
