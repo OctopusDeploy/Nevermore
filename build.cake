@@ -86,7 +86,7 @@ Task("CopyToArtifacts")
     .IsDependentOn("Test")
     .Does(() => {
 		CreateDirectory(artifactsDir);
-		CopyFiles($"./source/**/*.nupkg", artifactsDir);
+		CopyFiles($"./source/**/Nevermore*.nupkg", artifactsDir);
 	});
 
 Task("CopyToLocalPackages")
@@ -94,7 +94,7 @@ Task("CopyToLocalPackages")
     .WithCriteria(BuildSystem.IsLocalBuild)
     .Does(() => {
 		CreateDirectory(localPackagesDir);
-		CopyFiles($"./source/**/*.nupkg", localPackagesDir);
+		CopyFiles($"{artifactsDir}*.nupkg", localPackagesDir);
 	});
 
 	

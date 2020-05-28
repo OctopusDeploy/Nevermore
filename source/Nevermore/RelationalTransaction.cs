@@ -38,6 +38,7 @@ namespace Nevermore
         readonly IDbTransaction transaction;
         readonly ISqlCommandFactory sqlCommandFactory;
         readonly IRelatedDocumentStore relatedDocumentStore;
+        readonly IQueryLogger queryLogger;
         readonly string name;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator = new UniqueParameterNameGenerator();
@@ -49,6 +50,7 @@ namespace Nevermore
 
         public DateTime CreatedTime { get; } = DateTime.Now;
 
+        [Obsolete]
         public RelationalTransaction(
             RelationalTransactionRegistry registry,
             RetriableOperation retriableOperation,
@@ -61,6 +63,34 @@ namespace Nevermore
             string name = null,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None
         )
+            : this(
+                registry,
+                retriableOperation,
+                isolationLevel,
+                sqlCommandFactory,
+                jsonSerializerSettings,
+                mappings, keyAllocator,
+                relatedDocumentStore,
+                new DefaultQueryLogger(),
+                name,
+                objectInitialisationOptions
+            )
+        {
+        }
+
+        public RelationalTransaction(
+            RelationalTransactionRegistry registry,
+            RetriableOperation retriableOperation,
+            IsolationLevel isolationLevel,
+            ISqlCommandFactory sqlCommandFactory,
+            JsonSerializerSettings jsonSerializerSettings,
+            RelationalMappings mappings,
+            IKeyAllocator keyAllocator,
+            IRelatedDocumentStore relatedDocumentStore,
+            IQueryLogger queryLogger,
+            string name = null,
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None
+        )
         {
             this.registry = registry;
             this.retriableOperation = retriableOperation;
@@ -69,11 +99,12 @@ namespace Nevermore
             this.mappings = mappings;
             this.keyAllocator = keyAllocator;
             this.relatedDocumentStore = relatedDocumentStore;
+            this.queryLogger = queryLogger;
             this.name = name ?? Thread.CurrentThread.Name;
             this.objectInitialisationOptions = objectInitialisationOptions;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
-            
+
             dataModificationQueryBuilder = new DataModificationQueryBuilder(mappings, jsonSerializerSettings);
 
             try
@@ -96,10 +127,10 @@ namespace Nevermore
                 uniqueParameterNameGenerator,
                 (documentType, where, parameterValues, commandTimeout) => DeleteInternal(
                     dataModificationQueryBuilder.CreateDelete(documentType, where),
-                    parameterValues, 
+                    parameterValues,
                     commandTimeout
-                ), 
-                Enumerable.Empty<IWhereClause>(), 
+                ),
+                Enumerable.Empty<IWhereClause>(),
                 new CommandParameterValues()
             );
         }
@@ -191,16 +222,16 @@ namespace Nevermore
         {
             if (customAssignedId != null && instance.Id != null && customAssignedId != instance.Id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
-            
+
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
-                new[] {instance}, 
-                tableName, 
+                new[] {instance},
+                tableName,
                 tableHint,
                 m => string.IsNullOrEmpty(customAssignedId) ? AllocateId(m) : customAssignedId,
                 true
-             );
-            
-            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            );
+
+            using (new TimedSection(ms => queryLogger.Insert(ms, name, statement)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -235,20 +266,20 @@ namespace Nevermore
 
             IReadOnlyList<IId> instanceList = instances.ToArray();
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateInsert(
-                instanceList, 
-                tableName, 
+                instanceList,
+                tableName,
                 tableHint,
                 AllocateId,
                 includeDefaultModelColumns);
 
-            using (new TimedSection(Log, ms => $"Insert took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(ms => queryLogger.Insert(ms, name, statement)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
                 try
                 {
                     command.ExecuteNonQueryWithRetry(GetRetryPolicy(RetriableOperation.Insert));
-                    for(var x = 0; x < instanceList.Count; x++)
+                    for (var x = 0; x < instanceList.Count; x++)
                     {
                         var idVariableName = instanceList.Count == 1 ? "Id" : $"{x}__Id";
 
@@ -306,8 +337,8 @@ namespace Nevermore
         public void Update<TDocument>(TDocument instance, string tableHint = null, TimeSpan? commandTimeout = null) where TDocument : class, IId
         {
             var (mapping, statement, parameters) = dataModificationQueryBuilder.CreateUpdate(instance, tableHint);
-            
-            using (new TimedSection(Log, ms => $"Update took {ms}ms in transaction '{name}': {statement}", 300))
+
+            using (new TimedSection(ms => queryLogger.Update(ms, name, statement)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameters, mapping, commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -345,7 +376,7 @@ namespace Nevermore
 
         void DeleteInternal(string statement, CommandParameterValues parameterValues, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Delete took {ms}ms in transaction '{name}': {statement}", 300))
+            using (new TimedSection(ms => queryLogger.Delete(ms, name, statement)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, statement, parameterValues, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -369,7 +400,7 @@ namespace Nevermore
 
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Executing non query took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(ms => queryLogger.NonQuery(ms, name, query)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -431,9 +462,8 @@ namespace Nevermore
             try
             {
                 long msUntilFirstRecord = -1;
-                using (var timedSection = new TimedSection(Log, ms => $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}", 300))
+                using (var timedSection = new TimedSection(ms => queryLogger.Reader(ms, msUntilFirstRecord, name, command.CommandText)))
                 {
-
                     try
                     {
                         reader = command.ExecuteReaderWithRetry();
@@ -522,6 +552,7 @@ namespace Nevermore
                 if (dr.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return i;
             }
+
             return -1;
         }
 
@@ -529,10 +560,7 @@ namespace Nevermore
         {
             long msUntilFirstRecord = -1;
 
-            using (var timedSection = new TimedSection(Log,
-                ms =>
-                    $"Reader took {ms}ms ({msUntilFirstRecord}ms until the first record) in transaction '{name}': {command.CommandText}",
-                300))
+            using (var timedSection = new TimedSection(ms => queryLogger.Reader(ms, msUntilFirstRecord, name, command.CommandText)))
             using (var reader = command.ExecuteReaderWithRetry())
             {
                 msUntilFirstRecord = timedSection.ElapsedMilliseconds;
@@ -554,13 +582,13 @@ namespace Nevermore
         [Pure]
         public ISubquerySourceBuilder<T> RawSqlQuery<T>(string query) where T : class, IId
         {
-            return new SubquerySourceBuilder<T>(new RawSql(query),this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<T>(new RawSql(query), this, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Pure]
         public T ExecuteScalar<T>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Scalar took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(ms => queryLogger.Scalar(ms, name, query)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args, commandTimeout: commandTimeout))
             {
                 AddCommandTrace(command.CommandText);
@@ -601,7 +629,7 @@ namespace Nevermore
             Action<IDataReader> readerCallback,
             TimeSpan? commandTimeout = null)
         {
-            using (new TimedSection(Log, ms => $"Executing reader took {ms}ms in transaction '{name}': {query}", 300))
+            using (new TimedSection(ms => queryLogger.ExecuteReader(ms, name, query)))
             using (var command = sqlCommandFactory.CreateCommand(connection, transaction, query, args,
                 commandTimeout: commandTimeout))
             {

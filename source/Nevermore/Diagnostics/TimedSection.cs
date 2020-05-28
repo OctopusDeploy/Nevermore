@@ -6,18 +6,12 @@ namespace Nevermore.Diagnostics
 {
     internal class TimedSection : IDisposable
     {
+        readonly Action<long> callback;
         private readonly Stopwatch stopwatch;
-        private readonly ILog log;
-        private readonly long infoThreashold;
-        private readonly long warningThreashold;
-        private readonly Func<long, string> formatMessage;
 
-        internal TimedSection(ILog log, Func<long, string> formatMessage, long infoThreashold, long warningThreashold = long.MaxValue)
+        internal TimedSection(Action<long> callback)
         {
-            this.log = log;
-            this.infoThreashold = infoThreashold;
-            this.formatMessage = formatMessage;
-            this.warningThreashold = warningThreashold;
+            this.callback = callback;
             stopwatch = Stopwatch.StartNew();
         }
 
@@ -27,14 +21,7 @@ namespace Nevermore.Diagnostics
         {
             stopwatch.Stop();
             var ms = stopwatch.ElapsedMilliseconds;
-            var level = ms >= warningThreashold
-                ? LogLevel.Warn
-                : ms >= infoThreashold
-                    ? LogLevel.Info
-                    : LogLevel.Debug;
-
-            var message = formatMessage(ms);
-            log.Log(level, () => message);
+            callback(ms);
         }
     }
 }
