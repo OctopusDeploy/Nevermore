@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 #endif
 using System.Reflection;
 using System.Text;
+using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
@@ -26,6 +27,7 @@ namespace Nevermore
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings();
         readonly IRelatedDocumentStore relatedDocumentStore;
+        readonly IQueryLogger queryLogger;
         readonly IKeyAllocator keyAllocator;
         readonly ObjectInitialisationOptions objectInitialisationOptions;
 
@@ -58,12 +60,12 @@ namespace Nevermore
                 mappings,
                 jsonSettings,
                 relatedDocumentStore,
+                new DefaultQueryLogger(),
                 keyBlockSize,
                 objectInitialisationOptions,
                 forceMars
             )
         {
-
         }
 
         /// <summary>
@@ -88,6 +90,45 @@ namespace Nevermore
             int keyBlockSize = 20,
             ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
             bool forceMars = true)
+            : this(
+                connectionString,
+                applicationName,
+                sqlCommandFactory,
+                mappings,
+                jsonSettings,
+                relatedDocumentStore,
+                new DefaultQueryLogger(),
+                keyBlockSize,
+                objectInitialisationOptions,
+                forceMars
+            )
+        {
+        }
+
+        /// <summary>
+        /// Creates a new Relational Store
+        /// </summary>
+        /// <param name="connectionString">Allows the connection string to be set after the store is built (but before it is used)</param>
+        /// <param name="applicationName">Name of the application in the SQL string</param>
+        /// <param name="sqlCommandFactory"></param>
+        /// <param name="mappings"></param>
+        /// <param name="jsonSettings"></param>
+        /// <param name="relatedDocumentStore">If you don't have releated documents use the EmptyRelatedDocumentStore</param>
+        /// <param name="queryLogger"></param>
+        /// <param name="keyBlockSize">Block size for the KeyAllocator</param>
+        /// <param name="objectInitialisationOptions"></param>
+        /// <param name="forceMars"></param>
+        public RelationalStore(
+            Func<string> connectionString,
+            string applicationName,
+            ISqlCommandFactory sqlCommandFactory,
+            RelationalMappings mappings,
+            JsonSerializerSettings jsonSettings,
+            IRelatedDocumentStore relatedDocumentStore,
+            IQueryLogger queryLogger,
+            int keyBlockSize = 20,
+            ObjectInitialisationOptions objectInitialisationOptions = ObjectInitialisationOptions.None,
+            bool forceMars = true)
         {
             this.registry = new Lazy<RelationalTransactionRegistry>(
                 () => SetConnectionStringOptions(connectionString(), applicationName, forceMars)
@@ -99,6 +140,7 @@ namespace Nevermore
 
             this.jsonSettings = jsonSettings;
             this.relatedDocumentStore = relatedDocumentStore;
+            this.queryLogger = queryLogger;
             this.objectInitialisationOptions = objectInitialisationOptions;
         }
 
@@ -123,8 +165,19 @@ namespace Nevermore
         public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel,
             RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.Select, string name = null)
         {
-            return new RelationalTransaction(registry.Value, retriableOperation, isolationLevel, sqlCommandFactory,
-                jsonSettings, mappings, keyAllocator, relatedDocumentStore, name, objectInitialisationOptions);
+            return new RelationalTransaction(
+                registry.Value, 
+                retriableOperation, 
+                isolationLevel, 
+                sqlCommandFactory,
+                jsonSettings, 
+                mappings, 
+                keyAllocator, 
+                relatedDocumentStore,
+                queryLogger,
+                name, 
+                objectInitialisationOptions
+                );
         }
 
         static RelationalTransactionRegistry SetConnectionStringOptions(string connectionString, string applicationName, bool forceMars)
