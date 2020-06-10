@@ -21,7 +21,7 @@ namespace Nevermore
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
         /// assigned ID, and that ID value will be visible in the <code>Id</code> property of the object as soon as
-        /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
+        /// <see cref="M:Insert" /> returns.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="instance">The document instance to insert.</param>
@@ -105,7 +105,6 @@ namespace Nevermore
         /// </summary>
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="document">The document to delete.</param>
-        /// <param name="options">Advanced options for the delete operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
 

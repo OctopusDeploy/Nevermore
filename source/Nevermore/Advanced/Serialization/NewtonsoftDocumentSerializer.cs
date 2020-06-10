@@ -11,7 +11,6 @@ namespace Nevermore.Advanced.Serialization
 {
     public class NewtonsoftDocumentSerializer : IDocumentSerializer
     {
-        readonly IRelationalStoreConfiguration configuration;
         static readonly RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager(1024 * 32, 4, 1024 * 1024 * 1);
         readonly ArrayPoolAdapter arrayPoolAdapter = new ArrayPoolAdapter();
 
