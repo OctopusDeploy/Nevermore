@@ -19,19 +19,32 @@ namespace Nevermore.Advanced
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
 
+        [Obsolete]
         public WriteTransaction(
             RelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
             string name = null
-        ) : base(registry, operationsToRetry, configuration, name)
+        )
+            : this(registry, operationsToRetry, configuration, keyAllocator, new DefaultQueryLogger(), name)
+        {
+        }
+
+        public WriteTransaction(
+            RelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            IKeyAllocator keyAllocator,
+            IQueryLogger queryLogger,
+            string name = null
+        ) : base(registry, operationsToRetry, configuration, queryLogger, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
         }
-        
+
         public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {instance}, options);

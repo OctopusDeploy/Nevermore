@@ -25,9 +25,10 @@ namespace Nevermore.Advanced
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
+        readonly IQueryLogger queryLogger;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
-        
+
         DbConnection connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
@@ -36,15 +37,33 @@ namespace Nevermore.Advanced
         readonly List<string> commandTrace = new List<string>();
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
-        
+
         public IDictionary<string, object> State { get; }
 
-        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
+        [Obsolete]
+        public ReadTransaction(
+            RelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            string name = null
+        )
+            : this(registry, operationsToRetry, configuration, new DefaultQueryLogger(), name)
+        {
+        }
+
+        public ReadTransaction(
+            RelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            IQueryLogger queryLogger,
+            string name = null
+        )
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
+            this.queryLogger = queryLogger;
             this.name = name ?? Thread.CurrentThread.Name;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
@@ -57,7 +76,7 @@ namespace Nevermore.Advanced
         {
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
-            
+
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
         }
@@ -67,7 +86,7 @@ namespace Nevermore.Advanced
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync();
         }
-        
+
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
@@ -79,7 +98,7 @@ namespace Nevermore.Advanced
             await OpenAsync();
             Transaction = await connection.BeginTransactionAsync(isolationLevel);
         }
-        
+
         [Pure]
         public TDocument Load<TDocument>(string id) where TDocument : class
         {
@@ -117,7 +136,7 @@ namespace Nevermore.Advanced
                 throw new ResourceNotFoundException(id);
             return result;
         }
-        
+
         [Pure]
         public async Task<TDocument> LoadRequiredAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
         {
@@ -136,10 +155,10 @@ namespace Nevermore.Advanced
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
-            
+
             return results;
         }
-        
+
         public async Task<List<TDocument>> LoadRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
@@ -149,7 +168,7 @@ namespace Nevermore.Advanced
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
-            
+
             return results;
         }
 
@@ -159,7 +178,7 @@ namespace Nevermore.Advanced
             var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
             return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument>(idList));
         }
-        
+
         [Pure]
         public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
@@ -183,7 +202,7 @@ namespace Nevermore.Advanced
         {
             return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
-        
+
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             return Stream<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.SequentialAccess | CommandBehavior.SingleResult, commandTimeout: commandTimeout));
@@ -196,21 +215,18 @@ namespace Nevermore.Advanced
 
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
         {
-            using var reader = ExecuteReader(command);
+            long timeTillFirstRecord = 0;
+            using var timedSection = new TimedSection(ms => queryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
+
+            using var reader = ExecuteReaderInternal(command);
+            timeTillFirstRecord = timedSection.ElapsedMilliseconds;
+
             foreach (var item in ProcessReader<TRecord>(reader, command))
                 yield return item;
-        }
-        
-        public async IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await using var reader = await ExecuteReaderAsync(command, cancellationToken);
-            await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken))
-                yield return result;
         }
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
-            using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             while (reader.Read())
             {
@@ -220,9 +236,20 @@ namespace Nevermore.Advanced
             }
         }
 
+        public async IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            long timeTillFirstRecord = 0;
+            using var timedSection = new TimedSection(ms => queryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
+
+            await using var reader = await ExecuteReaderAsync(command, cancellationToken);
+            timeTillFirstRecord = timedSection.ElapsedMilliseconds;
+
+            await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken))
+                yield return result;
+        }
+
         async IAsyncEnumerable<TRecord> ProcessReaderAsync<TRecord>(DbDataReader reader, PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
 
             while (await reader.ReadAsync(cancellationToken))
@@ -232,7 +259,7 @@ namespace Nevermore.Advanced
                     yield return instance;
             }
         }
-        
+
         public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
@@ -254,7 +281,7 @@ namespace Nevermore.Advanced
                 yield return projectionMapper(mapper);
             }
         }
-        
+
         void AddCommandTrace(string commandText)
         {
             lock (commandTrace)
@@ -266,7 +293,7 @@ namespace Nevermore.Advanced
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
             }
         }
-        
+
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
@@ -279,12 +306,16 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
+            using var _ = new TimedSection(ms => LogBasedOnCommand(ms, preparedCommand));
+
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteNonQuery();
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
+            using var _ = new TimedSection(ms => LogBasedOnCommand(ms, preparedCommand));
+
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -298,9 +329,11 @@ namespace Nevermore.Advanced
         {
             return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout), cancellationToken);
         }
-        
+
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
+            using var timedSection = new TimedSection(ms => queryLogger.Scalar(ms, name, preparedCommand.Statement));
+
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
@@ -310,6 +343,8 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
+            using var timedSection = new TimedSection(ms => queryLogger.Scalar(ms, name, preparedCommand.Statement));
+
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
@@ -326,14 +361,27 @@ namespace Nevermore.Advanced
         {
             return ExecuteReaderAsync(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout), cancellationToken);
         }
-        
+
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
+        {
+            using var timedSection = new TimedSection(ms => queryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
+            return ExecuteReaderInternal(preparedCommand);
+        }
+
+
+        public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
+        {
+            using var timedSection = new TimedSection(ms => queryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
+            return await ExecuteReaderInternalAsync(preparedCommand, cancellationToken);
+        }
+
+        DbDataReader ExecuteReaderInternal(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteReader();
         }
-        
-        public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
+
+        async Task<DbDataReader> ExecuteReaderInternalAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken)
         {
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteReaderAsync(cancellationToken);
@@ -351,17 +399,15 @@ namespace Nevermore.Advanced
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
-            
+
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
             var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
-        
+
         CommandExecutor CreateCommand(PreparedCommand command)
         {
-            var operationName = command.Operation == RetriableOperation.None || command.Operation == RetriableOperation.All ? "Custom query" : command.Operation.ToString();
-            var timedSection = new TimedSection(Log, ms => $"{operationName} took {ms}ms in transaction '{name}': {command.Statement}", 300);
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             if (command.ParameterValues != null)
@@ -374,8 +420,8 @@ namespace Nevermore.Advanced
             {
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
-            
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
+
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), this, configuration.AllowSynchronousOperations);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)
@@ -395,6 +441,30 @@ namespace Nevermore.Advanced
             sb.AppendLine($"Transaction '{name}' {connection?.State} with {copy.Length} commands started at {CreatedTime:s} ({(DateTime.Now - CreatedTime).TotalSeconds:n2} seconds ago)");
             foreach (var command in copy)
                 sb.AppendLine(command);
+        }
+
+        void LogBasedOnCommand(long duration, PreparedCommand preparedCommand)
+        {
+            switch (preparedCommand.Operation)
+            {
+                case RetriableOperation.Insert:
+                    queryLogger.Insert(duration, name, preparedCommand.Statement);
+                    break;
+                case RetriableOperation.Update:
+                    queryLogger.Update(duration, name, preparedCommand.Statement);
+                    break;
+                case RetriableOperation.Delete:
+                    queryLogger.Delete(duration, name, preparedCommand.Statement);
+                    break;
+                case RetriableOperation.Select:
+                    queryLogger.ExecuteReader(duration, name, preparedCommand.Statement);
+                    break;
+                case RetriableOperation.All:
+                case RetriableOperation.None:
+                default:
+                    queryLogger.NonQuery(duration, name, preparedCommand.Statement);
+                    break;
+            }
         }
 
         public override string ToString()

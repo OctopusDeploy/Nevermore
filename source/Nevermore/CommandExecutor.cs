@@ -27,16 +27,14 @@ namespace Nevermore
         readonly DbCommand command;
         readonly PreparedCommand prepared;
         readonly RetryPolicy retryPolicy;
-        readonly TimedSection timedSection;
         readonly ITransactionDiagnostic transaction;
         readonly bool allowSynchronousOperations;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, ITransactionDiagnostic transaction, bool allowSynchronousOperations)
         {
             this.command = command;
             this.prepared = prepared;
             this.retryPolicy = retryPolicy;
-            this.timedSection = timedSection;
             this.transaction = transaction;
             this.allowSynchronousOperations = allowSynchronousOperations;
         }
@@ -193,7 +191,6 @@ namespace Nevermore
         {
             DisposeOfParameters();
 
-            timedSection?.Dispose();
             command?.Dispose();
         }
 
