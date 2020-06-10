@@ -210,7 +210,7 @@ namespace Nevermore.Advanced
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
-            using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
+            using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             while (reader.Read())
             {
@@ -222,7 +222,7 @@ namespace Nevermore.Advanced
 
         async IAsyncEnumerable<TRecord> ProcessReaderAsync<TRecord>(DbDataReader reader, PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            using var timed = new TimedSection(Log, ms => $"Reader took {ms}ms to process the results set in transaction '{name}'", 300);
+            using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
 
             while (await reader.ReadAsync(cancellationToken))
@@ -360,8 +360,7 @@ namespace Nevermore.Advanced
 
         CommandExecutor CreateCommand(PreparedCommand command)
         {
-            var operationName = command.Operation == RetriableOperation.None || command.Operation == RetriableOperation.All ? "Custom query" : command.Operation.ToString();
-            var timedSection = new TimedSection(Log, ms => $"{operationName} took {ms}ms in transaction '{name}': {command.Statement}", 300);
+            var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             if (command.ParameterValues != null)
@@ -395,6 +394,30 @@ namespace Nevermore.Advanced
             sb.AppendLine($"Transaction '{name}' {connection?.State} with {copy.Length} commands started at {CreatedTime:s} ({(DateTime.Now - CreatedTime).TotalSeconds:n2} seconds ago)");
             foreach (var command in copy)
                 sb.AppendLine(command);
+        }
+         
+        void LogBasedOnCommand(long duration, PreparedCommand command)
+        {
+            switch (command.Operation)
+            {
+                case RetriableOperation.Insert:
+                    configuration.QueryLogger.Insert(duration, name, command.Statement);
+                    break;
+                case RetriableOperation.Update:
+                    configuration.QueryLogger.Update(duration, name, command.Statement);
+                    break;
+                case RetriableOperation.Delete:
+                    configuration.QueryLogger.Delete(duration, name, command.Statement);
+                    break;
+                case RetriableOperation.Select:
+                    configuration.QueryLogger.ExecuteReader(duration, name, command.Statement);
+                    break;
+                case RetriableOperation.All:
+                case RetriableOperation.None:
+                default:
+                    configuration.QueryLogger.NonQuery(duration, name, command.Statement);
+                    break;
+            }
         }
 
         public override string ToString()
