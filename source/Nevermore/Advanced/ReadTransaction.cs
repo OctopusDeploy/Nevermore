@@ -27,7 +27,7 @@ namespace Nevermore.Advanced
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
-        
+
         DbConnection connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
@@ -36,7 +36,7 @@ namespace Nevermore.Advanced
         readonly List<string> commandTrace = new List<string>();
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
-        
+
         public IDictionary<string, object> State { get; }
 
         public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
@@ -57,7 +57,7 @@ namespace Nevermore.Advanced
         {
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
-            
+
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
         }
@@ -67,7 +67,7 @@ namespace Nevermore.Advanced
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync();
         }
-        
+
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
@@ -79,7 +79,7 @@ namespace Nevermore.Advanced
             await OpenAsync();
             Transaction = await connection.BeginTransactionAsync(isolationLevel);
         }
-        
+
         [Pure]
         public TDocument Load<TDocument>(string id) where TDocument : class
         {
@@ -117,7 +117,7 @@ namespace Nevermore.Advanced
                 throw new ResourceNotFoundException(id);
             return result;
         }
-        
+
         [Pure]
         public async Task<TDocument> LoadRequiredAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
         {
@@ -136,10 +136,10 @@ namespace Nevermore.Advanced
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
-            
+
             return results;
         }
-        
+
         public async Task<List<TDocument>> LoadRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
@@ -149,7 +149,7 @@ namespace Nevermore.Advanced
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
             }
-            
+
             return results;
         }
 
@@ -159,7 +159,7 @@ namespace Nevermore.Advanced
             var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
             return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument>(idList));
         }
-        
+
         [Pure]
         public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
@@ -183,7 +183,7 @@ namespace Nevermore.Advanced
         {
             return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
-        
+
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             return Stream<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.SequentialAccess | CommandBehavior.SingleResult, commandTimeout: commandTimeout));
@@ -200,7 +200,7 @@ namespace Nevermore.Advanced
             foreach (var item in ProcessReader<TRecord>(reader, command))
                 yield return item;
         }
-        
+
         public async IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await using var reader = await ExecuteReaderAsync(command, cancellationToken);
@@ -232,7 +232,7 @@ namespace Nevermore.Advanced
                     yield return instance;
             }
         }
-        
+
         public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
@@ -254,7 +254,7 @@ namespace Nevermore.Advanced
                 yield return projectionMapper(mapper);
             }
         }
-        
+
         void AddCommandTrace(string commandText)
         {
             lock (commandTrace)
@@ -266,7 +266,7 @@ namespace Nevermore.Advanced
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
             }
         }
-        
+
         public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
         {
             return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
@@ -298,7 +298,7 @@ namespace Nevermore.Advanced
         {
             return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout), cancellationToken);
         }
-        
+
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
@@ -326,13 +326,13 @@ namespace Nevermore.Advanced
         {
             return ExecuteReaderAsync(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout), cancellationToken);
         }
-        
+
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteReader();
         }
-        
+
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
@@ -351,13 +351,13 @@ namespace Nevermore.Advanced
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
-            
+
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList);
             var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
-        
+
         CommandExecutor CreateCommand(PreparedCommand command)
         {
             var operationName = command.Operation == RetriableOperation.None || command.Operation == RetriableOperation.All ? "Custom query" : command.Operation.ToString();
@@ -374,7 +374,7 @@ namespace Nevermore.Advanced
             {
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
-            
+
             return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
         }
 
