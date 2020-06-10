@@ -25,7 +25,6 @@ namespace Nevermore.Advanced
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
-        readonly IQueryLogger queryLogger;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
 
@@ -40,30 +39,12 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        [Obsolete]
-        public ReadTransaction(
-            RelationalTransactionRegistry registry,
-            RetriableOperation operationsToRetry,
-            IRelationalStoreConfiguration configuration,
-            string name = null
-        )
-            : this(registry, operationsToRetry, configuration, new DefaultQueryLogger(), name)
-        {
-        }
-
-        public ReadTransaction(
-            RelationalTransactionRegistry registry,
-            RetriableOperation operationsToRetry,
-            IRelationalStoreConfiguration configuration,
-            IQueryLogger queryLogger,
-            string name = null
-        )
+        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
-            this.queryLogger = queryLogger;
             this.name = name ?? Thread.CurrentThread.Name;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
@@ -216,7 +197,7 @@ namespace Nevermore.Advanced
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
         {
             long timeTillFirstRecord = 0;
-            using var timedSection = new TimedSection(ms => queryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
 
             using var reader = ExecuteReaderInternal(command);
             timeTillFirstRecord = timedSection.ElapsedMilliseconds;
@@ -224,7 +205,7 @@ namespace Nevermore.Advanced
             foreach (var item in ProcessReader<TRecord>(reader, command))
                 yield return item;
         }
-        
+
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
@@ -240,7 +221,7 @@ namespace Nevermore.Advanced
         public async IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             long timeTillFirstRecord = 0;
-            using var timedSection = new TimedSection(ms => queryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.Reader(ms, timeTillFirstRecord, name, command.Statement));
 
             await using var reader = await ExecuteReaderAsync(command, cancellationToken);
             timeTillFirstRecord = timedSection.ElapsedMilliseconds;
@@ -333,7 +314,7 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
-            using var timedSection = new TimedSection(ms => queryLogger.Scalar(ms, name, preparedCommand.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.Scalar(ms, name, preparedCommand.Statement));
 
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
@@ -344,7 +325,7 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var timedSection = new TimedSection(ms => queryLogger.Scalar(ms, name, preparedCommand.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.Scalar(ms, name, preparedCommand.Statement));
 
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -365,14 +346,14 @@ namespace Nevermore.Advanced
 
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
         {
-            using var timedSection = new TimedSection(ms => queryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
             return ExecuteReaderInternal(preparedCommand);
         }
 
 
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var timedSection = new TimedSection(ms => queryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
+            using var timedSection = new TimedSection(ms => configuration.QueryLogger.ExecuteReader(ms, name, preparedCommand.Statement));
             return await ExecuteReaderInternalAsync(preparedCommand, cancellationToken);
         }
 
@@ -449,21 +430,21 @@ namespace Nevermore.Advanced
             switch (preparedCommand.Operation)
             {
                 case RetriableOperation.Insert:
-                    queryLogger.Insert(duration, name, preparedCommand.Statement);
+                    configuration.QueryLogger.Insert(duration, name, preparedCommand.Statement);
                     break;
                 case RetriableOperation.Update:
-                    queryLogger.Update(duration, name, preparedCommand.Statement);
+                    configuration.QueryLogger.Update(duration, name, preparedCommand.Statement);
                     break;
                 case RetriableOperation.Delete:
-                    queryLogger.Delete(duration, name, preparedCommand.Statement);
+                    configuration.QueryLogger.Delete(duration, name, preparedCommand.Statement);
                     break;
                 case RetriableOperation.Select:
-                    queryLogger.ExecuteReader(duration, name, preparedCommand.Statement);
+                    configuration.QueryLogger.ExecuteReader(duration, name, preparedCommand.Statement);
                     break;
                 case RetriableOperation.All:
                 case RetriableOperation.None:
                 default:
-                    queryLogger.NonQuery(duration, name, preparedCommand.Statement);
+                    configuration.QueryLogger.NonQuery(duration, name, preparedCommand.Statement);
                     break;
             }
         }
