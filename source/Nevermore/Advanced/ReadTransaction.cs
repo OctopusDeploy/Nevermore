@@ -224,6 +224,7 @@ namespace Nevermore.Advanced
             foreach (var item in ProcessReader<TRecord>(reader, command))
                 yield return item;
         }
+        
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
