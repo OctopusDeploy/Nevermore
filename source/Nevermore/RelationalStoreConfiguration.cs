@@ -11,6 +11,7 @@ using Nevermore.Advanced.ReaderStrategies.Primitives;
 using Nevermore.Advanced.ReaderStrategies.ValueTuples;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Advanced.TypeHandlers;
+using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
 using Newtonsoft.Json;
@@ -50,6 +51,8 @@ namespace Nevermore
 
             AllowSynchronousOperations = true;
 
+            QueryLogger = new DefaultQueryLogger();
+
             connectionString = new Lazy<string>(() =>
             {
                 var result = connectionStringFunc();
@@ -70,6 +73,8 @@ namespace Nevermore
         public IDocumentSerializer DocumentSerializer { get; set; }
         
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
+        
+        public IQueryLogger QueryLogger { get; set; }
 
         public IHookRegistry Hooks { get; }
         public int KeyBlockSize { get; set; }
