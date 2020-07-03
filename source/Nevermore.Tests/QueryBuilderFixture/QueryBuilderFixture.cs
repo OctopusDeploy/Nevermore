@@ -8,6 +8,8 @@ using NSubstitute;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
+#pragma warning disable NV0007
+
 namespace Nevermore.Tests.QueryBuilderFixture
 {
     public class QueryBuilderFixture

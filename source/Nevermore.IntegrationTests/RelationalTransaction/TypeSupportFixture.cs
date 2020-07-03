@@ -76,12 +76,15 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using var transaction = Store.BeginReadTransaction();
 
+#pragma warning disable NV0007
+            // Safe from SQL injection because the selectColumn is passed from code only
             var resultFromPrimitive = transaction.Stream<T>($"select ({selectColumn}) as Column1").First();
             Assert.AreEqual(resultFromPrimitive, expected);
             
             var resultFromTuple = transaction.Stream<(T Val1, int Val2)>($"select ({selectColumn}) as Val1, 7 as Val2").First();
             Assert.AreEqual(resultFromTuple.Val1, expected);
             Assert.AreEqual(resultFromTuple.Val2, 7);
+#pragma warning restore NV0007
         }
     }
 }

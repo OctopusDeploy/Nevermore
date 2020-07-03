@@ -11,6 +11,8 @@ using Nevermore.Querying;
 using NUnit.Framework;
 using TestStack.BDDfy;
 
+#pragma warning disable NV0007
+
 namespace Nevermore.IntegrationTests
 {
     public class RelatedDocumentTableFixture : FixtureWithRelationalStore
