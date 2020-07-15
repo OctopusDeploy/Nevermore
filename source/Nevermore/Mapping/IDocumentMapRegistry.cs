@@ -15,6 +15,6 @@ namespace Nevermore.Mapping
         DocumentMap Resolve<TDocument>();
         DocumentMap Resolve(object instance);
 
-        string GetId(object instance);
+        object GetId(object instance);
     }
 }

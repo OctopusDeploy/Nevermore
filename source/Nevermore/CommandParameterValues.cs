@@ -56,11 +56,11 @@ namespace Nevermore
 
         public CommandType CommandType { get; set; }
 
-        public void AddTable(string name, IEnumerable<string> ids)
+        public void AddTable(string name, IEnumerable<object> ids)
         {
-            var idColumnMetadata = new SqlMetaData("ParameterValue", SqlDbType.NVarChar, 300);
+            var idColumnMetadata = SqlMetaData.InferFromValue(ids.First(), "ParameterValue");
 
-            var dataRecords = ids.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v =>
+            var dataRecords = ids.Where(v => v != null).Select(v =>
             {
                 var record = new SqlDataRecord(idColumnMetadata);
                 record.SetValue(0, v);

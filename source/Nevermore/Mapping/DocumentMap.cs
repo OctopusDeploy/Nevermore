@@ -331,13 +331,13 @@ namespace Nevermore.Mapping
             }
         }
 
-        public string GetId(object document)
+        public object GetId(object document)
         {
             if (document == null)
                 return null;
             
             var readerWriter = IdColumn.PropertyHandler;
-            return (string)readerWriter.Read(document);
+            return readerWriter.Read(document);
         }
     }
 }

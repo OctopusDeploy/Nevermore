@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests.SetUp
         {
             var tableName = tableNameOverride ?? mapping.TableName;
             result.AppendLine("CREATE TABLE [TestSchema].[" + tableName + "] (");
-            result.AppendFormat("  [Id] NVARCHAR(50) NOT NULL CONSTRAINT [PK_{0}_Id] PRIMARY KEY CLUSTERED, ", tableName).AppendLine();
+            result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
 
             foreach (var column in mapping.WritableIndexedColumns())
             {

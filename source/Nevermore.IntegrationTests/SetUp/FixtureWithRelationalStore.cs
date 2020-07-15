@@ -26,7 +26,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new ProductMap(),
                 new LineItemMap(),
                 new MachineMap(),
-                new OrderMap());
+                new OrderMap(),
+                new MessageMap());
             
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
@@ -43,7 +44,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new CustomerMap(), 
                 new LineItemMap(), 
                 new BrandMap(), 
-                new MachineMap());
+                new MachineMap(),
+                new MessageMap());
             
             Store = new RelationalStore(config);
         }

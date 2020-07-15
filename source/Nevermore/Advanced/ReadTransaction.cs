@@ -81,12 +81,12 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public TDocument Load<TDocument>(string id) where TDocument : class
+        public TDocument Load<TDocument>(object id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument>(id)).FirstOrDefault();
         }
 
-        public async Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<TDocument> LoadAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = StreamAsync<TDocument>(PrepareLoad<TDocument>(id), cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken))
@@ -94,11 +94,11 @@ namespace Nevermore.Advanced
             return null;
         }
 
-        public List<TDocument> Load<TDocument>(IEnumerable<string> ids) where TDocument : class
+        public List<TDocument> LoadMany<TDocument>(params object[] ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
-        public async Task<List<TDocument>> LoadAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<List<TDocument>> LoadManyAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = new List<TDocument>();
             await foreach (var item in LoadStreamAsync<TDocument>(ids, cancellationToken))
@@ -110,7 +110,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public TDocument LoadRequired<TDocument>(string id) where TDocument : class
+        public TDocument LoadRequired<TDocument>(object id) where TDocument : class
         {
             var result = Load<TDocument>(id);
             if (result == null)
@@ -119,7 +119,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public async Task<TDocument> LoadRequiredAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<TDocument> LoadRequiredAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var result = await LoadAsync<TDocument>(id, cancellationToken);
             if (result == null)
@@ -127,10 +127,10 @@ namespace Nevermore.Advanced
             return result;
         }
 
-        public List<TDocument> LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
+        public List<TDocument> LoadManyRequired<TDocument>(params object[] ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
-            var results = Load<TDocument>(idList);
+            var results = LoadMany<TDocument>(idList);
             if (results.Count != idList.Count)
             {
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
@@ -140,11 +140,11 @@ namespace Nevermore.Advanced
             return results;
         }
 
-        public async Task<List<TDocument>> LoadRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var idList = ids.Distinct().ToList();
-            var results = await LoadAsync<TDocument>(idList, cancellationToken);
-            if (results.Count != idList.Count)
+            var idList = ids.Distinct().ToArray();
+            var results = await LoadManyAsync<TDocument>(idList, cancellationToken);
+            if (results.Count != idList.Length)
             {
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
                 throw new ResourceNotFoundException(firstMissing);
@@ -154,16 +154,16 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class
+        public IEnumerable<TDocument> LoadStream<TDocument>(params object[] ids) where TDocument : class
         {
-            var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            var idList = ids.Where(id => id != null).Distinct().ToList();
             return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument>(idList));
         }
 
         [Pure]
-        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
+        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(object[] ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
-            var idList = ids.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            var idList = ids.Where(id => id != null).Distinct().ToList();
             if (idList.Count == 0)
                 yield break;
 
@@ -339,15 +339,19 @@ namespace Nevermore.Advanced
             return await command.ExecuteReaderAsync(cancellationToken);
         }
 
-        PreparedCommand PrepareLoad<TDocument>(string id)
+        PreparedCommand PrepareLoad<TDocument>(object id)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+
+            if (mapping.IdColumn.Type != id.GetType())
+                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
+
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
-        PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<string> idList)
+        PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<object> idList)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;

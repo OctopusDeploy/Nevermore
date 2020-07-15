@@ -91,7 +91,7 @@ namespace Nevermore.Mapping
             return mapping;
         }
         
-        public string GetId(object instance)
+        public object GetId(object instance)
         {
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));

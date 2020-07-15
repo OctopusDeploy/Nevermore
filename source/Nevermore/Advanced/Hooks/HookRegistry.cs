@@ -33,12 +33,12 @@ namespace Nevermore.Advanced.Hooks
             foreach (var hook in hooks) hook.AfterUpdate(document, map, transaction);
         }
 
-        public void BeforeDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public void BeforeDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
             foreach (var hook in hooks) hook.BeforeDelete<TDocument>(id, map, transaction);
         }
 
-        public void AfterDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public void AfterDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
             foreach (var hook in hooks) hook.AfterDelete<TDocument>(id, map, transaction);
         }
@@ -73,12 +73,12 @@ namespace Nevermore.Advanced.Hooks
             foreach (var hook in hooks) await hook.AfterUpdateAsync(document, map, transaction);
         }
 
-        public async Task BeforeDeleteAsync<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
             foreach (var hook in hooks) await hook.BeforeDeleteAsync<TDocument>(id, map, transaction);
         }
 
-        public async Task AfterDeleteAsync<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
             foreach (var hook in hooks) await hook.AfterDeleteAsync<TDocument>(id, map, transaction);
         }

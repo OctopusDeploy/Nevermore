@@ -95,17 +95,17 @@ namespace Nevermore.Util
         public PreparedCommand PrepareDelete(object document, DeleteOptions options = null)
         {
             var mapping = mappings.Resolve(document.GetType());
-            var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
+            var id = mapping.IdColumn.PropertyHandler.Read(document);
             return PrepareDelete(mapping, id, options);
         }
 
-        public PreparedCommand PrepareDelete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
+        public PreparedCommand PrepareDelete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
         {
             var mapping = mappings.Resolve(typeof(TDocument));
             return PrepareDelete(mapping, id, options);
         }
 
-        private PreparedCommand PrepareDelete(DocumentMap mapping, string id, DeleteOptions options = null)
+        private PreparedCommand PrepareDelete(DocumentMap mapping, object id, DeleteOptions options = null)
         {
             options ??= DeleteOptions.Default;
 
@@ -221,7 +221,7 @@ namespace Nevermore.Util
             }
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, "");
@@ -241,17 +241,17 @@ namespace Nevermore.Util
             ThrowIfIdAlreadySetToDifferentValue,
             IgnoreCustomIdIfIdAlreadySet
         }
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
         {
-            var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
+            var id = mapping.IdColumn.PropertyHandler.Read(document);
             
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            if (string.IsNullOrWhiteSpace(id))
+            if (mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id))
             {
-                id = string.IsNullOrWhiteSpace(customAssignedId) ? allocateId(mapping) : customAssignedId;
+                id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);
             }
 

@@ -67,8 +67,8 @@ namespace Nevermore.IntegrationTests.Advanced
             public void AfterInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(AfterInsert));
             public void BeforeUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(BeforeUpdate));
             public void AfterUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(AfterUpdate));
-            public void BeforeDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(BeforeDelete));
-            public void AfterDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(AfterDelete));
+            public void BeforeDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(BeforeDelete));
+            public void AfterDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(AfterDelete));
             public void BeforeCommit(IWriteTransaction transaction) => log.AppendLine(nameof(BeforeCommit));
             public void AfterCommit(IWriteTransaction transaction) => log.AppendLine(nameof(AfterCommit));
         }

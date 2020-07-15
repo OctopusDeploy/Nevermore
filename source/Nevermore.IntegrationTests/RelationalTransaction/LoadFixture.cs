@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -23,7 +25,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.Load<Product>(new[] { "A", "B" });
+                trn.LoadMany<Product>(new[] { "A", "B" }.ToArray());
             }
         }
 
@@ -32,7 +34,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.Load<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
+                trn.LoadMany<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n).ToArray());
             }
         }
 
@@ -41,7 +43,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
+                trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n).ToArray());
             }
         }
 
@@ -285,6 +287,49 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 var lineItem = new LineItem { ProductId = product.Id, Name = "Some line item", Quantity = quantity };
                 trn.Insert(lineItem);
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadAnyIdTypes()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var messageA = new Message { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
+
+                trn.Insert<Message>(messageA);
+                trn.Commit();
+
+                var loadedMessageA = trn.Load<Message>(messageA.Id);
+
+                loadedMessageA.Sender.Should().Be(messageA.Sender);
+                loadedMessageA.Body.Should().Be(messageA.Body);
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadManyAnyIdTypes()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var messageA = new Message { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
+                var messageB = new Message { Id = Guid.NewGuid(), Sender = "Sender B", Body = "Body of Message B" };
+
+                trn.Insert(messageA);
+                trn.Insert(messageB);
+                trn.Commit();
+                
+                var loadedMessages = trn.LoadMany<Message>(new object[] { messageA.Id, messageB.Id });
+                loadedMessages.Count.Should().Be(2);
+
+                var loadedMessageA = loadedMessages.Single(x => x.Id == messageA.Id);
+                var loadedMessageB = loadedMessages.Single(x => x.Id == messageB.Id);
+
+                loadedMessageA.Sender.Should().Be(messageA.Sender);
+                loadedMessageA.Body.Should().Be(messageA.Body);
+
+                loadedMessageB.Sender.Should().Be(messageB.Sender);
+                loadedMessageB.Body.Should().Be(messageB.Body);
             }
         }
     }

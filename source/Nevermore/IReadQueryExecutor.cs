@@ -19,7 +19,7 @@ namespace Nevermore
          /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <param name="id">The <c>Id</c> of the document to find.</param>
          /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-         [Pure] TDocument Load<TDocument>(string id) where TDocument : class;
+         [Pure] TDocument Load<TDocument>(object id) where TDocument : class;
 
          /// <summary>
          /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -28,7 +28,7 @@ namespace Nevermore
          /// <param name="id">The <c>Id</c> of the document to find.</param>
          /// <param name="cancellationToken">Token to use to cancel the command.</param>
          /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-         [Pure] Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
+         [Pure] Task<TDocument> LoadAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class;
  
          /// <summary>
          /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -37,7 +37,7 @@ namespace Nevermore
          /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <returns>The documents.</returns>
-         [Pure] List<TDocument> Load<TDocument>(IEnumerable<string> ids) where TDocument : class;
+         [Pure] List<TDocument> LoadMany<TDocument>(params object[] ids) where TDocument : class;
 
          /// <summary>
          /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -47,7 +47,7 @@ namespace Nevermore
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <param name="cancellationToken">Token to use to cancel the command.</param>
          /// <returns>The documents.</returns>
-         [Pure] Task<List<TDocument>> LoadAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class;
+         [Pure] Task<List<TDocument>> LoadManyAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class;
  
          /// <summary>
          /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -56,7 +56,7 @@ namespace Nevermore
          /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <returns>The documents as a lazy loaded stream.</returns>
-         [Pure] IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class;
+         [Pure] IEnumerable<TDocument> LoadStream<TDocument>(params object[] ids) where TDocument : class;
 
          /// <summary>
          /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -66,7 +66,7 @@ namespace Nevermore
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <param name="cancellationToken">Token to use to cancel the command.</param>
          /// <returns>The documents as a lazy loaded stream.</returns>
-         [Pure] IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class;
+         [Pure] IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class;
  
          /// <summary>
          /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -74,7 +74,7 @@ namespace Nevermore
          /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <param name="id">The <c>Id</c> of the document to find.</param>
          /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-         [Pure] TDocument LoadRequired<TDocument>(string id) where TDocument : class;
+         [Pure] TDocument LoadRequired<TDocument>(object id) where TDocument : class;
 
          /// <summary>
          /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -83,7 +83,7 @@ namespace Nevermore
          /// <param name="id">The <c>Id</c> of the document to find.</param>
          /// <param name="cancellationToken">Token to use to cancel the command.</param>
          /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-         [Pure] Task<TDocument> LoadRequiredAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
+         [Pure] Task<TDocument> LoadRequiredAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class;
  
          /// <summary>
          /// Loads a set of documents by their ID's. If any of the documents are not found, a
@@ -92,7 +92,7 @@ namespace Nevermore
          /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <returns>The documents.</returns>
-         [Pure] List<TDocument> LoadRequired<TDocument>(IEnumerable<string> ids) where TDocument : class;
+         [Pure] List<TDocument> LoadManyRequired<TDocument>(params object[] ids) where TDocument : class;
 
          /// <summary>
          /// Loads a set of documents by their ID's. If any of the documents are not found, a
@@ -102,7 +102,7 @@ namespace Nevermore
          /// <param name="ids">A collection of ID's to query by.</param>
          /// <param name="cancellationToken">Token to use to cancel the command.</param>
          /// <returns>The documents.</returns>
-         [Pure] Task<List<TDocument>> LoadRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class;
+         [Pure] Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class;
  
          /// <summary>
          /// Begins building a query that returns strongly typed documents.
