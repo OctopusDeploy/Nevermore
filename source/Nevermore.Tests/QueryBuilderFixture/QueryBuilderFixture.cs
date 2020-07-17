@@ -26,9 +26,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ClearReceivedCalls();
         }
         
-        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo") where TDocument : class
+        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo", string idColumnName = "Id") where TDocument : class
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         [Test]
@@ -89,6 +89,19 @@ ORDER BY [Id]";
 FROM [dbo].[Orders]
 WHERE ([Price] > 5)
 ORDER BY [Id]";
+
+            actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectWithCustomIdColum()
+        {
+            var actual = CreateQueryBuilder<object>("Orders", idColumnName: "CorrelationId")
+                .DebugViewRawQuery();
+
+            const string expected = @"SELECT *
+FROM [dbo].[Orders]
+ORDER BY [CorrelationId]";
 
             actual.Should().Be(expected);
         }
