@@ -25,7 +25,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.LoadMany<Product>(new[] { "A", "B" }.ToArray());
+                trn.LoadMany<Product>(new[] { "A", "B" });
             }
         }
 
@@ -34,7 +34,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.LoadMany<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n).ToArray());
+                trn.LoadMany<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
             }
         }
 
@@ -43,7 +43,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n).ToArray());
+                trn.LoadStream<Product>(Enumerable.Range(1, 3000).Select(n => "ID-" + n));
             }
         }
 
@@ -319,7 +319,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(messageB);
                 trn.Commit();
                 
-                var loadedMessages = trn.LoadMany<Message>(new object[] { messageA.Id, messageB.Id });
+                var loadedMessages = trn.LoadMany<Message>(messageA.Id, messageB.Id);
                 loadedMessages.Count.Should().Be(2);
 
                 var loadedMessageA = loadedMessages.Single(x => x.Id == messageA.Id);

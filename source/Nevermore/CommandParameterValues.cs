@@ -56,7 +56,7 @@ namespace Nevermore
 
         public CommandType CommandType { get; set; }
 
-        public void AddTable(string name, IEnumerable<object> ids)
+        public void AddTable<T>(string name, IEnumerable<T> ids)
         {
             var idColumnMetadata = SqlMetaData.InferFromValue(ids.First(), "ParameterValue");
 

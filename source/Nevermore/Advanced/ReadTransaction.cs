@@ -81,27 +81,79 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public TDocument Load<TDocument>(object id) where TDocument : class
+        private TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
         {
-            return Stream<TDocument>(PrepareLoad<TDocument>(id)).FirstOrDefault();
+            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
 
-        public async Task<TDocument> LoadAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
+        [Pure]
+        public TDocument Load<TDocument>(string id) where TDocument : class => Load<TDocument, string>(id);
+
+        [Pure]
+        public TDocument Load<TDocument>(int id) where TDocument : class => Load<TDocument, int>(id);
+
+        [Pure]
+        public TDocument Load<TDocument>(long id) where TDocument : class => Load<TDocument, long>(id);
+
+        [Pure]
+        public TDocument Load<TDocument>(Guid id) where TDocument : class => Load<TDocument, Guid>(id);
+
+        private async Task<TDocument> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var results = StreamAsync<TDocument>(PrepareLoad<TDocument>(id), cancellationToken);
+            var results = StreamAsync<TDocument>(PrepareLoad<TDocument, TKey>(id), cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken))
                 return row;
             return null;
         }
 
-        public List<TDocument> LoadMany<TDocument>(params object[] ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+        [Pure]
+        public Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadAsync<TDocument, string>(id, cancellationToken);
 
         [Pure]
-        public async Task<List<TDocument>> LoadManyAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class
+        public Task<TDocument> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadAsync<TDocument, int>(id, cancellationToken);
+
+        [Pure]
+        public Task<TDocument> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadAsync<TDocument, long>(id, cancellationToken);
+
+        [Pure]
+        public Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadAsync<TDocument, Guid>(id, cancellationToken);
+
+        private List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+            => LoadStream<TDocument, TKey>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(params string[] ids) where TDocument : class
+            => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(params int[] ids) where TDocument : class
+          => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(params long[] ids) where TDocument : class
+          => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(params Guid[] ids) where TDocument : class
+          => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(IEnumerable<string> ids) where TDocument : class
+            => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(IEnumerable<int> ids) where TDocument : class
+           => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(IEnumerable<long> ids) where TDocument : class
+           => LoadStream<TDocument>(ids).ToList();
+
+        public List<TDocument> LoadMany<TDocument>(IEnumerable<Guid> ids) where TDocument : class
+           => LoadStream<TDocument>(ids).ToList();
+
+        [Pure]
+        private async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = new List<TDocument>();
-            await foreach (var item in LoadStreamAsync<TDocument>(ids, cancellationToken))
+            await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken))
             {
                 results.Add(item);
             }
@@ -110,68 +162,200 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public TDocument LoadRequired<TDocument>(object id) where TDocument : class
+        public Task<List<TDocument>> LoadManyAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyAsync<TDocument, string>(ids, cancellationToken);
+
+        [Pure]
+        public Task<List<TDocument>> LoadManyAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyAsync<TDocument, int>(ids, cancellationToken);
+
+        [Pure]
+        public Task<List<TDocument>> LoadManyAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyAsync<TDocument, long>(ids, cancellationToken);
+
+        [Pure]
+        public Task<List<TDocument>> LoadManyAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyAsync<TDocument, Guid>(ids, cancellationToken);
+
+        [Pure]
+        private TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class
         {
-            var result = Load<TDocument>(id);
+            var result = Load<TDocument, TKey>(id);
             if (result == null)
                 throw new ResourceNotFoundException(id);
             return result;
         }
 
         [Pure]
-        public async Task<TDocument> LoadRequiredAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
+        public TDocument LoadRequired<TDocument>(string id) where TDocument : class
+            => LoadRequired<TDocument, string>(id);
+
+        [Pure]
+        public TDocument LoadRequired<TDocument>(int id) where TDocument : class
+            => LoadRequired<TDocument, int>(id);
+
+        [Pure]
+        public TDocument LoadRequired<TDocument>(long id) where TDocument : class
+            => LoadRequired<TDocument, long>(id);
+
+        [Pure]
+        public TDocument LoadRequired<TDocument>(Guid id) where TDocument : class
+            => LoadRequired<TDocument, Guid>(id);
+
+        [Pure]
+        private async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var result = await LoadAsync<TDocument>(id, cancellationToken);
+            var result = await LoadAsync<TDocument, TKey>(id, cancellationToken);
             if (result == null)
                 throw new ResourceNotFoundException(id);
             return result;
         }
 
-        public List<TDocument> LoadManyRequired<TDocument>(params object[] ids) where TDocument : class
+        [Pure]
+        public Task<TDocument> LoadRequiredAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadRequiredAsync<TDocument, string>(id, cancellationToken);
+
+        [Pure]
+        public Task<TDocument> LoadRequiredAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadRequiredAsync<TDocument, int>(id, cancellationToken);
+
+        [Pure]
+        public Task<TDocument> LoadRequiredAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadRequiredAsync<TDocument, long>(id, cancellationToken);
+
+        [Pure]
+        public Task<TDocument> LoadRequiredAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadRequiredAsync<TDocument, Guid>(id, cancellationToken);
+
+        private List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
-            var results = LoadMany<TDocument>(idList);
+            var results = LoadMany<TDocument, TKey>(idList);
             if (results.Count != idList.Count)
             {
-                var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
+                var firstMissing = idList.FirstOrDefault(id => results.All(record => !((TKey)configuration.DocumentMaps.GetId(record)).Equals(id)));
                 throw new ResourceNotFoundException(firstMissing);
             }
 
             return results;
         }
 
-        public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(object[] ids, CancellationToken cancellationToken = default) where TDocument : class
+        public List<TDocument> LoadManyRequired<TDocument>(params string[] ids) where TDocument : class
+            => LoadManyRequired<TDocument, string>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(params int[] ids) where TDocument : class
+            => LoadManyRequired<TDocument, int>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(params long[] ids) where TDocument : class
+            => LoadManyRequired<TDocument, long>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(params Guid[] ids) where TDocument : class
+            => LoadManyRequired<TDocument, Guid>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
+           => LoadManyRequired<TDocument, string>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<int> ids) where TDocument : class
+          => LoadManyRequired<TDocument, int>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<long> ids) where TDocument : class
+          => LoadManyRequired<TDocument, long>(ids);
+
+        public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<Guid> ids) where TDocument : class
+          => LoadManyRequired<TDocument, Guid>(ids);
+
+        private async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToArray();
-            var results = await LoadManyAsync<TDocument>(idList, cancellationToken);
+            var results = await LoadManyAsync<TDocument, TKey>(idList, cancellationToken);
             if (results.Count != idList.Length)
             {
-                var firstMissing = idList.FirstOrDefault(id => results.All(record => configuration.DocumentMaps.GetId(record) != id));
+                var firstMissing = idList.FirstOrDefault(id => results.All(record => !((TKey)configuration.DocumentMaps.GetId(record)).Equals(id)));
                 throw new ResourceNotFoundException(firstMissing);
             }
 
             return results;
         }
 
+        public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyRequiredAsync<TDocument, string>(ids, cancellationToken);
+
+        public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyRequiredAsync<TDocument, int>(ids, cancellationToken);
+
+        public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyRequiredAsync<TDocument, long>(ids, cancellationToken);
+
+        public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class
+            => LoadManyRequiredAsync<TDocument, Guid>(ids, cancellationToken);
+
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(params object[] ids) where TDocument : class
+        private IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
-            return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument>(idList));
+            return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument, TKey>(idList));
         }
 
         [Pure]
-        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(object[] ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class 
+            => LoadStream<TDocument, string>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<int> ids) where TDocument : class 
+            => LoadStream<TDocument, int>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<long> ids) where TDocument : class 
+            => LoadStream<TDocument, long>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<Guid> ids) where TDocument : class 
+            => LoadStream<TDocument, Guid>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(params string[] ids) where TDocument : class 
+            => LoadStream<TDocument, string>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(params int[] ids) where TDocument : class
+            => LoadStream<TDocument, int>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(params long[] ids) where TDocument : class 
+            => LoadStream<TDocument, long>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument>(params Guid[] ids) where TDocument : class
+            => LoadStream<TDocument, Guid>(ids);
+
+        [Pure]
+        private async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
             if (idList.Count == 0)
                 yield break;
 
-            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument>(idList), cancellationToken))
+            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument, TKey>(idList), cancellationToken))
             {
                 yield return item;
             }
         }
+
+        [Pure]
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadStreamAsync<TDocument, string>(ids, cancellationToken);
+
+        [Pure]
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadStreamAsync<TDocument, int>(ids, cancellationToken);
+
+        [Pure]
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadStreamAsync<TDocument, long>(ids, cancellationToken);
+
+        [Pure]
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class 
+            => LoadStreamAsync<TDocument, Guid>(ids, cancellationToken);
 
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
@@ -339,11 +523,11 @@ namespace Nevermore.Advanced
             return await command.ExecuteReaderAsync(cancellationToken);
         }
 
-        PreparedCommand PrepareLoad<TDocument>(object id)
+        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
-            if (mapping.IdColumn.Type != id.GetType())
+            if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
 
             var tableName = mapping.TableName;
@@ -351,7 +535,7 @@ namespace Nevermore.Advanced
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
-        PreparedCommand PrepareLoadMany<TDocument>(IEnumerable<object> idList)
+        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
             var tableName = mapping.TableName;
