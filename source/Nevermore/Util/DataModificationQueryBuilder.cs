@@ -49,7 +49,7 @@ namespace Nevermore.Util
         public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
-            
+
             var mapping = mappings.Resolve(document.GetType());
 
             var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
@@ -75,9 +75,9 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             var updates = string.Join(", ", updateStatements);
-            
+
             var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
 
             var parameters = GetDocumentParameters(
@@ -169,12 +169,12 @@ namespace Nevermore.Util
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string schemaName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
             var columns = new List<string>();
-            
-            if (includeDefaultModelColumns) 
+
+            if (includeDefaultModelColumns)
                 columns.Add(mapping.IdColumn.ColumnName);
-            
+
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
-            
+
             if (includeDefaultModelColumns)
             {
                 switch (mapping.JsonStorageFormat)
@@ -244,7 +244,7 @@ namespace Nevermore.Util
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
         {
             var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
-            
+
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
@@ -282,7 +282,7 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.PropertyHandler.Read(document);
@@ -393,14 +393,14 @@ namespace Nevermore.Util
             var documentAndIds = documents.Count == 1
                 ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
-            
+
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
                 into g
                 let related = (
                     from m in g
                     from i in documentAndIds
-                    from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
+                    from relId in m.Handler.Read(i.document)
                     let relatedTableName = mappings.Resolve(relId.type).TableName
                     select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName)
                 ).Distinct().ToArray()
@@ -429,7 +429,7 @@ namespace Nevermore.Util
             public string RelatedDocumentTableColumnName { get; set; }
         }
     }
-    
+
     internal static class DataModificationQueryBuilderExtensions
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>

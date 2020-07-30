@@ -30,7 +30,7 @@ namespace Nevermore.Tests.Util
                 new OtherMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
-                m => idAllocator() 
+                m => idAllocator()
             );
         }
 
@@ -72,13 +72,13 @@ namespace Nevermore.Tests.Util
                 new InsertOptions
                 {
                     TableName ="AltTableName",
-                    Hint ="WITH (NOLOCK)" 
+                    Hint ="WITH (NOLOCK)"
                 }
             );
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void InsertWithoutDefaultColumns()
         {
@@ -127,7 +127,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void InsertMultipleDocuments()
         {
@@ -193,10 +193,10 @@ namespace Nevermore.Tests.Util
         {
             int n = 0;
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", ReadOnly = "Value"};
-            
+
             idAllocator = () => "New-Id-" + (++n);
             var result = builder.PrepareInsert(new [] { document });
-            
+
             this.Assent(Format(result));
         }
 
@@ -224,7 +224,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-  
+
         [Test]
         public void UpdateWithNoRelatedDocuments()
         {
@@ -400,8 +400,16 @@ namespace Nevermore.Tests.Util
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
                 RelatedDocuments(t => t.RelatedDocumentIds1);
-                RelatedDocuments(t => t.RelatedDocumentIds2);
+                RelatedDocuments(new Retriever());
                 RelatedDocuments(t => t.RelatedDocumentIds3, "OtherRelatedTable");
+            }
+
+            class Retriever : IRelatedDocumentsRetriever
+            {
+                public IEnumerable<(string id, Type type)> Read(object target)
+                {
+                    return ((TestDocumentWithMultipleRelatedDocuments) target).RelatedDocumentIds2;
+                }
             }
         }
 
