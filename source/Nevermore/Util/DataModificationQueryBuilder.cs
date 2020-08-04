@@ -42,14 +42,14 @@ namespace Nevermore.Util
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
             var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping);
 
-            AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
+            //AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
             return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
         }
 
         public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
-            
+
             var mapping = mappings.Resolve(document.GetType());
 
             var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
@@ -75,9 +75,9 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             var updates = string.Join(", ", updateStatements);
-            
+
             var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
 
             var parameters = GetDocumentParameters(
@@ -88,7 +88,7 @@ namespace Nevermore.Util
                 mapping
             );
 
-            statement = AppendRelatedDocumentStatementsForUpdate(statement, parameters, mapping, document);
+            //statement = AppendRelatedDocumentStatementsForUpdate(statement, parameters, mapping, document);
             return new PreparedCommand(statement, parameters, RetriableOperation.Update, mapping, options.CommandTimeout);
         }
 
@@ -115,8 +115,8 @@ namespace Nevermore.Util
             var statement = new StringBuilder();
             statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
-            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
-                statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
+            // foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
+            //     statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
             var parameters = new CommandParameterValues {{IdVariableName, id}};
             return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
@@ -134,24 +134,24 @@ namespace Nevermore.Util
             var actualTableName = options.TableName ?? mapping.TableName;
             var actualSchemaName = options.SchemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
-            if (!mapping.RelatedDocumentsMappings.Any())
+            //if (!mapping.RelatedDocumentsMappings.Any())
                 return new PreparedCommand($"DELETE FROM [{actualSchemaName}].[{actualTableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
 
-            var statement = new StringBuilder();
-            statement.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
-            statement.AppendLine();
-            statement.AppendLine("INSERT INTO @Ids");
-            statement.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
-            statement.AppendLine($"FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK)");
-            statement.AppendLine(where.GenerateSql());
-            statement.AppendLine();
-
-            statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
-
-            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
-                statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
-
-            return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
+            // var statement = new StringBuilder();
+            // statement.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
+            // statement.AppendLine();
+            // statement.AppendLine("INSERT INTO @Ids");
+            // statement.AppendLine($"SELECT [{mapping.IdColumn.ColumnName}]");
+            // statement.AppendLine($"FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK)");
+            // statement.AppendLine(where.GenerateSql());
+            // statement.AppendLine();
+            //
+            // statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] in (SELECT Id FROM @Ids)");
+            //
+            // foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
+            //     statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
+            //
+            // return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
         }
 
         DocumentMap GetMapping(IReadOnlyList<object> documents)
@@ -169,12 +169,12 @@ namespace Nevermore.Util
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string schemaName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
             var columns = new List<string>();
-            
-            if (includeDefaultModelColumns) 
+
+            if (includeDefaultModelColumns)
                 columns.Add(mapping.IdColumn.ColumnName);
-            
+
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
-            
+
             if (includeDefaultModelColumns)
             {
                 switch (mapping.JsonStorageFormat)
@@ -244,7 +244,7 @@ namespace Nevermore.Util
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, string customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
         {
             var id = (string) mapping.IdColumn.PropertyHandler.Read(document);
-            
+
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
@@ -282,7 +282,7 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.PropertyHandler.Read(document);
@@ -306,130 +306,130 @@ namespace Nevermore.Util
         }
 
 
-        void AppendRelatedDocumentStatementsForInsert(
-            StringBuilder sb,
-            CommandParameterValues parameters,
-            DocumentMap mapping,
-            IReadOnlyList<object> documents)
-        {
-            var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
-
-            foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
-            {
-                var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
-
-                sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
-                var related = data.Related;
-
-                for (var x = 0; x < related.Length; x++)
-                {
-                    var parentIdVariable = related[x].parentIdVariable;
-                    var relatedDocumentId = related[x].relatedDocumentId;
-                    var relatedTableName = related[x].relatedTableName;
-
-                    var relatedVariableName = relatedVariablePrefix + x;
-                    parameters.Add(relatedVariableName, relatedDocumentId);
-                    if (x > 0)
-                        sb.Append(",");
-                    sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
-                }
-            }
-        }
-
-        string AppendRelatedDocumentStatementsForUpdate(
-            string statement,
-            CommandParameterValues parameters,
-            DocumentMap mapping,
-            object document)
-        {
-            var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
-            if (relatedDocumentData.Count == 0)
-                return statement;
-
-            var sb = new StringBuilder();
-            sb.AppendLine(statement);
-            sb.AppendLine();
-
-            if (relatedDocumentData.Any(d => d.Related.Any()))
-                sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
-
-            foreach (var data in relatedDocumentData)
-            {
-                if (data.Related.Any())
-                {
-                    var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
-
-                    sb.AppendLine();
-                    sb.AppendLine("DELETE FROM @references");
-                    sb.AppendLine();
-
-                    var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')");
-                    sb.Append("INSERT INTO @references VALUES ");
-                    sb.AppendLine(string.Join(", ", valueBlocks));
-                    sb.AppendLine();
-
-                    sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
-                    sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM @references)");
-                    sb.AppendLine();
-
-                    sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
-                    sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
-
-                    for (var x = 0; x < data.Related.Length; x++)
-                        parameters.Add(relatedVariablePrefix + x, data.Related[x].relatedDocumentId);
-                }
-                else
-                {
-                    sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @Id");
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
-        {
-            var documentAndIds = documents.Count == 1
-                ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
-                : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
-            
-            var groupedByTable = from m in mapping.RelatedDocumentsMappings
-                group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
-                into g
-                let related = (
-                    from m in g
-                    from i in documentAndIds
-                    from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
-                    let relatedTableName = mappings.Resolve(relId.type).TableName
-                    select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName)
-                ).Distinct().ToArray()
-                select new RelatedDocumentTableData
-                {
-                    TableName = g.Key.Table,
-                    SchemaName = g.Key.Schema,
-                    IdColumnName = g.Select(m => m.IdColumnName).Distinct().Single(),
-                    IdTableColumnName = g.Select(m => m.IdTableColumnName).Distinct().Single(),
-                    RelatedDocumentIdColumnName = g.Select(m => m.RelatedDocumentIdColumnName).Distinct().Single(),
-                    RelatedDocumentTableColumnName = g.Select(m => m.RelatedDocumentTableColumnName).Distinct().Single(),
-                    Related = related
-                };
-            return groupedByTable.ToArray();
-        }
-
-
-        class RelatedDocumentTableData
-        {
-            public string TableName { get; set; }
-            public string SchemaName { get; set; }
-            public string IdColumnName { get; set; }
-            public string RelatedDocumentIdColumnName { get; set; }
-            public (string parentIdVariable, string relatedDocumentId, string relatedTableName)[] Related { get; set; }
-            public string IdTableColumnName { get; set; }
-            public string RelatedDocumentTableColumnName { get; set; }
-        }
+        // void AppendRelatedDocumentStatementsForInsert(
+        //     StringBuilder sb,
+        //     CommandParameterValues parameters,
+        //     DocumentMap mapping,
+        //     IReadOnlyList<object> documents)
+        // {
+        //     var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
+        //
+        //     foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
+        //     {
+        //         var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
+        //
+        //         sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
+        //         var related = data.Related;
+        //
+        //         for (var x = 0; x < related.Length; x++)
+        //         {
+        //             var parentIdVariable = related[x].parentIdVariable;
+        //             var relatedDocumentId = related[x].relatedDocumentId;
+        //             var relatedTableName = related[x].relatedTableName;
+        //
+        //             var relatedVariableName = relatedVariablePrefix + x;
+        //             parameters.Add(relatedVariableName, relatedDocumentId);
+        //             if (x > 0)
+        //                 sb.Append(",");
+        //             sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
+        //         }
+        //     }
+        // }
+        //
+        // string AppendRelatedDocumentStatementsForUpdate(
+        //     string statement,
+        //     CommandParameterValues parameters,
+        //     DocumentMap mapping,
+        //     object document)
+        // {
+        //     var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
+        //     if (relatedDocumentData.Count == 0)
+        //         return statement;
+        //
+        //     var sb = new StringBuilder();
+        //     sb.AppendLine(statement);
+        //     sb.AppendLine();
+        //
+        //     if (relatedDocumentData.Any(d => d.Related.Any()))
+        //         sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
+        //
+        //     foreach (var data in relatedDocumentData)
+        //     {
+        //         if (data.Related.Any())
+        //         {
+        //             var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
+        //
+        //             sb.AppendLine();
+        //             sb.AppendLine("DELETE FROM @references");
+        //             sb.AppendLine();
+        //
+        //             var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')");
+        //             sb.Append("INSERT INTO @references VALUES ");
+        //             sb.AppendLine(string.Join(", ", valueBlocks));
+        //             sb.AppendLine();
+        //
+        //             sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
+        //             sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM @references)");
+        //             sb.AppendLine();
+        //
+        //             sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
+        //             sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
+        //             sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
+        //
+        //             for (var x = 0; x < data.Related.Length; x++)
+        //                 parameters.Add(relatedVariablePrefix + x, data.Related[x].relatedDocumentId);
+        //         }
+        //         else
+        //         {
+        //             sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @Id");
+        //         }
+        //     }
+        //
+        //     return sb.ToString();
+        // }
+        //
+        // IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
+        // {
+        //     var documentAndIds = documents.Count == 1
+        //         ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
+        //         : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
+        //
+        //     var groupedByTable = from m in mapping.RelatedDocumentsMappings
+        //         group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
+        //         into g
+        //         let related = (
+        //             from m in g
+        //             from i in documentAndIds
+        //             from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
+        //             let relatedTableName = mappings.Resolve(relId.type).TableName
+        //             select (parentIdVariable: i.idVariable, relatedDocumentId: relId.id, relatedTableName)
+        //         ).Distinct().ToArray()
+        //         select new RelatedDocumentTableData
+        //         {
+        //             TableName = g.Key.Table,
+        //             SchemaName = g.Key.Schema,
+        //             IdColumnName = g.Select(m => m.IdColumnName).Distinct().Single(),
+        //             IdTableColumnName = g.Select(m => m.IdTableColumnName).Distinct().Single(),
+        //             RelatedDocumentIdColumnName = g.Select(m => m.RelatedDocumentIdColumnName).Distinct().Single(),
+        //             RelatedDocumentTableColumnName = g.Select(m => m.RelatedDocumentTableColumnName).Distinct().Single(),
+        //             Related = related
+        //         };
+        //     return groupedByTable.ToArray();
+        // }
+        //
+        //
+        // class RelatedDocumentTableData
+        // {
+        //     public string TableName { get; set; }
+        //     public string SchemaName { get; set; }
+        //     public string IdColumnName { get; set; }
+        //     public string RelatedDocumentIdColumnName { get; set; }
+        //     public (string parentIdVariable, string relatedDocumentId, string relatedTableName)[] Related { get; set; }
+        //     public string IdTableColumnName { get; set; }
+        //     public string RelatedDocumentTableColumnName { get; set; }
+        // }
     }
-    
+
     internal static class DataModificationQueryBuilderExtensions
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
