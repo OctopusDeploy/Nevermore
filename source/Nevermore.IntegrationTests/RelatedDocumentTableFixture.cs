@@ -171,17 +171,17 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void Insert()
-        {
-            var references = new[] {"Product-1", "Product-2"};
-            this.Given(_ => _.GivenRecordsCurrentlyExist())
-                .When(_ => _.WhenANewOrderIsInsertedReferencing(references))
-                .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(references))
-                .And(_ => _.AndThenThereAreNoReferencesForThatOrderOtherThan(references))
-                .And(_ => _.AndThenTheOtherReferencesWereNotChanged())
-                .BDDfy();
-        }
+        // [Test]
+        // public void Insert()
+        // {
+        //     var references = new[] {"Product-1", "Product-2"};
+        //     this.Given(_ => _.GivenRecordsCurrentlyExist())
+        //         .When(_ => _.WhenANewOrderIsInsertedReferencing(references))
+        //         .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(references))
+        //         .And(_ => _.AndThenThereAreNoReferencesForThatOrderOtherThan(references))
+        //         .And(_ => _.AndThenTheOtherReferencesWereNotChanged())
+        //         .BDDfy();
+        // }
 
         [Test]
         public void InsertNullReferences()
@@ -193,19 +193,19 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void Update()
-        {
-            var starting = new[] {"Product-1", "Product-2"};
-            var updated = new[] {"Product-2", "Product-3"};
-            this.Given(_ => _.GivenRecordsCurrentlyExist())
-                .And(_ => _.AndGivenAnOrderReferencing(starting))
-                .When(_ => _.WhenTheOrderIsUpdatedReferencing(updated))
-                .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(updated))
-                .And(_ => _.AndThenThereAreNoReferencesForThatOrderOtherThan(updated))
-                .And(_ => _.AndThenTheOtherReferencesWereNotChanged())
-                .BDDfy();
-        }
+        // [Test]
+        // public void Update()
+        // {
+        //     var starting = new[] {"Product-1", "Product-2"};
+        //     var updated = new[] {"Product-2", "Product-3"};
+        //     this.Given(_ => _.GivenRecordsCurrentlyExist())
+        //         .And(_ => _.AndGivenAnOrderReferencing(starting))
+        //         .When(_ => _.WhenTheOrderIsUpdatedReferencing(updated))
+        //         .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(updated))
+        //         .And(_ => _.AndThenThereAreNoReferencesForThatOrderOtherThan(updated))
+        //         .And(_ => _.AndThenTheOtherReferencesWereNotChanged())
+        //         .BDDfy();
+        // }
 
         [Test]
         public void UpdateNullReferences()
@@ -302,7 +302,7 @@ namespace Nevermore.IntegrationTests
                     return hashCode;
                 }
             }
-            
+
             public static bool operator ==(RelatedDocumentRow left, RelatedDocumentRow right) => Equals(left, right);
             public static bool operator !=(RelatedDocumentRow left, RelatedDocumentRow right) => !Equals(left, right);
         }
