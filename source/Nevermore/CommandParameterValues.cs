@@ -178,7 +178,7 @@ namespace Nevermore
                 && mapping.IdColumn != null
                 && mapping.IdColumn.MaxLength > 0
                 && columnType == DbType.String
-                && string.Equals(name, "Id", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(name, mapping.IdColumn.ColumnName, StringComparison.OrdinalIgnoreCase))
             {
                 if (mapping.IdColumn.MaxLength != null)
                 {

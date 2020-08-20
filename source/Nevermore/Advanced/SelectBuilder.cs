@@ -74,30 +74,32 @@ namespace Nevermore.Advanced
 
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        public TableSelectBuilder(ITableSource from) 
-            : this(from, new List<IWhereClause>(), new List<OrderByField>())
+        public TableSelectBuilder(ITableSource from, IColumn idColumn) 
+            : this(from, idColumn, new List<IWhereClause>(), new List<OrderByField>())
         {
         }
 
-        TableSelectBuilder(ITableSource from, List<IWhereClause> whereClauses,
+        TableSelectBuilder(ITableSource from, IColumn idColumn, List<IWhereClause> whereClauses,
             List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
             : base(whereClauses, orderByClauses, columnSelection, rowSelection)
         {
             From = from;
+            IdColumn = idColumn;
         }
 
         protected override ITableSource From { get; }
         protected override ISelectColumns DefaultSelect => new SelectAllSource();
+        protected IColumn IdColumn { get; }
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
-            yield return new OrderByField(new Column("Id"));
+            yield return new OrderByField(IdColumn);
         }
 
         public override ISelectBuilder Clone()
         {
-            return new TableSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
     

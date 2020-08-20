@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Querying;
@@ -197,9 +198,11 @@ namespace Nevermore.Advanced
         string tableOrViewName;
         string alias;
         string schemaName;
+        string idColumnName;
 
         public TableSourceQueryBuilder(string tableOrViewName,
             string schemaName,
+            string idColumnName,
             IReadTransaction readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
@@ -210,11 +213,12 @@ namespace Nevermore.Advanced
         {
             this.schemaName = schemaName;
             this.tableOrViewName = tableOrViewName;
+            this.idColumnName = idColumnName;
         }
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            return new TableSelectBuilder(CreateSimpleTableSource());
+            return new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName));
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
@@ -256,7 +260,7 @@ namespace Nevermore.Advanced
         public IQueryBuilder<TRecord> Hint(string tableHint)
         {
             var source = new TableSourceWithHint(CreateSimpleTableSource(), tableHint);
-            return CreateQueryBuilder(new TableSelectBuilder(source));
+            return CreateQueryBuilder(new TableSelectBuilder(source, new Column(idColumnName)));
         }
 
         ISimpleTableSource CreateSimpleTableSource()

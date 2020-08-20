@@ -62,6 +62,7 @@ ORDER BY [Id]");
         {
             return new TableSourceQueryBuilder<Record>("Records", 
                 "dbo",
+                "Id",
                 Substitute.For<IRelationalTransaction>(), 
                 new TableAliasGenerator(), 
                 new UniqueParameterNameGenerator(), 

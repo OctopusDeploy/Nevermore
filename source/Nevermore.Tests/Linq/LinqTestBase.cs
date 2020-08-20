@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Linq
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
-                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo")),
+                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
