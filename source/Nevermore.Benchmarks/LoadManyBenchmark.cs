@@ -31,7 +31,7 @@ namespace Nevermore.Benchmarks
         [Benchmark]
         public List<Customer> LoadMany()
         {
-            var result = transaction.Load<Customer>(allIdsRandomlySorted.Take(NumberToLoad));
+            var result = transaction.LoadMany<Customer>(allIdsRandomlySorted.Take(NumberToLoad));
             if (result.Count != NumberToLoad)
                 throw new Exception();
             return result;

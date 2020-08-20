@@ -10,8 +10,8 @@ namespace Nevermore.Advanced.Hooks
         void AfterInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
         void BeforeUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
         void AfterUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
-        void BeforeDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
-        void AfterDelete<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
+        void BeforeDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
+        void AfterDelete<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class {}
         void BeforeCommit(IWriteTransaction transaction) {}
         void AfterCommit(IWriteTransaction transaction) {}
 
@@ -19,8 +19,8 @@ namespace Nevermore.Advanced.Hooks
         Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
         Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
         Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task BeforeDeleteAsync<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task AfterDeleteAsync<TDocument>(string id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
+        Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
+        Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
         Task BeforeCommitAsync(IWriteTransaction transaction) => Task.CompletedTask;
         Task AfterCommitAsync(IWriteTransaction transaction) => Task.CompletedTask;
     }

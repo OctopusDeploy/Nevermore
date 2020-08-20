@@ -11,7 +11,7 @@ namespace Nevermore
         /// Gets or sets a specific ID to assign to the document being inserted. If null (the default) it will assign
         /// an ID automatically using the <see cref="T:IKeyAllocator"/>.
         /// </summary>
-        public string CustomAssignedId { get; set; }
+        public object CustomAssignedId { get; set; }
 
         /// <summary>
         /// Gets or sets whether to include the [Id] and [Json] columns (defaults to true). If false, these columns

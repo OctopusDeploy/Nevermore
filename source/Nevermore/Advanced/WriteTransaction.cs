@@ -123,7 +123,7 @@ namespace Nevermore.Advanced
             return DeleteAsync<TDocument>(id, options, cancellationToken);
         }
 
-        public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
+        public void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             configuration.Hooks.BeforeDelete<TDocument>(id, command.Mapping, this);
@@ -131,12 +131,12 @@ namespace Nevermore.Advanced
             configuration.Hooks.AfterDelete<TDocument>(id, command.Mapping, this);
         }
 
-        public Task DeleteAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
         {
             return DeleteAsync(id, null, cancellationToken);
         }
 
-        public async Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);

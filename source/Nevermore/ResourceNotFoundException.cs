@@ -10,8 +10,8 @@ namespace Nevermore
 
         }
 
-        public ResourceNotFoundException(string resourceId)
-            : base("The resource '" + resourceId + "' was not found.")
+        public ResourceNotFoundException(object resourceId)
+           : base("The resource '" + resourceId + "' was not found.")
         {
         }
     }
