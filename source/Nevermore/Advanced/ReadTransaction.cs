@@ -48,7 +48,6 @@ namespace Nevermore.Advanced
             this.name = name ?? Thread.CurrentThread.Name;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
-            registry.Add(this);
         }
 
         protected DbTransaction Transaction { get; private set; }
@@ -60,12 +59,16 @@ namespace Nevermore.Advanced
 
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
+
+            registry.Add(this);
         }
 
         public async Task OpenAsync()
         {
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync();
+
+            registry.Add(this);
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -622,9 +625,40 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            Transaction?.Dispose();
-            connection?.Dispose();
-            registry.Remove(this);
+            ExecuteAllAndAggregateExceptionsIfRequired(
+                () => Transaction?.Dispose(),
+                () => connection?.Dispose(),
+                () => registry.Remove(this)
+            );
+        }
+
+        void ExecuteAllAndAggregateExceptionsIfRequired(params Action[] actions)
+        {
+            var exceptions = new List<Exception>();
+
+            foreach (var action in actions)
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception e)
+                {
+                    exceptions.Add(e);
+                }
+            }
+
+            switch (exceptions.Count)
+            {
+                case 0:
+                    return;
+                
+                case 1:
+                    throw exceptions[0];
+                
+                default:
+                    throw new AggregateException(exceptions);
+            }
         }
     }
 }
