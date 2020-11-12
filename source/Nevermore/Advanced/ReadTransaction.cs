@@ -625,40 +625,9 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            ExecuteAllAndAggregateExceptionsIfRequired(
-                () => Transaction?.Dispose(),
-                () => connection?.Dispose(),
-                () => registry.Remove(this)
-            );
-        }
-
-        void ExecuteAllAndAggregateExceptionsIfRequired(params Action[] actions)
-        {
-            var exceptions = new List<Exception>();
-
-            foreach (var action in actions)
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception e)
-                {
-                    exceptions.Add(e);
-                }
-            }
-
-            switch (exceptions.Count)
-            {
-                case 0:
-                    return;
-                
-                case 1:
-                    throw exceptions[0];
-                
-                default:
-                    throw new AggregateException(exceptions);
-            }
+            Transaction?.Dispose();
+            connection?.Dispose();
+            registry.Remove(this);
         }
     }
 }
