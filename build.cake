@@ -114,11 +114,7 @@ Task("Publish")
 		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget/index.json",
 		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
-	NuGetPush($"{artifactsDir}Nevermore.Extensions.DependencyInjection.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget/index.json",
-		ApiKey = EnvironmentVariable("FeedzIoApiKey")
-	});
-	
+
     if (gitVersionInfo.PreReleaseTag == "")
     {
         NuGetPush($"{artifactsDir}Nevermore.{nugetVersion}.nupkg", new NuGetPushSettings {
@@ -129,12 +125,7 @@ Task("Publish")
             Source = "https://api.nuget.org/v3/index.json",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
-        NuGetPush($"{artifactsDir}Nevermore.Extensions.DependencyInjection.{nugetVersion}.nupkg", new NuGetPushSettings {
-            Source = "https://api.nuget.org/v3/index.json",
-            ApiKey = EnvironmentVariable("NuGetApiKey")
-        });
     }
-	
 });
 
 
