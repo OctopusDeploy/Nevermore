@@ -3,6 +3,7 @@ using System.Linq;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced.TypeHandlers;
+using Nevermore.Mapping;
 using NUnit.Framework;
 
 namespace Nevermore.Tests
@@ -74,6 +75,38 @@ namespace Nevermore.Tests
             command.Parameters["someId_1"].Value.Should().Be("id1");
             command.Parameters["someId_2"].Value.Should().Be("id2");
             command.Parameters["someIdentifier"].Value.Should().Be("value");
+        }
+
+        class Customer
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+        }
+
+        class Map : DocumentMap<Customer>
+        {
+            public Map()
+            {
+                Column(c => c.FirstName).MaxLength(128);
+                Column(c => c.LastName).MaxLength(256);
+            }
+        }
+        
+        [Test]
+        public void ShouldUseMaxLengthsWhenAvailable()
+        {
+            var mapping = new Map();
+            
+            var parameters = new CommandParameterValues();
+            parameters["FirstName"] = "Fred";
+            parameters["LastName"] = "Fred";
+            
+            var command = new SqlCommand($"SELECT BLAH BLAH");
+            
+            parameters.ContributeTo(command, new TypeHandlerRegistry(), ((IDocumentMap)mapping).Build());
+
+            command.Parameters["FirstName"].Size.Should().Be(128);
+            command.Parameters["LastName"].Size.Should().Be(256);
         }
 
         [Test]

@@ -186,6 +186,16 @@ namespace Nevermore
                 }
             }
 
+            if (columnType == DbType.String && mapping != null)
+            {
+                var indexed = mapping.WritableIndexedColumns();
+                var columnMap = indexed.FirstOrDefault(i => string.Equals(i.ColumnName, param.ParameterName, StringComparison.OrdinalIgnoreCase));
+                if (columnMap != null && columnMap.MaxLength != null)
+                {
+                    param.Size = columnMap.MaxLength.Value;
+                }
+            }
+
             command.Parameters.Add(param);
         }
 
