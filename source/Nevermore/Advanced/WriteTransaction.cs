@@ -106,23 +106,6 @@ namespace Nevermore.Advanced
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
         }
 
-        public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
-        {
-            var id = configuration.DocumentMaps.GetId(document);
-            Delete<TDocument>(id, options);
-        }
-
-        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
-        {
-            return DeleteAsync(document, null, cancellationToken);
-        }
-
-        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-        {
-            var id = configuration.DocumentMaps.GetId(document);
-            return DeleteAsync<TDocument>(id, options, cancellationToken);
-        }
-
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
             => Delete<TDocument>((object) id, options);
 
@@ -134,6 +117,12 @@ namespace Nevermore.Advanced
 
         public void Delete<TDocument>(Guid id, DeleteOptions options = null) where TDocument : class
             => Delete<TDocument>((object) id, options);
+
+        public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
+        {
+            var id = configuration.DocumentMaps.GetId(document);
+            Delete<TDocument>(id, options);
+        }
 
         void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
         {
@@ -155,6 +144,11 @@ namespace Nevermore.Advanced
         public Task DeleteAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => DeleteAsync<TDocument>(id, null, cancellationToken);
 
+        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            return DeleteAsync(document, null, cancellationToken);
+        }
+
         public Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
             => DeleteAsync<TDocument>((object) id, options, cancellationToken);
 
@@ -166,6 +160,12 @@ namespace Nevermore.Advanced
 
         public Task DeleteAsync<TDocument>(Guid id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
             => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            var id = configuration.DocumentMaps.GetId(document);
+            return DeleteAsync<TDocument>(id, options, cancellationToken);
+        }
 
         async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
