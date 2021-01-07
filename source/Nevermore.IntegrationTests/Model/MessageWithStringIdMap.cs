@@ -2,9 +2,9 @@
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class MessageMap : DocumentMap<Message>
+    public class MessageWithStringIdMap : DocumentMap<MessageWithStringId>
     {
-        public MessageMap()
+        public MessageWithStringIdMap()
         {
             Id(x => x.Id);
             Column(x => x.Sender);

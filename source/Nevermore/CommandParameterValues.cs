@@ -56,10 +56,10 @@ namespace Nevermore
 
         public CommandType CommandType { get; set; }
 
-        public void AddTable<T>(string name, IEnumerable<T> ids)
+        public void AddTable<T>(string name, IReadOnlyCollection<T> ids)
         {
-            var idColumnMetadata = SqlMetaData.InferFromValue(ids.First(), "ParameterValue");
-
+            var idColumnMetadata = GetSqlMetaData(ids, "ParameterValue");
+            
             var dataRecords = ids.Where(v => v != null).Select(v =>
             {
                 var record = new SqlDataRecord(idColumnMetadata);
@@ -74,7 +74,29 @@ namespace Nevermore
         {
             Add(name, tvp);
         }
-        
+
+        static SqlMetaData GetSqlMetaData<T>(IReadOnlyCollection<T> ids, string name)
+        {
+            var valueType = typeof(T);
+            var notSupportedErrorMsg = $"'{valueType.Name}' is not a valid ID type, supported types are: {nameof(String)}, {nameof(Int32)}, {nameof(Int64)} and {nameof(Guid)}.";
+            switch (Type.GetTypeCode(valueType))
+            {
+                case TypeCode.String: return new SqlMetaData(name, SqlDbType.NVarChar, 300);
+                case TypeCode.Int32: return new SqlMetaData(name, SqlDbType.Int);
+                case TypeCode.Int64: return new SqlMetaData(name, SqlDbType.BigInt);
+                case TypeCode.Object:
+                {
+                    if (valueType == typeof(Guid)) 
+                    { 
+                        return new SqlMetaData(name, SqlDbType.UniqueIdentifier);
+                    }
+                    
+                    throw new NotSupportedException(notSupportedErrorMsg);
+                }
+                default: throw new NotSupportedException(notSupportedErrorMsg);
+            }
+        }
+
         void AddFromParametersObject(object args)
         {
             if (args == null)

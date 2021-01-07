@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using Nevermore.Advanced.Serialization;
 using Nevermore.IntegrationTests.Chaos;
 using Nevermore.IntegrationTests.Contracts;
 using Nevermore.IntegrationTests.Model;
@@ -27,7 +26,10 @@ namespace Nevermore.IntegrationTests.SetUp
                 new LineItemMap(),
                 new MachineMap(),
                 new OrderMap(),
-                new MessageMap());
+                new MessageWithStringIdMap(),
+                new MessageWithIntIdMap(),
+                new MessageWithLongIdMap(),
+                new MessageWithGuidIdMap());
             
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
@@ -45,7 +47,10 @@ namespace Nevermore.IntegrationTests.SetUp
                 new LineItemMap(), 
                 new BrandMap(), 
                 new MachineMap(),
-                new MessageMap());
+                new MessageWithStringIdMap(),
+                new MessageWithIntIdMap(),
+                new MessageWithLongIdMap(),
+                new MessageWithGuidIdMap());
             
             Store = new RelationalStore(config);
         }

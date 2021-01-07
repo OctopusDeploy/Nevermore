@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
+
 #pragma warning disable 618
 
 namespace Nevermore.IntegrationTests.RelationalTransaction
@@ -27,6 +28,37 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 trn.LoadMany<Product>(new[] { "A", "B" });
             }
+        }
+
+        [Test]
+        public void LoadWithMultipleIdsWithDifferentLength()
+        {
+            using var trn = Store.BeginTransaction();
+
+            var product1 = new Product
+            {
+                Id = "Products-1",
+                Name = "TestProduct",
+                Price = 2,
+                Type = ProductType.Normal
+            };
+            trn.Insert(product1);
+            
+            var product2 = new Product
+            {
+                Id = "Products-133",
+                Name = "TestProduct",
+                Price = 2,
+                Type = ProductType.Normal
+            };
+            trn.Insert(product2);
+            trn.Commit();
+            
+            var ids = new[] {product1.Id, product2.Id};
+            
+            var products = trn.LoadMany<Product>(ids);
+
+            products.Should().HaveCount(ids.Length);
         }
 
         [Test]
@@ -295,12 +327,12 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         {
             using (var trn = Store.BeginTransaction())
             {
-                var messageA = new Message { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
+                var messageA = new MessageWithGuidId { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
 
-                trn.Insert<Message>(messageA);
+                trn.Insert(messageA);
                 trn.Commit();
 
-                var loadedMessageA = trn.Load<Message>(messageA.Id);
+                var loadedMessageA = trn.Load<MessageWithGuidId>(messageA.Id);
 
                 loadedMessageA.Sender.Should().Be(messageA.Sender);
                 loadedMessageA.Body.Should().Be(messageA.Body);
@@ -308,28 +340,94 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         }
 
         [Test]
-        public void StoreAndLoadManyAnyIdTypes()
+        public void StoreAndLoadManyForStringIdType()
         {
             using (var trn = Store.BeginTransaction())
             {
-                var messageA = new Message { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
-                var messageB = new Message { Id = Guid.NewGuid(), Sender = "Sender B", Body = "Body of Message B" };
+                var messages = new List<MessageWithStringId>
+                {
+                    new MessageWithStringId {Id = "Messages-1", Sender = "Sender A", Body = "Body of Message A"},
+                    new MessageWithStringId {Id = "Messages-12", Sender = "Sender A", Body = "Body of Message A"}
+                };
 
-                trn.Insert(messageA);
-                trn.Insert(messageB);
+                foreach (var message in messages)
+                {
+                    trn.Insert(message);
+                }
                 trn.Commit();
-                
-                var loadedMessages = trn.LoadMany<Message>(messageA.Id, messageB.Id);
-                loadedMessages.Count.Should().Be(2);
 
-                var loadedMessageA = loadedMessages.Single(x => x.Id == messageA.Id);
-                var loadedMessageB = loadedMessages.Single(x => x.Id == messageB.Id);
+                var loadedMessages = trn.LoadMany<MessageWithStringId>(messages.Select(m => m.Id));
 
-                loadedMessageA.Sender.Should().Be(messageA.Sender);
-                loadedMessageA.Body.Should().Be(messageA.Body);
+                loadedMessages.ShouldAllBeEquivalentTo(messages);
+            }
+        }
 
-                loadedMessageB.Sender.Should().Be(messageB.Sender);
-                loadedMessageB.Body.Should().Be(messageB.Body);
+        [Test]
+        public void StoreAndLoadManyForIntIdType()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var messages = new List<MessageWithIntId>
+                {
+                    new MessageWithIntId {Id = int.MinValue, Sender = "Sender A", Body = "Body of Message A"},
+                    new MessageWithIntId {Id = int.MaxValue, Sender = "Sender A", Body = "Body of Message A"}
+                };
+
+                foreach (var message in messages)
+                {
+                    trn.Insert(message);
+                }
+                trn.Commit();
+
+                var loadedMessages = trn.LoadMany<MessageWithIntId>(messages.Select(m => m.Id));
+
+                loadedMessages.ShouldAllBeEquivalentTo(messages);
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadManyForLongIdType()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var messages = new List<MessageWithLongId>
+                {
+                    new MessageWithLongId {Id = long.MinValue, Sender = "Sender A", Body = "Body of Message A"},
+                    new MessageWithLongId {Id = long.MaxValue, Sender = "Sender A", Body = "Body of Message A"}
+                };
+
+                foreach (var message in messages)
+                {
+                    trn.Insert(message);
+                }
+                trn.Commit();
+
+                var loadedMessages = trn.LoadMany<MessageWithLongId>(messages.Select(m => m.Id));
+
+                loadedMessages.ShouldAllBeEquivalentTo(messages);
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadManyForGuidIdType()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var messages = new List<MessageWithGuidId>
+                {
+                    new MessageWithGuidId {Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A"},
+                    new MessageWithGuidId {Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A"}
+                };
+
+                foreach (var message in messages)
+                {
+                    trn.Insert(message);
+                }
+                trn.Commit();
+
+                var loadedMessages = trn.LoadMany<MessageWithGuidId>(messages.Select(m => m.Id));
+
+                loadedMessages.ShouldAllBeEquivalentTo(messages);
             }
         }
     }
