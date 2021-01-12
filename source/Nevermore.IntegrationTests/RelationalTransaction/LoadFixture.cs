@@ -340,6 +340,17 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         }
 
         [Test]
+        public void LoadByWrongIdType_ShouldThrowArgumentException()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                Action target = () => trn.Load<MessageWithGuidId>(1);
+
+                target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.Int32' does not match configured type of 'System.Guid'.");
+            }
+        }
+
+        [Test]
         public void StoreAndLoadManyForStringIdType()
         {
             using (var trn = Store.BeginTransaction())
@@ -428,6 +439,17 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var loadedMessages = trn.LoadMany<MessageWithGuidId>(messages.Select(m => m.Id));
 
                 loadedMessages.ShouldAllBeEquivalentTo(messages);
+            }
+        }
+
+        [Test]
+        public void LoadManyByWrongIdType_ShouldThrowArgumentException()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                Action target = () => trn.LoadMany<MessageWithGuidId>("Messages-1");
+
+                target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.String' does not match configured type of 'System.Guid'.");
             }
         }
     }

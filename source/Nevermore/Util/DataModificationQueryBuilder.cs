@@ -105,7 +105,7 @@ namespace Nevermore.Util
             
             var idType = id.GetType();
             if (mapping.IdColumn.Type != idType)
-                throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
+                throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
             
             return PrepareDelete(mapping, id, options);
         }

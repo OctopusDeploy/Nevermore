@@ -59,7 +59,7 @@ namespace Nevermore
         public void AddTable<T>(string name, IReadOnlyCollection<T> ids)
         {
             var idColumnMetadata = GetSqlMetaData(ids, "ParameterValue");
-            
+
             var dataRecords = ids.Where(v => v != null).Select(v =>
             {
                 var record = new SqlDataRecord(idColumnMetadata);

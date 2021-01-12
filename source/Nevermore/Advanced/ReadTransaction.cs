@@ -529,7 +529,7 @@ namespace Nevermore.Advanced
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
+                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
@@ -541,7 +541,7 @@ namespace Nevermore.Advanced
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
+                throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList());
