@@ -81,6 +81,8 @@ namespace Nevermore
             var notSupportedErrorMsg = $"'{valueType.Name}' is not a valid ID type, supported types are: {nameof(String)}, {nameof(Int32)}, {nameof(Int64)} and {nameof(Guid)}.";
             switch (Type.GetTypeCode(valueType))
             {
+                //TODO: May consider dynamically resolving the 'ParameterValue' column length for User-Defined Table Type 'ParameterList' based on each DocumentMap configuration later.
+                //TODO: The fixed length of 300 is a temporary solution which match our table schema in Script0002-ParameterList.sql
                 case TypeCode.String: return new SqlMetaData(name, SqlDbType.NVarChar, 300);
                 case TypeCode.Int32: return new SqlMetaData(name, SqlDbType.Int);
                 case TypeCode.Int64: return new SqlMetaData(name, SqlDbType.BigInt);
