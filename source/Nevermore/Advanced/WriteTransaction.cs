@@ -106,24 +106,25 @@ namespace Nevermore.Advanced
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
         }
 
+        public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
+            => Delete<TDocument>((object) id, options);
+
+        public void Delete<TDocument>(int id, DeleteOptions options = null) where TDocument : class
+            => Delete<TDocument>((object) id, options);
+
+        public void Delete<TDocument>(long id, DeleteOptions options = null) where TDocument : class
+            => Delete<TDocument>((object) id, options);
+
+        public void Delete<TDocument>(Guid id, DeleteOptions options = null) where TDocument : class
+            => Delete<TDocument>((object) id, options);
+
         public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
             var id = configuration.DocumentMaps.GetId(document);
             Delete<TDocument>(id, options);
         }
 
-        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
-        {
-            return DeleteAsync(document, null, cancellationToken);
-        }
-
-        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-        {
-            var id = configuration.DocumentMaps.GetId(document);
-            return DeleteAsync<TDocument>(id, options, cancellationToken);
-        }
-
-        public void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
+        void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             configuration.Hooks.BeforeDelete<TDocument>(id, command.Mapping, this);
@@ -131,12 +132,42 @@ namespace Nevermore.Advanced
             configuration.Hooks.AfterDelete<TDocument>(id, command.Mapping, this);
         }
 
-        public Task DeleteAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>(id, null, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>(id, null, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>(id, null, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>(id, null, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
         {
-            return DeleteAsync(id, null, cancellationToken);
+            return DeleteAsync(document, null, cancellationToken);
         }
 
-        public async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(int id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(long id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(Guid id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+
+        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        {
+            var id = configuration.DocumentMaps.GetId(document);
+            return DeleteAsync<TDocument>(id, options, cancellationToken);
+        }
+
+        async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);

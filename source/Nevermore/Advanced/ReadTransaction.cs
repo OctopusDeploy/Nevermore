@@ -293,6 +293,7 @@ namespace Nevermore.Advanced
         private IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
+
             return idList.Count == 0 ? new List<TDocument>() : Stream<TDocument>(PrepareLoadMany<TDocument, TKey>(idList));
         }
 
@@ -528,7 +529,7 @@ namespace Nevermore.Advanced
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}");
+                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
@@ -538,11 +539,13 @@ namespace Nevermore.Advanced
         PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
-            var tableName = mapping.TableName;
+
+            if (mapping.IdColumn.Type != typeof(TKey))
+                throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var param = new CommandParameterValues();
-            param.AddTable("criteriaTable", idList);
-            var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
+            param.AddTable("criteriaTable", idList.ToList());
+            var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
 

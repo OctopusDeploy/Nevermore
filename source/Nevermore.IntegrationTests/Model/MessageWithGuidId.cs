@@ -2,7 +2,7 @@
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class Message
+    public class MessageWithGuidId
     {
         public Guid Id { get; set; }
 

@@ -93,12 +93,76 @@ namespace Nevermore
         Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        void Delete<TDocument>(int id, DeleteOptions options = null) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        void Delete<TDocument>(long id, DeleteOptions options = null) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        void Delete<TDocument>(Guid id, DeleteOptions options = null) where TDocument : class;
+
+        /// <summary>
         /// Deletes an existing document from the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
         /// <param name="document">The document to delete.</param>
         /// <param name="options">Advanced options for the delete operation.</param>
         void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Deletes an existing document from the database.
@@ -109,6 +173,42 @@ namespace Nevermore
         Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(int id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(long id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Deletes an existing document from the database by its ID.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
+        /// <param name="id">The id of the document to delete.</param>
+        /// <param name="options">Advanced options for the delete operation.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        Task DeleteAsync<TDocument>(Guid id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
         /// Deletes an existing document from the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
@@ -117,31 +217,6 @@ namespace Nevermore
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
-        /// <summary>
-        /// Deletes an existing document from the database by its ID.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
-        /// <param name="id">The id of the document to delete.</param>
-        /// <param name="options">Advanced options for the delete operation.</param>
-        void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class;
-
-        /// <summary>
-        /// Deletes an existing document from the database by its ID.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
-        /// <param name="id">The id of the document to delete.</param>
-        /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task DeleteAsync<TDocument>(object id, CancellationToken cancellationToken = default) where TDocument : class;
-
-        /// <summary>
-        /// Deletes an existing document from the database by its ID.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of document being deleted.</typeparam>
-        /// <param name="id">The id of the document to delete.</param>
-        /// <param name="options">Advanced options for the delete operation.</param>
-        /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class;
-        
         /// <summary>
         /// Creates a deletion query for a strongly typed document.
         /// </summary>
