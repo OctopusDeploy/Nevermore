@@ -31,6 +31,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
                 new DocumentWithRowVersionMap());
+                new AircraftMap(),
+                new BoatMap());
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
@@ -53,6 +55,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
                 new DocumentWithRowVersionMap());
+                new AircraftMap(),
+                new BoatMap());
 
             Store = new RelationalStore(config);
         }

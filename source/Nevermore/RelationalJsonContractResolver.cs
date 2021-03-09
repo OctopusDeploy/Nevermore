@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
-using Nevermore.Mapping;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Linq;
@@ -16,9 +16,20 @@ namespace Nevermore
             this.configuration = configuration;
         }
 
-        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
-            configuration.DocumentMaps.ResolveOptional(member.DeclaringType, out var map);
+            var members = GetSerializableMembers(type);
+
+            return members.Select(member => CreateProperty(type, member, memberSerialization)).ToList();
+        }
+
+        JsonProperty CreateProperty(Type type, MemberInfo member, MemberSerialization memberSerialization)
+        {
+            // Todo: Newtonsoft derives the MemberInfo from the base class if that's where the member is defined,
+            //  so ReflectedType will always be the same as DeclaredType. Issue currently open to fix this:
+            //  https://github.com/JamesNK/Newtonsoft.Json/issues/2488
+            // configuration.DocumentMaps.ResolveOptional(member.ReflectedType, out var map);
+            configuration.DocumentMaps.ResolveOptional(type, out var map);
 
             var property = base.CreateProperty(member, memberSerialization);
 
