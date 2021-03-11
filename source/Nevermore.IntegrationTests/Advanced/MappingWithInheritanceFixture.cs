@@ -44,12 +44,13 @@ namespace Nevermore.IntegrationTests.Advanced
         }
 
         JObject GetJObject(IRelationalTransaction transaction, string id)
-        {   
-            var parameters = new CommandParameterValues();
-            parameters.Add("id", id);
+        {
             var json = transaction.Stream<string>(
-                "SELECT [JSON] FROM [TestSchema].[Aircraft] WHERE [Id] = @id",
-                parameters)
+                    "SELECT [JSON] FROM [TestSchema].[Aircraft] WHERE [Id] = @id",
+                    new CommandParameterValues
+                    {
+                        {"id", id}
+                    })
                 .Single();
             var jObject = JObject.Parse(json);
 
