@@ -8,7 +8,6 @@ using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore.Advanced
 {
@@ -31,7 +30,7 @@ namespace Nevermore.Advanced
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
         }
-        
+
         public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {instance}, options);
@@ -88,7 +87,10 @@ namespace Nevermore.Advanced
         {
             var command = builder.PrepareUpdate(document, options);
             configuration.Hooks.BeforeUpdate(document, command.Mapping, this);
-            ExecuteNonQuery(command);
+            var numberOfUpdatedRows = ExecuteNonQuery(command);
+
+            AssertUpdateHasBeenSuccessful(numberOfUpdatedRows, command);
+
             configuration.Hooks.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
@@ -102,7 +104,10 @@ namespace Nevermore.Advanced
         {
             var command = builder.PrepareUpdate(document, options);
             await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
-            await ExecuteNonQueryAsync(command, cancellationToken);
+            var numberOfUpdatedRows = await ExecuteNonQueryAsync(command, cancellationToken);
+
+            AssertUpdateHasBeenSuccessful(numberOfUpdatedRows, command);
+
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
         }
 
@@ -217,5 +222,11 @@ namespace Nevermore.Advanced
             await Transaction.CommitAsync(cancellationToken);
             await configuration.Hooks.AfterCommitAsync(this);
         }
+
+        static void AssertUpdateHasBeenSuccessful(int numberOfUpdatedRows, PreparedCommand command)
+        {
+            if (numberOfUpdatedRows == 0 && command.Mapping.RowVersionColumns().Any()) throw new StaleDataException("Update failed because submitted data was out of date. Refresh the data and try again.");
+        }
+
     }
 }

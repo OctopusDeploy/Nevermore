@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
-using Nevermore.Advanced;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.PropertyHandlers;
 
@@ -16,7 +14,7 @@ namespace Nevermore.Mapping
         protected DocumentMap()
         {
         }
-        
+
         /// <summary>
         /// Gets or sets the name of the schema containing the table that this document will be stored in.
         /// </summary>
@@ -53,7 +51,7 @@ namespace Nevermore.Mapping
             get => map.IdFormat;
             set => map.IdFormat = value;
         }
-        
+
         /// <summary>
         /// Tells Nevermore whether to expect large documents or not. Defaults to false, since most tables tend to only
         /// have small documents. However, this property is self-tuning: if Nevermore reads or writes a document
@@ -73,7 +71,7 @@ namespace Nevermore.Mapping
             get => map.JsonStorageFormat;
             set => map.JsonStorageFormat = value;
         }
-        
+
         /// <summary>
         /// Configures the ID of the document.
         /// </summary>
@@ -82,7 +80,7 @@ namespace Nevermore.Mapping
         {
             return map.IdColumn;
         }
-        
+
         /// <summary>
         /// Configures the ID of the document.
         /// </summary>
@@ -137,7 +135,7 @@ namespace Nevermore.Mapping
                        ?? throw new Exception("The expression for the Type Resolution column must be a property.");
             map.TypeResolutionColumn = new ColumnMapping(columnName ?? prop.Name, typeof(TProperty), new PropertyHandler(prop), prop);
             map.Columns.Add(map.TypeResolutionColumn);
-            return map.TypeResolutionColumn; 
+            return map.TypeResolutionColumn;
         }
 
         /// <summary>
@@ -249,7 +247,7 @@ namespace Nevermore.Mapping
             map.UniqueConstraints.Add(unique);
             return unique;
         }
-        
+
         static DocumentMap InitializeDefault()
         {
             return new DocumentMap
@@ -285,7 +283,7 @@ namespace Nevermore.Mapping
     public class DocumentMap
     {
         public const string RelatedDocumentTableName = "RelatedDocument";
-        
+
         public DocumentMap()
         {
             Columns = new List<ColumnMapping>();
@@ -319,7 +317,7 @@ namespace Nevermore.Mapping
 
             if (TypeResolutionColumn != null && JsonStorageFormat == JsonStorageFormat.NoJson)
                 throw new InvalidOperationException($"The document map for type {Type.FullName} has a TypeColumn, but also uses the NoJson storage mode, which is not allowed.");
-            
+
             try
             {
                 foreach (var column in Columns)
@@ -335,7 +333,7 @@ namespace Nevermore.Mapping
         {
             if (document == null)
                 return null;
-            
+
             var readerWriter = IdColumn.PropertyHandler;
             return readerWriter.Read(document);
         }

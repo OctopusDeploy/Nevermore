@@ -10,6 +10,7 @@ namespace Nevermore.Mapping
         const int DefaultMaxForeignKeyIdLength = 50;
         ColumnDirection direction;
         int? maxLength;
+        bool rowVersion = false;
 
         internal ColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
         {
@@ -18,7 +19,7 @@ namespace Nevermore.Mapping
             PropertyHandler = handler ?? throw new ArgumentNullException(nameof(handler));
             Property = property;
 
-            if (Property == null) 
+            if (Property == null)
                 return;
             if (Property.Name == "Id")
             {
@@ -34,9 +35,10 @@ namespace Nevermore.Mapping
         public Type Type { get; }
         public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
-        
+
         public int? MaxLength => maxLength;
         public ColumnDirection Direction => direction;
+        public bool RowVersion => rowVersion;
 
         IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {
@@ -56,6 +58,12 @@ namespace Nevermore.Mapping
             return this;
         }
 
+        IColumnMappingBuilder IColumnMappingBuilder.RowVersion()
+        {
+            rowVersion = true;
+            return ((IColumnMappingBuilder)this).LoadOnly();
+        }
+
         IColumnMappingBuilder IColumnMappingBuilder.CustomPropertyHandler(IPropertyHandler propertyHandler)
         {
             PropertyHandler = propertyHandler;
@@ -71,8 +79,13 @@ namespace Nevermore.Mapping
                     // This is the most common cause of errors
                     throw new InvalidOperationException($"The mapping for column '{ColumnName}' to property '{Property.Name}' is invalid. The property has no setter, but the column mapping is not declared with SaveOnly().");
                 }
-                
+
                 throw new InvalidOperationException($"The mapping for column '{ColumnName}' uses a property handler that returned false for CanWrite, and yet the column is declared as being both loaded from and saved to the database. Use `SaveOnly` if this column is intended to be saved, but not loaded from the database.");
+            }
+
+            if (rowVersion && direction != ColumnDirection.FromDatabase)
+            {
+                throw new InvalidOperationException($"The mapping for column '{ColumnName}' is invalid. Property declared as `RowVersion()` is not writable.");
             }
         }
     }

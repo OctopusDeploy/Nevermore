@@ -131,7 +131,7 @@ namespace Nevermore.IntegrationTests
                             lines[2].Product is SpecialProduct sp && sp.BonusMaterial == "Out-takes");
             }
         }
-        
+
         [Test]
         public void ShouldAllowNoPrefixOnProjectionMapping()
         {
@@ -175,7 +175,7 @@ namespace Nevermore.IntegrationTests
 
             product.Id.Should().Be("Products-1");
         }
-        
+
         [Test]
         public void ShouldInsertManyRecordsWithInsertMany()
         {
@@ -231,19 +231,6 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void ShouldHandleRowVersionColumn()
-        {
-            using (var transaction = Store.BeginTransaction())
-            {
-                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                transaction.Insert(customer1); // customer has a RowVersion column, but would have an error when inserting if the ReadOnly mapping was ignored
-                var dbCustomer = transaction.Query<Customer>().Where(c => c.Id == customer1.Id).ToList().Single();
-                dbCustomer.RowVersion.Length.Should().Be(8);
-                dbCustomer.RowVersion.All(v => v == 0).Should().BeFalse();
-            }
-        }
-        
-        [Test]
         public void ShouldPersistAndLoadReferenceCollectionsOnSingleDocuments()
         {
             var customerId = string.Empty;
@@ -260,8 +247,8 @@ namespace Nevermore.IntegrationTests
                 loadedCustomer.Roles.Count.Should().Be(2);
             }
         }
-        
-        
+
+
         [Test]
         public void ShouldUseIdPassedInToInsertMethod()
         {
