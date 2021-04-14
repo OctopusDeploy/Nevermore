@@ -78,7 +78,7 @@ namespace Nevermore.Util
             }
 
             var whereStatements = new List<string> {$"[{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}"};
-            whereStatements.AddRange(mapping.RowVersionColumns().Select(dvc => $"[{dvc.ColumnName}] = @{dvc.ColumnName}"));
+            if (mapping.RowVersionColumn != null) whereStatements.Add($"[{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}");
 
             var updates = string.Join(", ", updateStatements);
             var wheres = string.Join(" AND ", whereStatements);
@@ -320,13 +320,10 @@ namespace Nevermore.Util
                 result[$"{prefix}{c.ColumnName}"] = value;
             }
 
-            if (dataModification == DataModification.Update)
+            if (dataModification == DataModification.Update && mapping.RowVersionColumn != null)
             {
-                foreach (var c in mapping.RowVersionColumns())
-                {
-                    var value = c.PropertyHandler.Read(document);
-                    result[$"{prefix}{c.ColumnName}"] = value ?? throw new InvalidDataException($"'{c.Property.Name}' property is declared as RowVersion() and can't be set to null. Refresh the data and try again.");
-                }
+                var value = mapping.RowVersionColumn.PropertyHandler.Read(document);
+                result[$"{prefix}{mapping.RowVersionColumn.ColumnName}"] = value ?? throw new InvalidDataException($"'{mapping.RowVersionColumn.Property.Name}' property is declared as RowVersion() and can't be set to null. Refresh the data and try again.");
             }
 
             return result;
@@ -461,8 +458,5 @@ namespace Nevermore.Util
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
             doc.Columns.Where(c => c.Direction == ColumnDirection.Both || c.Direction == ColumnDirection.ToDatabase);
-
-        public static IEnumerable<ColumnMapping> RowVersionColumns(this DocumentMap doc) =>
-            doc.Columns.Where(c => c.RowVersion);
     }
 }

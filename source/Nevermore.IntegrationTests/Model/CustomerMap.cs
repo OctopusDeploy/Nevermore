@@ -11,7 +11,7 @@ namespace Nevermore.IntegrationTests.Model
             Column(m => m.LastName).MaxLength(50);
             Column(m => m.Nickname);
             Column(m => m.Roles);
-            Column(m => m.RowVersion).RowVersion();
+            RowVersion(m => m.RowVersion);
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
         }
     }

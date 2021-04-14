@@ -149,6 +149,11 @@ namespace Nevermore.Mapping
             return Column(null, getter, null);
         }
 
+        protected void RowVersion<TProperty>(Expression<Func<TDocument, TProperty>> getter)
+        {
+            map.RowVersionColumn = (ColumnMapping)Column(null, getter, null).LoadOnly();
+        }
+
         /// <summary>
         /// Defines a column. The column name will be the name of the property.
         /// </summary>
@@ -294,6 +299,7 @@ namespace Nevermore.Mapping
 
         public Type Type { get; set; }
         public ColumnMapping IdColumn { get; set; }
+        public ColumnMapping RowVersionColumn { get; set; }
         public ColumnMapping TypeResolutionColumn { get; set; }
         public JsonStorageFormat JsonStorageFormat { get; set; }
         public string TableName { get; set; }

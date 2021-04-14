@@ -391,7 +391,7 @@ namespace Nevermore.Tests.Util
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
                 Column(t => t.ReadOnly).LoadOnly();
-                Column(t => t.RowVersion).RowVersion();
+                RowVersion(t => t.RowVersion);
             }
         }
 

@@ -10,7 +10,6 @@ namespace Nevermore.Mapping
         const int DefaultMaxForeignKeyIdLength = 50;
         ColumnDirection direction;
         int? maxLength;
-        bool rowVersion = false;
 
         internal ColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
         {
@@ -38,7 +37,6 @@ namespace Nevermore.Mapping
 
         public int? MaxLength => maxLength;
         public ColumnDirection Direction => direction;
-        public bool RowVersion => rowVersion;
 
         IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {
@@ -58,12 +56,6 @@ namespace Nevermore.Mapping
             return this;
         }
 
-        IColumnMappingBuilder IColumnMappingBuilder.RowVersion()
-        {
-            rowVersion = true;
-            return ((IColumnMappingBuilder)this).LoadOnly();
-        }
-
         IColumnMappingBuilder IColumnMappingBuilder.CustomPropertyHandler(IPropertyHandler propertyHandler)
         {
             PropertyHandler = propertyHandler;
@@ -81,11 +73,6 @@ namespace Nevermore.Mapping
                 }
 
                 throw new InvalidOperationException($"The mapping for column '{ColumnName}' uses a property handler that returned false for CanWrite, and yet the column is declared as being both loaded from and saved to the database. Use `SaveOnly` if this column is intended to be saved, but not loaded from the database.");
-            }
-
-            if (rowVersion && direction != ColumnDirection.FromDatabase)
-            {
-                throw new InvalidOperationException($"The mapping for column '{ColumnName}' is invalid. Property declared as `RowVersion()` is not writable.");
             }
         }
     }

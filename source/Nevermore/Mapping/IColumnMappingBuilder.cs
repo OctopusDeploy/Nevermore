@@ -20,12 +20,6 @@ namespace Nevermore.Mapping
         IColumnMappingBuilder SaveOnly();
 
         /// <summary>
-        /// Nevermore will read values from the database and set them on this property. This property will be used
-        /// when performing updates to make sure the data in the database hasn't changed.
-        /// </summary>
-        IColumnMappingBuilder RowVersion();
-
-        /// <summary>
         /// Nevermore will build an expression to read and write the property automatically. However, you can override
         /// this behavior with your own property handler. Keep in mind that if you want to control how a type is mapped
         /// from the database to a .NET object, you might want to use a <see cref="ITypeHandler"/> instead.

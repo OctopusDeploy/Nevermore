@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
@@ -13,28 +12,35 @@ namespace Nevermore.IntegrationTests.Advanced
         [Test]
         public void UpdateChangesRowVersion()
         {
-            using var transaction = Store.BeginTransaction();
-            transaction.Insert( new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"});
-            transaction.Commit();
+            var customer1 = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
+            RunInTransaction(transaction => transaction.Insert(customer1));
 
-            var customer = transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single();
-            customer.LastName = "LastName2";
-            transaction.Update(customer);
+            var customer2 = RunInTransaction(transaction => transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single());
 
-            var updatedCustomer = transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single();
+            customer2.RowVersion.Should().Equal(customer1.RowVersion);
 
-            customer.RowVersion.Should().NotEqual(updatedCustomer.RowVersion);
+            customer2.LastName = "LastName2";
+            RunInTransaction(transaction => transaction.Update(customer2));
+
+            customer2.RowVersion.Should().NotEqual(customer1.RowVersion);
         }
 
+
         [Test]
-        public void DetectsPartiallyPopulatedDocuments()
+        public void RefreshesRowVersion()
         {
             var customer = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
             RunInTransaction(transaction => transaction.Insert(customer));
 
-            customer.FirstName = "FirstName1";
-            Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update(customer));
-            invalidUpdate.ShouldThrow<InvalidDataException>();
+            customer.RowVersion.Should().NotBeNull();
+
+            customer = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
+
+            customer.LastName = "LastName1";
+            RunInTransaction(transaction => transaction.Update(customer));
+
+            customer.LastName = "LastName2";
+            RunInTransaction(transaction => transaction.Update(customer));
         }
 
         [Test]
