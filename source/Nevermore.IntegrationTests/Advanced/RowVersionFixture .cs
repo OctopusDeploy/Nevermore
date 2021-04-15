@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -15,7 +14,7 @@ namespace Nevermore.IntegrationTests.Advanced
             var customer1 = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
             RunInTransaction(transaction => transaction.Insert(customer1));
 
-            var customer2 = RunInTransaction(transaction => transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single());
+            var customer2  = RunInTransaction(transaction => transaction.Load<Customer>(customer1.Id));
 
             customer2.RowVersion.Should().Equal(customer1.RowVersion);
 
@@ -36,23 +35,27 @@ namespace Nevermore.IntegrationTests.Advanced
 
             customer = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
 
+            var previousRowVersion = customer.RowVersion;
             customer.LastName = "LastName1";
             RunInTransaction(transaction => transaction.Update(customer));
 
+            customer.RowVersion.Should().NotEqual(previousRowVersion);
+
+            previousRowVersion = customer.RowVersion;
             customer.LastName = "LastName2";
             RunInTransaction(transaction => transaction.Update(customer));
+
+            customer.RowVersion.Should().NotEqual(previousRowVersion);
         }
 
         [Test]
         public void FailsUpdateWhenDataBecomesStale()
         {
-            RunInTransaction(transaction =>
-            {
-                transaction.Insert( new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"});
-            });
+            var customer = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
+            RunInTransaction(transaction => transaction.Insert( customer));
 
-            var customer1 = RunInTransaction(transaction => transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single());
-            var customer2 = RunInTransaction(transaction => transaction.Query<Customer>().Where(c => c.FirstName == "FirstName").ToArray().Single());
+            var customer1 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
+            var customer2 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
 
             customer1.LastName = "LastName1";
             RunInTransaction(transaction => transaction.Update(customer1));
@@ -61,6 +64,9 @@ namespace Nevermore.IntegrationTests.Advanced
             Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update(customer2));
 
             invalidUpdate.ShouldThrow<StaleDataException>();
+
+            var customer3 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
+            customer3.LastName.Should().Be(customer1.LastName);
         }
 
         TResult RunInTransaction<TResult>(Func<IRelationalTransaction, TResult> func)
