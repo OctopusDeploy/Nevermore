@@ -12,6 +12,8 @@ namespace Nevermore.Transient
     public class RetryManager
     {
         static RetryManager defaultRetryManager;
+        static object setDefaultRetryManagerMutex = new object();
+
         readonly IDictionary<string, RetryStrategy> retryStrategies;
         readonly IDictionary<string, RetryStrategy> defaultRetryStrategiesMap;
         string defaultRetryStrategyName;
@@ -73,9 +75,10 @@ namespace Nevermore.Transient
             get
             {
                 if (defaultRetryManager == null)
-                {
-                    TransientFaultHandling.InitializeRetryManager();
-                }
+                    lock (setDefaultRetryManagerMutex)
+                        if (defaultRetryManager == null)
+                            TransientFaultHandling.InitializeRetryManager();
+
                 return defaultRetryManager;
             }
         }
