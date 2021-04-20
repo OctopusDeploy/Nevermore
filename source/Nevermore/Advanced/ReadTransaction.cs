@@ -48,7 +48,6 @@ namespace Nevermore.Advanced
             this.name = name ?? Thread.CurrentThread.Name;
             if (string.IsNullOrEmpty(name))
                 this.name = "<unknown>";
-            registry.Add(this);
         }
 
         protected DbTransaction Transaction { get; private set; }
@@ -60,12 +59,16 @@ namespace Nevermore.Advanced
 
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
+
+            registry.Add(this);
         }
 
         public async Task OpenAsync()
         {
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync();
+
+            registry.Add(this);
         }
 
         public void Open(IsolationLevel isolationLevel)
