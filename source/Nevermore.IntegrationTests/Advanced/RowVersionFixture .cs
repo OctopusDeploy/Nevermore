@@ -24,6 +24,21 @@ namespace Nevermore.IntegrationTests.Advanced
             customer2.RowVersion.Should().NotEqual(customer1.RowVersion);
         }
 
+        [Test]
+        public void HandlesMultipleDocuments()
+        {
+            var insertedCustomer1 = new Customer {FirstName = "FirstName1", LastName = "LastName1", Nickname = "NickName1"};
+            var insertedCustomer2 = new Customer {FirstName = "FirstName2", LastName = "LastName2", Nickname = "NickName2"};
+
+            RunInTransaction(transaction => transaction.InsertMany(new []{insertedCustomer1, insertedCustomer2}));
+
+            var customer1 = RunInTransaction(transaction => transaction.Load<Customer>(insertedCustomer1.Id));
+            var customer2 = RunInTransaction(transaction => transaction.Load<Customer>(insertedCustomer2.Id));
+
+            customer1.RowVersion.Should().Equal(insertedCustomer1.RowVersion);
+            customer2.RowVersion.Should().Equal(insertedCustomer2.RowVersion);
+        }
+
 
         [Test]
         public void RefreshesRowVersion()
@@ -67,6 +82,24 @@ namespace Nevermore.IntegrationTests.Advanced
 
             var customer3 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
             customer3.LastName.Should().Be(customer1.LastName);
+        }
+
+        [Test]
+        public void DoesNotAffectNonVersionedDocuments()
+        {
+            var machine = new Machine()
+            {
+                Name = "1"
+            };
+
+            RunInTransaction(t => t.Insert(machine));
+
+            machine.Name = "2";
+            RunInTransaction(t => t.Update(machine));
+
+            var machine2 = RunInTransaction(transaction => transaction.Load<Machine>(machine.Id));
+
+            machine2.Name.Should().Be("2");
         }
 
         TResult RunInTransaction<TResult>(Func<IRelationalTransaction, TResult> func)

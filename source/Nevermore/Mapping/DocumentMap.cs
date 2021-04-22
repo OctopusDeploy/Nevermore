@@ -316,6 +316,8 @@ namespace Nevermore.Mapping
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; }
         public string SchemaName { get; set; }
 
+        public bool IsRowVersioningEnabled => RowVersionColumn != null;
+
         public void Validate()
         {
             if (IdColumn == null)

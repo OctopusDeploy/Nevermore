@@ -77,13 +77,12 @@ namespace Nevermore.Util
                     throw new ArgumentOutOfRangeException();
             }
 
-            var whereStatements = new List<string> {$"[{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}"};
-            if (mapping.RowVersionColumn != null) whereStatements.Add($"[{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}");
+            var rowVersionCheckStatement = mapping.IsRowVersioningEnabled ? $" AND [{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $"OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
 
             var updates = string.Join(", ", updateStatements);
-            var wheres = string.Join(" AND ", whereStatements);
 
-            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE {wheres}";
+            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} {returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
@@ -209,7 +208,9 @@ namespace Nevermore.Util
             var actualTableName = tableName ?? mapping.TableName;
             var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
-            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $"OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) {returnRowVersionStatement} VALUES ");
 
             void Append(string prefix)
             {
@@ -320,7 +321,7 @@ namespace Nevermore.Util
                 result[$"{prefix}{c.ColumnName}"] = value;
             }
 
-            if (dataModification == DataModification.Update && mapping.RowVersionColumn != null)
+            if (dataModification == DataModification.Update && mapping.IsRowVersioningEnabled)
             {
                 var value = mapping.RowVersionColumn.PropertyHandler.Read(document);
                 result[$"{prefix}{mapping.RowVersionColumn.ColumnName}"] = value ?? throw new InvalidDataException($"'{mapping.RowVersionColumn.Property.Name}' property is declared as RowVersion() and can't be set to null. Refresh the data and try again.");
