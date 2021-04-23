@@ -244,7 +244,7 @@ namespace Nevermore.Advanced
                 ExecuteNonQuery(command);
                 return Array.Empty<object>();
             }
-
+            
             var newRowVersions = new List<object>();
             using (var reader = ExecuteReader(command))
             {

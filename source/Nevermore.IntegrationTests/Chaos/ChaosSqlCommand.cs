@@ -19,8 +19,8 @@ namespace Nevermore.IntegrationTests.Chaos
 
         void MakeSomeChaos()
         {
-            if (Debugger.IsAttached) return; // No chaos when debugging thanks!
-            if (ChaosGenerator.NextDouble() < chaosFactor) throw new TimeoutException("You made the chaos monkey angry...");
+           // if (Debugger.IsAttached) return; // No chaos when debugging thanks!
+           // if (ChaosGenerator.NextDouble() < chaosFactor) throw new TimeoutException("You made the chaos monkey angry...");
         }
 
         public override void Cancel()

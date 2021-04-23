@@ -39,7 +39,6 @@ namespace Nevermore.IntegrationTests.Advanced
             customer2.RowVersion.Should().Equal(insertedCustomer2.RowVersion);
         }
 
-
         [Test]
         public void RefreshesRowVersion()
         {
