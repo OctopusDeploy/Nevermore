@@ -19,8 +19,25 @@ namespace Nevermore
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             var members = GetSerializableMembers(type);
+            if (members == null)
+            {
+                throw new JsonSerializationException("Null collection of serializable members returned.");
+            }
 
-            return members.Select(member => CreateProperty(type, member, memberSerialization)).ToList();
+            var properties = new JsonPropertyCollection(type);
+
+            foreach (var member in members)
+            {
+                var property = CreateProperty(type, member, memberSerialization);
+
+                if (property != null)
+                {
+                    properties.AddProperty(property);
+                }
+            }
+
+            var orderedProperties = properties.OrderBy(p => p.Order ?? -1).ToList();
+            return orderedProperties;
         }
 
         JsonProperty CreateProperty(Type type, MemberInfo member, MemberSerialization memberSerialization)
