@@ -37,7 +37,7 @@ namespace Nevermore.Advanced
             configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
             var newRowVersions = ExecuteSingleDataModification(command);
-            AssertModificationHasBeenSuccessful(document, command.Mapping, newRowVersions);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersions);
 
             configuration.Hooks.AfterInsert(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -54,7 +54,7 @@ namespace Nevermore.Advanced
             await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
 
             var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
-            AssertModificationHasBeenSuccessful(document, command.Mapping, newRowVersion);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
             await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -69,7 +69,7 @@ namespace Nevermore.Advanced
             foreach (var document in documents) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
             var newRowVersions = ExecuteDataModification(command);
-            AssertModificationsHaveBeenSuccessful(documentList, command.Mapping, newRowVersions);
+            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
 
             foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
@@ -90,7 +90,7 @@ namespace Nevermore.Advanced
             foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
 
             var newRowVersions = await ExecuteDataModificationAsync(command, cancellationToken);
-            AssertModificationsHaveBeenSuccessful(documentList, command.Mapping, newRowVersions);
+            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
 
             foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
 
@@ -103,7 +103,7 @@ namespace Nevermore.Advanced
             configuration.Hooks.BeforeUpdate(document, command.Mapping, this);
 
             var newRowVersion = ExecuteSingleDataModification(command);
-            AssertModificationHasBeenSuccessful(document, command.Mapping, newRowVersion);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
             configuration.Hooks.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -120,7 +120,7 @@ namespace Nevermore.Advanced
             await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
 
             var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
-            AssertModificationHasBeenSuccessful(document, command.Mapping, newRowVersion);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
         }
@@ -244,7 +244,7 @@ namespace Nevermore.Advanced
                 ExecuteNonQuery(command);
                 return Array.Empty<object>();
             }
-            
+
             var newRowVersions = new List<object>();
             using (var reader = ExecuteReader(command))
             {
@@ -289,17 +289,17 @@ namespace Nevermore.Advanced
             return result.SingleOrDefault();
         }
 
-        void AssertModificationsHaveBeenSuccessful(IReadOnlyList<object> documentList, DocumentMap mapping, object[] newRowVersions)
+        void ApplyNewRowVersionsIfRequired(IReadOnlyList<object> documentList, DocumentMap mapping, object[] newRowVersions)
         {
             if (!mapping.IsRowVersioningEnabled) return;
 
             for (var i = 0; i < documentList.Count; i++)
             {
-                AssertModificationHasBeenSuccessful(documentList[i], mapping, newRowVersions[i]);
+                ApplyNewRowVersionIfRequired(documentList[i], mapping, newRowVersions[i]);
             }
         }
 
-        void AssertModificationHasBeenSuccessful<TDocument>(TDocument document, DocumentMap mapping, object newRowVersion) where TDocument : class
+        void ApplyNewRowVersionIfRequired<TDocument>(TDocument document, DocumentMap mapping, object newRowVersion) where TDocument : class
         {
             if (!mapping.IsRowVersioningEnabled) return;
 
