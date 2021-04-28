@@ -11,76 +11,86 @@ namespace Nevermore.IntegrationTests.Advanced
         [Test]
         public void UpdateChangesRowVersion()
         {
-            var customer1 = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
-            RunInTransaction(transaction => transaction.Insert(customer1));
+            // ChaosSqlCommand is set to retry some of the reads which breaks row versioning code because INSERTS/UPDATES,
+            // even executed via SqlReader, must not be retired.
+            NoMonkeyBusiness();
 
-            var customer2  = RunInTransaction(transaction => transaction.Load<Customer>(customer1.Id));
+            var document1 = new DocumentWithRowVersion() {Name = "Name"};
+            RunInTransaction(transaction => transaction.Insert(document1));
 
-            customer2.RowVersion.Should().Equal(customer1.RowVersion);
+            var document2  = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document1.Id));
 
-            customer2.LastName = "LastName2";
-            RunInTransaction(transaction => transaction.Update(customer2));
+            document2.RowVersion.Should().Equal(document1.RowVersion);
 
-            customer2.RowVersion.Should().NotEqual(customer1.RowVersion);
+            document2.Name = "Name2";
+            RunInTransaction(transaction => transaction.Update(document2));
+
+            document2.RowVersion.Should().NotEqual(document1.RowVersion);
         }
 
         [Test]
         public void HandlesMultipleDocuments()
         {
-            var insertedCustomer1 = new Customer {FirstName = "FirstName1", LastName = "LastName1", Nickname = "NickName1"};
-            var insertedCustomer2 = new Customer {FirstName = "FirstName2", LastName = "LastName2", Nickname = "NickName2"};
+            NoMonkeyBusiness();
 
-            RunInTransaction(transaction => transaction.InsertMany(new []{insertedCustomer1, insertedCustomer2}));
+            var insertedDocument1 = new DocumentWithRowVersion {Name = "Name1"};
+            var insertedDocument2 = new DocumentWithRowVersion {Name = "Name2"};
 
-            var customer1 = RunInTransaction(transaction => transaction.Load<Customer>(insertedCustomer1.Id));
-            var customer2 = RunInTransaction(transaction => transaction.Load<Customer>(insertedCustomer2.Id));
+            RunInTransaction(transaction => transaction.InsertMany(new []{insertedDocument1, insertedDocument2}));
 
-            customer1.RowVersion.Should().Equal(insertedCustomer1.RowVersion);
-            customer2.RowVersion.Should().Equal(insertedCustomer2.RowVersion);
+            var document1 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(insertedDocument1.Id));
+            var document2 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(insertedDocument2.Id));
+
+            document1.RowVersion.Should().Equal(insertedDocument1.RowVersion);
+            document2.RowVersion.Should().Equal(insertedDocument2.RowVersion);
         }
 
         [Test]
         public void RefreshesRowVersion()
         {
-            var customer = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
-            RunInTransaction(transaction => transaction.Insert(customer));
+            NoMonkeyBusiness();
 
-            customer.RowVersion.Should().NotBeNull();
+            var document = new DocumentWithRowVersion { Name = "Name"};
+            RunInTransaction(transaction => transaction.Insert(document));
 
-            customer = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
+            document.RowVersion.Should().NotBeNull();
 
-            var previousRowVersion = customer.RowVersion;
-            customer.LastName = "LastName1";
-            RunInTransaction(transaction => transaction.Update(customer));
+            document = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document.Id));
 
-            customer.RowVersion.Should().NotEqual(previousRowVersion);
+            var previousRowVersion = document.RowVersion;
+            document.Name = "Name1";
+            RunInTransaction(transaction => transaction.Update(document));
 
-            previousRowVersion = customer.RowVersion;
-            customer.LastName = "LastName2";
-            RunInTransaction(transaction => transaction.Update(customer));
+            document.RowVersion.Should().NotEqual(previousRowVersion);
 
-            customer.RowVersion.Should().NotEqual(previousRowVersion);
+            previousRowVersion = document.RowVersion;
+            document.Name = "Name2";
+            RunInTransaction(transaction => transaction.Update(document));
+
+            document.RowVersion.Should().NotEqual(previousRowVersion);
         }
 
         [Test]
         public void FailsUpdateWhenDataBecomesStale()
         {
-            var customer = new Customer {FirstName = "FirstName", LastName = "LastName", Nickname = "NickName"};
-            RunInTransaction(transaction => transaction.Insert( customer));
+            NoMonkeyBusiness();
 
-            var customer1 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
-            var customer2 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
+            var document = new DocumentWithRowVersion {Name = "Name"};
+            RunInTransaction(transaction => transaction.Insert( document));
 
-            customer1.LastName = "LastName1";
-            RunInTransaction(transaction => transaction.Update(customer1));
+            var document1 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document.Id));
+            var document2 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document.Id));
 
-            customer2.LastName = "LastName2";
-            Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update(customer2));
+            document1.Name = "Name1";
+            RunInTransaction(transaction => transaction.Update(document1));
+
+            document2.Name = "Name2";
+            Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update(document2));
 
             invalidUpdate.ShouldThrow<StaleDataException>();
 
-            var customer3 = RunInTransaction(transaction => transaction.Load<Customer>(customer.Id));
-            customer3.LastName.Should().Be(customer1.LastName);
+            var document3 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document.Id));
+            document3.Name.Should().Be(document1.Name);
         }
 
         [Test]

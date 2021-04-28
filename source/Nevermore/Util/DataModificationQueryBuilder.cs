@@ -78,11 +78,11 @@ namespace Nevermore.Util
             }
 
             var rowVersionCheckStatement = mapping.IsRowVersioningEnabled ? $" AND [{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}" : string.Empty;
-            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $"OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
 
             var updates = string.Join(", ", updateStatements);
 
-            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} {returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
+            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates}{returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
@@ -208,9 +208,9 @@ namespace Nevermore.Util
             var actualTableName = tableName ?? mapping.TableName;
             var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
-            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $"OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
 
-            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) {returnRowVersionStatement} VALUES ");
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}){returnRowVersionStatement} VALUES ");
 
             void Append(string prefix)
             {
