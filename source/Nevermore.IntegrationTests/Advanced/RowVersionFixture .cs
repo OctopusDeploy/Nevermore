@@ -94,6 +94,20 @@ namespace Nevermore.IntegrationTests.Advanced
         }
 
         [Test]
+        public void HandlesUniqueConstraint()
+        {
+            NoMonkeyBusiness();
+
+            var document1 = new DocumentWithRowVersion {Name = "Name"};
+            RunInTransaction(transaction => transaction.Insert( document1));
+
+            var document2 = new DocumentWithRowVersion {Name = "Name"};
+            Action invalidUpdate = () => RunInTransaction(transaction => transaction.Insert(document2));
+
+            invalidUpdate.ShouldThrow<UniqueConstraintViolationException>();
+        }
+
+        [Test]
         public void DoesNotAffectNonVersionedDocuments()
         {
             var machine = new Machine()

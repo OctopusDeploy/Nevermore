@@ -95,7 +95,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 {
                     SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
                 }
-                schema.AppendLine($"alter table [TestSchema].[{nameof(DocumentWithRowVersion)}] add [RowVersion] rowversion");
+                schema.AppendLine($"ALTER TABLE [TestSchema].[{nameof(DocumentWithRowVersion)}] ADD [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }
             catch (Exception ex)

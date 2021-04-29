@@ -7,7 +7,9 @@ namespace Nevermore.IntegrationTests.Model
         public DocumentWithRowVersionMap()
         {
             Id().MaxLength(100);
+            Column(m => m.Name).MaxLength(100);
             RowVersion(m => m.RowVersion);
+            Unique($"Unique{nameof(DocumentWithRowVersion)}Name", new[] { "Name" }, "Documents must have unique names");
         }
     }
 }

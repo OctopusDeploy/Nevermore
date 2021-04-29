@@ -245,22 +245,14 @@ namespace Nevermore.Advanced
                 return Array.Empty<object>();
             }
 
-            var newRowVersions = new List<object>();
-            using (var reader = ExecuteReader(command))
-            {
-                while (reader.Read())
-                {
-                    newRowVersions.Add(reader.GetValue(0));
-                }
-            }
-
-            return newRowVersions.ToArray();
+            //The results need to be read eagerly so errors are raised while code is still executing within CommandExecutor error handling logic
+            return ReadResults(command, reader => reader.GetValue(0));
         }
 
         object ExecuteSingleDataModification(PreparedCommand command)
         {
-            var result = ExecuteDataModification(command);
-            return result.SingleOrDefault();
+            var results = ExecuteDataModification(command);
+            return results.SingleOrDefault();
         }
 
         async Task<object[]> ExecuteDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
@@ -271,22 +263,13 @@ namespace Nevermore.Advanced
                 return Array.Empty<object>();
             }
 
-            var newRowVersions = new List<object>();
-            using (var reader = await ExecuteReaderAsync(command, cancellationToken))
-            {
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    newRowVersions.Add(reader.GetValue(0));
-                }
-            }
-
-            return newRowVersions.ToArray();
+            return await ReadResultsAsync(command, reader => reader.GetValue(0));
         }
 
         async Task<object> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
         {
-            var result = await ExecuteDataModificationAsync(command, cancellationToken);
-            return result.SingleOrDefault();
+            var results = await ExecuteDataModificationAsync(command, cancellationToken);
+            return results.SingleOrDefault();
         }
 
         void ApplyNewRowVersionsIfRequired(IReadOnlyList<object> documentList, DocumentMap mapping, object[] newRowVersions)

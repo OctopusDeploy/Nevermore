@@ -107,19 +107,19 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class 
+        public Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, string>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class 
+        public Task<TDocument> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, int>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class 
+        public Task<TDocument> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, long>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class 
+        public Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, Guid>(id, cancellationToken);
 
         private List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
@@ -298,23 +298,23 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<string> ids) where TDocument : class
             => LoadStream<TDocument, string>(ids);
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<int> ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<int> ids) where TDocument : class
             => LoadStream<TDocument, int>(ids);
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<long> ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<long> ids) where TDocument : class
             => LoadStream<TDocument, long>(ids);
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<Guid> ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(IEnumerable<Guid> ids) where TDocument : class
             => LoadStream<TDocument, Guid>(ids);
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(params string[] ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(params string[] ids) where TDocument : class
             => LoadStream<TDocument, string>(ids);
 
         [Pure]
@@ -322,7 +322,7 @@ namespace Nevermore.Advanced
             => LoadStream<TDocument, int>(ids);
 
         [Pure]
-        public IEnumerable<TDocument> LoadStream<TDocument>(params long[] ids) where TDocument : class 
+        public IEnumerable<TDocument> LoadStream<TDocument>(params long[] ids) where TDocument : class
             => LoadStream<TDocument, long>(ids);
 
         [Pure]
@@ -343,19 +343,19 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class 
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadStreamAsync<TDocument, string>(ids, cancellationToken);
 
         [Pure]
-        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class 
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadStreamAsync<TDocument, int>(ids, cancellationToken);
 
         [Pure]
-        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class 
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadStreamAsync<TDocument, long>(ids, cancellationToken);
 
         [Pure]
-        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class 
+        public IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadStreamAsync<TDocument, Guid>(ids, cancellationToken);
 
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
@@ -524,6 +524,18 @@ namespace Nevermore.Advanced
             return await command.ExecuteReaderAsync(cancellationToken);
         }
 
+        protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
+        {
+            using var command = CreateCommand(preparedCommand);
+            return command.ReadResults(mapper);
+        }
+
+        protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
+        {
+            using var command = CreateCommand(preparedCommand);
+            return await command.ReadResultsAsync(mapper);
+        }
+
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
@@ -586,7 +598,7 @@ namespace Nevermore.Advanced
             foreach (var command in copy)
                 sb.AppendLine(command);
         }
-         
+
         void LogBasedOnCommand(long duration, PreparedCommand command)
         {
             switch (command.Operation)
