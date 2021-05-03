@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests.SetUp
     public abstract class FixtureWithRelationalStore : FixtureWithDatabase
     {
         bool resetBetweenTests = true;
-        
+
         protected FixtureWithRelationalStore()
         {
             var config = new RelationalStoreConfiguration(ConnectionString);
@@ -29,29 +29,31 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithStringIdMap(),
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
-                new MessageWithGuidIdMap());
-            
+                new MessageWithGuidIdMap(),
+                new DocumentWithRowVersionMap());
+
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
-            
+
             config.UseJsonNetSerialization(settings =>
             {
                 settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
-            
+
             GenerateSchemaAutomatically(
-                new OrderMap(), 
+                new OrderMap(),
                 new ProductMap(),
-                new CustomerMap(), 
-                new LineItemMap(), 
-                new BrandMap(), 
+                new CustomerMap(),
+                new LineItemMap(),
+                new BrandMap(),
                 new MachineMap(),
                 new MessageWithStringIdMap(),
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
-                new MessageWithGuidIdMap());
-            
+                new MessageWithGuidIdMap(),
+                new DocumentWithRowVersionMap());
+
             Store = new RelationalStore(config);
         }
 
@@ -68,12 +70,12 @@ namespace Nevermore.IntegrationTests.SetUp
         public virtual void OneTimeSetUp()
         {
         }
-        
+
         [SetUp]
         public virtual void SetUp()
         {
             if (resetBetweenTests)
-            {            
+            {
                 integrationTestDatabase.ResetBetweenTestRuns();
                 ((RelationalStore)Store).Reset();
             }
@@ -93,7 +95,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 {
                     SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
                 }
-                schema.AppendLine($"alter table [TestSchema].[{nameof(Customer)}] add [RowVersion] rowversion");
+                schema.AppendLine($"ALTER TABLE [TestSchema].[{nameof(DocumentWithRowVersion)}] ADD [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) VALUES 
+INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) OUTPUT inserted.RowVersion VALUES 
 (@Id, @AColumn, @JSON)
 
 @Id=New-Id

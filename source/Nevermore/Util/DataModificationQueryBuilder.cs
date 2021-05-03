@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Nevermore.Advanced;
@@ -40,7 +41,7 @@ namespace Nevermore.Util
 
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
-            var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping);
+            var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
 
             AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
             return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
@@ -49,7 +50,7 @@ namespace Nevermore.Util
         public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
-            
+
             var mapping = mappings.Resolve(document.GetType());
 
             var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
@@ -75,17 +76,21 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
+            var rowVersionCheckStatement = mapping.IsRowVersioningEnabled ? $" AND [{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+
             var updates = string.Join(", ", updateStatements);
-            
-            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}";
+
+            var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates}{returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
 
             var parameters = GetDocumentParameters(
                 m => throw new Exception("Cannot update a document if it does not have an ID"),
                 null,
                 null,
                 document,
-                mapping
+                mapping,
+                DataModification.Update
             );
 
             statement = AppendRelatedDocumentStatementsForUpdate(statement, parameters, mapping, document);
@@ -102,11 +107,11 @@ namespace Nevermore.Util
         public PreparedCommand PrepareDelete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
         {
             var mapping = mappings.Resolve(typeof(TDocument));
-            
+
             var idType = id.GetType();
             if (mapping.IdColumn.Type != idType)
                 throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
-            
+
             return PrepareDelete(mapping, id, options);
         }
 
@@ -174,12 +179,12 @@ namespace Nevermore.Util
         void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string schemaName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
         {
             var columns = new List<string>();
-            
-            if (includeDefaultModelColumns) 
+
+            if (includeDefaultModelColumns)
                 columns.Add(mapping.IdColumn.ColumnName);
-            
+
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
-            
+
             if (includeDefaultModelColumns)
             {
                 switch (mapping.JsonStorageFormat)
@@ -203,7 +208,9 @@ namespace Nevermore.Util
             var actualTableName = tableName ?? mapping.TableName;
             var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
-            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) VALUES ");
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}){returnRowVersionStatement} VALUES ");
 
             void Append(string prefix)
             {
@@ -226,15 +233,15 @@ namespace Nevermore.Util
             }
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
         {
             if (documents.Count == 1)
-                return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, "");
+                return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, dataModification, "");
 
             var parameters = new CommandParameterValues();
             for (var x = 0; x < documents.Count; x++)
             {
-                var instanceParameters = GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.IgnoreCustomIdIfIdAlreadySet, documents[x], mapping, $"{x}__");
+                var instanceParameters = GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.IgnoreCustomIdIfIdAlreadySet, documents[x], mapping, dataModification, $"{x}__");
                 parameters.AddRange(instanceParameters);
             }
 
@@ -246,10 +253,17 @@ namespace Nevermore.Util
             ThrowIfIdAlreadySetToDifferentValue,
             IgnoreCustomIdIfIdAlreadySet
         }
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, string prefix = null)
+
+        enum DataModification
+        {
+            Insert,
+            Update
+        }
+
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
         {
             var id = mapping.IdColumn.PropertyHandler.Read(document);
-            
+
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
@@ -287,7 +301,7 @@ namespace Nevermore.Util
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             foreach (var c in mapping.WritableIndexedColumns())
             {
                 var value = c.PropertyHandler.Read(document);
@@ -305,6 +319,12 @@ namespace Nevermore.Util
                 }
 
                 result[$"{prefix}{c.ColumnName}"] = value;
+            }
+
+            if (dataModification == DataModification.Update && mapping.IsRowVersioningEnabled)
+            {
+                var value = mapping.RowVersionColumn.PropertyHandler.Read(document);
+                result[$"{prefix}{mapping.RowVersionColumn.ColumnName}"] = value ?? throw new InvalidDataException($"'{mapping.RowVersionColumn.Property.Name}' property is declared as RowVersion() and can't be set to null. Refresh the data and try again.");
             }
 
             return result;
@@ -398,7 +418,7 @@ namespace Nevermore.Util
             var documentAndIds = documents.Count == 1
                 ? new[] {(parentIdVariable: IdVariableName, document: documents[0])}
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
-            
+
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
                 into g
@@ -434,7 +454,7 @@ namespace Nevermore.Util
             public string RelatedDocumentTableColumnName { get; set; }
         }
     }
-    
+
     internal static class DataModificationQueryBuilderExtensions
     {
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>

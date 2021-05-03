@@ -1,3 +1,4 @@
+using System;
 using Nevermore.Mapping;
 
 namespace Nevermore.Benchmarks.Model
@@ -20,7 +21,7 @@ namespace Nevermore.Benchmarks.Model
             Column(m => m.Counter7);
             Column(m => m.Counter8);
             Column(m => m.Counter9);
-            Column(m => m.RowVersion).LoadOnly();
+            RowVersion(m => m.RowVersion);
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
         }
     }

@@ -1,4 +1,5 @@
-UPDATE [dbo].[TestDocumentTbl] WITH (NO LOCK) SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+UPDATE [dbo].[TestDocumentTbl] WITH (NO LOCK) SET [AColumn] = @AColumn, [JSON] = @JSON OUTPUT inserted.RowVersion WHERE [Id] = @Id AND [RowVersion] = @RowVersion
 @Id=Doc-1
 @JSON={"NotMapped":"NonMappedValue"}
 @AColumn=AValue
+@RowVersion=0

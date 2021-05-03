@@ -1,4 +1,4 @@
-INSERT INTO [dbo].[TestDocumentTbl]  ([AColumn]) VALUES 
+INSERT INTO [dbo].[TestDocumentTbl]  ([AColumn]) OUTPUT inserted.RowVersion VALUES 
 (@AColumn)
 
 @Id=New-Id

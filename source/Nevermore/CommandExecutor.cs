@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -17,7 +18,7 @@ namespace Nevermore
     /// A nevermore query has two phases.
     ///  - Building the query, which results in a <see cref="PreparedCommand"/>
     ///  - Executing the prepared command against the database
-    /// This class does phase 2. It wraps DbCommand, but with our timing and exception handling code. 
+    /// This class does phase 2. It wraps DbCommand, but with our timing and exception handling code.
     /// </summary>
     internal class CommandExecutor : IDisposable
     {
@@ -116,6 +117,34 @@ namespace Nevermore
             }
         }
 
+        public T[] ReadResults<T>(Func<DbDataReader, T> mapper)
+        {
+            AssertSynchronousOperation();
+            try
+            {
+                var data = new List<T>();
+                using (var reader = command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior))
+                {
+                    while (reader.Read())
+                    {
+                        data.Add(mapper(reader));
+                    }
+                }
+
+                return data.ToArray();
+            }
+            catch (SqlException ex)
+            {
+                DetectAndThrowIfKnownException(ex, prepared.Mapping);
+                throw WrapException(ex);
+            }
+            catch (Exception ex)
+            {
+                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                throw;
+            }
+        }
+
         public DbDataReader ExecuteReader()
         {
             AssertSynchronousOperation();
@@ -134,7 +163,7 @@ namespace Nevermore
                 throw;
             }
         }
-        
+
         public async Task<DbDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
         {
             try
@@ -152,7 +181,34 @@ namespace Nevermore
                 throw;
             }
         }
-            
+
+        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, T> mapper)
+        {
+            try
+            {
+                var data = new List<T>();
+                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior))
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        data.Add(mapper(reader));
+                    }
+                }
+
+                return data.ToArray();
+            }
+            catch (SqlException ex)
+            {
+                DetectAndThrowIfKnownException(ex, prepared.Mapping);
+                throw WrapException(ex);
+            }
+            catch (Exception ex)
+            {
+                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                throw;
+            }
+        }
+
         Exception WrapException(Exception ex)
         {
             if (ex is SqlException sqlEx && sqlEx.Number == 1205) // deadlock
@@ -171,7 +227,7 @@ namespace Nevermore
 
         static void DetectAndThrowIfKnownException(SqlException ex, DocumentMap mapping)
         {
-            if (mapping == null) 
+            if (mapping == null)
                 return;
             if (ex.Number == 2627 || ex.Number == 2601)
             {
@@ -188,7 +244,7 @@ namespace Nevermore
             if (!allowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
         }
-            
+
         public void Dispose()
         {
             DisposeOfParameters();

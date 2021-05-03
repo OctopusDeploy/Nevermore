@@ -8,7 +8,6 @@ using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
-using Newtonsoft.Json.Serialization;
 
 namespace Nevermore.Advanced
 {
@@ -31,40 +30,49 @@ namespace Nevermore.Advanced
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
         }
-        
-        public void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class
+
+        public void Insert<TDocument>(TDocument document, InsertOptions options = null) where TDocument : class
         {
-            var command = builder.PrepareInsert(new[] {instance}, options);
-            configuration.Hooks.BeforeInsert(instance, command.Mapping, this);
-            ExecuteNonQuery(command);
-            configuration.Hooks.AfterInsert(instance, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
+            var command = builder.PrepareInsert(new[] {document}, options);
+            configuration.Hooks.BeforeInsert(document, command.Mapping, this);
+
+            var newRowVersion = ExecuteSingleDataModification(command);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+
+            configuration.Hooks.AfterInsert(document, command.Mapping, this);
+            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
-        public Task InsertAsync<TDocument>(TDocument instance, CancellationToken cancellationToken = default) where TDocument : class
+        public Task InsertAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
         {
-            return InsertAsync(instance, null, cancellationToken);
+            return InsertAsync(document, null, cancellationToken);
         }
 
-        public async Task InsertAsync<TDocument>(TDocument instance, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task InsertAsync<TDocument>(TDocument document, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var command = builder.PrepareInsert(new[] {instance}, options);
-            await configuration.Hooks.BeforeInsertAsync(instance, command.Mapping, this);
-            await ExecuteNonQueryAsync(command, cancellationToken);
-            await configuration.Hooks.AfterInsertAsync(instance, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instance);
+            var command = builder.PrepareInsert(new[] {document}, options);
+            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+
+            var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+
+            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
         public void InsertMany<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null) where TDocument : class
         {
-            IReadOnlyList<object> instanceList = documents.ToArray();
-            if (!instanceList.Any()) return;
+            IReadOnlyList<object> documentList = documents.ToArray();
+            if (!documentList.Any()) return;
 
-            var command = builder.PrepareInsert(instanceList, options);
-            foreach (var instance in instanceList) configuration.Hooks.BeforeInsert(instance, command.Mapping, this);
-            ExecuteNonQuery(command);
-            foreach (var instance in instanceList) configuration.Hooks.AfterInsert(instance, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
+            var command = builder.PrepareInsert(documentList, options);
+            foreach (var document in documents) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
+
+            var newRowVersions = ExecuteDataModification(command);
+            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
+
+            foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
+            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }
 
         public Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, CancellationToken cancellationToken = default) where TDocument : class
@@ -74,21 +82,29 @@ namespace Nevermore.Advanced
 
         public async Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            IReadOnlyList<object> instanceList = documents.ToArray();
-            if (!instanceList.Any()) return;
+            IReadOnlyList<object> documentList = documents.ToArray();
+            if (!documentList.Any()) return;
 
-            var command = builder.PrepareInsert(instanceList, options);
-            foreach (var instance in instanceList) await configuration.Hooks.BeforeInsertAsync(instance, command.Mapping, this);
-            await ExecuteNonQueryAsync(command, cancellationToken);
-            foreach (var instance in instanceList) await configuration.Hooks.AfterInsertAsync(instance, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, instanceList);
+            var command = builder.PrepareInsert(documentList, options);
+
+            foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+
+            var newRowVersions = await ExecuteDataModificationAsync(command, cancellationToken);
+            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
+
+            foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+
+            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }
 
         public void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
         {
             var command = builder.PrepareUpdate(document, options);
             configuration.Hooks.BeforeUpdate(document, command.Mapping, this);
-            ExecuteNonQuery(command);
+
+            var newRowVersion = ExecuteSingleDataModification(command);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+
             configuration.Hooks.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
@@ -102,7 +118,10 @@ namespace Nevermore.Advanced
         {
             var command = builder.PrepareUpdate(document, options);
             await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
-            await ExecuteNonQueryAsync(command, cancellationToken);
+
+            var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
         }
 
@@ -217,5 +236,60 @@ namespace Nevermore.Advanced
             await Transaction.CommitAsync(cancellationToken);
             await configuration.Hooks.AfterCommitAsync(this);
         }
+
+        object[] ExecuteDataModification(PreparedCommand command)
+        {
+            if (!command.Mapping.IsRowVersioningEnabled)
+            {
+                ExecuteNonQuery(command);
+                return Array.Empty<object>();
+            }
+
+            //The results need to be read eagerly so errors are raised while code is still executing within CommandExecutor error handling logic
+            return ReadResults(command, reader => reader.GetValue(0));
+        }
+
+        object ExecuteSingleDataModification(PreparedCommand command)
+        {
+            var results = ExecuteDataModification(command);
+            return results.SingleOrDefault();
+        }
+
+        async Task<object[]> ExecuteDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
+        {
+            if (!command.Mapping.IsRowVersioningEnabled)
+            {
+                await ExecuteNonQueryAsync(command, cancellationToken);
+                return Array.Empty<object>();
+            }
+
+            return await ReadResultsAsync(command, reader => reader.GetValue(0));
+        }
+
+        async Task<object> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
+        {
+            var results = await ExecuteDataModificationAsync(command, cancellationToken);
+            return results.SingleOrDefault();
+        }
+
+        void ApplyNewRowVersionsIfRequired(IReadOnlyList<object> documentList, DocumentMap mapping, object[] newRowVersions)
+        {
+            if (!mapping.IsRowVersioningEnabled) return;
+
+            for (var i = 0; i < documentList.Count; i++)
+            {
+                ApplyNewRowVersionIfRequired(documentList[i], mapping, newRowVersions[i]);
+            }
+        }
+
+        void ApplyNewRowVersionIfRequired<TDocument>(TDocument document, DocumentMap mapping, object newRowVersion) where TDocument : class
+        {
+            if (!mapping.IsRowVersioningEnabled) return;
+
+            if (newRowVersion == null) throw new StaleDataException($"Modification failed for '{typeof(TDocument).Name}' document with '{mapping.GetId(document)}' Id because submitted data was out of date. Refresh the document and try again.");
+
+            mapping.RowVersionColumn.PropertyHandler.Write(document, newRowVersion);
+        }
+
     }
 }

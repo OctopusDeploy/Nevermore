@@ -22,13 +22,15 @@ namespace Nevermore.IntegrationTests.Advanced
             var customer = new Customer {Id = "C131", FirstName = "Fred", LastName = "Freddy"};
             transaction.Insert(customer);
             AssertLogged(log, "BeforeInsert", "AfterInsert");
-            
+
+            customer = transaction.Load<Customer>("C131");
+
             transaction.Update(customer);
             AssertLogged(log, "BeforeUpdate", "AfterUpdate");
 
             transaction.Delete(customer);
             AssertLogged(log, "BeforeDelete", "AfterDelete");
-            
+
             transaction.Commit();
             AssertLogged(log, "BeforeCommit", "AfterCommit");
         }
@@ -62,7 +64,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 this.log = log;
             }
-            
+
             public void BeforeInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(BeforeInsert));
             public void AfterInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(AfterInsert));
             public void BeforeUpdate<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => log.AppendLine(nameof(BeforeUpdate));

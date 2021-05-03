@@ -18,7 +18,7 @@ namespace Nevermore.Mapping
             PropertyHandler = handler ?? throw new ArgumentNullException(nameof(handler));
             Property = property;
 
-            if (Property == null) 
+            if (Property == null)
                 return;
             if (Property.Name == "Id")
             {
@@ -34,7 +34,7 @@ namespace Nevermore.Mapping
         public Type Type { get; }
         public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
-        
+
         public int? MaxLength => maxLength;
         public ColumnDirection Direction => direction;
 
@@ -71,7 +71,7 @@ namespace Nevermore.Mapping
                     // This is the most common cause of errors
                     throw new InvalidOperationException($"The mapping for column '{ColumnName}' to property '{Property.Name}' is invalid. The property has no setter, but the column mapping is not declared with SaveOnly().");
                 }
-                
+
                 throw new InvalidOperationException($"The mapping for column '{ColumnName}' uses a property handler that returned false for CanWrite, and yet the column is declared as being both loaded from and saved to the database. Use `SaveOnly` if this column is intended to be saved, but not loaded from the database.");
             }
         }

@@ -2,4 +2,4 @@ UPDATE [dbo].[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON OUTPUT 
 @Id=Doc-1
 @JSON={"NotMapped":"NonMappedValue"}
 @AColumn=AValue
-@RowVersion=0
+@RowVersion=1

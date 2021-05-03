@@ -5,13 +5,13 @@ namespace Nevermore.Mapping
     public interface IColumnMappingBuilder
     {
         IColumnMappingBuilder MaxLength(int max);
-        
+
         /// <summary>
-        /// Nevermore will read values from the database and set them on this property, but will not include this proprty
+        /// Nevermore will read values from the database and set them on this property, but will not include this property
         /// when performing updates or inserts. Useful for things like computed columns, rowversion, and so on.
         /// </summary>
         IColumnMappingBuilder LoadOnly();
-        
+
         /// <summary>
         /// Nevermore will read this property and write the values to the database, but when reading, won't attempt to
         /// set this property (perhaps it has no public setter). Useful for things like calculated properties that return

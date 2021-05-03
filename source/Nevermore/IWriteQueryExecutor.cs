@@ -14,9 +14,9 @@ namespace Nevermore
         /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
-        /// <param name="instance">The document instance to insert.</param>
+        /// <param name="document">The document instance to insert.</param>
         /// <param name="options">Advanced options for the insert operation.</param>
-        void Insert<TDocument>(TDocument instance, InsertOptions options = null) where TDocument : class;
+        void Insert<TDocument>(TDocument document, InsertOptions options = null) where TDocument : class;
 
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
@@ -24,9 +24,9 @@ namespace Nevermore
         /// <see cref="M:Insert" /> returns.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
-        /// <param name="instance">The document instance to insert.</param>
+        /// <param name="document">The document instance to insert.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task InsertAsync<TDocument>(TDocument instance, CancellationToken cancellationToken = default) where TDocument : class;
+        Task InsertAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Immediately inserts a new item into the default table for the document type. The item will have an automatically
@@ -34,10 +34,10 @@ namespace Nevermore
         /// <see cref="M:Insert" /> returns. To assign your own ID, use the <paramref name="options"/> parameter.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
-        /// <param name="instance">The document instance to insert.</param>
+        /// <param name="document">The document instance to insert.</param>
         /// <param name="options">Advanced options for the insert operation.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        Task InsertAsync<TDocument>(TDocument instance, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class;
+        Task InsertAsync<TDocument>(TDocument document, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Immediately inserts multiple items into a specific table. Useful for up to a few hundred items, but not more

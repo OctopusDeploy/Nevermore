@@ -30,7 +30,7 @@ namespace Nevermore.Tests.Util
                 new OtherMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
-                m => idAllocator() 
+                m => idAllocator()
             );
         }
 
@@ -72,13 +72,13 @@ namespace Nevermore.Tests.Util
                 new InsertOptions
                 {
                     TableName ="AltTableName",
-                    Hint ="WITH (NOLOCK)" 
+                    Hint ="WITH (NOLOCK)"
                 }
             );
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void InsertWithoutDefaultColumns()
         {
@@ -127,7 +127,7 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-        
+
         [Test]
         public void InsertMultipleDocuments()
         {
@@ -193,10 +193,10 @@ namespace Nevermore.Tests.Util
         {
             int n = 0;
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", ReadOnly = "Value"};
-            
+
             idAllocator = () => "New-Id-" + (++n);
             var result = builder.PrepareInsert(new [] { document });
-            
+
             this.Assent(Format(result));
         }
 
@@ -224,7 +224,17 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-  
+
+        [Test]
+        public void UpdateWithRoWVersion()
+        {
+            var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", RowVersion = 1};
+
+            var result = builder.PrepareUpdate(document);
+
+            this.Assent(Format(result));
+        }
+
         [Test]
         public void UpdateWithNoRelatedDocuments()
         {
@@ -341,6 +351,7 @@ namespace Nevermore.Tests.Util
             public string AColumn { get; set; }
             public string NotMapped { get; set; }
             public string ReadOnly { get; set; }
+            public int RowVersion { get; set; }
         }
 
         class TestDocumentWithRelatedDocuments
@@ -380,6 +391,7 @@ namespace Nevermore.Tests.Util
                 TableName = "TestDocumentTbl";
                 Column(t => t.AColumn);
                 Column(t => t.ReadOnly).LoadOnly();
+                RowVersion(t => t.RowVersion);
             }
         }
 
