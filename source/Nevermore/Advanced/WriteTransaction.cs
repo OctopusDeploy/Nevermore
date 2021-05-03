@@ -36,8 +36,8 @@ namespace Nevermore.Advanced
             var command = builder.PrepareInsert(new[] {document}, options);
             configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
-            var newRowVersions = ExecuteSingleDataModification(command);
-            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersions);
+            var newRowVersion = ExecuteSingleDataModification(command);
+            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
             configuration.Hooks.AfterInsert(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
