@@ -29,14 +29,12 @@ namespace Nevermore.Analyzers
                  {
                      if (declarator.Initializer is {Value: { } syntax})
                      {
-                         var expression = (syntax as InvocationExpressionSyntax)?.Expression ??
-                                          (syntax as AwaitExpressionSyntax)?.Expression;
+                      var expression = (syntax as AwaitExpressionSyntax)?.Expression ?? syntax;
 
-                         if (expression is { } &&
-                             context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol is
-                                 { } symbol &&
-                             methodsWeCareAbout.Contains(symbol.Name))
-                         {
+                        if (expression is InvocationExpressionSyntax ies &&
+                            ies.Expression is MemberAccessExpressionSyntax memberAccess &&
+                            methodsWeCareAbout.Contains(memberAccess.Name.Identifier.Text))
+                        {
                              context.ReportDiagnostic(Diagnostic.Create(
                                  Descriptors.NV0008NevermoreDisposableTransactionCreated,
                                  localDeclaration.GetLocation(), "Nevermore transaction is never disposed"));
