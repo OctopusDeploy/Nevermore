@@ -18,14 +18,14 @@ namespace Nevermore.Analyzers
     public class NevermoreSqlInjectionAnalyzer : DiagnosticAnalyzer
     {
         readonly HashSet<string> methodsWeCareAbout = new HashSet<string> {"Where", "Stream"};
-        
+
         public override void Initialize(AnalysisContext context)
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
             context.RegisterCompilationStartAction(AnalyzeCompilation);
         }
-        
+
         void AnalyzeCompilation(CompilationStartAnalysisContext compilationStartContext)
         {
             compilationStartContext.RegisterCodeBlockStartAction<SyntaxKind>(context =>
@@ -33,7 +33,7 @@ namespace Nevermore.Analyzers
                 var ignoreThisBlock = false;
 
                 var errors = new List<Diagnostic>();
-                
+
                 context.RegisterSyntaxNodeAction(invocationContext =>
                 {
                     var invocation = (InvocationExpressionSyntax)invocationContext.Node;
@@ -44,7 +44,7 @@ namespace Nevermore.Analyzers
                 {
                     if (ignoreThisBlock)
                         return;
-                    
+
                     foreach (var error in errors)
                     {
                         c.ReportDiagnostic(error);
@@ -60,10 +60,10 @@ namespace Nevermore.Analyzers
                 return;
 
             var methodSymbol = (IMethodSymbol)symbolInfo.Symbol;
-            
+
             if (!methodsWeCareAbout.Contains(methodSymbol.Name))
                 return;
-            
+
             if (methodSymbol.ContainingType == null)
                 return;
 
@@ -75,11 +75,11 @@ namespace Nevermore.Analyzers
 
             if (invocation.ArgumentList.Arguments.Count < 1)
                 return;
-            
+
             var location = CheckForSqlInjection(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
             if (location != Location.None)
             {
-                errors.Add(Diagnostic.Create(ErrorDescriptor, location, "This expression uses string concatenation, which creates a risk of a SQL Injection vulnerability. Pass parameters or arguments instead. If you're absolutely sure it's safe, use '#pragma warning disable NV0007' plus a comment explaining why."));
+                errors.Add(Diagnostic.Create(Descriptors.NV0007NevermoreSqlInjectionError, location, "This expression uses string concatenation, which creates a risk of a SQL Injection vulnerability. Pass parameters or arguments instead. If you're absolutely sure it's safe, use '#pragma warning disable NV0007' plus a comment explaining why."));
             }
         }
 
@@ -92,7 +92,7 @@ namespace Nevermore.Analyzers
                     return expression.GetLocation();
                 }
             }
-            
+
             if (expression is InterpolatedStringExpressionSyntax interpolatedStringExpressionSyntax)
             {
                 return expression.GetLocation();
@@ -101,8 +101,7 @@ namespace Nevermore.Analyzers
             return Location.None;
         }
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(ErrorDescriptor);
-        
-        static readonly DiagnosticDescriptor ErrorDescriptor = new DiagnosticDescriptor("NV0007", "Nevermore SQL injection", "{0}", "Nevermore", DiagnosticSeverity.Error, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptors.NV0007NevermoreSqlInjectionError);
+
     }
 }

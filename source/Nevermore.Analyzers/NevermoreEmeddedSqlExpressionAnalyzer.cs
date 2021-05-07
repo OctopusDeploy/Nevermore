@@ -17,7 +17,7 @@ namespace Nevermore.Analyzers
     public class NevermoreEmbeddedSqlExpressionAnalyzer : DiagnosticAnalyzer
     {
         readonly HashSet<string> methodsWeCareAbout = new HashSet<string> {"Where", "Parameter", "LikeParameter", "LikePipedParameter", "ToList", "Stream", "First", "FirstOrDefault", "Take"};
-        
+
         public override void Initialize(AnalysisContext context)
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
@@ -59,9 +59,9 @@ namespace Nevermore.Analyzers
                 var query = queryBuilder.ToString();
                 if (string.IsNullOrWhiteSpace(query))
                     return (true, null, null, null);
-                
+
                 var expectedParameters = parameterDetectionRegex.Matches(query).Select(m => m.Value.TrimStart('@')).ToList();
-                
+
                 var notSupplied = expectedParameters.Where(p => !actualParameters.Contains(p)).ToArray();
                 if (notSupplied.Length == 0)
                     return (true, null, null, null);
@@ -70,22 +70,22 @@ namespace Nevermore.Analyzers
 
                 // ReSharper disable once PossibleUnintendedLinearSearchInSet because it's intentional
                 var notSuppliedIfCasingIgnored = expectedParameters.Where(p => !actualParameters.Contains(p, StringComparer.OrdinalIgnoreCase)).ToArray();
-                
+
                 if (notSuppliedIfCasingIgnored.Length == 0)
                 {
                     if (notSupplied.Length == 1)
-                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, ErrorDescriptor, nodes.First());
+                        return (false, $"The query refers to the parameter '@{notSupplied[0]}', but the parameter being passed uses different casing. Change the call to '.Parameter(\"{notSupplied[0]}\", ...)' to correct the casing. " + suppliedMessage, Descriptors.NV0006NevermoreEmbeddedSqlError, nodes.First());
 
-                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, ErrorDescriptor, nodes.First());
+                    return (false, $"The following parameters appear in the SQL query string, but the values have been passed using inconsistently cased names. Inconsistent parameter names: {string.Join(", ", notSupplied)}. " + suppliedMessage, Descriptors.NV0006NevermoreEmbeddedSqlError, nodes.First());
                 }
 
                 if (notSupplied.Length == 1)
-                    return (false, $"The query refers to the parameter '@{notSupplied[0]}', but no value for the parameter is being passed to the query. Make sure you add a call to '.Parameter(\"{notSupplied[0]}\", ...)' to the query. " + suppliedMessage, ErrorDescriptor, nodes.First());
+                    return (false, $"The query refers to the parameter '@{notSupplied[0]}', but no value for the parameter is being passed to the query. Make sure you add a call to '.Parameter(\"{notSupplied[0]}\", ...)' to the query. " + suppliedMessage, Descriptors.NV0006NevermoreEmbeddedSqlError, nodes.First());
 
-                return (false, $"The following parameters appear in the SQL query string, but have not been passed to the query as parameters. Check the spelling and try again. Missing parameters: {string.Join(", ", notSupplied)}. " + suppliedMessage, ErrorDescriptor, nodes.First());
+                return (false, $"The following parameters appear in the SQL query string, but have not been passed to the query as parameters. Check the spelling and try again. Missing parameters: {string.Join(", ", notSupplied)}. " + suppliedMessage, Descriptors.NV0006NevermoreEmbeddedSqlError, nodes.First());
             }
         }
-        
+
         void AnalyzeCompilation(CompilationStartAnalysisContext compilationStartContext)
         {
             compilationStartContext.RegisterCodeBlockStartAction<SyntaxKind>(context =>
@@ -98,7 +98,7 @@ namespace Nevermore.Analyzers
                     var invocation = (InvocationExpressionSyntax)invocationContext.Node;
                     ProcessInvocation(invocation, invocationContext, discovered);
                 }, SyntaxKind.InvocationExpression);
-                
+
                 context.RegisterCodeBlockEndAction(analysisContext =>
                 {
                     foreach (var (node, unit) in discovered)
@@ -121,10 +121,10 @@ namespace Nevermore.Analyzers
                 return;
 
             var methodSymbol = (IMethodSymbol)symbolInfo.Symbol;
-            
+
             if (!methodsWeCareAbout.Contains(methodSymbol.Name))
                 return;
-            
+
             if (methodSymbol.ContainingType == null)
                 return;
 
@@ -133,23 +133,23 @@ namespace Nevermore.Analyzers
 
             if (methodSymbol.Name == null)
                 return;
-            
+
             // A query might look like this:
             //   transaction.Query<Customer>()
             //      .Where("FirstName = @name")
             //      .Where("LastName = @last")
             //      .Parameter("@name", "foo")
             //      .ToList();
-            // We need the whole chain of methods being called, and some of them are extension methods, others are 
-            // normal methods. So instead, each time we see a method we care about (Where, Parameter, ToList...) 
-            // we .Parent our way up the chain until we hit the topmost invocation. Then we use that as a key, 
-            // so that all other methods off that root are collected together into one "analysis unit". 
+            // We need the whole chain of methods being called, and some of them are extension methods, others are
+            // normal methods. So instead, each time we see a method we care about (Where, Parameter, ToList...)
+            // we .Parent our way up the chain until we hit the topmost invocation. Then we use that as a key,
+            // so that all other methods off that root are collected together into one "analysis unit".
             var startOfMethodChain = FindStartOfMethodChain(invocation);
             if (startOfMethodChain == null)
                 return;
 
             var currentQuery = discovered.GetOrAdd(startOfMethodChain, _ => new QueryAnalysisUnit());
-            
+
             if (methodSymbol.Name == "Where")
             {
                 if (methodSymbol.MethodKind != MethodKind.Ordinary)
@@ -171,7 +171,7 @@ namespace Nevermore.Analyzers
 
                 var query = GetStringValue(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
                 currentQuery.AddQueryText(query, invocation);
-                
+
                 if (invocation.ArgumentList.Arguments.Count < 2)
                     return;
 
@@ -182,14 +182,14 @@ namespace Nevermore.Analyzers
             {
                 if (invocation.ArgumentList.Arguments.Count < 1)
                     return;
-                
+
                 var firstArg = invocation.ArgumentList.Arguments[0].Expression;
                 var firstArgValue = GetStringValue(firstArg, context.SemanticModel);
                 if (firstArgValue != null)
                     currentQuery.AddSuppliedParameter(firstArgValue);
                 else
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(ErrorDescriptor, invocation.GetLocation(), "Could not understand parameter: " + firstArg));
+                    context.ReportDiagnostic(Diagnostic.Create(Descriptors.NV0006NevermoreEmbeddedSqlError, invocation.GetLocation(), "Could not understand parameter: " + firstArg));
                 }
             }
         }
@@ -209,7 +209,7 @@ namespace Nevermore.Analyzers
                 start = parent;
                 parent = parent.Parent;
             }
-            
+
             return start;
         }
 
@@ -229,14 +229,14 @@ namespace Nevermore.Analyzers
                     var references = local.DeclaringSyntaxReferences;
                     if (references.Length != 1)
                         return null;
-                    
+
                     var declaration = references[0].GetSyntax();
                     if (declaration is VariableDeclaratorSyntax variableDeclaratorSyntax)
                     {
                         return GetStringValue(variableDeclaratorSyntax.Initializer.Value, model);
                     }
                 }
-                
+
                 if (symbol.Symbol is IPropertySymbol propertySymbol)
                 {
                     var references = propertySymbol.DeclaringSyntaxReferences;
@@ -285,7 +285,7 @@ namespace Nevermore.Analyzers
                     {
                         return GetStringValue(creationExpressionSyntax.ArgumentList.Arguments[0].Expression, model);
                     }
-                    
+
                     if (typeSymbol.Name == "CommandParameterValues")
                     {
                         var values = new List<string>();
@@ -298,24 +298,24 @@ namespace Nevermore.Analyzers
                         {
                             values.AddRange(creationExpressionSyntax.ArgumentList.Arguments.Select(e => GetStringValue(e.Expression, model)));
                         }
-                        
+
                         return string.Join(", ", values.Select(v => '@' + v.TrimStart('@')));
                     }
 
                     return "???? " + typeSymbol.Name;
                 }
             }
-            
+
             if (expression is InitializerExpressionSyntax initializerExpressionSyntax)
             {
                 return string.Join(", ", initializerExpressionSyntax.Expressions.Take(1).Select(e => "@" + GetStringValue(e, model).TrimStart('@')));
             }
-            
+
             if (expression is AssignmentExpressionSyntax assignmentExpressionSyntax)
             {
                 return GetStringValue(assignmentExpressionSyntax.Left, model);
             }
-            
+
             if (expression is ImplicitElementAccessSyntax implicitElementAccessSyntax)
             {
                 if (implicitElementAccessSyntax.ArgumentList.Arguments.Count >= 1)
@@ -323,12 +323,12 @@ namespace Nevermore.Analyzers
                     return GetStringValue(implicitElementAccessSyntax.ArgumentList.Arguments[0].Expression, model);
                 }
             }
-            
+
             if (expression is AnonymousObjectCreationExpressionSyntax anonymousObjectCreationExpressionSyntax)
             {
                 return string.Join(", ", anonymousObjectCreationExpressionSyntax.Initializers.Select(e => "@" + (e.NameEquals == null ? e.Expression.ToString() : GetStringValue(e.NameEquals.Name, model)).TrimStart('@')));
             }
-            
+
             return expression.GetType().Name + " -- " + expression;
         }
 
@@ -338,7 +338,7 @@ namespace Nevermore.Analyzers
             {
                 return interpolatedStringTextSyntax.TextToken.Text;
             }
-            
+
             if (contentSyntax is InterpolationSyntax interpolationSyntax)
             {
                 return GetStringValue(interpolationSyntax.Expression, model);
@@ -347,9 +347,7 @@ namespace Nevermore.Analyzers
             return contentSyntax.GetType().Name;
         }
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(WarningDescriptor, ErrorDescriptor);
-        
-        static readonly DiagnosticDescriptor WarningDescriptor = new DiagnosticDescriptor("NV0005", "Nevermore embedded SQL", "{0}", "Nevermore", DiagnosticSeverity.Warning, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
-        static readonly DiagnosticDescriptor ErrorDescriptor = new DiagnosticDescriptor("NV0006", "Nevermore embedded SQL", "{0}", "Nevermore", DiagnosticSeverity.Error, true, helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptors.NV0005NevermoreEmbeddedSqlWarning, Descriptors.NV0006NevermoreEmbeddedSqlError);
+
     }
 }
