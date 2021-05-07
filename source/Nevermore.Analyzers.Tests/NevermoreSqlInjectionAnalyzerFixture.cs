@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace Nevermore.Analyzers.Tests
 {
-	public class NevermoreSqlInjectionAnalyzerFixture
+	public class NevermoreSqlInjectionAnalyzerFixture : NevermoreFixture
     {
         [Test]
         public void ShouldDetectSqlInjectionInInterpolatedStream()
@@ -26,7 +26,7 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertError(results, "This expression uses string concatenation");
         }
-        
+
         [Test]
         public void ShouldDetectSqlInjectionInInterpolatedWhere()
         {
@@ -38,7 +38,7 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertError(results, "This expression uses string concatenation");
         }
-        
+
         [Test]
         public void ShouldDetectSqlInjectionInConcatenatedWhere()
         {
@@ -50,7 +50,7 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertError(results, "This expression uses string concatenation");
         }
-        
+
         [Test]
         public void ShouldCompileIfPragmaIgnore()
         {
@@ -63,21 +63,6 @@ namespace Nevermore.Analyzers.Tests
 
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);
-        }
-
-        void AssertError(List<Diagnostic> results, string error)
-        {
-	        results.Count.Should().Be(1);
-	        results[0].GetMessage().Should().Contain(error);
-        }
-
-        void AssertPassed(List<Diagnostic> results)
-        {
-	        if (results.Count == 0)
-		        return;
-
-	        var errors = results.Select(r => r.GetMessage());
-	        Assert.Fail(string.Join(Environment.NewLine, errors));
         }
     }
 }

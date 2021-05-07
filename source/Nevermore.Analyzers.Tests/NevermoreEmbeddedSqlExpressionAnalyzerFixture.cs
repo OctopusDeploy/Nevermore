@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace Nevermore.Analyzers.Tests
 {
-	public class NevermoreEmbeddedSqlExpressionAnalyzerFixture
+	public class NevermoreEmbeddedSqlExpressionAnalyzerFixture : NevermoreFixture
     {
         [Test]
         public void ShouldDetectMissingParameter()
@@ -15,35 +15,35 @@ namespace Nevermore.Analyzers.Tests
 	        var code = @"
 				transaction.Query<Customer>().Where('FirstName = @name').ToList();
 			";
-	        
+
 	        var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
 	        AssertError(results, "The query refers to the parameter '@name', but no value for the parameter is being passed to the query");
         }
-        
+
         [Test]
         public void ShouldDetectMisspelledParameter()
         {
 	        var code = @"
 				transaction.Query<Customer>().Where('FirstName = @name').Parameter('nome', 'Robert').ToList();
 			";
-	        
+
 	        var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
 	        AssertError(results, "The query refers to the parameter '@name', but no value for the parameter is being passed to the query");
 	        AssertError(results, "Detected the following parameters: @nome");
         }
-        
+
         [Test]
         public void ShouldDetectIncorrectlyCasedParameter()
         {
 	        var code = @"
 				transaction.Query<Customer>().Where('FirstName = @name').Parameter('Name', 'Robert').ToList();
 			";
-	        
+
 	        var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
 
 	        AssertError(results, "The query refers to the parameter '@name', but the parameter being passed uses different casing.");
         }
-        
+
         [Test]
         public void ShouldDetectCommandParametersWithObjectSyntax()
         {
@@ -61,20 +61,5 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
 	        AssertPassed(results);
         }
-
-        void AssertError(List<Diagnostic> results, string error)
-        {
-	        results.Count.Should().Be(1);
-	        results[0].GetMessage().Should().Contain(error);
-        }
-
-        void AssertPassed(List<Diagnostic> results)
-        {
-	        if (results.Count == 0)
-		        return;
-
-	        var errors = results.Select(r => r.GetMessage());
-	        Assert.Fail(string.Join(Environment.NewLine, errors));
-        }
-    }
+   }
 }
