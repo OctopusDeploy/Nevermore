@@ -123,6 +123,7 @@ namespace Nevermore.Advanced
             ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
+            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
