@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Nevermore;
 using Nevermore.Querying;
@@ -46,17 +47,17 @@ class Program
             var diagnostics = compilation.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning).ToList();
             if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
                 throw new Exception("Compilation exception: " + string.Join(Environment.NewLine, diagnostics.Select(d => d.GetMessage())));
-            
+
             var analyzers = ImmutableArray.Create<DiagnosticAnalyzer>(new TDiagnostic());
             var withAnalyzers = compilation.WithAnalyzers(analyzers);
             var results = withAnalyzers.GetAnalyzerDiagnosticsAsync(analyzers, CancellationToken.None).Result;
             return results.ToList();
         }
-        
+
         static Project CreateProject(IEnumerable<string> sources)
         {
             var projectId = ProjectId.CreateNewId("TestProject");
-            
+
             var references = new List<MetadataReference>();
             FindReferencesRecure(typeof(IRelationalTransaction).Assembly, new HashSet<string>(), references);
 
