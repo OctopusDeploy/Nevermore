@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <!-- At the time of writing anything later than netstandard 2.0 doesn't work in Visual Studio -->
+        <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Nevermore.Analyzers</AssemblyName>
         <PackageId>Nevermore.Analyzers</PackageId>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -21,6 +22,7 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
         <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">True</ContinuousIntegrationBuild>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
