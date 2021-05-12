@@ -44,7 +44,11 @@ namespace Nevermore.Analyzers
                 if (invocation.ArgumentList.Arguments.Count != 1)
                     return;
 
-                var expressionArgument = invocation.ArgumentList.Arguments[0].Expression as SimpleLambdaExpressionSyntax;
+                var firstArgumentExpression = invocation.ArgumentList.Arguments[0].Expression;
+                if (firstArgumentExpression is IdentifierNameSyntax)
+                    return;
+
+                var expressionArgument = firstArgumentExpression as SimpleLambdaExpressionSyntax;
                 if (expressionArgument == null)
                 {
                     context.ReportDiagnostic(

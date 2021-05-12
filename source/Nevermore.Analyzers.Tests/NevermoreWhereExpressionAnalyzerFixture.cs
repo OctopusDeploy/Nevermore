@@ -43,6 +43,18 @@ namespace Nevermore.Analyzers.Tests
 		    AssertPassed(results);
 	    }
 
+	    [Test]
+	    public void ShouldPassIfAnExpressionTypedVariableIsUsed()
+	    {
+		    var code = @"
+				Expression<Func<Customer, bool>> predicate = c => c.FirstName!.StartsWith('Rob');
+				transaction.Query<Customer>().Where(predicate).ToList();
+			";
+
+		    var results = CodeCompiler.Compile<NevermoreWhereExpressionAnalyzer>(code);
+		    AssertPassed(results);
+	    }
+
         [Test]
         public void ShouldFailForPropertyAccess()
         {
