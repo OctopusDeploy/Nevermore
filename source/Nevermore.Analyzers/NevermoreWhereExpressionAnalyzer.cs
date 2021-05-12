@@ -22,14 +22,15 @@ namespace Nevermore.Analyzers
             compilationStartContext.RegisterSyntaxNodeAction(context =>
             {
                 var invocation = (InvocationExpressionSyntax)context.Node; // RegisterSymbolAction guarantees by 2nd arg
+                var maes = invocation.Expression as MemberAccessExpressionSyntax;
+                if (maes?.Name.Identifier.Text != "Where")
+                    return;
+
                 var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
                 if (symbolInfo.Symbol?.Kind != SymbolKind.Method)
                     return;
 
                 var methodSymbol = (IMethodSymbol)symbolInfo.Symbol;
-
-                if (methodSymbol.Name != "Where")
-                    return;
 
                 if (methodSymbol.MethodKind != MethodKind.ReducedExtension)
                     return;
