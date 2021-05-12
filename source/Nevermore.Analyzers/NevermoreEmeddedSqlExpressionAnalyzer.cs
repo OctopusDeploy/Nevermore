@@ -40,7 +40,7 @@ namespace Nevermore.Analyzers
 
             public void AddSuppliedParameter(string name)
             {
-                var values = parameterDetectionRegex.Matches(name).Select(m => m.Value.TrimStart('@')).ToList();
+                var values = parameterDetectionRegex.Matches(name).Cast<Match>().Select(m => m.Value.TrimStart('@')).ToList();
                 if (values.Count == 0)
                 {
                     actualParameters.Add(name.TrimStart('@'));
@@ -60,7 +60,7 @@ namespace Nevermore.Analyzers
                 if (string.IsNullOrWhiteSpace(query))
                     return (true, null, null, null);
 
-                var expectedParameters = parameterDetectionRegex.Matches(query).Select(m => m.Value.TrimStart('@')).ToList();
+                var expectedParameters = parameterDetectionRegex.Matches(query).Cast<Match>().Select(m => m.Value.TrimStart('@')).ToList();
 
                 var notSupplied = expectedParameters.Where(p => !actualParameters.Contains(p)).ToArray();
                 if (notSupplied.Length == 0)
@@ -101,8 +101,9 @@ namespace Nevermore.Analyzers
 
                 context.RegisterCodeBlockEndAction(analysisContext =>
                 {
-                    foreach (var (node, unit) in discovered)
+                    foreach (var item in discovered)
                     {
+                        var unit = item.Value;
                         var (success, message, level, syntaxNode) = unit.Validate();
 
                         if (!success)
