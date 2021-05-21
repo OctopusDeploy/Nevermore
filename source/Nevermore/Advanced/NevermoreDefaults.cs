@@ -18,5 +18,7 @@ namespace Nevermore.Advanced
         public const int LargeDocumentCutoffSize = 1024;
 
         public const string FallbackDefaultSchemaName = "dbo";
+
+        public const bool DefaultTrustServerCertificate = true;
     }
 }

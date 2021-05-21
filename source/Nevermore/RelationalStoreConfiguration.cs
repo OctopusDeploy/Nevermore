@@ -105,6 +105,7 @@ namespace Nevermore
             OverrideValueIfNotSet(builder, nameof(builder.ConnectTimeout), NevermoreDefaults.DefaultConnectTimeoutSeconds);
             OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryCount), NevermoreDefaults.DefaultConnectRetryCount);
             OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryInterval), NevermoreDefaults.DefaultConnectRetryInterval);
+            OverrideValueIfNotSet(builder, nameof(builder.TrustServerCertificate), NevermoreDefaults.DefaultTrustServerCertificate);
 
             return builder.ToString();
         }
