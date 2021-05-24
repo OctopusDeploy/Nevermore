@@ -424,8 +424,10 @@ namespace Nevermore.Advanced
             var maxRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_maxrow"));
 
             var clonedSelectBuilder = selectBuilder.Clone();
-
-            clonedSelectBuilder.AddDefaultColumnSelection();
+            
+            if(!clonedSelectBuilder.HasCustomColumnSelection)
+                clonedSelectBuilder.AddDefaultColumnSelection();
+            
             clonedSelectBuilder.AddRowNumberColumn(rowNumberColumnName, new List<Column>());
 
             var subqueryBuilder = CreateSubqueryBuilder(clonedSelectBuilder);
