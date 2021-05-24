@@ -340,6 +340,8 @@ namespace Nevermore.Advanced
             AddColumnSelection(DefaultSelect);
         }
 
+        public bool HasCustomColumnSelection => ColumnSelection != null;
+
         ISelectColumns GetColumnSelection() => ColumnSelection ?? DefaultSelect;
 
         IRowSelection GetRowSelection() => RowSelection ?? new AllRows();
