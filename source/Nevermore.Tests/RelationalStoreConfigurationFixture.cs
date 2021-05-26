@@ -16,13 +16,14 @@ namespace Nevermore.Tests
             connectionStringBuilder.ConnectTimeout.Should().Be(NevermoreDefaults.DefaultConnectTimeoutSeconds);
             connectionStringBuilder.ConnectRetryCount.Should().Be(NevermoreDefaults.DefaultConnectRetryCount);
             connectionStringBuilder.ConnectRetryInterval.Should().Be(NevermoreDefaults.DefaultConnectRetryInterval);
+            connectionStringBuilder.TrustServerCertificate.Should().Be(NevermoreDefaults.DefaultTrustServerCertificate);
         }
 
         [Test]
         public void ShouldNotOverrideExplicitConnectionStringOptions()
         {
             var config =
-                new RelationalStoreConfiguration("Server=(local);Connection Timeout=123;ConnectRetryCount=123;ConnectRetryInterval=59;")
+                new RelationalStoreConfiguration("Server=(local);Connection Timeout=123;ConnectRetryCount=123;ConnectRetryInterval=59;Trust Server Certificate=False")
                 {
                     ApplicationName = "Nevermore test"
                 };
@@ -32,6 +33,7 @@ namespace Nevermore.Tests
             connectionStringBuilder.ConnectTimeout.Should().Be(123);
             connectionStringBuilder.ConnectRetryCount.Should().Be(123);
             connectionStringBuilder.ConnectRetryInterval.Should().Be(59);
+            connectionStringBuilder.TrustServerCertificate.Should().BeFalse();
         }
     }
 }

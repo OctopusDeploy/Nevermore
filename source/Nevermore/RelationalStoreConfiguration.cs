@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
@@ -14,8 +13,6 @@ using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Nevermore
 {
@@ -34,15 +31,15 @@ namespace Nevermore
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
             InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
-            
+
             this.UseJsonNetSerialization(s => {});
-            
+
             ReaderStrategies = new ReaderStrategyRegistry();
             ReaderStrategies.Register(new DocumentReaderStrategy(this));
             ReaderStrategies.Register(new ValueTupleReaderStrategy(this));
             ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
             ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
-            
+
             Hooks = new HookRegistry();
 
             DefaultSchema = NevermoreDefaults.FallbackDefaultSchemaName;
@@ -59,28 +56,28 @@ namespace Nevermore
                 return InitializeConnectionString(result);
             });
         }
-        
+
         public string ApplicationName { get; set; }
 
         public string ConnectionString => connectionString.Value;
-        
+
         public bool AllowSynchronousOperations { get; set; }
-        
+
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
-        
+
         public IDocumentSerializer DocumentSerializer { get; set; }
-        
+
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
-        
+
         public IQueryLogger QueryLogger { get; set; }
 
         public IHookRegistry Hooks { get; }
         public int KeyBlockSize { get; set; }
-        
+
         public IReaderStrategyRegistry ReaderStrategies { get; }
-        
+
         public ITypeHandlerRegistry TypeHandlers { get; }
         public IInstanceTypeRegistry InstanceTypeResolvers { get; }
 
@@ -102,27 +99,14 @@ namespace Nevermore
             if (ApplicationName != null) builder.ApplicationName = ApplicationName;
             if (ForceMultipleActiveResultSets) builder.MultipleActiveResultSets = true;
 
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectTimeout), NevermoreDefaults.DefaultConnectTimeoutSeconds);
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryCount), NevermoreDefaults.DefaultConnectRetryCount);
-            OverrideValueIfNotSet(builder, nameof(builder.ConnectRetryInterval), NevermoreDefaults.DefaultConnectRetryInterval);
-            OverrideValueIfNotSet(builder, nameof(builder.TrustServerCertificate), NevermoreDefaults.DefaultTrustServerCertificate);
+
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectTimeout, NevermoreDefaults.DefaultConnectTimeoutSeconds);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectRetryCount, NevermoreDefaults.DefaultConnectRetryCount);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectRetryInterval, NevermoreDefaults.DefaultConnectRetryInterval);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.TrustServerCertificate, NevermoreDefaults.DefaultTrustServerCertificate);
 
             return builder.ToString();
         }
 
-        static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, string propertyName, object overrideValue)
-        {
-            var defaultConnectionStringBuilder = new SqlConnectionStringBuilder();
-
-            var property = connectionStringBuilder.GetType().GetRuntimeProperty(propertyName);
-
-            var defaultValue = property.GetValue(defaultConnectionStringBuilder);
-            var currentValue = property.GetValue(connectionStringBuilder);
-
-            if (Equals(defaultValue, currentValue))
-            {
-                property.SetValue(connectionStringBuilder, overrideValue);
-            }
-        }
     }
 }
