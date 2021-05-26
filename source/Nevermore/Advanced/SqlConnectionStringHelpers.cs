@@ -1,11 +1,11 @@
 using Microsoft.Data.SqlClient;
-using Octopus.TinyTypes;
 
 namespace Nevermore.Advanced
 {
     public static class SqlConnectionStringHelpers
     {
-        public static void OverrideValueIfNotSet(SqlConnectionStringBuilder connectionStringBuilder, DbConnectionStringKeyword propertyName, object overrideValue)
+        // Extension method for SqlConnectionStringBuilder to override values
+        public static void OverrideConnectionStringPropertyValueIfNotSet(this SqlConnectionStringBuilder connectionStringBuilder, DbConnectionStringKeyword propertyName, object overrideValue)
         {
             if (!connectionStringBuilder.ShouldSerialize(propertyName.Value))
             {
@@ -14,19 +14,18 @@ namespace Nevermore.Advanced
         }
     }
 
-    public class DbConnectionStringKeyword : TinyType<string>
+    public class DbConnectionStringKeyword
     {
-        public DbConnectionStringKeyword(string value) : base(value)
-        {
-        }
-    }
 
-    // https://github.com/dotnet/SqlClient/blob/5c5a15d5ac842b48c4e99bff951b026f07f1a5d3/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/Common/DbConnectionStringCommon.cs#L885
-    // Updated to use TinyTypes
-    public static class DbConnectionStringKeywords
-    {
+        public string Value { get; }
+        public DbConnectionStringKeyword(string value)
+        {
+            Value = value;
+        }
+
+        // https://github.com/dotnet/SqlClient/blob/5c5a15d5ac842b48c4e99bff951b026f07f1a5d3/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/Common/DbConnectionStringCommon.cs#L885
         // all
-        // internal static readonly DbConnectionStringKeyword NamedConnection = new DbConnectionStringKeyword("Named Connection");
+        // public static readonly DbConnectionStringKeyword NamedConnection = new DbConnectionStringKeyword("Named Connection");
 
         // SqlClient
         public static readonly DbConnectionStringKeyword ApplicationIntent = new DbConnectionStringKeyword("Application Intent");
@@ -77,4 +76,5 @@ namespace Nevermore.Advanced
         public static readonly DbConnectionStringKeyword PoolBlockingPeriod = new DbConnectionStringKeyword("Pool Blocking Period");
 #endif
     }
+
 }

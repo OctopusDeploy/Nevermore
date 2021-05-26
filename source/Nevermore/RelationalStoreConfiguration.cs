@@ -99,10 +99,11 @@ namespace Nevermore
             if (ApplicationName != null) builder.ApplicationName = ApplicationName;
             if (ForceMultipleActiveResultSets) builder.MultipleActiveResultSets = true;
 
-            SqlConnectionStringHelpers.OverrideValueIfNotSet(builder, DbConnectionStringKeywords.ConnectTimeout, NevermoreDefaults.DefaultConnectTimeoutSeconds);
-            SqlConnectionStringHelpers.OverrideValueIfNotSet(builder, DbConnectionStringKeywords.ConnectRetryCount, NevermoreDefaults.DefaultConnectRetryCount);
-            SqlConnectionStringHelpers.OverrideValueIfNotSet(builder, DbConnectionStringKeywords.ConnectRetryInterval, NevermoreDefaults.DefaultConnectRetryInterval);
-            SqlConnectionStringHelpers.OverrideValueIfNotSet(builder, DbConnectionStringKeywords.TrustServerCertificate, NevermoreDefaults.DefaultTrustServerCertificate);
+
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectTimeout, NevermoreDefaults.DefaultConnectTimeoutSeconds);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectRetryCount, NevermoreDefaults.DefaultConnectRetryCount);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.ConnectRetryInterval, NevermoreDefaults.DefaultConnectRetryInterval);
+            builder.OverrideConnectionStringPropertyValueIfNotSet(DbConnectionStringKeyword.TrustServerCertificate, NevermoreDefaults.DefaultTrustServerCertificate);
 
             return builder.ToString();
         }
