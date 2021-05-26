@@ -2,7 +2,7 @@ using Microsoft.Data.SqlClient;
 
 namespace Nevermore.Advanced
 {
-    public static class SqlConnectionStringHelpers
+    public static class SqlConnectionStringBuilderExtensions
     {
         // Extension method for SqlConnectionStringBuilder to override values
         public static void OverrideConnectionStringPropertyValueIfNotSet(this SqlConnectionStringBuilder connectionStringBuilder, DbConnectionStringKeyword propertyName, object overrideValue)
