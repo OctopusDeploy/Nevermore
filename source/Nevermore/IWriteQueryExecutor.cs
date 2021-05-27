@@ -239,5 +239,13 @@ namespace Nevermore
         /// <param name="idPrefix"></param>
         /// <returns></returns>
         string AllocateId(string tableName, string idPrefix);
+        
+        /// <summary>
+        /// Allocate an ID for the specified type. The type must be mapped.
+        /// If the mapping specifies a SingletonId, that is returned
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document.</typeparam>
+        /// <returns></returns>
+        string AllocateId<TDocument>();
     }
 }

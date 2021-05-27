@@ -182,7 +182,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, T> mapper)
+        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, Task<T>> mapper)
         {
             try
             {
@@ -191,7 +191,7 @@ namespace Nevermore
                 {
                     while (await reader.ReadAsync())
                     {
-                        data.Add(mapper(reader));
+                        data.Add(await mapper(reader));
                     }
                 }
 

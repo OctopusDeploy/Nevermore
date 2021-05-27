@@ -1,6 +1,8 @@
-INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) OUTPUT inserted.RowVersion VALUES 
+DECLARE @InsertedRows TABLE ([RowVersion] binary(8))
+INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON]) OUTPUT inserted.[RowVersion] INTO @InsertedRows VALUES 
 (@0__Id, @0__AColumn, @0__JSON)
 ,(@1__Id, @1__AColumn, @1__JSON)
+SELECT [RowVersion] FROM @InsertedRows
 
 @0__Id=New-Id-1
 @0__JSON={"NotMapped":"NonMappedValue"}

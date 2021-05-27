@@ -36,12 +36,12 @@ namespace Nevermore.Transient
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
                 try
                 {
-                    return await command.ExecuteNonQueryAsync();
+                    return await command.ExecuteNonQueryAsync(cancellationToken);
                 }
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
-                        command.Connection.Close();
+                        await command.Connection.CloseAsync();
                 }
             });
         }
