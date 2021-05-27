@@ -12,7 +12,9 @@ namespace Nevermore.IntegrationTests.SetUp
         {
             var tableName = tableNameOverride ?? mapping.TableName;
             result.AppendLine("CREATE TABLE [TestSchema].[" + tableName + "] (");
-            result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
+
+            var identity = mapping.IsIdentityId ? " IDENTITY(1,1)" : null;
+            result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)}{identity} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
 
             foreach (var column in mapping.WritableIndexedColumns())
             {
@@ -20,6 +22,10 @@ namespace Nevermore.IntegrationTests.SetUp
             }
 
             result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine();
+
+            if (mapping.IsRowVersioningEnabled)
+                result.Append("  ,[RowVersion] TIMESTAMP").AppendLine();
+
             result.AppendLine(")");
 
             foreach (var unique in mapping.UniqueConstraints)

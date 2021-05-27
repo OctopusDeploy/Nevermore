@@ -15,11 +15,8 @@ namespace Nevermore.IntegrationTests.SetUp
 
         protected FixtureWithRelationalStore()
         {
-            var config = new RelationalStoreConfiguration(ConnectionString);
-            config.CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory());
-            config.ApplicationName = "Nevermore-IntegrationTests";
-            config.DefaultSchema = "TestSchema";
-            config.DocumentMaps.Register(
+            var documentMaps = new IDocumentMap[]
+            {
                 new CustomerMap(),
                 new BrandMap(),
                 new ProductMap(),
@@ -30,7 +27,18 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+                new DocumentWithRowVersionMap(),
+                new DocumentWithIdentityIdMap(),
+                new DocumentWithIdentityIdAndRowVersionMap()
+            };
+
+            var config = new RelationalStoreConfiguration(ConnectionString)
+            {
+                CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory()),
+                ApplicationName = "Nevermore-IntegrationTests",
+                DefaultSchema = "TestSchema"
+            };
+            config.DocumentMaps.Register(documentMaps);
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
@@ -41,18 +49,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
 
-            GenerateSchemaAutomatically(
-                new OrderMap(),
-                new ProductMap(),
-                new CustomerMap(),
-                new LineItemMap(),
-                new BrandMap(),
-                new MachineMap(),
-                new MessageWithStringIdMap(),
-                new MessageWithIntIdMap(),
-                new MessageWithLongIdMap(),
-                new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+            GenerateSchemaAutomatically(documentMaps);
 
             Store = new RelationalStore(config);
         }
@@ -95,7 +92,6 @@ namespace Nevermore.IntegrationTests.SetUp
                 {
                     SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
                 }
-                schema.AppendLine($"ALTER TABLE [TestSchema].[{nameof(DocumentWithRowVersion)}] ADD [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }
             catch (Exception ex)
