@@ -83,6 +83,7 @@ namespace Nevermore.Analyzers.Tests
         [TestCase("4.5")]
         [TestCase("4.5m")]
         [TestCase("true")]
+        [TestCase("Environment.SpecialFolder.Cookies")]
         public void ShouldCompileIfAInterpolatingAPrimitive(string value)
         {
 	        var code = $@"
@@ -111,6 +112,16 @@ namespace Nevermore.Analyzers.Tests
         {
 	        var code = @"
 				transaction.Query<Customer>().Where($'Name = {Customer.Constant}').ToList();
+			";
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstantFromANestedClass()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {Customer.Attributes.Constant}').ToList();
 			";
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);

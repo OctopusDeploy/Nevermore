@@ -160,6 +160,9 @@ namespace Nevermore.Analyzers
             if (symbolType == null)
                 return false;
 
+            if (symbolType.EnumUnderlyingType != null)
+                return true;
+
             switch (symbolType.SpecialType)
             {
                 case SpecialType.System_Enum:
