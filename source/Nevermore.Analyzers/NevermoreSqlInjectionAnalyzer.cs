@@ -28,29 +28,36 @@ namespace Nevermore.Analyzers
 
         void AnalyzeCompilation(CompilationStartAnalysisContext compilationStartContext)
         {
-            compilationStartContext.RegisterCodeBlockStartAction<SyntaxKind>(context =>
-            {
-                var ignoreThisBlock = false;
-
-                var errors = new List<Diagnostic>();
-
-                context.RegisterSyntaxNodeAction(invocationContext =>
+            compilationStartContext.RegisterCodeBlockStartAction<SyntaxKind>(
+                context =>
                 {
-                    var invocation = (InvocationExpressionSyntax)invocationContext.Node;
-                    ProcessInvocation(invocation, invocationContext, errors);
-                }, SyntaxKind.InvocationExpression);
+                    var ignoreThisBlock = false;
 
-                context.RegisterCodeBlockEndAction(c =>
-                {
-                    if (ignoreThisBlock)
-                        return;
+                    var errors = new List<Diagnostic>();
 
-                    foreach (var error in errors)
-                    {
-                        c.ReportDiagnostic(error);
-                    }
-                });
-            });
+                    context.RegisterSyntaxNodeAction(
+                        invocationContext =>
+                        {
+                            var invocation = (InvocationExpressionSyntax) invocationContext.Node;
+                            ProcessInvocation(invocation, invocationContext, errors);
+                        },
+                        SyntaxKind.InvocationExpression
+                    );
+
+                    context.RegisterCodeBlockEndAction(
+                        c =>
+                        {
+                            if (ignoreThisBlock)
+                                return;
+
+                            foreach (var error in errors)
+                            {
+                                c.ReportDiagnostic(error);
+                            }
+                        }
+                    );
+                }
+            );
         }
 
         void ProcessInvocation(InvocationExpressionSyntax invocation, SyntaxNodeAnalysisContext context, List<Diagnostic> errors)
@@ -59,7 +66,7 @@ namespace Nevermore.Analyzers
             if (symbolInfo.Symbol?.Kind != SymbolKind.Method)
                 return;
 
-            var methodSymbol = (IMethodSymbol)symbolInfo.Symbol;
+            var methodSymbol = (IMethodSymbol) symbolInfo.Symbol;
 
             if (!methodsWeCareAbout.Contains(methodSymbol.Name))
                 return;
@@ -67,7 +74,7 @@ namespace Nevermore.Analyzers
             if (methodSymbol.ContainingType == null)
                 return;
 
-            if (!(methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Nevermore") || methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Querying")  || methodSymbol.ContainingType.Name.StartsWith("IQueryBuilder") || methodSymbol.ContainingType.Name == "QueryBuilderWhereExtensions" || methodSymbol.ContainingType.Name == "DeleteQueryBuilderExtensions"))
+            if (!(methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Nevermore") || methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Querying") || methodSymbol.ContainingType.Name.StartsWith("IQueryBuilder") || methodSymbol.ContainingType.Name == "QueryBuilderWhereExtensions" || methodSymbol.ContainingType.Name == "DeleteQueryBuilderExtensions"))
                 return;
 
             if (methodSymbol.Name == null)
@@ -76,14 +83,14 @@ namespace Nevermore.Analyzers
             if (invocation.ArgumentList.Arguments.Count < 1)
                 return;
 
-            var location = CheckForSqlInjection(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
+            var location = CheckForSqlInjection(context, invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel);
             if (location != Location.None)
             {
                 errors.Add(Diagnostic.Create(Descriptors.NV0007NevermoreSqlInjectionError, location, "This expression uses string concatenation, which creates a risk of a SQL Injection vulnerability. Pass parameters or arguments instead. If you're absolutely sure it's safe, use '#pragma warning disable NV0007' plus a comment explaining why."));
             }
         }
 
-        static Location CheckForSqlInjection(ExpressionSyntax expression, SemanticModel model)
+        static Location CheckForSqlInjection(SyntaxNodeAnalysisContext context, ExpressionSyntax expression, SemanticModel model)
         {
             if (expression is BinaryExpressionSyntax binaryExpressionSyntax)
             {
@@ -95,13 +102,85 @@ namespace Nevermore.Analyzers
 
             if (expression is InterpolatedStringExpressionSyntax interpolatedStringExpressionSyntax)
             {
+                if (interpolatedStringExpressionSyntax.Contents.All(c => IsStringLiteralOrNameOf(context, c)))
+                    return Location.None;
                 return expression.GetLocation();
             }
 
             return Location.None;
         }
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptors.NV0007NevermoreSqlInjectionError);
+        static bool IsStringLiteralOrNameOf(SyntaxNodeAnalysisContext context, InterpolatedStringContentSyntax content)
+        {
+            // The string being interpolated into
+            if (content is InterpolatedStringTextSyntax)
+                return true;
 
+
+            if (content is InterpolationSyntax interpolationSyntax)
+            {
+                // nameof() invocation
+                if (interpolationSyntax.Expression is InvocationExpressionSyntax invocation)
+                    return invocation.Expression is IdentifierNameSyntax invocationIdentifier &&
+                           invocationIdentifier.Identifier.Text == "nameof";
+
+                // variable
+                if (interpolationSyntax.Expression is IdentifierNameSyntax identifierNameSyntax)
+                {
+                    var symbol = context.SemanticModel.GetSymbolInfo(identifierNameSyntax);
+                    var symbolType = GetSymbolType(symbol);
+                    if (IsTypeThatIsOkToConcatenate(symbolType))
+                        return true;
+
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        static bool IsTypeThatIsOkToConcatenate(INamedTypeSymbol symbolType)
+        {
+            if (symbolType == null)
+                return false;
+
+            switch (symbolType.SpecialType)
+            {
+                case SpecialType.System_Enum:
+                case SpecialType.System_Boolean:
+                case SpecialType.System_Char:
+                case SpecialType.System_SByte:
+                case SpecialType.System_Byte:
+                case SpecialType.System_Int16:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_UInt64:
+                case SpecialType.System_Decimal:
+                case SpecialType.System_Single:
+                case SpecialType.System_Double:
+                case SpecialType.System_DateTime:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        static INamedTypeSymbol GetSymbolType(SymbolInfo symbol)
+        {
+            var type = (symbol.Symbol as ILocalSymbol)?.Type as INamedTypeSymbol;
+            if (type == null)
+                return null;
+
+            if (type.SpecialType == SpecialType.System_Nullable_T ||
+                type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+                return type.TypeArguments[0] as INamedTypeSymbol;
+
+            return type;
+        }
+
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptors.NV0007NevermoreSqlInjectionError);
     }
 }

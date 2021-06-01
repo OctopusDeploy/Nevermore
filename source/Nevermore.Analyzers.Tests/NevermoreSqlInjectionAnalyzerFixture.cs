@@ -64,5 +64,33 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);
         }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingANameOf()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {nameof(System)}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [TestCase("1")]
+        [TestCase("(int?) 1")]
+        [TestCase("100000000L")]
+        [TestCase("4.5")]
+        [TestCase("4.5m")]
+        [TestCase("true")]
+        public void ShouldCompileIfAInterpolatingAPrimitive(string value)
+        {
+	        var code = $@"
+				var name = {value};
+				transaction.Query<Customer>().Where($'Name = ${{name}}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
     }
 }
