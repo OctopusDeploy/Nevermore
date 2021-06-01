@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -127,10 +128,15 @@ namespace Nevermore.Analyzers
                 // variable
                 if (interpolationSyntax.Expression is IdentifierNameSyntax identifierNameSyntax)
                 {
-                    var symbol = context.SemanticModel.GetSymbolInfo(identifierNameSyntax);
-                    var symbolType = GetSymbolType(symbol);
-                    if (IsTypeThatIsOkToConcatenate(symbolType))
-                        return true;
+                    if (context.SemanticModel.GetSymbolInfo(identifierNameSyntax).Symbol is ILocalSymbol symbol)
+                    {
+                        if (symbol.IsConst)
+                            return true;
+
+                        var symbolType = GetSymbolType(symbol);
+                        if (IsTypeThatIsOkToConcatenate(symbolType))
+                            return true;
+                    }
 
                     return false;
                 }
@@ -167,9 +173,9 @@ namespace Nevermore.Analyzers
             }
         }
 
-        static INamedTypeSymbol GetSymbolType(SymbolInfo symbol)
+        static INamedTypeSymbol GetSymbolType(ILocalSymbol symbol)
         {
-            var type = (symbol.Symbol as ILocalSymbol)?.Type as INamedTypeSymbol;
+            var type = symbol.Type as INamedTypeSymbol;
             if (type == null)
                 return null;
 

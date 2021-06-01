@@ -92,5 +92,17 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);
         }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstant()
+        {
+	        var code = @"
+				const string name = 'Robert';
+				transaction.Query<Customer>().Where($'Name = {name}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
     }
 }
