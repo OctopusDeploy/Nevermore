@@ -140,6 +140,16 @@ namespace Nevermore.Analyzers
 
                     return false;
                 }
+
+                // property
+                if (interpolationSyntax.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+                {
+                    var symbol = context.SemanticModel.GetSymbolInfo(memberAccessExpressionSyntax).Symbol;
+                    if (symbol is IFieldSymbol fieldSymbol && fieldSymbol.IsConst)
+                        return true;
+
+                    return false;
+                }
             }
 
             return false;

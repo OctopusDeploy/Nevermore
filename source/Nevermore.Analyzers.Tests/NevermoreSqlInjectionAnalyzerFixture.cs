@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
+using Microsoft.DotNet.PlatformAbstractions;
 using NUnit.Framework;
 
 namespace Nevermore.Analyzers.Tests
@@ -101,6 +102,16 @@ namespace Nevermore.Analyzers.Tests
 				transaction.Query<Customer>().Where($'Name = {name}').ToList();
 			";
 
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstantFromAnotherType()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {Customer.Constant}').ToList();
+			";
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);
         }
