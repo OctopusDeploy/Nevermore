@@ -343,20 +343,27 @@ namespace Nevermore.Util
             {
                 var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
 
-                sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
-                var related = data.Related;
-
-                for (var x = 0; x < related.Length; x++)
+                var remaining = data.Related.Length;
+                while (remaining > 0)
                 {
-                    var parentIdVariable = related[x].parentIdVariable;
-                    var relatedDocumentId = related[x].relatedDocumentId;
-                    var relatedTableName = related[x].relatedTableName;
+                    sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
+                    var related = data.Related;
+                    var batchSize = Math.Min(1000, remaining);
 
-                    var relatedVariableName = relatedVariablePrefix + x;
-                    parameters.Add(relatedVariableName, relatedDocumentId);
-                    if (x > 0)
-                        sb.Append(",");
-                    sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
+                    for (var x = 0; x < batchSize; x++)
+                    {
+                        int index = data.Related.Length - remaining;
+                        var parentIdVariable = related[index].parentIdVariable;
+                        var relatedDocumentId = related[index].relatedDocumentId;
+                        var relatedTableName = related[index].relatedTableName;
+
+                        var relatedVariableName = relatedVariablePrefix + index;
+                        parameters.Add(relatedVariableName, relatedDocumentId);
+                        if (x > 0)
+                            sb.Append(",");
+                        sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
+                        remaining--;
+                    }
                 }
             }
         }
@@ -383,15 +390,23 @@ namespace Nevermore.Util
                 if (data.Related.Any())
                 {
                     var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
+                    var remaining = data.Related.Length;
 
                     sb.AppendLine();
                     sb.AppendLine("DELETE FROM @references");
                     sb.AppendLine();
 
-                    var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')");
-                    sb.Append("INSERT INTO @references VALUES ");
-                    sb.AppendLine(string.Join(", ", valueBlocks));
-                    sb.AppendLine();
+                    var allValueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')").ToArray();
+                    while (remaining > 0)
+                    {
+                        var batchSize = Math.Min(1000, remaining);
+                        var valueBlocks = allValueBlocks.Skip(data.Related.Length - remaining).Take(batchSize);
+
+                        sb.Append("INSERT INTO @references VALUES ");
+                        sb.AppendLine(string.Join(", ", valueBlocks));
+                        sb.AppendLine();
+                        remaining -= batchSize;
+                    }
 
                     sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
                     sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM @references)");

@@ -174,7 +174,13 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void Insert()
         {
-            var references = new[] {"Product-1", "Product-2"};
+            var referenceData = new List<string>();
+            for (int i = 0; i < 2001; i++)
+            {
+                referenceData.Add("Product-" + i);
+            }
+            var references = referenceData.ToArray();
+
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .When(_ => _.WhenANewOrderIsInsertedReferencing(references))
                 .Then(_ => _.ThenTheTableContainsTheNewReferencesTo(references))
@@ -196,8 +202,16 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void Update()
         {
-            var starting = new[] {"Product-1", "Product-2"};
-            var updated = new[] {"Product-2", "Product-3"};
+            var startingData = new List<string>();
+            var updatedData = new List<string>();
+            for (int i = 0; i < 2001; i++)
+            {
+                startingData.Add("Product-" + i);
+                updatedData.Add("Product-" + i + 1);
+            }
+            var starting = startingData.ToArray();
+            var updated = updatedData.ToArray();
+
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(starting))
                 .When(_ => _.WhenTheOrderIsUpdatedReferencing(updated))
@@ -302,7 +316,7 @@ namespace Nevermore.IntegrationTests
                     return hashCode;
                 }
             }
-            
+
             public static bool operator ==(RelatedDocumentRow left, RelatedDocumentRow right) => Equals(left, right);
             public static bool operator !=(RelatedDocumentRow left, RelatedDocumentRow right) => !Equals(left, right);
         }
