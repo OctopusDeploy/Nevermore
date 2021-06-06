@@ -21,6 +21,10 @@ namespace Nevermore.Util
         const string JsonVariableName = "JSON";
         const string JsonBlobVariableName = "JSONBlob";
 
+        // The error from SQL Server says '2100' but because statements are converted to `exec sp_executesql` calls, 2 of these 2100 params are already taken
+        // https://stackoverflow.com/a/8050474/2631967
+        const int SqlServerParameterLimit = 2098;
+
         readonly IDocumentMapRegistry mappings;
         readonly IDocumentSerializer serializer;
         readonly IRelationalStoreConfiguration configuration;
@@ -34,17 +38,23 @@ namespace Nevermore.Util
             this.keyAllocator = keyAllocator;
         }
 
-        public PreparedCommand PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
+        public PreparedCommand[] PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
         {
+            var commands = new List<PreparedCommand>();
             options ??= InsertOptions.Default;
+
             var mapping = GetMapping(documents);
+            // TODO - we need to create these document parameters for each command - parameters are disposed at the end of execution in 'CommandExecutor'
+            var documentParameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
 
-            var sb = new StringBuilder();
-            AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
-            var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
+            // TODO - we should perform both insert/related doc insert in a single command and only create additional commands as necessary to preserve sql performance characteristics for existing users
+            var insertCommand = CreateInsertCommand(documents, mapping, documentParameters, options);
+            commands.Add(insertCommand);
 
-            AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
-            return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
+            var relatedDocumentCommands = CreateRelatedDocumentInsertCommands(mapping, documents, documentParameters, options);
+            commands.AddRange(relatedDocumentCommands);
+
+            return commands.ToArray();
         }
 
         public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
@@ -176,16 +186,20 @@ namespace Nevermore.Util
         }
 
         // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
-        void AppendInsertStatement(StringBuilder sb, DocumentMap mapping, string tableName, string schemaName, string tableHint, int numberOfInstances, bool includeDefaultModelColumns)
+        PreparedCommand CreateInsertCommand(
+            IReadOnlyList<object> documents,
+            DocumentMap mapping,
+            CommandParameterValues parameters,
+            InsertOptions options)
         {
             var columns = new List<string>();
 
-            if (includeDefaultModelColumns)
+            if (options.IncludeDefaultModelColumns)
                 columns.Add(mapping.IdColumn.ColumnName);
 
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
 
-            if (includeDefaultModelColumns)
+            if (options.IncludeDefaultModelColumns)
             {
                 switch (mapping.JsonStorageFormat)
                 {
@@ -205,12 +219,13 @@ namespace Nevermore.Util
 
             var columnNames = string.Join(", ", columns.Select(columnName => $"[{columnName}]"));
 
-            var actualTableName = tableName ?? mapping.TableName;
-            var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
+            var actualTableName = options.TableName ?? mapping.TableName;
+            var actualSchemaName = options.SchemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
             var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
 
-            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}){returnRowVersionStatement} VALUES ");
+            var sb = new StringBuilder();
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {options.Hint} ({columnNames}){returnRowVersionStatement} VALUES ");
 
             void Append(string prefix)
             {
@@ -218,19 +233,21 @@ namespace Nevermore.Util
                 sb.AppendLine($"({columnVariableNames})");
             }
 
-            if (numberOfInstances == 1)
+            if (documents.Count == 1)
             {
                 Append("");
-                return;
+                return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
             }
 
-            for (var x = 0; x < numberOfInstances; x++)
+            for (var x = 0; x < documents.Count; x++)
             {
                 if (x > 0)
                     sb.Append(",");
 
                 Append($"{x}__");
             }
+
+            return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
         }
 
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
@@ -330,13 +347,13 @@ namespace Nevermore.Util
             return result;
         }
 
-
-        void AppendRelatedDocumentStatementsForInsert(
-            StringBuilder sb,
-            CommandParameterValues parameters,
+        PreparedCommand[] CreateRelatedDocumentInsertCommands(
             DocumentMap mapping,
-            IReadOnlyList<object> documents)
+            IReadOnlyList<object> documents,
+            CommandParameterValues documentParameters,
+            InsertOptions options)
         {
+            var commands = new List<PreparedCommand>();
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
 
             foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
@@ -346,26 +363,46 @@ namespace Nevermore.Util
                 var remaining = data.Related.Length;
                 while (remaining > 0)
                 {
-                    sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
-                    var related = data.Related;
-                    var batchSize = Math.Min(1000, remaining);
+                    var sb = new StringBuilder();
+                    var parameters = new CommandParameterValues();
+                    parameters.AddRange(documentParameters);
+                    var reachedParameterLimit = false;
 
-                    for (var x = 0; x < batchSize; x++)
+                    while (!reachedParameterLimit && remaining > 0)
                     {
-                        int index = data.Related.Length - remaining;
-                        var parentIdVariable = related[index].parentIdVariable;
-                        var relatedDocumentId = related[index].relatedDocumentId;
-                        var relatedTableName = related[index].relatedTableName;
+                        sb.AppendLine(
+                            $"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
+                        var related = data.Related;
+                        var batchSize = Math.Min(1000, remaining);
 
-                        var relatedVariableName = relatedVariablePrefix + index;
-                        parameters.Add(relatedVariableName, relatedDocumentId);
-                        if (x > 0)
-                            sb.Append(",");
-                        sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
-                        remaining--;
+                        for (var x = 0; x < batchSize; x++)
+                        {
+                            int index = data.Related.Length - remaining;
+                            var parentIdVariable = related[index].parentIdVariable;
+                            var relatedDocumentId = related[index].relatedDocumentId;
+                            var relatedTableName = related[index].relatedTableName;
+
+                            var relatedVariableName = relatedVariablePrefix + index;
+                            parameters.Add(relatedVariableName, relatedDocumentId);
+                            if (x > 0)
+                                sb.Append(",");
+                            sb.AppendLine(
+                                $"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
+                            remaining--;
+
+                            if (parameters.Count >= SqlServerParameterLimit)
+                            {
+                                reachedParameterLimit = true;
+                                break;
+                            }
+                        }
                     }
+
+                    commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
                 }
             }
+
+            return commands.ToArray();
         }
 
         string AppendRelatedDocumentStatementsForUpdate(

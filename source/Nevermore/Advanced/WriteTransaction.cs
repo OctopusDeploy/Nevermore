@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
@@ -14,6 +15,7 @@ namespace Nevermore.Advanced
     [DebuggerDisplay("{ToString()}")]
     public class WriteTransaction : ReadTransaction, IRelationalTransaction
     {
+        readonly RelationalTransactionRegistry registry;
         readonly IRelationalStoreConfiguration configuration;
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
@@ -26,6 +28,7 @@ namespace Nevermore.Advanced
             string name = null
         ) : base(registry, operationsToRetry, configuration, name)
         {
+            this.registry = registry;
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
@@ -33,13 +36,17 @@ namespace Nevermore.Advanced
 
         public void Insert<TDocument>(TDocument document, InsertOptions options = null) where TDocument : class
         {
-            var command = builder.PrepareInsert(new[] {document}, options);
-            configuration.Hooks.BeforeInsert(document, command.Mapping, this);
+            var commands = builder.PrepareInsert(new[] {document}, options);
+            foreach (var command in commands)
+            {
+                configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
-            var newRowVersion = ExecuteSingleDataModification(command);
-            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+                var newRowVersion = ExecuteSingleDataModification(command);
+                ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            configuration.Hooks.AfterInsert(document, command.Mapping, this);
+                configuration.Hooks.AfterInsert(document, command.Mapping, this);
+            }
+
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -50,13 +57,17 @@ namespace Nevermore.Advanced
 
         public async Task InsertAsync<TDocument>(TDocument document, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var command = builder.PrepareInsert(new[] {document}, options);
-            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+            var commands = builder.PrepareInsert(new[] {document}, options);
+            foreach (var command in commands)
+            {
+                await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
 
-            var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
-            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+                var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+                ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+                await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+            }
+
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -65,13 +76,17 @@ namespace Nevermore.Advanced
             IReadOnlyList<object> documentList = documents.ToArray();
             if (!documentList.Any()) return;
 
-            var command = builder.PrepareInsert(documentList, options);
-            foreach (var document in documents) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
+            var commands = builder.PrepareInsert(documentList, options);
+            foreach (var command in commands)
+            {
+                foreach (var document in documents) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
-            var newRowVersions = ExecuteDataModification(command);
-            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
+                var newRowVersions = ExecuteDataModification(command);
+                ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
 
-            foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
+                foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
+            }
+
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }
 
@@ -85,14 +100,16 @@ namespace Nevermore.Advanced
             IReadOnlyList<object> documentList = documents.ToArray();
             if (!documentList.Any()) return;
 
-            var command = builder.PrepareInsert(documentList, options);
+            var commands = builder.PrepareInsert(documentList, options);
+            foreach (var command in commands)
+            {
+                foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
 
-            foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+                var newRowVersions = await ExecuteDataModificationAsync(command, cancellationToken);
+                ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
 
-            var newRowVersions = await ExecuteDataModificationAsync(command, cancellationToken);
-            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
-
-            foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+                foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+            }
 
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }

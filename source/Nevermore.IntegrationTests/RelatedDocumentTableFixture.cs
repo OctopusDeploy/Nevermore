@@ -175,7 +175,7 @@ namespace Nevermore.IntegrationTests
         public void Insert()
         {
             var referenceData = new List<string>();
-            for (int i = 0; i < 2001; i++)
+            for (int i = 0; i < 3001; i++)
             {
                 referenceData.Add("Product-" + i);
             }
@@ -204,7 +204,7 @@ namespace Nevermore.IntegrationTests
         {
             var startingData = new List<string>();
             var updatedData = new List<string>();
-            for (int i = 0; i < 2001; i++)
+            for (int i = 0; i < 3001; i++)
             {
                 startingData.Add("Product-" + i);
                 updatedData.Add("Product-" + i + 1);
