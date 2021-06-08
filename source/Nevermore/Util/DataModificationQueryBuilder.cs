@@ -109,7 +109,7 @@ namespace Nevermore.Util
             var mapping = mappings.Resolve(typeof(TDocument));
 
             var idType = id.GetType();
-            if (mapping.IdColumn.Type != idType)
+            if (mapping.IdColumn.Type != idType && !mapping.IdColumn.Type.IsStronglyTypedString())
                 throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             return PrepareDelete(mapping, id, options);
@@ -268,7 +268,8 @@ namespace Nevermore.Util
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            if (mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id))
+            if ((mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id)) ||
+                (mapping.IdColumn.Type.IsStronglyTypedString() && string.IsNullOrWhiteSpace(id?.ToString())))
             {
                 id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);

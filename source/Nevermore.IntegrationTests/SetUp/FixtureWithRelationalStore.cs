@@ -33,6 +33,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new DocumentWithRowVersionMap());
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
+            config.TypeHandlers.Register(new CustomerIdTypeHandler());
+
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
 

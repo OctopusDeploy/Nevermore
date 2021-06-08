@@ -14,6 +14,7 @@ using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.Transient;
+using Nevermore.Util;
 
 namespace Nevermore.Advanced
 {
@@ -81,7 +82,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        private TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
@@ -545,6 +546,8 @@ namespace Nevermore.Advanced
 
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{"Id", id}};
+            if (mapping.IdColumn.Type.IsStronglyTypedString())
+                args = new CommandParameterValues {{"Id", id.ToString()}};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
