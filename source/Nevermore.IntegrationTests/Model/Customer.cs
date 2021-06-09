@@ -22,7 +22,7 @@ namespace Nevermore.IntegrationTests.Model
 
     public class CustomerId
     {
-        public CustomerId(string value)
+        internal CustomerId(string value)
         {
             Value = value;
         }

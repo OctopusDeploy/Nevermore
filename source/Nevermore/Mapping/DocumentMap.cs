@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
         /// <summary>
         /// Gets or sets a formatting function used to format generated document IDs. Examples: i => "C" + i;
         /// </summary>
-        protected Func<int, string> IdFormat
+        protected Func<int, object> IdFormat
         {
             get => map.IdFormat;
             set => map.IdFormat = value;
@@ -304,7 +304,7 @@ namespace Nevermore.Mapping
         public JsonStorageFormat JsonStorageFormat { get; set; }
         public string TableName { get; set; }
         public string IdPrefix { get; set; }
-        public Func<int, string> IdFormat { get; set; }
+        public Func<int, object> IdFormat { get; set; }
 
         public bool ExpectLargeDocuments { get; set; }
 

@@ -30,7 +30,7 @@ namespace Nevermore.Tests.Util
                 new OtherMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
-                m => idAllocator()
+                (m, t) => idAllocator()
             );
         }
 

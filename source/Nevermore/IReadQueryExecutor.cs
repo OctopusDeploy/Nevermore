@@ -45,6 +45,13 @@ namespace Nevermore
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
         [Pure] TDocument Load<TDocument>(Guid id) where TDocument : class;
 
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The type of the Id</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
         [Pure] TDocument Load<TDocument, TKey>(TKey id) where TDocument : class;
 
         /// <summary>

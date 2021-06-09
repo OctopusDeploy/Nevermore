@@ -545,9 +545,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{"Id", id}};
-            if (mapping.IdColumn.Type.IsStronglyTypedString())
-                args = new CommandParameterValues {{"Id", id.ToString()}};
+            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.Type.IsStronglyTypedId() ? (object)id.ToString() : id }};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 

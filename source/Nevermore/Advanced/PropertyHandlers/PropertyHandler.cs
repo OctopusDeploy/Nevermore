@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Nevermore.Util;
 
 namespace Nevermore.Advanced.PropertyHandlers
 {
@@ -86,30 +84,10 @@ namespace Nevermore.Advanced.PropertyHandlers
             var assign =
                 Expression.Assign(
                     Expression.Property(Expression.Convert(targetArgument, propertyInfo.DeclaringType), propertyInfo),
-                    CompileConvert(propertyInfo, valueArgument));
+                    Expression.Convert(valueArgument, propertyInfo.PropertyType));
 
             var setter = Expression.Lambda<Action<object, object>>(assign, targetArgument, valueArgument);
             return setter.Compile();
-        }
-
-        static Expression CompileConvert(PropertyInfo propertyInfo, ParameterExpression valueArgument)
-        {
-            if (!propertyInfo.PropertyType.IsStronglyTypedString())
-                return Expression.Convert(valueArgument, propertyInfo.PropertyType);
-
-            // the strongly typed string must either have a ctor parameter for the value
-            var constructorInfos = propertyInfo.PropertyType.GetConstructors();
-            var ctorInfo = constructorInfos.SingleOrDefault(c => c.GetParameters().Length == 1);
-            if (ctorInfo != null)
-            {
-                return Expression.New(ctorInfo, Expression.Convert(valueArgument, typeof(string)));
-            }
-
-            // or the Value property must have a setter
-            var ctor = Expression.New(propertyInfo.PropertyType);
-            var valueProperty = propertyInfo.PropertyType.GetProperty("Value");
-            var valueAssignment = Expression.Bind(valueProperty, Expression.Convert(valueArgument, typeof(string)));
-            return Expression.MemberInit(ctor, valueAssignment);
         }
 
         static Action<object, object> TryCompileListSetter(PropertyInfo propertyInfo)

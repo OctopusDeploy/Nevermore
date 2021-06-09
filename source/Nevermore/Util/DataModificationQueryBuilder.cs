@@ -24,9 +24,9 @@ namespace Nevermore.Util
         readonly IDocumentMapRegistry mappings;
         readonly IDocumentSerializer serializer;
         readonly IRelationalStoreConfiguration configuration;
-        readonly Func<DocumentMap, string> keyAllocator;
+        readonly Func<DocumentMap, Type, object> keyAllocator;
 
-        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, string> keyAllocator)
+        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, Type, object> keyAllocator)
         {
             this.mappings = configuration.DocumentMaps;
             this.serializer = configuration.DocumentSerializer;
@@ -41,7 +41,7 @@ namespace Nevermore.Util
 
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
-            var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
+            var parameters = GetDocumentParameters((m, t) => keyAllocator(m, t), options.CustomAssignedId, documents, mapping, DataModification.Insert);
 
             AppendRelatedDocumentStatementsForInsert(sb, parameters, mapping, documents);
             return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
@@ -85,7 +85,7 @@ namespace Nevermore.Util
             var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates}{returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
 
             var parameters = GetDocumentParameters(
-                m => throw new Exception("Cannot update a document if it does not have an ID"),
+                (m, t) => throw new Exception("Cannot update a document if it does not have an ID"),
                 null,
                 null,
                 document,
@@ -109,7 +109,7 @@ namespace Nevermore.Util
             var mapping = mappings.Resolve(typeof(TDocument));
 
             var idType = id.GetType();
-            if (mapping.IdColumn.Type != idType && !mapping.IdColumn.Type.IsStronglyTypedString())
+            if (mapping.IdColumn.Type != idType)
                 throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             return PrepareDelete(mapping, id, options);
@@ -233,7 +233,7 @@ namespace Nevermore.Util
             }
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, Type, object> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, dataModification, "");
@@ -260,24 +260,27 @@ namespace Nevermore.Util
             Update
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, Type, object> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
         {
             var id = mapping.IdColumn.PropertyHandler.Read(document);
+
+            if (customAssignedId != null && customAssignedId.GetType() != mapping.IdColumn.Type)
+                throw new ArgumentException($"The given custom Id '{customAssignedId}' must be of type ({mapping.IdColumn.Type.Name}), to match the model's Id property");
 
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
                 customAssignedId != null && id != null && !id.Equals(customAssignedId))
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            if ((mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id)) ||
-                (mapping.IdColumn.Type.IsStronglyTypedString() && string.IsNullOrWhiteSpace(id?.ToString())))
+            if (id == null || (mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id)))
             {
-                id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
+                var customIdIsNotSet = customAssignedId == null || (customAssignedId is string assignedId && string.IsNullOrWhiteSpace(assignedId));
+                id = customIdIsNotSet ? allocateId(mapping, mapping.IdColumn.Type) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);
             }
 
             var result = new CommandParameterValues
             {
-                [$"{prefix}{mapping.IdColumn.ColumnName}"] = id
+                [$"{prefix}{mapping.IdColumn.ColumnName}"] = mapping.IdColumn.Type.IsStronglyTypedId() ? id.ToString() : id
             };
 
             switch (mapping.JsonStorageFormat)

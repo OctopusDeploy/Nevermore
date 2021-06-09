@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Diagnostics;
@@ -200,26 +202,47 @@ namespace Nevermore.Advanced
             return new DeleteQueryBuilder<TDocument>(ParameterNameGenerator, builder, this);
         }
 
-        public string AllocateId(Type documentType)
+        public object AllocateId(Type documentType, Type idColumnType)
         {
             var mapping = configuration.DocumentMaps.Resolve(documentType);
-            return AllocateId(mapping);
+            return AllocateId(mapping, idColumnType);
         }
 
-        string AllocateId(DocumentMap mapping)
+        object AllocateId(DocumentMap mapping, Type idColumnType)
         {
-            return AllocateId(mapping.TableName, mapping.IdFormat);
+            return AllocateId(mapping.TableName, idColumnType, mapping.IdFormat);
         }
 
-        public string AllocateId(string tableName, string idPrefix)
+        public object AllocateId(string tableName, string idPrefix, Type idColumnType)
         {
-            return AllocateId(tableName, key => $"{idPrefix}-{key}");
+            return AllocateId(tableName, idColumnType, key => $"{idPrefix}-{key}");
         }
 
-        public string AllocateId(string tableName, Func<int, string> idFormatter)
+        public object AllocateId(string tableName, Type idColumnType, Func<int, object> idFormatter)
         {
             var key = keyAllocator.NextId(tableName);
-            return idFormatter(key);
+            var id = idFormatter(key);
+            if (id.GetType() != idColumnType && idColumnType.IsStronglyTypedId())
+                id = ConvertToStronglyTypedId(idColumnType, id);
+            return id;
+        }
+
+        object ConvertToStronglyTypedId(Type idColumnType, object value)
+        {
+            // see if there's a constructor that takes the same type as value, if so call it
+            var ctorInfo = idColumnType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).SingleOrDefault(c => c.GetParameters().Length == 1 && c.GetParameters().Single().ParameterType == value.GetType());
+            if (ctorInfo != null)
+            {
+                return Activator.CreateInstance(idColumnType, bindingAttr:BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new [] { value }, CultureInfo.CurrentCulture);
+            }
+
+            // else call the default ctor and then look to see if there is a property with the same type that can be set
+            var id = Activator.CreateInstance(idColumnType);
+            var propInfo = idColumnType.GetProperties().FirstOrDefault(p => p.CanWrite && p.PropertyType == value.GetType());
+            if (propInfo == null)
+                throw new ArgumentException($"Unable to locate a constructor or settable property taking type {value.GetType().Name} that can be used to create an instance of {idColumnType.Name}");
+            propInfo.SetValue(id, value);
+            return id;
         }
 
         public void Commit()

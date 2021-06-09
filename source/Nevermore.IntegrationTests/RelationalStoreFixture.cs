@@ -20,7 +20,7 @@ namespace Nevermore.IntegrationTests
                 var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
-                transaction.Insert(customer3, new InsertOptions { CustomAssignedId = "Customers-Chazza"});
+                transaction.Insert(customer3, new InsertOptions { CustomAssignedId = "Customers-Chazza".ToCustomerId() });
 
                 customer1.Id.Value.Should().Be("Customers-Alice");
                 customer2.Id.Value.Should().StartWith("Customers-");
@@ -255,7 +255,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345".ToCustomerId() });
                 Assert.That(customer.Id?.Value, Is.EqualTo("12345"), "Id passed in should be used");
             }
         }
