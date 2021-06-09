@@ -33,6 +33,34 @@ namespace Nevermore.IntegrationTests.Model
         {
             return Value;
         }
+
+        public static bool operator !=(CustomerId? a, CustomerId? b)
+        {
+            return !(a == b);
+        }
+        public static bool operator ==(CustomerId? a, CustomerId? b)
+        {
+            return (a is null && b is null) ||
+                   (!(a is null) && a.Equals(b));
+        }
+
+        protected bool Equals(CustomerId other)
+        {
+            return Value == other.Value;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((CustomerId) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return (Value != null ? Value.GetHashCode() : 0);
+        }
     }
 
     public static class CustomerIdExtensionMethods

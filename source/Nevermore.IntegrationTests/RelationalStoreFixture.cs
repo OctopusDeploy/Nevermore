@@ -266,7 +266,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = new Customer {Id = "12345".ToCustomerId(), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345".ToCustomerId() });
                 Assert.That(customer.Id?.Value, Is.EqualTo("12345"), "Id passed in should be used if same");
             }
         }

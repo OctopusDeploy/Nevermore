@@ -265,7 +265,7 @@ namespace Nevermore.Util
             var id = mapping.IdColumn.PropertyHandler.Read(document);
 
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
-                customAssignedId != null && id != null && customAssignedId != id)
+                customAssignedId != null && id != null && !id.Equals(customAssignedId))
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
             if ((mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id)) ||
