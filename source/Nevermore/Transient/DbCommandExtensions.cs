@@ -48,57 +48,45 @@ namespace Nevermore.Transient
 
         public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
         {
-            try
+            GuardConnectionIsNotNull(command);
+            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
-                GuardConnectionIsNotNull(command);
-                var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
-                return effectiveCommandRetryPolicy.ExecuteAction(() =>
+                var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                try
                 {
-                    var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
-                    try
-                    {
-                        return command.ExecuteReader(behavior);
-                    }
-                    catch (Exception)
-                    {
-                        if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
-                            command.Connection.Close();
-                        throw;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Exception occurred while executing a reader for `{command.CommandText}`", ex);
-            }
+                    return command.ExecuteReader(behavior);
+                }
+                catch (Exception)
+                {
+                    if (weOwnTheConnectionLifetime && command.Connection != null &&
+                        command.Connection.State == ConnectionState.Open)
+                        command.Connection.Close();
+                    throw;
+                }
+            });
         }
-        
-        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader", CancellationToken cancellationToken = default)
+
+        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader", CancellationToken cancellationToken)
         {
-            try
+            GuardConnectionIsNotNull(command);
+            var effectiveCommandRetryPolicy =
+                (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
-                GuardConnectionIsNotNull(command);
-                var effectiveCommandRetryPolicy = 
-                    (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
-                return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
+                try
                 {
-                    var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
-                    try
-                    {
-                        return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
-                    }
-                    catch (Exception)
-                    {
-                        if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
-                            await command.Connection.CloseAsync();
-                        throw;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Exception occurred while executing a reader for `{command.CommandText}`", ex);
-            }
+                    return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
+                }
+                catch (Exception)
+                {
+                    if (weOwnTheConnectionLifetime && command.Connection != null &&
+                        command.Connection.State == ConnectionState.Open)
+                        await command.Connection.CloseAsync();
+                    throw;
+                }
+            });
         }
 
         public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar")
@@ -119,7 +107,7 @@ namespace Nevermore.Transient
                 }
             });
         }
-        
+
         public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
