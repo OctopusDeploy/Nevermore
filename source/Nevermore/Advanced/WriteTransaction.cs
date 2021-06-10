@@ -230,7 +230,7 @@ namespace Nevermore.Advanced
             return AllocateId(tableName, key => $"{idPrefix}-{key}");
         }
 
-        public string AllocateId(string tableName, Func<int, string> idFormatter)
+        string AllocateId(string tableName, Func<int, string> idFormatter)
         {
             var key = keyAllocator.NextId(tableName);
             return idFormatter(key);

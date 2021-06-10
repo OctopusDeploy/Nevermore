@@ -39,6 +39,9 @@ namespace Nevermore.Util
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
 
+            if (mapping.IdColumn.IsIdentity && options.CustomAssignedId != null)
+                throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
+
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
             var parameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
@@ -298,7 +301,8 @@ namespace Nevermore.Util
                 customAssignedId != null && id != null && customAssignedId != id)
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            if (mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string) id))
+            //we never want to allocate id's if the Id column is an Identity
+            if (!mapping.IdColumn.IsIdentity && mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string) id))
             {
                 id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);
