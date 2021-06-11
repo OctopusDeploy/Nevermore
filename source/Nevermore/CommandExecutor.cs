@@ -123,12 +123,10 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using (var reader = command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior))
+                using var reader = command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior);
+                while (reader.Read())
                 {
-                    while (reader.Read())
-                    {
-                        data.Add(mapper(reader));
-                    }
+                    data.Add(mapper(reader));
                 }
 
                 return data.ToArray();
@@ -182,17 +180,15 @@ namespace Nevermore
             }
         }
 
-        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, T> mapper)
+        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, T> mapper, CancellationToken cancellationToken = default)
         {
             try
             {
                 var data = new List<T>();
-                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior))
+                await using var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken: cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        data.Add(mapper(reader));
-                    }
+                    data.Add(mapper(reader));
                 }
 
                 return data.ToArray();

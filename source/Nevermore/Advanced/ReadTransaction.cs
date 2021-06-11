@@ -530,10 +530,10 @@ namespace Nevermore.Advanced
             return command.ReadResults(mapper);
         }
 
-        protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
+        protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
-            return await command.ReadResultsAsync(mapper);
+            return await command.ReadResultsAsync(mapper, cancellationToken);
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)

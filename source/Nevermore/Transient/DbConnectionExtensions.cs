@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nevermore.Transient
@@ -18,14 +19,14 @@ namespace Nevermore.Transient
             (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteAction(connection.Open);
         }
         
-        public static Task OpenWithRetryAsync(this DbConnection connection)
+        public static Task OpenWithRetryAsync(this DbConnection connection, CancellationToken cancellationToken = default)
         {
-            return OpenWithRetryAsync(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy());
+            return OpenWithRetryAsync(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy(), cancellationToken);
         }
 
-        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy)
+        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken = default)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(connection.OpenAsync);
+            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(() => connection.OpenAsync(cancellationToken));
         }
     }
 }
