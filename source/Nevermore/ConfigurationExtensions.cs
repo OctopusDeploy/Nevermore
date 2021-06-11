@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
@@ -18,10 +19,10 @@ namespace Nevermore
             callback(jsonNet.SerializerSettings);
         }
 
-        internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, string schemaName)
+        internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, string? schemaName)
         {
-            return schemaName 
-                ?? configuration.DefaultSchema 
+            return schemaName
+                ?? configuration.DefaultSchema
                 ?? NevermoreDefaults.FallbackDefaultSchemaName;
         }
 

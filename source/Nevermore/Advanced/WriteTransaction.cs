@@ -208,32 +208,49 @@ namespace Nevermore.Advanced
             return new DeleteQueryBuilder<TDocument>(ParameterNameGenerator, builder, this);
         }
 
-        public string AllocateId(Type documentType)
+        public TKey AllocateId<TKey>(Type documentType)
         {
             var mapping = configuration.DocumentMaps.Resolve(documentType);
-            return AllocateId(mapping);
+            return AllocateIdForMapping<TKey>(mapping);
         }
 
-        public string AllocateId<TDocument>()
+        public TKey AllocateId<TDocument, TKey>()
         {
             var mapping = configuration.DocumentMaps.Resolve<TDocument>();
-            return AllocateId(mapping);
+            return AllocateIdForMapping<TKey>(mapping);
         }
 
-        string AllocateId(DocumentMap mapping)
+        TKey AllocateIdForMapping<TKey>(DocumentMap mapping)
         {
-            return AllocateId(mapping.TableName, mapping.IdFormat);
+            var handler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
+                throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
+
+            if (typeof(TKey) != primitivePrimaryKeyHandler.Type)
+                throw new ArgumentException($"The given key type of {typeof(TKey).Name} does not match the document maps primary key handler type {primitivePrimaryKeyHandler.Type.Name}");
+
+            return (TKey) AllocateIdUsingHandler(mapping, primitivePrimaryKeyHandler);
+        }
+
+        object AllocateId(DocumentMap mapping)
+        {
+            var handler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
+                throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
+
+            return AllocateIdUsingHandler(mapping, primitivePrimaryKeyHandler);
+        }
+
+        object AllocateIdUsingHandler(DocumentMap mapping, IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler)
+        {
+            var key = keyAllocator.NextId(mapping.TableName);
+            return primitivePrimaryKeyHandler.FormatKey(mapping.TableName, key);
         }
 
         public string AllocateId(string tableName, string idPrefix)
         {
-            return AllocateId(tableName, key => $"{idPrefix}-{key}");
-        }
-
-        string AllocateId(string tableName, Func<int, string> idFormatter)
-        {
             var key = keyAllocator.NextId(tableName);
-            return idFormatter(key);
+            return $"{idPrefix}-{key}";
         }
 
         public void Commit()

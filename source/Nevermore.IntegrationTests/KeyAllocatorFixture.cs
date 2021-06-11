@@ -18,7 +18,7 @@ namespace Nevermore.IntegrationTests
             var allocatorA = new KeyAllocator(Store, 10);
             var allocatorB = new KeyAllocator(Store, 10);
 
-            // A gets 1-10 
+            // A gets 1-10
             AssertNext(allocatorA, "Todos", 1);
             AssertNext(allocatorA, "Todos", 2);
             AssertNext(allocatorA, "Todos", 3);
@@ -90,21 +90,21 @@ namespace Nevermore.IntegrationTests
                         var sequence = random.Next(3);
                         if (sequence == 0)
                         {
-                            var id = transaction.AllocateId(typeof (Customer));
+                            var id = transaction.AllocateId<string>(typeof (Customer));
                             projectIds.Add(id);
                             transaction.Commit();
                         }
                         else if (sequence == 1)
                         {
                             // Abandon some transactions (just projects to make it easier)
-                            var id = transaction.AllocateId(typeof(Customer));
+                            var id = transaction.AllocateId<string>(typeof(Customer));
                             // Abandoned Ids are not returned to the pool
                             projectIds.Add(id);
                             transaction.Dispose();
                         }
                         else if (sequence == 2)
                         {
-                            var id = transaction.AllocateId(typeof(Order));
+                            var id = transaction.AllocateId<string>(typeof(Order));
                             deploymentIds.Add(id);
                             transaction.Commit();
                         }
@@ -120,7 +120,7 @@ namespace Nevermore.IntegrationTests
 
             projectIdsAfter.Distinct().Count().Should().Be(projectIdsAfter.Length);
             deploymentIdsAfter.Distinct().Count().Should().Be(deploymentIdsAfter.Length);
-            
+
             // Check that there are no gaps in sequence
 
             var firstProjectId = projectIdsAfter.First();

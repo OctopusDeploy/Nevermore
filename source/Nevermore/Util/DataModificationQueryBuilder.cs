@@ -24,9 +24,9 @@ namespace Nevermore.Util
         readonly IDocumentMapRegistry mappings;
         readonly IDocumentSerializer serializer;
         readonly IRelationalStoreConfiguration configuration;
-        readonly Func<DocumentMap, string> keyAllocator;
+        readonly Func<DocumentMap, object> keyAllocator;
 
-        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, string> keyAllocator)
+        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, object> keyAllocator)
         {
             this.mappings = configuration.DocumentMaps;
             this.serializer = configuration.DocumentSerializer;
@@ -39,7 +39,7 @@ namespace Nevermore.Util
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
 
-            if (mapping.IdColumn.IsIdentity && options.CustomAssignedId != null)
+            if (mapping.IdColumn?.PrimaryKeyHandler is IIdentityPrimaryKeyHandler && options.CustomAssignedId != null)
                 throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
 
             var sb = new StringBuilder();
@@ -189,7 +189,7 @@ namespace Nevermore.Util
         {
             var columns = new List<string>();
 
-            if (includeDefaultModelColumns && !mapping.IsIdentityId)
+            if (includeDefaultModelColumns && !(mapping.IdColumn is null) && !mapping.IsIdentityId)
                 columns.Add(mapping.IdColumn.ColumnName);
 
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
@@ -266,7 +266,7 @@ namespace Nevermore.Util
                 sb.AppendLine(outputSelect);
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, object> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, dataModification, "");
@@ -293,8 +293,11 @@ namespace Nevermore.Util
             Update
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, object> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
         {
+            if (mapping.IdColumn is null)
+                throw new InvalidOperationException($"Map for {mapping.Type.Name} do not specify an Id column");
+
             var id = mapping.IdColumn.PropertyHandler.Read(document);
 
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
@@ -302,7 +305,7 @@ namespace Nevermore.Util
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
             //we never want to allocate id's if the Id column is an Identity
-            if (!mapping.IdColumn.IsIdentity && mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string) id))
+            if (!(mapping.IdColumn.PrimaryKeyHandler is IIdentityPrimaryKeyHandler) && mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string) id))
             {
                 id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
                 mapping.IdColumn.PropertyHandler.Write(document, id);

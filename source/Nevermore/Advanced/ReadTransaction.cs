@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
+using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.Transient;
 
@@ -544,7 +545,11 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{"Id", id}};
+            var idHandler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            var args = new CommandParameterValues
+            {
+                { "Id", idHandler is IPrimitivePrimaryKeyHandler primitive ? primitive.GetPrimitiveValue(id) : id }
+            };
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 

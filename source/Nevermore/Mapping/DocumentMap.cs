@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -18,7 +19,7 @@ namespace Nevermore.Mapping
         /// <summary>
         /// Gets or sets the name of the schema containing the table that this document will be stored in.
         /// </summary>
-        protected string SchemaName
+        protected string? SchemaName
         {
             get => map.SchemaName;
             set => map.SchemaName = value;
@@ -34,22 +35,12 @@ namespace Nevermore.Mapping
         }
 
         /// <summary>
-        /// Gets or sets the prefix to be used before IDs. If you override <see cref="IdFormat"/>, this property won't
-        /// be used.
+        /// Gets or sets the primary key handler.
         /// </summary>
-        protected string IdPrefix
+        protected IPrimaryKeyHandler? PrimaryKeyHandler
         {
-            get => map.IdPrefix;
-            set => map.IdPrefix = value;
-        }
-
-        /// <summary>
-        /// Gets or sets a formatting function used to format generated document IDs. Examples: i => "C" + i;
-        /// </summary>
-        protected Func<int, string> IdFormat
-        {
-            get => map.IdFormat;
-            set => map.IdFormat = value;
+            get => map.PrimaryKeyHandler;
+            set => map.PrimaryKeyHandler = value;
         }
 
         /// <summary>
@@ -78,6 +69,8 @@ namespace Nevermore.Mapping
         /// <returns>A builder to further configure the ID.</returns>
         protected IIdColumnMappingBuilder Id()
         {
+            if (map.IdColumn is null)
+                throw new InvalidOperationException($"Id was called for {typeof(TDocument)} but no Id property was found on this type.");
             return map.IdColumn;
         }
 
@@ -89,7 +82,7 @@ namespace Nevermore.Mapping
         /// <returns>A builder to further configure the ID.</returns>
         protected IIdColumnMappingBuilder Id<TProperty>(Expression<Func<TDocument, TProperty>> property)
         {
-            return Id<TProperty>(null, property);
+            return Id(null, property);
         }
 
         /// <summary>
@@ -99,7 +92,7 @@ namespace Nevermore.Mapping
         /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
         /// <typeparam name="TProperty">The property type of the Id column.</typeparam>
         /// <returns>A builder to further configure the ID.</returns>
-        protected IIdColumnMappingBuilder Id<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> property)
+        protected IIdColumnMappingBuilder Id<TProperty>(string? columnName, Expression<Func<TDocument, TProperty>> property)
         {
             var prop = GetPropertyInfo(property)
                 ?? throw new Exception("The expression for the Id column must be a property.");
@@ -129,7 +122,7 @@ namespace Nevermore.Mapping
         /// <param name="property">An expression that accesses the property. E.g., <code>c => c.FirstName</code></param>
         /// <typeparam name="TProperty">The property type of the column.</typeparam>
         /// <returns>A builder to further configure the column mapping.</returns>
-        protected IColumnMappingBuilder TypeResolutionColumn<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> property)
+        protected IColumnMappingBuilder TypeResolutionColumn<TProperty>(string? columnName, Expression<Func<TDocument, TProperty>> property)
         {
             var prop = GetPropertyInfo(property)
                        ?? throw new Exception("The expression for the Type Resolution column must be a property.");
@@ -174,7 +167,7 @@ namespace Nevermore.Mapping
         /// <param name="setter">A func called when reading data from the database and setting it on the object.</param>
         /// <typeparam name="TProperty">The property type of the column.</typeparam>
         /// <returns>A builder to further configure the column mapping.</returns>
-        protected IColumnMappingBuilder Column<TProperty>(string columnName, Expression<Func<TDocument, TProperty>> getter, Action<TDocument, TProperty> setter)
+        protected IColumnMappingBuilder Column<TProperty>(string? columnName, Expression<Func<TDocument, TProperty>>? getter, Action<TDocument, TProperty>? setter)
         {
             var property = GetPropertyInfo(getter ?? throw new ArgumentNullException(nameof(getter)));
             if (property != null && setter == null)
@@ -193,21 +186,21 @@ namespace Nevermore.Mapping
         /// <param name="handler">A custom property handler.</param>
         /// <param name="prop">If handler uses a property, the property, so it can be excluded from JSON. Can be null.</param>
         /// <returns>A builder to further configure the column mapping.</returns>
-        protected IColumnMappingBuilder Column(string columnName, Type propertyType, IPropertyHandler handler, PropertyInfo prop = null)
+        protected IColumnMappingBuilder Column(string columnName, Type propertyType, IPropertyHandler handler, PropertyInfo? prop = null)
         {
             var column = new ColumnMapping(columnName, propertyType, handler, prop);
             map.Columns.Add(column);
             return column;
         }
 
-        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName, string schemaName = null)
+        protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName, string? schemaName = null)
         {
             var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName, schemaName);
             map.RelatedDocumentsMappings.Add(mapping);
             return mapping;
         }
 
-        PropertyInfo GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
+        PropertyInfo? GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
         {
             var member = propertyLambda.Body as MemberExpression;
             if (member == null)
@@ -255,17 +248,14 @@ namespace Nevermore.Mapping
 
         static DocumentMap InitializeDefault()
         {
-            return new DocumentMap
+            return new DocumentMap(typeof(TDocument), typeof(TDocument).Name)
             {
-                Type = typeof(TDocument),
                 IdColumn = GetDefaultIdColumn(),
-                TableName = typeof(TDocument).Name,
-                IdPrefix = typeof(TDocument).Name + "s",
-                JsonStorageFormat = JsonStorageFormat.TextOnly
+                JsonStorageFormat = Mapping.JsonStorageFormat.TextOnly
             };
         }
 
-        static IdColumnMapping GetDefaultIdColumn()
+        static IdColumnMapping? GetDefaultIdColumn()
         {
             var properties = typeof(TDocument).GetProperties();
             foreach (var property in properties)
@@ -289,22 +279,23 @@ namespace Nevermore.Mapping
     {
         public const string RelatedDocumentTableName = "RelatedDocument";
 
-        public DocumentMap()
+        public DocumentMap(Type type, string tableName)
         {
+            Type = type;
+            TableName = tableName;
             Columns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
-            IdFormat = key => $"{IdPrefix}-{key}";
         }
 
         public Type Type { get; set; }
-        public IdColumnMapping IdColumn { get; set; }
-        public ColumnMapping RowVersionColumn { get; set; }
-        public ColumnMapping TypeResolutionColumn { get; set; }
+        public IdColumnMapping? IdColumn { get; set; }
+        public ColumnMapping? RowVersionColumn { get; set; }
+        public ColumnMapping? TypeResolutionColumn { get; set; }
         public JsonStorageFormat JsonStorageFormat { get; set; }
         public string TableName { get; set; }
-        public string IdPrefix { get; set; }
-        public Func<int, string> IdFormat { get; set; }
+
+        public IPrimaryKeyHandler? PrimaryKeyHandler { get; set; }
 
         public bool ExpectLargeDocuments { get; set; }
 
@@ -314,11 +305,11 @@ namespace Nevermore.Mapping
         public List<ColumnMapping> Columns { get; }
         public List<UniqueRule> UniqueConstraints { get; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; }
-        public string SchemaName { get; set; }
+        public string? SchemaName { get; set; }
 
         public bool IsRowVersioningEnabled => RowVersionColumn != null;
 
-        public bool IsIdentityId => IdColumn.IsIdentity;
+        public bool IsIdentityId => IdColumn?.PrimaryKeyHandler is IIdentityPrimaryKeyHandler;
 
         public bool HasModificationOutputs =>IsRowVersioningEnabled || IsIdentityId;
 
@@ -327,7 +318,7 @@ namespace Nevermore.Mapping
             if (IdColumn == null)
                 throw new InvalidOperationException($"There is no Id property on the document type {Type.FullName}");
 
-            if (TypeResolutionColumn != null && JsonStorageFormat == JsonStorageFormat.NoJson)
+            if (TypeResolutionColumn != null && JsonStorageFormat == Mapping.JsonStorageFormat.NoJson)
                 throw new InvalidOperationException($"The document map for type {Type.FullName} has a TypeColumn, but also uses the NoJson storage mode, which is not allowed.");
 
             try
@@ -341,9 +332,9 @@ namespace Nevermore.Mapping
             }
         }
 
-        public object GetId(object document)
+        public object? GetId(object? document)
         {
-            if (document == null)
+            if (document == null || IdColumn == null)
                 return null;
 
             var readerWriter = IdColumn.PropertyHandler;
