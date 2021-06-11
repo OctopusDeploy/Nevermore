@@ -1,4 +1,6 @@
-﻿namespace Nevermore.Mapping
+﻿using System;
+
+namespace Nevermore.Mapping
 {
     public interface IIdColumnMappingBuilder : IColumnMappingBuilder
     {
@@ -7,5 +9,9 @@
         /// </summary>
         /// <remarks>This will also reset the PropertyHandler</remarks>
         IIdColumnMappingBuilder Identity();
+
+        IIdColumnMappingBuilder KeyHandler(IPrimaryKeyHandler primaryKeyHandler);
+
+        IIdColumnMappingBuilder IdPrefix(Func<(string tableName, int key), string> idPrefix);
     }
 }

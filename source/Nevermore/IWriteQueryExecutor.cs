@@ -41,7 +41,7 @@ namespace Nevermore
 
         /// <summary>
         /// Immediately inserts multiple items into a specific table. Useful for up to a few hundred items, but not more
-        /// (depends on the number of properties in each item). 
+        /// (depends on the number of properties in each item).
         /// </summary>
         /// <typeparam name="TDocument">The type of document being inserted.</typeparam>
         /// <param name="documents">The document instances to insert (will be formed into a multiple VALUES for a single SQL INSERT.</param>
@@ -68,7 +68,7 @@ namespace Nevermore
         Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
-        /// Updates an existing document in the database. 
+        /// Updates an existing document in the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being updated.</typeparam>
         /// <param name="document">The document to update.</param>
@@ -76,7 +76,7 @@ namespace Nevermore
         void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class;
 
         /// <summary>
-        /// Updates an existing document in the database. 
+        /// Updates an existing document in the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being updated.</typeparam>
         /// <param name="document">The document to update.</param>
@@ -84,7 +84,7 @@ namespace Nevermore
         Task UpdateAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
-        /// Updates an existing document in the database. 
+        /// Updates an existing document in the database.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being updated.</typeparam>
         /// <param name="document">The document to update.</param>
@@ -226,26 +226,30 @@ namespace Nevermore
 
         /// <summary>
         /// Allocate an ID for the specified type. The type must be mapped.
-        /// If the mapping specifies a SingletonId, that is returned
+        /// If the mapping specifies a SingletonId, that is returned.
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        string AllocateId(Type documentType);
+        /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
+        TKey AllocateId<TKey>(Type documentType);
 
         /// <summary>
-        /// Allocates an ID using the specified table name. Any mapping for that table is not used.
+        /// Allocates an ID using the specified table name. Any mapping for that table is not used. The configuration's PrimaryKeyHandlerRegistry must contain
+        /// an entry for the key type (primitives are handled out of the box).
         /// </summary>
         /// <param name="tableName"></param>
         /// <param name="idPrefix"></param>
         /// <returns></returns>
         string AllocateId(string tableName, string idPrefix);
-        
+
         /// <summary>
         /// Allocate an ID for the specified type. The type must be mapped.
         /// If the mapping specifies a SingletonId, that is returned
         /// </summary>
         /// <typeparam name="TDocument">The type of document.</typeparam>
+        /// <typeparam name="TKey">The key type to allocate, e.g. int, string, MyStringTinyType.</typeparam>
         /// <returns></returns>
-        string AllocateId<TDocument>();
+        /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
+        TKey AllocateId<TDocument, TKey>();
     }
 }
