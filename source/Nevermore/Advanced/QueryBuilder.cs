@@ -336,6 +336,22 @@ namespace Nevermore.Advanced
             return default;
         }
 
+        public IEnumerable<TRecord> Distinct()
+        {
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddDistinct();
+            var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues, commandTimeout);
+            return stream;
+        }
+
+        public IAsyncEnumerable<TRecord> DistinctAsync(CancellationToken cancellationToken = default)
+        {
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddDistinct();
+            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            return stream;
+        }
+
         public IEnumerable<TRecord> Take(int take)
         {
             var clonedSelectBuilder = selectBuilder.Clone();

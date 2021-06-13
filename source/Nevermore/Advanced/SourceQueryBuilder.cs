@@ -486,11 +486,21 @@ namespace Nevermore.Advanced
             return Final(Builder.Take(take));
         }
 
+        public IEnumerable<TRecord> Distinct()
+        {
+            return Final(Builder.Distinct());
+        }
+
         public IAsyncEnumerable<TRecord> TakeAsync(int take, CancellationToken cancellationToken = default)
         {
             return Final(Builder.TakeAsync(take, cancellationToken));
         }
 
+        public IAsyncEnumerable<TRecord> DistinctAsync(CancellationToken cancellationToken = default)
+        {
+            return Final(Builder.DistinctAsync(cancellationToken));
+        }
+        
         public List<TRecord> ToList(int skip, int take)
         {
             return Final(Builder.ToList(skip, take));

@@ -63,6 +63,24 @@ ELSE
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
+        
+        
+        [Test]
+        public void ShouldNotModifyQueryBuilderStateFromDistinct()
+        {
+            var queryBuilder = QueryBuilder("Accounts");
+
+            queryBuilder.Distinct();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT DISTINCT *
+FROM [dbo].[Accounts]");
+
+            queryBuilder.ToList();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM [dbo].[Accounts]
+ORDER BY [Id]");
+        }
 
         [Test]
         public void ShouldNotModifyQueryBuilderStateFromTake()

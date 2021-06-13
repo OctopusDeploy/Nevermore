@@ -23,4 +23,15 @@
         public string GenerateSql() => "";
         public override string ToString() => GenerateSql();
     }
+
+    public class Distinct : IRowSelection
+    {
+        public Distinct()
+        {
+            
+        }
+
+        public string GenerateSql() => $"DISTINCT ";
+        public override string ToString() => GenerateSql();
+    }
 }

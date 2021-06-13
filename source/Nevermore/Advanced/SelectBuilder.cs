@@ -261,6 +261,11 @@ namespace Nevermore.Advanced
             RowSelection = new Top(top);
         }
 
+        public void AddDistinct()
+        {
+            RowSelection = new Distinct();
+        }
+
         public virtual void AddOrder(string fieldName, bool @descending)
         {
             OrderByClauses.Add(new OrderByField(new Column(fieldName), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));
