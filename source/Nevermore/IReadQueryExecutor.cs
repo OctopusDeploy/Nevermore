@@ -49,6 +49,15 @@ namespace Nevermore
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The type of the Id</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] TDocument Load<TDocument, TKey>(TKey id) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
@@ -523,7 +532,7 @@ namespace Nevermore
         [Pure] IAsyncEnumerable<TRecord> StreamAsync<TRecord>(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Executes a query that returns strongly typed documents. 
+        /// Executes a query that returns strongly typed documents.
         /// </summary>
         /// <param name="preparedCommand">Everything needed to run the query.</param>
         /// <typeparam name="TRecord">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
@@ -531,7 +540,7 @@ namespace Nevermore
         [Pure] IEnumerable<TRecord> Stream<TRecord>(PreparedCommand preparedCommand);
 
         /// <summary>
-        /// Executes a query that returns strongly typed documents. 
+        /// Executes a query that returns strongly typed documents.
         /// </summary>
         /// <param name="preparedCommand">Everything needed to run the query.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
