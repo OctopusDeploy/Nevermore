@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Globalization;
 using System.Reflection;
 
@@ -13,9 +14,9 @@ namespace Nevermore.IntegrationTests.Model
 
         public T Value { get; }
 
-        public override string ToString()
+        public override string? ToString()
         {
-            return Value.ToString();
+            return Value?.ToString();
         }
 
         public override bool Equals(object? obj)
@@ -23,7 +24,7 @@ namespace Nevermore.IntegrationTests.Model
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
-            return Value.Equals(((TinyType<T>) obj).Value);
+            return !(Value is null) && Value.Equals(((TinyType<T>) obj).Value);
         }
 
         public override int GetHashCode()
@@ -31,16 +32,16 @@ namespace Nevermore.IntegrationTests.Model
             return (Value != null ? Value.GetHashCode() : 0);
         }
 
-        public static TinyType<T> Create(Type tinyType, T value)
+        public static TinyType<T>? Create(Type tinyType, T value)
         {
             const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            var instance = Activator.CreateInstance(tinyType, bindingFlags, null, new object[] {value}, CultureInfo.CurrentCulture);
-            return (TinyType<T>) instance;
+            var instance = Activator.CreateInstance(tinyType, bindingFlags, null, new object[] { value! }, CultureInfo.CurrentCulture);
+            return instance as TinyType<T>;
         }
 
-        public static TTinyType Create<TTinyType>(T value) where TTinyType : TinyType<T>
+        public static TTinyType? Create<TTinyType>(T value) where TTinyType : TinyType<T>
         {
-            return (TTinyType) Create(typeof(TTinyType), value);
+            return (TTinyType?) Create(typeof(TTinyType), value);
         }
     }
 

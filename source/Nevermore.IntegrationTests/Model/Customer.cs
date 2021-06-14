@@ -1,4 +1,3 @@
-#nullable enable
 using Nevermore.IntegrationTests.Contracts;
 
 namespace Nevermore.IntegrationTests.Model
@@ -26,6 +25,8 @@ namespace Nevermore.IntegrationTests.Model
         {
         }
     }
+
+#nullable enable
 
     public static class CustomerIdExtensionMethods
     {

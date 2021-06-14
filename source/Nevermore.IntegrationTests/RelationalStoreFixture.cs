@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
@@ -22,7 +23,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 transaction.Insert(customer3, new InsertOptions { CustomAssignedId = "Customers-Chazza".ToCustomerId() });
 
-                customer1.Id.Value.Should().Be("Customers-Alice");
+                customer1.Id!.Value.Should().Be("Customers-Alice");
                 customer2.Id.Value.Should().StartWith("Customers-");
                 customer3.Id.Value.Should().Be("Customers-Chazza");
 
