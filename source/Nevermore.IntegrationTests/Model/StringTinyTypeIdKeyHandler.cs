@@ -21,7 +21,12 @@ namespace Nevermore.IntegrationTests.Model
             return TinyType<string>.Create<T>($"{tableName}s-{key}")!;
         }
 
-        public void SetIdPrefix(Func<(string tableName, int key), string> idPrefix)
+        public void SetPrefix(Func<string, string> idPrefix)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetFormat(Func<(string idPrefix, int key), string> format)
         {
             throw new NotImplementedException();
         }
