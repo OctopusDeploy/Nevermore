@@ -43,7 +43,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 Type = ProductType.Normal
             };
             trn.Insert(product1);
-            
+
             var product2 = new Product
             {
                 Id = "Products-133",
@@ -53,9 +53,9 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             };
             trn.Insert(product2);
             trn.Commit();
-            
+
             var ids = new[] {product1.Id, product2.Id};
-            
+
             var products = trn.LoadMany<Product>(ids);
 
             products.Should().HaveCount(ids.Length);
@@ -83,13 +83,13 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         public void StoreNonInheritedTypesSerializesCorrectly()
         {
             using var trn = Store.BeginTransaction();
-            
+
             var customer = new Customer
             {
                 FirstName = "Bob",
                 LastName = "Tester",
                 Nickname = "Bob the builder",
-                Id = "Customers-01"
+                Id = "Customers-01".ToCustomerId()
             };
 
             trn.Insert(customer);
@@ -218,7 +218,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 brandToTestSerialization.JSON.Should().Be("{\"Description\":\"Details for Brand A.\"}");
             }
         }
-        
+
         [Test]
         public void StoreAndLoadStringInheritedTypes()
         {

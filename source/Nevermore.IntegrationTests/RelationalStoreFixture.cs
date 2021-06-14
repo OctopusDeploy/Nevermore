@@ -15,16 +15,16 @@ namespace Nevermore.IntegrationTests
             // The Id columns allow you to give records an ID, or use an auto-generated, unique ID
             using (var transaction = Store.BeginTransaction())
             {
-                var customer1 = new Customer {Id = "Customers-Alice", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                var customer1 = new Customer {Id = "Customers-Alice".ToCustomerId(), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
                 var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"web-server", "app-server"}};
                 var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
-                transaction.Insert(customer3, new InsertOptions { CustomAssignedId = "Customers-Chazza"});
+                transaction.Insert(customer3, new InsertOptions { CustomAssignedId = "Customers-Chazza".ToCustomerId() });
 
-                customer1.Id.Should().Be("Customers-Alice");
-                customer2.Id.Should().StartWith("Customers-");
-                customer3.Id.Should().Be("Customers-Chazza");
+                customer1.Id.Value.Should().Be("Customers-Alice");
+                customer2.Id.Value.Should().StartWith("Customers-");
+                customer3.Id.Value.Should().Be("Customers-Chazza");
 
                 transaction.Commit();
             }
@@ -82,7 +82,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldHandleIdsWithInOperand()
         {
-            string customerId;
+            CustomerId customerId;
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple"};
@@ -94,7 +94,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = transaction.Query<Customer>()
-                    .Where("Id", ArraySqlOperand.In, new[] {customerId})
+                    .Where("Id", ArraySqlOperand.In, new[] {customerId.Value})
                     .Stream()
                     .Single();
                 customer.FirstName.Should().Be("Alice");
@@ -233,7 +233,7 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldPersistAndLoadReferenceCollectionsOnSingleDocuments()
         {
-            var customerId = string.Empty;
+            CustomerId? customerId = null;
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
@@ -243,7 +243,7 @@ namespace Nevermore.IntegrationTests
             }
             using (var transaction = Store.BeginTransaction())
             {
-                var loadedCustomer = transaction.Load<Customer>(customerId);
+                var loadedCustomer = transaction.Load<Customer, CustomerId>(customerId);
                 loadedCustomer.Roles.Count.Should().Be(2);
             }
         }
@@ -255,8 +255,8 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
-                Assert.That(customer.Id, Is.EqualTo("12345"), "Id passed in should be used");
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345".ToCustomerId() });
+                Assert.That(customer.Id?.Value, Is.EqualTo("12345"), "Id passed in should be used");
             }
         }
 
@@ -265,9 +265,9 @@ namespace Nevermore.IntegrationTests
         {
             using (var transaction = Store.BeginTransaction())
             {
-                var customer = new Customer {Id = "12345", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
-                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
-                Assert.That(customer.Id, Is.EqualTo("12345"), "Id passed in should be used if same");
+                var customer = new Customer {Id = "12345".ToCustomerId(), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345".ToCustomerId() });
+                Assert.That(customer.Id?.Value, Is.EqualTo("12345"), "Id passed in should be used if same");
             }
         }
 
@@ -278,7 +278,7 @@ namespace Nevermore.IntegrationTests
             {
                 Assert.Throws<ArgumentException>(() =>
                 {
-                    var customer = new Customer {Id = "123456", FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                    var customer = new Customer {Id = "123456".ToCustomerId(), FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
                     transaction.Insert(customer, new InsertOptions { CustomAssignedId = "12345" });
                 });
             }
