@@ -18,12 +18,17 @@ namespace Nevermore.IntegrationTests.Model
 
         public object FormatKey(string tableName, int key)
         {
-            return TinyType<string>.Create<T>($"{tableName}s-{key}")!;
+            return TinyType<string>.Create<T>($"{GetPrefix(tableName)}-{key}")!;
         }
 
         public void SetPrefix(Func<string, string> idPrefix)
         {
             throw new NotImplementedException();
+        }
+
+        public string GetPrefix(string tableName)
+        {
+            return $"{tableName}s";
         }
 
         public void SetFormat(Func<(string idPrefix, int key), string> format)

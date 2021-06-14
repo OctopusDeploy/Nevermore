@@ -22,6 +22,11 @@ namespace Nevermore.Mapping
             idPrefixFunc = idPrefix;
         }
 
+        public string GetPrefix(string tableName)
+        {
+            return idPrefixFunc(tableName);
+        }
+
         /// <summary>
         /// Set a function that format a key value, given a prefix and a key number.
         /// </summary>
@@ -33,7 +38,7 @@ namespace Nevermore.Mapping
 
         public override object FormatKey(string tableName, int key)
         {
-            return formatFunc((idPrefixFunc(tableName), key));
+            return formatFunc((GetPrefix(tableName), key));
         }
     }
 }
