@@ -222,7 +222,7 @@ namespace Nevermore.Advanced
 
         TKey AllocateIdForMapping<TKey>(DocumentMap mapping)
         {
-            var handler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            var handler = configuration.PrimaryKeyHandlers.Resolve(mapping);
             if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
                 throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
 
@@ -234,7 +234,7 @@ namespace Nevermore.Advanced
 
         object AllocateId(DocumentMap mapping)
         {
-            var handler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            var handler = configuration.PrimaryKeyHandlers.Resolve(mapping);
             if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
                 throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
 

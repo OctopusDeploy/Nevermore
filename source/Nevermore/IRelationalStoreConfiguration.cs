@@ -32,7 +32,7 @@ namespace Nevermore
         IReaderStrategyRegistry ReaderStrategies { get; }
         ITypeHandlerRegistry TypeHandlers { get; }
         IInstanceTypeRegistry InstanceTypeResolvers { get; }
-        IPrimaryKeyHandlerRegistry PrimaryKeyHandlerRegistry { get; }
+        IPrimaryKeyHandlerRegistry PrimaryKeyHandlers { get; }
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         IQueryLogger QueryLogger { get; set; }
 

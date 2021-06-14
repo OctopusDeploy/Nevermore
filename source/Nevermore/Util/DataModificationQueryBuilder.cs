@@ -310,7 +310,7 @@ namespace Nevermore.Util
             var result = new CommandParameterValues();
 
             //we never want to allocate id's if the Id column is an Identity
-            var keyHandler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            var keyHandler = configuration.PrimaryKeyHandlers.Resolve(mapping);
             if (keyHandler is IPrimitivePrimaryKeyHandler primitiveKeyHandler)
             {
                 // check whether the object's Id has already been provided, if not then we'll either use the one from the InsertOptions or we'll generate one
