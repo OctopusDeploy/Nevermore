@@ -61,12 +61,46 @@ namespace Nevermore.Mapping
             return this;
         }
 
-        public IIdColumnMappingBuilder IdPrefix(Func<(string tableName, int key), string> idPrefix)
+        /// <summary>
+        /// Set a function that when given the TableName will return key prefix string.
+        /// </summary>
+        /// <param name="idPrefix">The function to call back to get the prefix.</param>
+        public IIdColumnMappingBuilder Prefix(Func<string, string> idPrefix)
         {
             if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase && PrimaryKeyHandler is IIdentityPrimaryKeyHandler)
-                throw new InvalidOperationException($"{nameof(IdPrefix)} cannot be set when an identity key handler has been configured.");
+                throw new InvalidOperationException($"{nameof(Prefix)} cannot be set when an identity key handler has been configured.");
 
-            return KeyHandler(new StringPrimaryKeyHandler(idPrefix));
+            if (PrimaryKeyHandler == null)
+                return KeyHandler(new StringPrimaryKeyHandler(idPrefix));
+
+            if (PrimaryKeyHandler is IStringBasedPrimitivePrimaryKeyHandler stringIdHandler)
+            {
+                stringIdHandler.SetPrefix(idPrefix);
+                return this;
+            }
+
+            throw new InvalidOperationException($"Cannot set the Id prefix when the PrimaryKeyHandler is of type {PrimaryKeyHandler.GetType().Name}");
+        }
+
+        /// <summary>
+        /// Set a function that format a key value, given a prefix and a key number.
+        /// </summary>
+        /// <param name="format">The function to call back to format the id.</param>
+        public IIdColumnMappingBuilder Format(Func<(string idPrefix, int key), string> format)
+        {
+            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase && PrimaryKeyHandler is IIdentityPrimaryKeyHandler)
+                throw new InvalidOperationException($"{nameof(Format)} cannot be set when an identity key handler has been configured.");
+
+            if (PrimaryKeyHandler == null)
+                return KeyHandler(new StringPrimaryKeyHandler(format: format));
+
+            if (PrimaryKeyHandler is IStringBasedPrimitivePrimaryKeyHandler stringIdHandler)
+            {
+                stringIdHandler.SetFormat(format);
+                return this;
+            }
+
+            throw new InvalidOperationException($"Cannot set the key format when the PrimaryKeyHandler is of type {PrimaryKeyHandler.GetType().Name}");
         }
 
         protected override void SetCustomPropertyHandler(IPropertyHandler propertyHandler)
