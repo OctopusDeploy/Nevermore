@@ -339,6 +339,42 @@ ORDER BY [Id]";
         }
 
         [Test]
+        public void ShouldGenerateDistinct()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
+                .NoLock()
+                .Where("[Price] > 5")
+                .Column("Name")
+                .Distinct();
+
+            var expected = @"SELECT DISTINCT [Name]
+FROM [dbo].[Orders] NOLOCK
+WHERE ([Price] > 5)";
+
+            actual.Should().Be(expected);
+        }
+
+
+        [Test]
+        public void ShouldGenerateDistinctForJoin()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
+                .Where("[Price] > 5");
+            var rightQueryBuilder = CreateQueryBuilder<object>("Customers");
+
+            leftQueryBuilder.InnerJoin(rightQueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
+                .Column("Name")
+                .Distinct();
+
+            this.Assent(actual);
+        }
+
+        [Test]
         public void ShouldGenerateExpectedLikeParametersForQueryBuilder()
         {
             CommandParameterValues parameterValues = null;

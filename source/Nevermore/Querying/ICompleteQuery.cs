@@ -47,6 +47,19 @@ namespace Nevermore.Querying
         /// </summary>
         /// <param name="cancellationToken">Token used to cancel the command.</param>
         [Pure] Task<TRecord> FirstOrDefaultAsync(CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        ///  Executes the query and returns a distinct set of results based on the columns included included
+        /// </summary>
+        /// <returns>The distinct set of results from the column projection</returns>
+        [Pure] IEnumerable<TRecord> Distinct();
+
+        /// <summary>
+        ///  Executes the query and returns a distinct set of results based on the columns included
+        /// </summary>
+        /// <param name="cancellationToken">Token used to cancel the command.</param>
+        /// <returns>The distinct set of results from the column projection</returns>
+        [Pure] IAsyncEnumerable<TRecord> DistinctAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///  Executes the query and returns the specified number of rows

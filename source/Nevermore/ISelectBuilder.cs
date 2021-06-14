@@ -7,7 +7,7 @@ namespace Nevermore
     public interface ISelectBuilder
     {
         void AddTop(int top);
-
+        void AddDistinct();
         void AddOrder(string fieldName, bool descending);
         void AddOrder(string fieldName, string tableAlias, bool descending);
         void AddWhere(UnaryWhereParameter whereParams);
