@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Linq;
 using System.Text;
+using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.Util;
 
@@ -58,7 +59,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         static string GetDatabaseType(ColumnMapping column)
         {
-            var dbType = DatabaseTypeConverter.AsDbType(column.Type);
+            var dbType = typeof(StringTinyType).IsAssignableFrom(column.Type) ? DbType.String : DatabaseTypeConverter.AsDbType(column.Type);
 
             switch (dbType)
             {

@@ -76,7 +76,7 @@ namespace Nevermore.IntegrationTests
             const int allocationCount = 20;
             const int threadCount = 10;
 
-            var projectIds = new ConcurrentBag<string>();
+            var customerIds = new ConcurrentBag<CustomerId>();
             var deploymentIds = new ConcurrentBag<string>();
             var random = new Random(1);
 
@@ -90,21 +90,21 @@ namespace Nevermore.IntegrationTests
                         var sequence = random.Next(3);
                         if (sequence == 0)
                         {
-                            var id = transaction.AllocateId<string>(typeof (Customer));
-                            projectIds.Add(id);
+                            var id = transaction.AllocateId<Customer, CustomerId>();
+                            customerIds.Add(id);
                             transaction.Commit();
                         }
                         else if (sequence == 1)
                         {
                             // Abandon some transactions (just projects to make it easier)
-                            var id = transaction.AllocateId<string>(typeof(Customer));
+                            var id = transaction.AllocateId<Customer, CustomerId>();
                             // Abandoned Ids are not returned to the pool
-                            projectIds.Add(id);
+                            customerIds.Add(id);
                             transaction.Dispose();
                         }
                         else if (sequence == 2)
                         {
-                            var id = transaction.AllocateId<string>(typeof(Order));
+                            var id = transaction.AllocateId<Order, string>();
                             deploymentIds.Add(id);
                             transaction.Commit();
                         }
@@ -115,21 +115,21 @@ namespace Nevermore.IntegrationTests
             Task.WaitAll(tasks);
             Func<string, int> removePrefix = x => int.Parse(x.Split('-')[1]);
 
-            var projectIdsAfter = projectIds.Select(removePrefix).OrderBy(x => x).ToArray();
+            var customerIdsAfter = customerIds.Select(x => removePrefix(x.Value)).OrderBy(x => x).ToArray();
             var deploymentIdsAfter = deploymentIds.Select(removePrefix).OrderBy(x => x).ToArray();
 
-            projectIdsAfter.Distinct().Count().Should().Be(projectIdsAfter.Length);
+            customerIdsAfter.Distinct().Count().Should().Be(customerIdsAfter.Length);
             deploymentIdsAfter.Distinct().Count().Should().Be(deploymentIdsAfter.Length);
 
             // Check that there are no gaps in sequence
 
-            var firstProjectId = projectIdsAfter.First();
-            var lastProjectId = projectIdsAfter.Last();
+            var firstProjectId = customerIdsAfter.First();
+            var lastProjectId = customerIdsAfter.Last();
 
             var expectedProjectIds = Enumerable.Range(firstProjectId, lastProjectId - firstProjectId + 1)
                 .ToList();
 
-            projectIdsAfter.Should().BeEquivalentTo(expectedProjectIds);
+            customerIdsAfter.Should().BeEquivalentTo(expectedProjectIds);
         }
 
         static void AssertNext(KeyAllocator allocator, string collection, int expected)
