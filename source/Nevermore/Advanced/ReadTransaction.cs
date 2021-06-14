@@ -82,7 +82,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        private TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
@@ -545,11 +545,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var idHandler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
-            var args = new CommandParameterValues
-            {
-                { "Id", idHandler is IPrimitivePrimaryKeyHandler primitive ? primitive.GetPrimitiveValue(id) : id }
-            };
+            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler is IPrimitivePrimaryKeyHandler primitive ? primitive.GetPrimitiveValue(id) : id }};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 

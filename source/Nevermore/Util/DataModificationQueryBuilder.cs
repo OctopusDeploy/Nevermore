@@ -300,21 +300,29 @@ namespace Nevermore.Util
 
             var id = mapping.IdColumn.PropertyHandler.Read(document);
 
+            if (customAssignedId != null && customAssignedId.GetType() != mapping.IdColumn.Type)
+                throw new ArgumentException($"The given custom Id '{customAssignedId}' must be of type ({mapping.IdColumn.Type.Name}), to match the model's Id property");
+
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
-                customAssignedId != null && id != null && customAssignedId != id)
+                customAssignedId != null && id != null && !customAssignedId.Equals(id))
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            //we never want to allocate id's if the Id column is an Identity
-            if (!(mapping.IdColumn.PrimaryKeyHandler is IIdentityPrimaryKeyHandler) && mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string) id))
-            {
-                id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
-                mapping.IdColumn.PropertyHandler.Write(document, id);
-            }
+            var result = new CommandParameterValues();
 
-            var result = new CommandParameterValues
+            //we never want to allocate id's if the Id column is an Identity
+            var keyHandler = configuration.PrimaryKeyHandlerRegistry.Resolve(mapping);
+            if (keyHandler is IPrimitivePrimaryKeyHandler primitiveKeyHandler)
             {
-                [$"{prefix}{mapping.IdColumn.ColumnName}"] = id
-            };
+                // check whether the object's Id has already been provided, if not then we'll either use the one from the InsertOptions or we'll generate one
+                if (id == null)
+                {
+                    id = customAssignedId == null || (customAssignedId is string assignedId && string.IsNullOrWhiteSpace(assignedId)) ? allocateId(mapping) : customAssignedId;
+                    mapping.IdColumn.PropertyHandler.Write(document, id);
+                }
+
+                var primitiveValue = primitiveKeyHandler.GetPrimitiveValue(id);
+                result[$"{prefix}{mapping.IdColumn.ColumnName}"] = primitiveValue;
+            }
 
             switch (mapping.JsonStorageFormat)
             {

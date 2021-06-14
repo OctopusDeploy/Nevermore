@@ -7,7 +7,7 @@ namespace Nevermore.Mapping
     public interface IPrimitivePrimaryKeyHandler : IPrimaryKeyHandler
     {
         [return: NotNullIfNotNull("id")]
-        object? GetPrimitiveValue<TKey>(TKey id);
+        object? GetPrimitiveValue(object? id);
 
         object FormatKey(string tableName, int key);
     }
@@ -17,7 +17,7 @@ namespace Nevermore.Mapping
         public Type Type => typeof(T);
 
         [return: NotNullIfNotNull("id")]
-        public virtual object? GetPrimitiveValue<TKey>(TKey id)
+        public virtual object? GetPrimitiveValue(object? id)
         {
             return id;
         }
@@ -25,7 +25,7 @@ namespace Nevermore.Mapping
         public abstract object FormatKey(string tableName, int key);
     }
 
-    public interface IStringBasedPrimitivePrimaryKeyHandler : IPrimaryKeyHandler
+    public interface IStringBasedPrimitivePrimaryKeyHandler : IPrimitivePrimaryKeyHandler
     {
         void SetIdPrefix(Func<(string tableName, int key), string> idPrefix);
     }
@@ -65,9 +65,12 @@ namespace Nevermore.Mapping
         }
     }
 
-    class GuidPrimaryKeyHandler : IPrimaryKeyHandler
+    class GuidPrimaryKeyHandler : PrimitivePrimaryKeyHandler<Guid>
     {
-        public Type Type => typeof(Guid);
+        public override object FormatKey(string tableName, int key)
+        {
+            return key;
+        }
     }
 
     public interface IIdentityPrimaryKeyHandler : IPrimaryKeyHandler
