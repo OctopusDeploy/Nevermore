@@ -11,6 +11,13 @@ namespace Nevermore.Mapping
         void SetPrefix(Func<string, string> idPrefix);
 
         /// <summary>
+        /// Given a tableName, get the prefix for the key.
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns>The key prefix for the given tableName</returns>
+        string GetPrefix(string tableName);
+
+        /// <summary>
         /// Set a function that format a key value, given a prefix and a key number.
         /// </summary>
         /// <param name="format">The function to call back to format the id.</param>
