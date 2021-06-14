@@ -43,7 +43,7 @@ namespace Nevermore.IntegrationTests.SetUp
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.TypeHandlers.Register(new StringTinyTypeIdTypeHandler<CustomerId>());
 
-            config.PrimaryKeyHandlerRegistry.Register(new StringTinyTypeIdKeyHandler<CustomerId>());
+            config.PrimaryKeyHandlers.Register(new StringTinyTypeIdKeyHandler<CustomerId>());
 
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());

@@ -46,11 +46,11 @@ namespace Nevermore
 
             TypeHandlers = new TypeHandlerRegistry();
 
-            PrimaryKeyHandlerRegistry = new PrimaryKeyHandlerRegistry();
-            PrimaryKeyHandlerRegistry.Register(new StringPrimaryKeyHandler());
-            PrimaryKeyHandlerRegistry.Register(new IntPrimaryKeyHandler());
-            PrimaryKeyHandlerRegistry.Register(new LongPrimaryKeyHandler());
-            PrimaryKeyHandlerRegistry.Register(new GuidPrimaryKeyHandler());
+            PrimaryKeyHandlers = new PrimaryKeyHandlerRegistry();
+            PrimaryKeyHandlers.Register(new StringPrimaryKeyHandler());
+            PrimaryKeyHandlers.Register(new IntPrimaryKeyHandler());
+            PrimaryKeyHandlers.Register(new LongPrimaryKeyHandler());
+            PrimaryKeyHandlers.Register(new GuidPrimaryKeyHandler());
 
             AllowSynchronousOperations = true;
 
@@ -87,7 +87,7 @@ namespace Nevermore
         public ITypeHandlerRegistry TypeHandlers { get; }
         public IInstanceTypeRegistry InstanceTypeResolvers { get; }
 
-        public IPrimaryKeyHandlerRegistry PrimaryKeyHandlerRegistry { get; }
+        public IPrimaryKeyHandlerRegistry PrimaryKeyHandlers { get; }
 
         /// <summary>
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
