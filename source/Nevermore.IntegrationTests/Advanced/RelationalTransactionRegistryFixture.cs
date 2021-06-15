@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
@@ -15,7 +16,6 @@ namespace Nevermore.IntegrationTests.Advanced
     {
         public static IEnumerable<TestCaseData> TransactionsAreRemovedFromTheRegistryWhenThePoolIsExhaustedSource()
         {
-
             TestCaseData CreateAsyncCase(string testName, Func<IRelationalStore, string, Task<IDisposable>> beginTransaction)
                 => new TestCaseData(beginTransaction) {TestName = testName};
 
@@ -26,10 +26,9 @@ namespace Nevermore.IntegrationTests.Advanced
             yield return CreateCase("BeginReadTransaction IsolationLevel overload", (store, name) => store.BeginReadTransaction(IsolationLevel.ReadUncommitted, name: name));
             yield return CreateCase("BeginReadTransaction RetriableOperation overload", (store, name) => store.BeginReadTransaction(RetriableOperation.None, name));
             yield return CreateCase("BeginWriteTransaction", (store, name) => store.BeginWriteTransaction(name: name));
-            yield return CreateAsyncCase("BeginReadTransactionAsync IsolationLevel overload", async (store, name) => await store.BeginReadTransactionAsync(IsolationLevel.ReadUncommitted, name: name));
-            yield return CreateAsyncCase("BeginReadTransactionAsync RetriableOperation overload", async (store, name) => await store.BeginReadTransactionAsync(RetriableOperation.None, name));
-            yield return CreateAsyncCase("BeginWriteTransaction", async (store, name) => await store.BeginWriteTransactionAsync(name: name));
-
+            yield return CreateAsyncCase("BeginReadTransactionAsync IsolationLevel overload", async (store, name) => await store.BeginReadTransactionAsync(CancellationToken.None, IsolationLevel.ReadUncommitted, name: name));
+            yield return CreateAsyncCase("BeginReadTransactionAsync RetriableOperation overload", async (store, name) => await store.BeginReadTransactionAsync(CancellationToken.None, RetriableOperation.None, name));
+            yield return CreateAsyncCase("BeginWriteTransaction", async (store, name) => await store.BeginWriteTransactionAsync(CancellationToken.None, name: name));
         }
 
         [TestCaseSource(nameof(TransactionsAreRemovedFromTheRegistryWhenThePoolIsExhaustedSource))]

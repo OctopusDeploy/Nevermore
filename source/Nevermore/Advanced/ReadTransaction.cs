@@ -62,10 +62,10 @@ namespace Nevermore.Advanced
             connection.OpenWithRetry();
         }
 
-        public async Task OpenAsync()
+        public async Task OpenAsync(CancellationToken cancellationToken)
         {
             connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
+            await connection.OpenWithRetryAsync(cancellationToken);
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -74,10 +74,10 @@ namespace Nevermore.Advanced
             Transaction = connection.BeginTransaction(isolationLevel);
         }
 
-        public async Task OpenAsync(IsolationLevel isolationLevel)
+        public async Task OpenAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
         {
-            await OpenAsync();
-            Transaction = await connection.BeginTransactionAsync(isolationLevel);
+            await OpenAsync(cancellationToken);
+            Transaction = await connection.BeginTransactionAsync(isolationLevel, cancellationToken);
         }
 
         [Pure]
@@ -637,9 +637,45 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            Transaction?.Dispose();
-            connection?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore();
+
+            Dispose(false);
+
+#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
+            GC.SuppressFinalize(this);
+#pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Transaction?.Dispose();
+                connection?.Dispose();
+            }
+
             registry.Remove(this);
+
+            Transaction = null;
+            connection = null;
+        }
+
+        protected virtual async ValueTask DisposeAsyncCore()
+        {
+            if(Transaction != null)
+                await Transaction.DisposeAsync().ConfigureAwait(false);
+
+            if(connection != null)
+                await connection.DisposeAsync().ConfigureAwait(false);
+
+            Transaction = null;
+            connection = null;
         }
     }
 }

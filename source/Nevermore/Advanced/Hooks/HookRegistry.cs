@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Mapping;
 
@@ -12,7 +13,7 @@ namespace Nevermore.Advanced.Hooks
         {
             hooks.Add(hook);
         }
-        
+
         public void BeforeInsert<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
             foreach (var hook in hooks) hook.BeforeInsert(document, map, transaction);
@@ -53,44 +54,44 @@ namespace Nevermore.Advanced.Hooks
             foreach (var hook in hooks) hook.AfterCommit(transaction);
         }
 
-        public async Task BeforeInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task BeforeInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeInsertAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeInsertAsync(document, map, transaction, cancellationToken);
         }
 
-        public async Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterInsertAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.AfterInsertAsync(document, map, transaction, cancellationToken);
         }
 
-        public async Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeUpdateAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeUpdateAsync(document, map, transaction, cancellationToken);
         }
 
-        public async Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterUpdateAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.AfterUpdateAsync(document, map, transaction, cancellationToken);
         }
 
-        public async Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeDeleteAsync<TDocument>(id, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeDeleteAsync<TDocument>(id, map, transaction, cancellationToken);
         }
 
-        public async Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
+        public async Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterDeleteAsync<TDocument>(id, map, transaction);
+            foreach (var hook in hooks) await hook.AfterDeleteAsync<TDocument>(id, map, transaction, cancellationToken);
         }
 
-        public async Task BeforeCommitAsync(IWriteTransaction transaction)
+        public async Task BeforeCommitAsync(IWriteTransaction transaction, CancellationToken cancellationToken = default)
         {
-            foreach (var hook in hooks) await hook.BeforeCommitAsync(transaction);
+            foreach (var hook in hooks) await hook.BeforeCommitAsync(transaction, cancellationToken);
         }
 
-        public async Task AfterCommitAsync(IWriteTransaction transaction)
+        public async Task AfterCommitAsync(IWriteTransaction transaction, CancellationToken cancellationToken = default)
         {
-            foreach (var hook in hooks) await hook.AfterCommitAsync(transaction);
+            foreach (var hook in hooks) await hook.AfterCommitAsync(transaction, cancellationToken);
         }
     }
 }

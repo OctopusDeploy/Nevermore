@@ -5,8 +5,8 @@ using System.Data.SqlClient;
 #else
 using Microsoft.Data.SqlClient;
 #endif
-using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
 using Nevermore.Mapping;
@@ -38,7 +38,6 @@ namespace Nevermore
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             try
-
             {
                 txn.Open();
                 return txn;
@@ -50,18 +49,19 @@ namespace Nevermore
             }
         }
 
-        public async Task<IReadTransaction> BeginReadTransactionAsync(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(CancellationToken cancellationToken, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.None | RetriableOperation.Select,
+            string name = null)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
 
             try
             {
-                await txn.OpenAsync();
+                await txn.OpenAsync(cancellationToken);
                 return txn;
             }
             catch
             {
-                txn.Dispose();
+                await txn.DisposeAsync();
                 throw;
             }
         }
@@ -82,17 +82,17 @@ namespace Nevermore
             }
         }
 
-        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(CancellationToken cancellationToken, IsolationLevel isolationLevel, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.None | RetriableOperation.Select, string name = null)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel, cancellationToken);
                 return txn;
             }
             catch
             {
-                txn.Dispose();
+                await txn.DisposeAsync();
                 throw;
             }
         }
@@ -112,17 +112,17 @@ namespace Nevermore
             }
         }
 
-        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(CancellationToken cancellationToken, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, RetriableOperation retriableOperation = RetriableOperation.Delete | RetriableOperation.None | RetriableOperation.Select, string name = null)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel, cancellationToken);
                 return txn;
             }
             catch
             {
-                txn.Dispose();
+                await txn.DisposeAsync();
                 throw;
             }
         }
@@ -130,6 +130,11 @@ namespace Nevermore
         public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
             return (IRelationalTransaction) BeginWriteTransaction(isolationLevel, retriableOperation, name);
+        }
+
+        public async Task<IRelationalTransaction> BeginTransactionAsync(CancellationToken cancellationToken, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
+            return (IRelationalTransaction) await BeginWriteTransactionAsync(cancellationToken, isolationLevel, retriableOperation, name);
         }
 
         ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)

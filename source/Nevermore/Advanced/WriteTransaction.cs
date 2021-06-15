@@ -51,12 +51,12 @@ namespace Nevermore.Advanced
         public async Task InsertAsync<TDocument>(TDocument document, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {document}, options);
-            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this, cancellationToken);
 
             var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
             ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this, cancellationToken);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -87,12 +87,12 @@ namespace Nevermore.Advanced
 
             var command = builder.PrepareInsert(documentList, options);
 
-            foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+            foreach (var document in documentList) await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this, cancellationToken);
 
             var newRowVersions = await ExecuteDataModificationAsync(command, cancellationToken);
             ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
 
-            foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+            foreach (var document in documentList) await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this, cancellationToken);
 
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }
@@ -117,12 +117,12 @@ namespace Nevermore.Advanced
         public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareUpdate(document, options);
-            await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
+            await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this, cancellationToken);
 
             var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
             ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
+            await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this, cancellationToken);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -190,9 +190,9 @@ namespace Nevermore.Advanced
         async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
-            await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);
+            await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this, cancellationToken);
             await ExecuteNonQueryAsync(command, cancellationToken);
-            await configuration.Hooks.AfterDeleteAsync<TDocument>(id, command.Mapping, this);
+            await configuration.Hooks.AfterDeleteAsync<TDocument>(id, command.Mapping, this, cancellationToken);
         }
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
@@ -233,9 +233,9 @@ namespace Nevermore.Advanced
 
         public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
-            await configuration.Hooks.BeforeCommitAsync(this);
+            await configuration.Hooks.BeforeCommitAsync(this, cancellationToken);
             await Transaction.CommitAsync(cancellationToken);
-            await configuration.Hooks.AfterCommitAsync(this);
+            await configuration.Hooks.AfterCommitAsync(this, cancellationToken);
         }
 
         object[] ExecuteDataModification(PreparedCommand command)

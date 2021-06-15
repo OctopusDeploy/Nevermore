@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Mapping;
 
@@ -15,13 +16,13 @@ namespace Nevermore.Advanced.Hooks
         void BeforeCommit(IWriteTransaction transaction) {}
         void AfterCommit(IWriteTransaction transaction) {}
 
-        Task BeforeInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class => Task.CompletedTask;
-        Task BeforeCommitAsync(IWriteTransaction transaction) => Task.CompletedTask;
-        Task AfterCommitAsync(IWriteTransaction transaction) => Task.CompletedTask;
+        Task BeforeInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction, CancellationToken cancellationToken = default) where TDocument : class => Task.CompletedTask;
+        Task BeforeCommitAsync(IWriteTransaction transaction, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        Task AfterCommitAsync(IWriteTransaction transaction, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }
