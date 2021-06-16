@@ -19,12 +19,22 @@ namespace Nevermore.Transient
             (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteAction(connection.Open);
         }
         
-        public static Task OpenWithRetryAsync(this DbConnection connection, CancellationToken cancellationToken = default)
+        public static Task OpenWithRetryAsync(this DbConnection connection)
+        {
+            return OpenWithRetryAsync(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy());
+        }
+
+        public static Task OpenWithRetryAsync(this DbConnection connection, CancellationToken cancellationToken)
         {
             return OpenWithRetryAsync(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy(), cancellationToken);
         }
 
-        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken = default)
+        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy)
+        {
+            return OpenWithRetryAsync(connection, retryPolicy, CancellationToken.None);
+        }
+        
+        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken)
         {
             return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(() => connection.OpenAsync(cancellationToken));
         }
