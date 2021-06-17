@@ -244,13 +244,10 @@ namespace Nevermore.Advanced
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument, TKey>(params TKey[] ids) where TDocument : class
-            => LoadManyRequiredInternal<TDocument, TKey>(ids);
+            => LoadManyRequired<TDocument, TKey>(ids.AsEnumerable());
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
-            => LoadManyRequiredInternal<TDocument, TKey>(ids);
-
-        List<TDocument> LoadManyRequiredInternal<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
             var results = LoadMany<TDocument, TKey>(idList);
@@ -327,13 +324,10 @@ namespace Nevermore.Advanced
 
         [Pure]
         public IEnumerable<TDocument> LoadStream<TDocument, TKey>(params TKey[] ids) where TDocument : class
-            => LoadStreamInternal<TDocument, TKey>(ids);
+            => LoadStream<TDocument, TKey>(ids.AsEnumerable());
 
         [Pure]
         public IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
-            => LoadStreamInternal<TDocument, TKey>(ids);
-
-        IEnumerable<TDocument> LoadStreamInternal<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
 
