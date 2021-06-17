@@ -255,6 +255,8 @@ namespace Nevermore.Advanced
 
         public void Commit()
         {
+            if (Transaction is null)
+                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
             configuration.Hooks.BeforeCommit(this);
@@ -264,6 +266,8 @@ namespace Nevermore.Advanced
 
         public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
+            if (Transaction is null)
+                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
             await configuration.Hooks.BeforeCommitAsync(this);
             await Transaction.CommitAsync(cancellationToken);
             await configuration.Hooks.AfterCommitAsync(this);
@@ -325,7 +329,7 @@ namespace Nevermore.Advanced
             if (output?.RowVersion == null)
                 throw new StaleDataException($"Modification failed for '{typeof(TDocument).Name}' document with '{mapping.GetId(document)}' Id because submitted data was out of date. Refresh the document and try again.");
 
-            mapping.RowVersionColumn.PropertyHandler.Write(document, output.RowVersion);
+            mapping.RowVersionColumn!.PropertyHandler.Write(document, output.RowVersion);
         }
 
         void ApplyIdentityIdsIfRequired(IReadOnlyList<object> documentList, DocumentMap mapping, DataModificationOutput[] outputs)
@@ -346,7 +350,7 @@ namespace Nevermore.Advanced
                 throw new InvalidOperationException(
                     $"Modification failed for '{typeof(TDocument).Name}' document with '{mapping.GetId(document)}' Id because the server failed to return a new Identity id.");
 
-            mapping.IdColumn.PropertyHandler.Write(document, output.Id);
+            mapping.IdColumn!.PropertyHandler.Write(document, output.Id);
         }
 
         class DataModificationOutput
@@ -360,10 +364,10 @@ namespace Nevermore.Advanced
 
                 if (map.IsRowVersioningEnabled)
                     output.RowVersion =
-                        reader.GetFieldValue<byte[]>(map.RowVersionColumn.ColumnName);
+                        reader.GetFieldValue<byte[]>(map.RowVersionColumn!.ColumnName);
 
                 if (map.IsIdentityId && isInsert)
-                    output.Id = reader.GetFieldValue<object>(map.IdColumn.ColumnName);
+                    output.Id = reader.GetFieldValue<object>(map.IdColumn!.ColumnName);
 
                 return output;
             }
@@ -374,10 +378,10 @@ namespace Nevermore.Advanced
 
                 if (map.IsRowVersioningEnabled)
                     output.RowVersion =
-                        await reader.GetFieldValueAsync<byte[]>(map.RowVersionColumn.ColumnName, cancellationToken);
+                        await reader.GetFieldValueAsync<byte[]>(map.RowVersionColumn!.ColumnName, cancellationToken);
 
                 if (map.IsIdentityId && isInsert)
-                    output.Id = await reader.GetFieldValueAsync<object>(map.IdColumn.ColumnName, cancellationToken);
+                    output.Id = await reader.GetFieldValueAsync<object>(map.IdColumn!.ColumnName, cancellationToken);
 
                 return output;
             }

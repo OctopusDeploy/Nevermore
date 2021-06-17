@@ -245,7 +245,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 var loadedCustomer = transaction.Load<Customer, CustomerId>(customerId);
-                loadedCustomer.Roles.Count.Should().Be(2);
+                loadedCustomer!.Roles.Count.Should().Be(2);
             }
         }
 
