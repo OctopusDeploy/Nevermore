@@ -99,7 +99,8 @@ namespace Nevermore.Advanced
         [Pure]
         public TDocument Load<TDocument>(Guid id) where TDocument : class => Load<TDocument, Guid>(id);
 
-        private async Task<TDocument> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
+        [Pure]
+        public async Task<TDocument> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = StreamAsync<TDocument>(PrepareLoad<TDocument, TKey>(id), cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken))
@@ -123,35 +124,48 @@ namespace Nevermore.Advanced
         public Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, Guid>(id, cancellationToken);
 
-        private List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        [Pure]
+        public List<TDocument> LoadMany<TDocument, TKey>(params TKey[] ids) where TDocument : class
             => LoadStream<TDocument, TKey>(ids).ToList();
 
+        [Pure]
+        public List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+            => LoadStream<TDocument, TKey>(ids).ToList();
+
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params string[] ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params int[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params long[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params Guid[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<string> ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<int> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<long> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<Guid> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
-        private async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = new List<TDocument>();
             await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken))
@@ -179,7 +193,7 @@ namespace Nevermore.Advanced
             => LoadManyAsync<TDocument, Guid>(ids, cancellationToken);
 
         [Pure]
-        private TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class
         {
             var result = Load<TDocument, TKey>(id);
             if (result == null)
@@ -204,7 +218,7 @@ namespace Nevermore.Advanced
             => LoadRequired<TDocument, Guid>(id);
 
         [Pure]
-        private async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var result = await LoadAsync<TDocument, TKey>(id, cancellationToken);
             if (result == null)
@@ -228,7 +242,15 @@ namespace Nevermore.Advanced
         public Task<TDocument> LoadRequiredAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadRequiredAsync<TDocument, Guid>(id, cancellationToken);
 
-        private List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        [Pure]
+        public List<TDocument> LoadManyRequired<TDocument, TKey>(params TKey[] ids) where TDocument : class
+            => LoadManyRequiredInternal<TDocument, TKey>(ids);
+
+        [Pure]
+        public List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+            => LoadManyRequiredInternal<TDocument, TKey>(ids);
+
+        List<TDocument> LoadManyRequiredInternal<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
             var results = LoadMany<TDocument, TKey>(idList);
@@ -241,31 +263,40 @@ namespace Nevermore.Advanced
             return results;
         }
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params string[] ids) where TDocument : class
             => LoadManyRequired<TDocument, string>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params int[] ids) where TDocument : class
             => LoadManyRequired<TDocument, int>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params long[] ids) where TDocument : class
             => LoadManyRequired<TDocument, long>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params Guid[] ids) where TDocument : class
             => LoadManyRequired<TDocument, Guid>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
            => LoadManyRequired<TDocument, string>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<int> ids) where TDocument : class
           => LoadManyRequired<TDocument, int>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<long> ids) where TDocument : class
           => LoadManyRequired<TDocument, long>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<Guid> ids) where TDocument : class
           => LoadManyRequired<TDocument, Guid>(ids);
 
-        private async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
+        [Pure]
+        public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToArray();
             var results = await LoadManyAsync<TDocument, TKey>(idList, cancellationToken);
@@ -278,20 +309,31 @@ namespace Nevermore.Advanced
             return results;
         }
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, string>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, int>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, long>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, Guid>(ids, cancellationToken);
 
         [Pure]
-        private IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        public IEnumerable<TDocument> LoadStream<TDocument, TKey>(params TKey[] ids) where TDocument : class
+            => LoadStreamInternal<TDocument, TKey>(ids);
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+            => LoadStreamInternal<TDocument, TKey>(ids);
+
+        IEnumerable<TDocument> LoadStreamInternal<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
 
@@ -331,7 +373,7 @@ namespace Nevermore.Advanced
             => LoadStream<TDocument, Guid>(ids);
 
         [Pure]
-        private async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
+        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
             if (idList.Count == 0)
