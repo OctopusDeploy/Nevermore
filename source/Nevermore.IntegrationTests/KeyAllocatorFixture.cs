@@ -18,7 +18,7 @@ namespace Nevermore.IntegrationTests
             var allocatorA = new KeyAllocator(Store, 10);
             var allocatorB = new KeyAllocator(Store, 10);
 
-            // A gets 1-10 
+            // A gets 1-10
             AssertNext(allocatorA, "Todos", 1);
             AssertNext(allocatorA, "Todos", 2);
             AssertNext(allocatorA, "Todos", 3);
@@ -81,16 +81,15 @@ namespace Nevermore.IntegrationTests
             var random = new Random(1);
 
             var tasks = Enumerable.Range(0, threadCount)
-                .Select(_ => Task.Factory.StartNew(()=>
+                .Select(_ => Task.Factory.StartNew(() =>
                 {
-                for (var i = 0; i < allocationCount; i++)
-                {
-                    using (var transaction = Store.BeginTransaction())
+                    for (var i = 0; i < allocationCount; i++)
                     {
+                        using var transaction = Store.BeginTransaction();
                         var sequence = random.Next(3);
                         if (sequence == 0)
                         {
-                            var id = transaction.AllocateId(typeof (Customer));
+                            var id = transaction.AllocateId(typeof(Customer));
                             projectIds.Add(id);
                             transaction.Commit();
                         }
@@ -109,8 +108,7 @@ namespace Nevermore.IntegrationTests
                             transaction.Commit();
                         }
                     }
-                }
-            })).ToArray();
+                })).ToArray();
 
             Task.WaitAll(tasks);
             Func<string, int> removePrefix = x => int.Parse(x.Split('-')[1]);
@@ -120,7 +118,7 @@ namespace Nevermore.IntegrationTests
 
             projectIdsAfter.Distinct().Count().Should().Be(projectIdsAfter.Length);
             deploymentIdsAfter.Distinct().Count().Should().Be(deploymentIdsAfter.Length);
-            
+
             // Check that there are no gaps in sequence
 
             var firstProjectId = projectIdsAfter.First();

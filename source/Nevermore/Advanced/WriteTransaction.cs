@@ -206,19 +206,39 @@ namespace Nevermore.Advanced
             return AllocateId(mapping);
         }
 
+        public string AllocateId<TDocument>() where TDocument : class
+            => AllocateId(typeof(TDocument));
+
         string AllocateId(DocumentMap mapping)
-        {
-            return AllocateId(mapping.TableName, mapping.IdFormat);
-        }
+            => AllocateId(mapping.TableName, mapping.IdFormat);
 
         public string AllocateId(string tableName, string idPrefix)
-        {
-            return AllocateId(tableName, key => $"{idPrefix}-{key}");
-        }
+            => AllocateId(tableName, key => $"{idPrefix}-{key}");
 
-        public string AllocateId(string tableName, Func<int, string> idFormatter)
+        string AllocateId(string tableName, Func<int, string> idFormatter)
         {
             var key = keyAllocator.NextId(tableName);
+            return idFormatter(key);
+        }
+
+        public async Task<string> AllocateIdAsync(Type documentType, CancellationToken cancellationToken= default)
+        {
+            var mapping = configuration.DocumentMaps.Resolve(documentType);
+            return await AllocateIdAsync(mapping, cancellationToken);
+        }
+
+        public async Task<string> AllocateIdAsync<TDocument>(CancellationToken cancellationToken = default) where TDocument : class
+            => await AllocateIdAsync(typeof(TDocument), cancellationToken);
+
+        public async Task<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken = default)
+            => await AllocateIdAsync(tableName, key => $"{idPrefix}-{key}", cancellationToken);
+
+        async Task<string> AllocateIdAsync(DocumentMap mapping, CancellationToken cancellationToken = default)
+            => await AllocateIdAsync(mapping.TableName, mapping.IdFormat, cancellationToken);
+
+        async Task<string> AllocateIdAsync(string tableName, Func<int, string> idFormatter, CancellationToken cancellationToken = default)
+        {
+            var key = await keyAllocator.NextIdAsync(tableName, cancellationToken);
             return idFormatter(key);
         }
 
