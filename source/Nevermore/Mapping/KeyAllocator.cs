@@ -92,10 +92,8 @@ namespace Nevermore.Mapping
                     parameters.CommandType = CommandType.StoredProcedure;
 
                     var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
-                    if (result is null)
-                        throw new InvalidOperationException("GetNextKeyBlock returned a null value");
                     transaction.Commit();
-                    return result.Value;
+                    return result;
                 }
             }
 

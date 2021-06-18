@@ -740,7 +740,7 @@ namespace Nevermore
         /// <param name="retriableOperation">The type of operation being performed. The retry policy on the transaction will then decide whether it's safe to retry this command if it fails.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>A scalar value.</returns>
-        TResult? ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null) where TResult : struct;
+        TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null);
 
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., SELECT query that returns a count).
@@ -752,7 +752,7 @@ namespace Nevermore
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A scalar value.</returns>
-        Task<TResult?> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default) where TResult : struct;
+        Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., SELECT query that returns a count).
@@ -760,7 +760,7 @@ namespace Nevermore
         /// <typeparam name="TResult">The scalar value type to return. The DB result will be cast to this type. If the result is null, it will return the default value for the type..</typeparam>
         /// <param name="preparedCommand">The command to execute.</param>
         /// <returns>A scalar value.</returns>
-        TResult? ExecuteScalar<TResult>(PreparedCommand preparedCommand) where TResult : struct;
+        TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand);
 
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., SELECT query that returns a count).
@@ -769,7 +769,7 @@ namespace Nevermore
         /// <param name="preparedCommand">The command to execute.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A scalar value.</returns>
-        Task<TResult?> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default) where TResult : struct;
+        Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a query that returns a data reader that you can process manually.
