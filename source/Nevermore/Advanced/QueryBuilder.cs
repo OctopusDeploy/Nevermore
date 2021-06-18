@@ -246,7 +246,7 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
             var count = readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
-            return count.GetValueOrDefault();
+            return count;
         }
 
         public async Task<int> CountAsync(CancellationToken cancellationToken = default)
@@ -254,7 +254,7 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
             var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
-            return count.GetValueOrDefault();
+            return count;
         }
 
         public bool Any()

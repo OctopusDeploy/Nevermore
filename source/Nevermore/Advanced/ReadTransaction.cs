@@ -512,31 +512,31 @@ namespace Nevermore.Advanced
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        public TResult? ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null) where TResult : struct
+        public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)
         {
             return ExecuteScalar<TResult>(new PreparedCommand(query, args, retriableOperation, commandTimeout: commandTimeout));
         }
 
-        public Task<TResult?> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default) where TResult : struct
+        public Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
             return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout), cancellationToken);
         }
 
-        public TResult? ExecuteScalar<TResult>(PreparedCommand preparedCommand) where TResult : struct
+        public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
-                return default;
+                return default!;
             return (TResult) result;
         }
 
-        public async Task<TResult?> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default) where TResult : struct
+        public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
-                return default;
+                return default!;
             return (TResult) result;
         }
 
