@@ -258,6 +258,48 @@ WHERE ([Price] > 5)";
         }
 
         [Test]
+        public void ShouldGenerateCountBySpaceForQueryBuilder()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            CreateQueryBuilder<object>("Orders")
+                .NoLock()
+                .GroupBy("SpaceId")
+                .Column("SpaceId")
+                .CountColumn("OrderCount")
+                .ToList();
+
+            const string expected = @"SELECT [SpaceId],
+COUNT (*) AS [OrderCount]
+FROM [dbo].[Orders] NOLOCK
+GROUP BY [SpaceId]";
+
+            actual.Should().Be(expected);
+        }        
+        
+        [Test]
+        public void ShouldGenerateCountDistinctBySpaceForQueryBuilder()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            CreateQueryBuilder<object>("Orders")
+                .NoLock()
+                .GroupBy("SpaceId")
+                .Column("SpaceId")
+                .CountColumn("[Name]", true,"OrderCount")
+                .ToList();
+
+            const string expected = @"SELECT [SpaceId],
+COUNT (DISTINCT [Name]) AS [OrderCount]
+FROM [dbo].[Orders] NOLOCK
+GROUP BY [SpaceId]";
+
+            actual.Should().Be(expected);
+        }   
+
+        [Test]
         public void ShouldGenerateCountForJoin()
         {
             string actual = null;
