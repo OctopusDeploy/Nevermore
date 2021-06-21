@@ -247,7 +247,7 @@ namespace Nevermore
         /// If the mapping specifies a SingletonId, that is returned
         /// </summary>
         /// <typeparam name="TDocument">The type of document.</typeparam>
-        /// <typeparam name="TKey">The key type to allocate, e.g. int, string, MyStringTinyType.</typeparam>
+        /// <typeparam name="TKey">The key type to allocate, e.g. int, string, MyCustomStringType.</typeparam>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
         TKey AllocateId<TDocument, TKey>();

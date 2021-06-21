@@ -5,9 +5,9 @@ using System.Reflection;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    public class TinyType<T>
+    public class CustomIdType<T>
     {
-        internal TinyType(T value)
+        internal CustomIdType(T value)
         {
             Value = value;
         }
@@ -24,7 +24,7 @@ namespace Nevermore.IntegrationTests.Model
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
-            return !(Value is null) && Value.Equals(((TinyType<T>) obj).Value);
+            return !(Value is null) && Value.Equals(((CustomIdType<T>) obj).Value);
         }
 
         public override int GetHashCode()
@@ -32,22 +32,22 @@ namespace Nevermore.IntegrationTests.Model
             return (Value != null ? Value.GetHashCode() : 0);
         }
 
-        public static TinyType<T>? Create(Type tinyType, T value)
+        public static CustomIdType<T>? Create(Type customType, T value)
         {
             const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            var instance = Activator.CreateInstance(tinyType, bindingFlags, null, new object[] { value! }, CultureInfo.CurrentCulture);
-            return instance as TinyType<T>;
+            var instance = Activator.CreateInstance(customType, bindingFlags, null, new object[] { value! }, CultureInfo.CurrentCulture);
+            return instance as CustomIdType<T>;
         }
 
-        public static TTinyType? Create<TTinyType>(T value) where TTinyType : TinyType<T>
+        public static TCustomIdType? Create<TCustomIdType>(T value) where TCustomIdType : CustomIdType<T>
         {
-            return (TTinyType?) Create(typeof(TTinyType), value);
+            return (TCustomIdType?) Create(typeof(TCustomIdType), value);
         }
     }
 
-    public class StringTinyType : TinyType<string>
+    public class StringCustomIdType : CustomIdType<string>
     {
-        internal StringTinyType(string value) : base(value)
+        internal StringCustomIdType(string value) : base(value)
         {
         }
     }
