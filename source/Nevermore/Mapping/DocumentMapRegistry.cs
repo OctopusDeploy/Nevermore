@@ -9,10 +9,12 @@ namespace Nevermore.Mapping
 {
     public class DocumentMapRegistry : IDocumentMapRegistry
     {
+        readonly IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry;
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
 
-        public DocumentMapRegistry()
+        public DocumentMapRegistry(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
         {
+            this.primaryKeyHandlerRegistry = primaryKeyHandlerRegistry;
         }
 
         public List<DocumentMap> GetAll()
@@ -40,7 +42,7 @@ namespace Nevermore.Mapping
         {
             foreach (var mapping in mappingsToAdd)
             {
-                Register(mapping.Build());
+                Register(mapping.Build(primaryKeyHandlerRegistry));
             }
         }
 

@@ -27,7 +27,6 @@ namespace Nevermore
         public RelationalStoreConfiguration(Func<string> connectionStringFunc)
         {
             CommandFactory = new SqlCommandFactory();
-            DocumentMaps = new DocumentMapRegistry();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
             InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
@@ -47,10 +46,8 @@ namespace Nevermore
             TypeHandlers = new TypeHandlerRegistry();
 
             PrimaryKeyHandlers = new PrimaryKeyHandlerRegistry();
-            PrimaryKeyHandlers.Register(new StringPrimaryKeyHandler());
-            PrimaryKeyHandlers.Register(new IntPrimaryKeyHandler());
-            PrimaryKeyHandlers.Register(new LongPrimaryKeyHandler());
-            PrimaryKeyHandlers.Register(new GuidPrimaryKeyHandler());
+
+            DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
             AllowSynchronousOperations = true;
 

@@ -25,7 +25,7 @@ namespace Nevermore.Tests
             command.Parameters["someId_2"].Value.Should().Be("id2");
             command.Parameters["someIdentifier"].Value.Should().Be("value");
         }
-        
+
         [Test]
         public void ShouldReplaceParametersWithExactMatchEndOfQuery()
         {
@@ -91,19 +91,19 @@ namespace Nevermore.Tests
                 Column(c => c.LastName).MaxLength(256);
             }
         }
-        
+
         [Test]
         public void ShouldUseMaxLengthsWhenAvailable()
         {
             var mapping = new Map();
-            
+
             var parameters = new CommandParameterValues();
             parameters["FirstName"] = "Fred";
             parameters["LastName"] = "Fred";
-            
+
             var command = new SqlCommand($"SELECT BLAH BLAH");
-            
-            parameters.ContributeTo(command, new TypeHandlerRegistry(), ((IDocumentMap)mapping).Build());
+
+            parameters.ContributeTo(command, new TypeHandlerRegistry(), ((IDocumentMap)mapping).Build(new PrimaryKeyHandlerRegistry()));
 
             command.Parameters["FirstName"].Size.Should().Be(128);
             command.Parameters["LastName"].Size.Should().Be(256);

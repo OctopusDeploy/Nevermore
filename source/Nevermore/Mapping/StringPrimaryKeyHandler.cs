@@ -3,7 +3,7 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    class StringPrimaryKeyHandler : PrimitivePrimaryKeyHandler<string>, IStringBasedPrimitivePrimaryKeyHandler
+    class StringPrimaryKeyHandler : PrimaryKeyHandler<string>, IStringBasedPrimitivePrimaryKeyHandler
     {
         Func<string, string> idPrefixFunc;
         Func<(string idPrefix, int key), string> formatFunc;
@@ -36,9 +36,10 @@ namespace Nevermore.Mapping
             formatFunc = format;
         }
 
-        public object FormatKey(string tableName, int key)
+        public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
-            return formatFunc((GetPrefix(tableName), key));
+            var nextKey = keyAllocator.NextId(tableName);
+            return formatFunc((GetPrefix(tableName), nextKey));
         }
     }
 }

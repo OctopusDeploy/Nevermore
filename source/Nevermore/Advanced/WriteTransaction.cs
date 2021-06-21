@@ -222,31 +222,25 @@ namespace Nevermore.Advanced
 
         TKey AllocateIdForMapping<TKey>(DocumentMap mapping)
         {
-            var handler = configuration.PrimaryKeyHandlers.Resolve(mapping);
-            if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
-                throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase)
+                throw new InvalidOperationException($"The document map for {mapping.Type} is configured to use an identity key handler.");
 
-            if (typeof(TKey) != primitivePrimaryKeyHandler.Type)
-                throw new ArgumentException($"The given key type of {typeof(TKey).Name} does not match the document maps primary key handler type {primitivePrimaryKeyHandler.Type.Name}");
-
-            return (TKey) AllocateIdUsingHandler(mapping, primitivePrimaryKeyHandler);
+            return (TKey) AllocateIdUsingHandler(mapping);
         }
 
         object AllocateId(DocumentMap mapping)
         {
-            var handler = configuration.PrimaryKeyHandlers.Resolve(mapping);
-            if (handler == null || !(handler is IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler))
-                throw new InvalidOperationException($"Primary key handler could not be resolved for type {mapping.Type}, or it is configured to use an identity key handler.");
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase)
+                throw new InvalidOperationException($"The document map for {mapping.Type} is configured to use an identity key handler.");
 
-            return AllocateIdUsingHandler(mapping, primitivePrimaryKeyHandler);
+            return AllocateIdUsingHandler(mapping);
         }
 
-        object AllocateIdUsingHandler(DocumentMap mapping, IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler)
+        object AllocateIdUsingHandler(DocumentMap mapping)
         {
-            var key = keyAllocator.NextId(mapping.TableName);
-            if (primitivePrimaryKeyHandler is IStringBasedPrimitivePrimaryKeyHandler stringBasedKeyHandler)
-                return stringBasedKeyHandler.FormatKey(mapping.TableName, key);
-            return key;
+            if (mapping.IdColumn is null || mapping.IsIdentityId)
+                throw new InvalidOperationException($"Cannot allocate an id when an Id column has not been mapped.");
+            return mapping.IdColumn.PrimaryKeyHandler.GetNextKey(keyAllocator, mapping.TableName);
         }
 
         public string AllocateId(string tableName, string idPrefix)

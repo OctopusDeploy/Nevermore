@@ -16,8 +16,9 @@ namespace Nevermore.IntegrationTests.Model
             return stringCustomType.Value;
         }
 
-        public object FormatKey(string tableName, int key)
+        public object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
+            var key = keyAllocator.NextId(tableName);
             return CustomIdType<string>.Create<T>($"{GetPrefix(tableName)}-{key}")!;
         }
 

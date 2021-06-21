@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
-using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.Transient;
 
@@ -578,11 +577,14 @@ namespace Nevermore.Advanced
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
-            if (mapping.IdColumn?.Type != typeof(TKey))
+            if (mapping.IdColumn is null)
+                throw new InvalidOperationException($"Cannot load {mapping.Type.Name} by Id, as no Id column has been mapped.");
+
+            if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler is IPrimitivePrimaryKeyHandler primitive ? primitive.ConvertToPrimitiveValue(id) : id }};
+            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
