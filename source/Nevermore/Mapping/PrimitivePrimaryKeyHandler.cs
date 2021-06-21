@@ -6,7 +6,7 @@ namespace Nevermore.Mapping
 {
     public abstract class PrimaryKeyHandler<T> : IPrimaryKeyHandler
     {
-        public Type Type => typeof(T);
+        public virtual Type Type => typeof(T);
 
         [return: NotNullIfNotNull("id")]
         public virtual object? ConvertToPrimitiveValue(object? id)

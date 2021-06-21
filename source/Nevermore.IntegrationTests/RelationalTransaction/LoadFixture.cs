@@ -435,7 +435,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
                 trn.Insert(document);
 
-                document.Id.Value.Should().StartWith(DocumentWithCustomPrefixMap.CustomPrefix);
+                document.Id.Value.Should().StartWith(CustomPrefixIdKeyHandler.CustomPrefix);
             }
         }
     }
