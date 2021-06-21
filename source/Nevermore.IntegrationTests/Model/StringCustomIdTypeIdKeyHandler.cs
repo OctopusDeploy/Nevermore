@@ -4,10 +4,16 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    class StringCustomIdTypeIdKeyHandler<T> : IStringBasedPrimitivePrimaryKeyHandler
+    class StringCustomIdTypeIdKeyHandler<T> : IPrimaryKeyHandler
         where T : StringCustomIdType
     {
+        readonly string? customPrefix;
         public Type Type => typeof(T);
+
+        public StringCustomIdTypeIdKeyHandler(string? customPrefix = null)
+        {
+            this.customPrefix = customPrefix;
+        }
 
         public object? ConvertToPrimitiveValue(object? id)
         {
@@ -19,22 +25,7 @@ namespace Nevermore.IntegrationTests.Model
         public object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
             var key = keyAllocator.NextId(tableName);
-            return CustomIdType<string>.Create<T>($"{GetPrefix(tableName)}-{key}")!;
-        }
-
-        public void SetPrefix(Func<string, string> idPrefix)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string GetPrefix(string tableName)
-        {
-            return $"{tableName}s";
-        }
-
-        public void SetFormat(Func<(string idPrefix, int key), string> format)
-        {
-            throw new NotImplementedException();
+            return CustomIdType<string>.Create<T>($"{customPrefix ?? tableName}s-{key}")!;
         }
     }
 }

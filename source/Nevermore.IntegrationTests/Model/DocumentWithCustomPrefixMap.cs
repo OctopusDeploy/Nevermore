@@ -4,11 +4,9 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class DocumentWithCustomPrefixMap : DocumentMap<DocumentWithCustomPrefix>
     {
-        public const string CustomPrefix = "CustomPrefix";
-
         public DocumentWithCustomPrefixMap()
         {
-            Id().Prefix(_ => CustomPrefix);
+            Id();
             Column(m => m.Name);
         }
     }
