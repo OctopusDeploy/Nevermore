@@ -22,5 +22,7 @@ namespace Nevermore.Mapping
         /// </summary>
         /// <param name="format">The function to call back to format the id.</param>
         void SetFormat(Func<(string idPrefix, int key), string> format);
+
+        object FormatKey(string tableName, int key);
     }
 }

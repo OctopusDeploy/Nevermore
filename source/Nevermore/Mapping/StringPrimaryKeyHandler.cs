@@ -36,7 +36,7 @@ namespace Nevermore.Mapping
             formatFunc = format;
         }
 
-        public override object FormatKey(string tableName, int key)
+        public object FormatKey(string tableName, int key)
         {
             return formatFunc((GetPrefix(tableName), key));
         }

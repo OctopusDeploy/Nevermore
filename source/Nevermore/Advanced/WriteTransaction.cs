@@ -244,7 +244,9 @@ namespace Nevermore.Advanced
         object AllocateIdUsingHandler(DocumentMap mapping, IPrimitivePrimaryKeyHandler primitivePrimaryKeyHandler)
         {
             var key = keyAllocator.NextId(mapping.TableName);
-            return primitivePrimaryKeyHandler.FormatKey(mapping.TableName, key);
+            if (primitivePrimaryKeyHandler is IStringBasedPrimitivePrimaryKeyHandler stringBasedKeyHandler)
+                return stringBasedKeyHandler.FormatKey(mapping.TableName, key);
+            return key;
         }
 
         public string AllocateId(string tableName, string idPrefix)
