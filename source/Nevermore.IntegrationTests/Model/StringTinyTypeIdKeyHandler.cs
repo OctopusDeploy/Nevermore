@@ -9,7 +9,7 @@ namespace Nevermore.IntegrationTests.Model
     {
         public Type Type => typeof(T);
 
-        public object? GetPrimitiveValue(object? id)
+        public object? ConvertToPrimitiveValue(object? id)
         {
             if (!(id is StringCustomIdType stringCustomType))
                 throw new ArgumentException($"Expected the id to be a {typeof(T).Name}");

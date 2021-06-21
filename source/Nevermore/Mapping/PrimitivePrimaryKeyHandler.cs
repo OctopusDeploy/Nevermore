@@ -9,11 +9,9 @@ namespace Nevermore.Mapping
         public Type Type => typeof(T);
 
         [return: NotNullIfNotNull("id")]
-        public virtual object? GetPrimitiveValue(object? id)
+        public virtual object? ConvertToPrimitiveValue(object? id)
         {
             return id;
         }
-
-        public abstract object FormatKey(string tableName, int key);
     }
 }

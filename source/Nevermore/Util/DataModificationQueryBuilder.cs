@@ -320,7 +320,7 @@ namespace Nevermore.Util
                     mapping.IdColumn.PropertyHandler.Write(document, id);
                 }
 
-                var primitiveValue = primitiveKeyHandler.GetPrimitiveValue(id);
+                var primitiveValue = primitiveKeyHandler.ConvertToPrimitiveValue(id);
                 result[$"{prefix}{mapping.IdColumn.ColumnName}"] = primitiveValue;
             }
 
