@@ -30,7 +30,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new DocumentWithRowVersionMap(),
                 new DocumentWithIdentityIdMap(),
                 new DocumentWithIdentityIdAndRowVersionMap(),
-                new DocumentWithCustomPrefixMap()
+                new DocumentWithCustomPrefixMap(),
+                new DocumentWithCustomPrefixAndStringIdMap()
             };
 
             var config = new RelationalStoreConfiguration(ConnectionString)

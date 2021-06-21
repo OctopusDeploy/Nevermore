@@ -49,6 +49,12 @@ namespace Nevermore.Mapping
             return this;
         }
 
+        public IIdColumnMappingBuilder KeyHandler(IPrimaryKeyHandler primaryKeyHandler)
+        {
+            PrimaryKeyHandler = primaryKeyHandler;
+            return this;
+        }
+
         void ValidateForIdentityUse()
         {
             if (!ValidIdentityTypes.Contains(Type))

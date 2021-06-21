@@ -454,7 +454,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
         }
 
         [Test]
-        public void StoreAndLoadWithCustomPrefix()
+        public void StoreAndLoadWithCustomIdAndCustomPrefix()
         {
             using (var trn = Store.BeginTransaction())
             {
@@ -466,6 +466,22 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(document);
 
                 document.Id.Value.Should().StartWith(CustomPrefixIdKeyHandler.CustomPrefix);
+            }
+        }
+
+        [Test]
+        public void StoreAndLoadWithCustomPrefix()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var document = new DocumentWithCustomPrefixAndStringId()
+                {
+                    Name = "test"
+                };
+
+                trn.Insert(document);
+
+                document.Id.Should().StartWith(DocumentWithCustomPrefixAndStringIdMap.CustomPrefix);
             }
         }
     }

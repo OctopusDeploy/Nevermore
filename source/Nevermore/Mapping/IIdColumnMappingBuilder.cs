@@ -9,7 +9,14 @@ namespace Nevermore.Mapping
         /// </summary>
         /// <remarks>This will also reset the PropertyHandler</remarks>
         IIdColumnMappingBuilder Identity();
-        
+
+        /// <summary>
+        /// Explicitly set a primary key handler.
+        /// </summary>
+        /// <param name="primaryKeyHandler">The primary key handler.</param>
+        /// <returns></returns>
+        IIdColumnMappingBuilder KeyHandler(IPrimaryKeyHandler primaryKeyHandler);
+
         /// <summary>
         /// Builds the IdColumnMapping.
         /// </summary>
