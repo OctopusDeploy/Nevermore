@@ -452,5 +452,21 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.String' does not match configured type of 'System.Guid'.");
             }
         }
+
+        [Test]
+        public void StoreAndLoadWithCustomPrefix()
+        {
+            using (var trn = Store.BeginTransaction())
+            {
+                var document = new DocumentWithCustomPrefix()
+                {
+                    Name = "test"
+                };
+
+                trn.Insert(document);
+
+                document.Id.Value.Should().StartWith(DocumentWithCustomPrefixMap.CustomPrefix);
+            }
+        }
     }
 }

@@ -29,7 +29,8 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithGuidIdMap(),
                 new DocumentWithRowVersionMap(),
                 new DocumentWithIdentityIdMap(),
-                new DocumentWithIdentityIdAndRowVersionMap()
+                new DocumentWithIdentityIdAndRowVersionMap(),
+                new DocumentWithCustomPrefixMap()
             };
 
             var config = new RelationalStoreConfiguration(ConnectionString)
@@ -43,6 +44,7 @@ namespace Nevermore.IntegrationTests.SetUp
             config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
 
             config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomerId>());
+            config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomPrefixId>());
 
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
