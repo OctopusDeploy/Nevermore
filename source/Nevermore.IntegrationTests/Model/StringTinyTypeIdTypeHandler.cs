@@ -6,7 +6,7 @@ using Nevermore.Advanced.TypeHandlers;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    class StringTinyTypeIdTypeHandler<T> : ITypeHandler where T : TinyType<string>
+    class StringCustomIdTypeHandler<T> : ITypeHandler where T : CustomIdType<string>
     {
         public bool CanConvert(Type objectType)
         {
@@ -18,7 +18,7 @@ namespace Nevermore.IntegrationTests.Model
             if (reader.IsDBNull(columnIndex)) return null;
             var value = reader.GetString(columnIndex);
             if (string.IsNullOrWhiteSpace(value)) return null;
-            return TinyType<string>.Create<T>(value);
+            return CustomIdType<string>.Create<T>(value);
         }
 
         public void WriteDatabase(DbParameter parameter, object value)

@@ -4,21 +4,21 @@ using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
 {
-    class StringTinyTypeIdKeyHandler<T> : IStringBasedPrimitivePrimaryKeyHandler
-        where T : StringTinyType
+    class StringCustomIdTypeIdKeyHandler<T> : IStringBasedPrimitivePrimaryKeyHandler
+        where T : StringCustomIdType
     {
         public Type Type => typeof(T);
 
         public object? GetPrimitiveValue(object? id)
         {
-            if (!(id is StringTinyType stringTinyType))
+            if (!(id is StringCustomIdType stringCustomType))
                 throw new ArgumentException($"Expected the id to be a {typeof(T).Name}");
-            return stringTinyType.Value;
+            return stringCustomType.Value;
         }
 
         public object FormatKey(string tableName, int key)
         {
-            return TinyType<string>.Create<T>($"{GetPrefix(tableName)}-{key}")!;
+            return CustomIdType<string>.Create<T>($"{GetPrefix(tableName)}-{key}")!;
         }
 
         public void SetPrefix(Func<string, string> idPrefix)

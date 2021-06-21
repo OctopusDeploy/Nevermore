@@ -19,7 +19,7 @@ namespace Nevermore.IntegrationTests.Model
         public string[] Passphrases { get; set; }
     }
 
-    public class CustomerId : StringTinyType
+    public class CustomerId : StringCustomIdType
     {
         internal CustomerId(string value) : base(value)
         {

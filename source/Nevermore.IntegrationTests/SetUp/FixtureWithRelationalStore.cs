@@ -41,9 +41,9 @@ namespace Nevermore.IntegrationTests.SetUp
             config.DocumentMaps.Register(documentMaps);
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
-            config.TypeHandlers.Register(new StringTinyTypeIdTypeHandler<CustomerId>());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
 
-            config.PrimaryKeyHandlers.Register(new StringTinyTypeIdKeyHandler<CustomerId>());
+            config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomerId>());
 
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
