@@ -11,7 +11,7 @@ namespace Nevermore.Mapping
     {
         void Register(IPrimaryKeyHandler strategy);
 
-        IPrimaryKeyHandler? Resolve(DocumentMap documentMap);
+        IPrimaryKeyHandler? Resolve(Type columnType);
     }
 
     class PrimaryKeyHandlerRegistry : IPrimaryKeyHandlerRegistry
@@ -19,20 +19,22 @@ namespace Nevermore.Mapping
         // maps key type to IPrimaryKeyHandler concrete type
         readonly ConcurrentDictionary<Type, IPrimaryKeyHandler> mappings = new ConcurrentDictionary<Type, IPrimaryKeyHandler>();
 
+        public PrimaryKeyHandlerRegistry()
+        {
+            mappings.TryAdd(typeof(string), new StringPrimaryKeyHandler());
+            mappings.TryAdd(typeof(int), new IntPrimaryKeyHandler());
+            mappings.TryAdd(typeof(long), new LongPrimaryKeyHandler());
+            mappings.TryAdd(typeof(Guid), new GuidPrimaryKeyHandler());
+        }
+
         public void Register(IPrimaryKeyHandler handler)
         {
             mappings[handler.Type] = handler;
         }
 
-        public IPrimaryKeyHandler? Resolve(DocumentMap documentMap)
+        public IPrimaryKeyHandler? Resolve(Type columnType)
         {
-            if (!(documentMap.PrimaryKeyHandler is null))
-                return documentMap.PrimaryKeyHandler;
-
-            if (documentMap.IdColumn is null)
-                throw new InvalidOperationException($"Map for document type {documentMap.Type.Name} does not specify an Id column.");
-
-            var idType = documentMap.IdColumn.Type;
+            var idType = columnType;
 
             var maps = new List<IPrimaryKeyHandler>();
 

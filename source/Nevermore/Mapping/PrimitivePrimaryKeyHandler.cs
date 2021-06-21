@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Nevermore.Mapping
 {
-    public abstract class PrimitivePrimaryKeyHandler<T> : IPrimitivePrimaryKeyHandler
+    public abstract class PrimaryKeyHandler<T> : IPrimaryKeyHandler
     {
         public Type Type => typeof(T);
 
@@ -13,5 +13,7 @@ namespace Nevermore.Mapping
         {
             return id;
         }
+
+        public abstract object GetNextKey(IKeyAllocator keyAllocator, string tableName);
     }
 }

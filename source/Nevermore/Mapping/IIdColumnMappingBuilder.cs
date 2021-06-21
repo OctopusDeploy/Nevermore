@@ -28,5 +28,12 @@ namespace Nevermore.Mapping
         /// </summary>
         /// <param name="format">The function to call back to format the id.</param>
         IIdColumnMappingBuilder Format(Func<(string idPrefix, int key), string> format);
+
+        /// <summary>
+        /// Builds the IdColumnMapping.
+        /// </summary>
+        /// <param name="primaryKeyHandlerRegistry">The primary key handler registry, which must be populated with the required handler prior to the DocumentMaps being registered.</param>
+        /// <returns>The built column mapping.</returns>
+        IdColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry);
     }
 }

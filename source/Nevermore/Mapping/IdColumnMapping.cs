@@ -5,7 +5,22 @@ using System.Reflection;
 
 namespace Nevermore.Mapping
 {
-    public class IdColumnMapping : ColumnMapping, IIdColumnMappingBuilder
+    public class IdColumnMapping : ColumnMapping
+    {
+        internal IdColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property, bool isIdentity, IPrimaryKeyHandler primaryKeyHandler)
+            : base(columnName, type, handler, property)
+        {
+            IsIdentity = isIdentity;
+            Direction = IsIdentity ? ColumnDirection.FromDatabase : ColumnDirection.Both;
+            PrimaryKeyHandler = primaryKeyHandler;
+        }
+
+        public bool IsIdentity { get; }
+
+        public IPrimaryKeyHandler PrimaryKeyHandler { get; }
+    }
+
+    public class IdColumnMappingBuilder : ColumnMapping, IIdColumnMappingBuilder
     {
         static readonly HashSet<Type> ValidIdentityTypes = new HashSet<Type>
         {
@@ -16,24 +31,25 @@ namespace Nevermore.Mapping
 
         bool hasCustomPropertyHandler;
 
-        internal IdColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
-            : base(columnName, type, handler, property)
-        { }
+        internal IdColumnMappingBuilder(string columnName, Type type, IPropertyHandler handler, PropertyInfo property) : base(columnName, type, handler, property)
+        {
+        }
 
-        public IPrimaryKeyHandler? PrimaryKeyHandler { get; private set; }
+        bool IsIdentity { get; set; }
+
+        IPrimaryKeyHandler? PrimaryKeyHandler { get; set; }
 
         /// <inheritdoc cref="IIdColumnMappingBuilder"/>
         public IIdColumnMappingBuilder Identity()
         {
             ValidateForIdentityUse();
 
-            if (!(PrimaryKeyHandler is null) && !(PrimaryKeyHandler is IIdentityPrimaryKeyHandler))
+            if (!(PrimaryKeyHandler is null))
                 throw new InvalidOperationException($"{nameof(KeyHandler)} has already been set to a non-identity handler.");
 
-            var handlerType = typeof(IdentityPrimaryKeyHandler<>).MakeGenericType(Type);
-            var keyHandler = (IIdentityPrimaryKeyHandler)Activator.CreateInstance(handlerType);
+            IsIdentity = true;
 
-            return KeyHandler(keyHandler);
+            return this;
         }
 
         void ValidateForIdentityUse()
@@ -47,14 +63,8 @@ namespace Nevermore.Mapping
 
         public IIdColumnMappingBuilder KeyHandler(IPrimaryKeyHandler primaryKeyHandler)
         {
-            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase && !(primaryKeyHandler is IIdentityPrimaryKeyHandler))
+            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException($"{nameof(KeyHandler)} can only be called with an IIdentityPrimaryKeyHandler, once {nameof(Identity)} has been called.");
-
-            if (primaryKeyHandler is IIdentityPrimaryKeyHandler)
-            {
-                ValidateForIdentityUse();
-                Direction = ColumnDirection.FromDatabase;
-            }
 
             PrimaryKeyHandler = primaryKeyHandler;
 
@@ -67,7 +77,7 @@ namespace Nevermore.Mapping
         /// <param name="idPrefix">The function to call back to get the prefix.</param>
         public IIdColumnMappingBuilder Prefix(Func<string, string> idPrefix)
         {
-            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase && PrimaryKeyHandler is IIdentityPrimaryKeyHandler)
+            if (Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException($"{nameof(Prefix)} cannot be set when an identity key handler has been configured.");
 
             if (PrimaryKeyHandler == null)
@@ -88,7 +98,7 @@ namespace Nevermore.Mapping
         /// <param name="format">The function to call back to format the id.</param>
         public IIdColumnMappingBuilder Format(Func<(string idPrefix, int key), string> format)
         {
-            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase && PrimaryKeyHandler is IIdentityPrimaryKeyHandler)
+            if (!(PrimaryKeyHandler is null) && Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException($"{nameof(Format)} cannot be set when an identity key handler has been configured.");
 
             if (PrimaryKeyHandler == null)
@@ -105,11 +115,24 @@ namespace Nevermore.Mapping
 
         protected override void SetCustomPropertyHandler(IPropertyHandler propertyHandler)
         {
-            if (PrimaryKeyHandler is IIdentityPrimaryKeyHandler)
+            if (Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException("Unable to configure an Identity Id column with a custom PropertyHandler");
 
             hasCustomPropertyHandler = true;
             base.SetCustomPropertyHandler(propertyHandler);
+        }
+
+        public IdColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
+        {
+            var primaryKeyHandler = PrimaryKeyHandler;
+            if (primaryKeyHandler is null)
+                primaryKeyHandler = primaryKeyHandlerRegistry.Resolve(Type);
+
+            if (primaryKeyHandler is null)
+                throw new InvalidOperationException($"Unable to determine a primary key handler for type {Type.Name}. This could happen if the custom PrimaryKeyHandlers are not registered prior to registering the DocumentMaps");
+
+            var mapping = new IdColumnMapping(ColumnName, Type, PropertyHandler, Property, IsIdentity, primaryKeyHandler);
+            return mapping;
         }
     }
 }

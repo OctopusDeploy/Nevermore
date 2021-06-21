@@ -39,7 +39,7 @@ namespace Nevermore.Util
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
 
-            if (mapping.IdColumn?.PrimaryKeyHandler is IIdentityPrimaryKeyHandler && options.CustomAssignedId != null)
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase && options.CustomAssignedId != null)
                 throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
 
             var sb = new StringBuilder();
@@ -309,9 +309,8 @@ namespace Nevermore.Util
 
             var result = new CommandParameterValues();
 
-            //we never want to allocate id's if the Id column is an Identity
-            var keyHandler = configuration.PrimaryKeyHandlers.Resolve(mapping);
-            if (keyHandler is IPrimitivePrimaryKeyHandler primitiveKeyHandler)
+            // we never want to allocate id's if the Id column is an Identity
+            if (!mapping.IdColumn.IsIdentity)
             {
                 // check whether the object's Id has already been provided, if not then we'll either use the one from the InsertOptions or we'll generate one
                 if (id == null)
@@ -319,10 +318,11 @@ namespace Nevermore.Util
                     id = customAssignedId == null || (customAssignedId is string assignedId && string.IsNullOrWhiteSpace(assignedId)) ? allocateId(mapping) : customAssignedId;
                     mapping.IdColumn.PropertyHandler.Write(document, id);
                 }
-
-                var primitiveValue = primitiveKeyHandler.ConvertToPrimitiveValue(id);
-                result[$"{prefix}{mapping.IdColumn.ColumnName}"] = primitiveValue;
             }
+
+            var keyHandler = mapping.IdColumn.PrimaryKeyHandler;
+            var primitiveValue = keyHandler.ConvertToPrimitiveValue(id);
+            result[$"{prefix}{mapping.IdColumn.ColumnName}"] = primitiveValue;
 
             switch (mapping.JsonStorageFormat)
             {

@@ -19,7 +19,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
             // Test accessibility
             public string Prop1 { get; set; }
-            public string Prop2 { get; } = "Hello"; 
+            public string Prop2 { get; } = "Hello";
             public string Prop3 { get; private set; }
             public string Prop4 { get; protected set; }
             public string Prop5 { get; private set; }
@@ -31,13 +31,13 @@ namespace Nevermore.IntegrationTests.Advanced
                 Prop5 = prop5;
             }
         }
-        
+
         enum Education { School, HighSchool, College }
 
         public override void OneTimeSetUp()
         {
             base.OneTimeSetUp();
-            
+
             NoMonkeyBusiness();
             KeepDataBetweenTests();
 
@@ -86,7 +86,7 @@ namespace Nevermore.IntegrationTests.Advanced
         [Test, Order(2)]
         public void ShouldWorkIfProp2IsSaveOnly()
         {
-            var map = ((IDocumentMap)new UserMap()).Build();
+            var map = ((IDocumentMap)new UserMap()).Build(Configuration.PrimaryKeyHandlers);
             // Pretend the user edited their document map to set it to SaveOnly
             ((IColumnMappingBuilder) map.Columns.Single(c => c.ColumnName == "Prop2")).SaveOnly();
             Configuration.DocumentMaps.Register(map);
@@ -105,9 +105,9 @@ namespace Nevermore.IntegrationTests.Advanced
                 Prop1 = "Prop1",
                 FirstName = "Fred"
             };
-            
+
             user.SetOtherProps("Prop3", "Prop4", "Prop5");
-            
+
             transaction.Insert(user);
             transaction.Update(user);
             transaction.Commit();
@@ -117,7 +117,7 @@ namespace Nevermore.IntegrationTests.Advanced
         public void ShouldLoad()
         {
             using var transaction = Store.BeginTransaction();
-            
+
             var user = transaction.Load<User>("users-123");
             user.Should().NotBeNull();
             user.Age.Should().Be(18);
@@ -132,7 +132,7 @@ namespace Nevermore.IntegrationTests.Advanced
         public void ShouldDelete()
         {
             using var transaction = Store.BeginTransaction();
-            
+
             transaction.Delete<User>("users-123");
             var user = transaction.Load<User>("users-123");
             user.Should().BeNull();

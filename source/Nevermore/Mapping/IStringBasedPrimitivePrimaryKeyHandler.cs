@@ -2,7 +2,7 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    public interface IStringBasedPrimitivePrimaryKeyHandler : IPrimitivePrimaryKeyHandler
+    public interface IStringBasedPrimitivePrimaryKeyHandler : IPrimaryKeyHandler
     {
         /// <summary>
         /// Set a function that when given the TableName will return key prefix string.
@@ -22,7 +22,5 @@ namespace Nevermore.Mapping
         /// </summary>
         /// <param name="format">The function to call back to format the id.</param>
         void SetFormat(Func<(string idPrefix, int key), string> format);
-
-        object FormatKey(string tableName, int key);
     }
 }
