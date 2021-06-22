@@ -436,6 +436,8 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(document);
 
                 document.Id.Value.Should().StartWith(CustomPrefixIdKeyHandler.CustomPrefix);
+
+                trn.LoadRequired<DocumentWithCustomPrefix, CustomPrefixId>(document.Id);
             }
         }
 
@@ -452,6 +454,8 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 trn.Insert(document);
 
                 document.Id.Should().StartWith(DocumentWithCustomPrefixAndStringIdMap.CustomPrefix);
+
+                trn.LoadRequired<DocumentWithCustomPrefixAndStringId>(document.Id);
             }
         }
     }

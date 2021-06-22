@@ -43,6 +43,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
             config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomPrefixId>());
 
             config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomerId>());
             config.PrimaryKeyHandlers.Register(new CustomPrefixIdKeyHandler());
