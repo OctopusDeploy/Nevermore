@@ -21,7 +21,7 @@ namespace Nevermore.Transient
                 }
                 finally
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                         command.Connection.Close();
                 }
             });
@@ -33,15 +33,15 @@ namespace Nevermore.Transient
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
             return effectiveCommandRetryPolicy.ExecuteAction(async () =>
             {
-                var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try
                 {
-                    return await command.ExecuteNonQueryAsync();
+                    return await command.ExecuteNonQueryAsync(cancellationToken);
                 }
                 finally
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
-                        command.Connection.Close();
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                        await command.Connection.CloseAsync();
                 }
             });
         }
@@ -61,8 +61,7 @@ namespace Nevermore.Transient
                     }
                     catch (Exception)
                     {
-                        if (weOwnTheConnectionLifetime && command.Connection != null &&
-                            command.Connection.State == ConnectionState.Open)
+                        if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                             command.Connection.Close();
                         throw;
                     }
@@ -83,15 +82,14 @@ namespace Nevermore.Transient
                     (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
                 return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
                 {
-                    var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                    var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                     try
                     {
                         return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
                     }
                     catch (Exception)
                     {
-                        if (weOwnTheConnectionLifetime && command.Connection != null &&
-                            command.Connection.State == ConnectionState.Open)
+                        if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                             await command.Connection.CloseAsync();
                         throw;
                     }
@@ -116,7 +114,7 @@ namespace Nevermore.Transient
                 }
                 finally
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                         command.Connection.Close();
                 }
             });
@@ -128,14 +126,14 @@ namespace Nevermore.Transient
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy()).LoggingRetries(operationName);
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
-                var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try
                 {
                     return await command.ExecuteScalarAsync(cancellationToken);
                 }
                 finally
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null && command.Connection.State == ConnectionState.Open)
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                         await command.Connection.CloseAsync();
                 }
             });
@@ -160,6 +158,18 @@ namespace Nevermore.Transient
             if (command.Connection.State == ConnectionState.Open) return false;
 
             command.Connection.OpenWithRetry(retryPolicy);
+            return true;
+        }
+        
+        static async Task<bool> EnsureValidConnectionAsync(DbCommand command, RetryPolicy retryPolicy, CancellationToken cancellationToken)
+        {
+            if (command == null) return false;
+
+            GuardConnectionIsNotNull(command);
+
+            if (command.Connection.State == ConnectionState.Open) return false;
+
+            await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken);
             return true;
         }
     }

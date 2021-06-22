@@ -264,7 +264,7 @@ namespace Nevermore.Advanced
                 return Array.Empty<object>();
             }
 
-            return await ReadResultsAsync(command, reader => reader.GetValue(0));
+            return await ReadResultsAsync(command, reader => reader.GetValue(0), cancellationToken);
         }
 
         async Task<object> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
