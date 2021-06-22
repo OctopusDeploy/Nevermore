@@ -28,7 +28,7 @@ namespace Nevermore.IntegrationTests.Advanced
             transaction.Update(customer);
             AssertLogged(log, "BeforeUpdate", "AfterUpdate");
 
-            transaction.Delete(customer);
+            transaction.Delete<Customer, CustomerId>(customer);
             AssertLogged(log, "BeforeDelete", "AfterDelete");
 
             transaction.Commit();

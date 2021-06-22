@@ -135,24 +135,24 @@ namespace Nevermore.Advanced
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
-            => Delete<TDocument>((object) id, options);
+            => Delete<TDocument, string>(id, options);
 
         public void Delete<TDocument>(int id, DeleteOptions options = null) where TDocument : class
-            => Delete<TDocument>((object) id, options);
+            => Delete<TDocument, int>(id, options);
 
         public void Delete<TDocument>(long id, DeleteOptions options = null) where TDocument : class
-            => Delete<TDocument>((object) id, options);
+            => Delete<TDocument, long>(id, options);
 
         public void Delete<TDocument>(Guid id, DeleteOptions options = null) where TDocument : class
-            => Delete<TDocument>((object) id, options);
+            => Delete<TDocument, Guid>(id, options);
 
-        public void Delete<TDocument>(TDocument document, DeleteOptions options = null) where TDocument : class
+        public void Delete<TDocument, TKey>(TDocument document, DeleteOptions options = null) where TDocument : class
         {
-            var id = configuration.DocumentMaps.GetId(document);
-            Delete<TDocument>(id, options);
+            var id = (TKey)configuration.DocumentMaps.GetId(document);
+            Delete<TDocument, TKey>(id, options);
         }
 
-        void Delete<TDocument>(object id, DeleteOptions options = null) where TDocument : class
+        public void Delete<TDocument, TKey>(TKey id, DeleteOptions options = null) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             configuration.Hooks.BeforeDelete<TDocument>(id, command.Mapping, this);
@@ -172,30 +172,31 @@ namespace Nevermore.Advanced
         public Task DeleteAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => DeleteAsync<TDocument>(id, null, cancellationToken);
 
-        public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
-        {
-            return DeleteAsync(document, null, cancellationToken);
-        }
+        public Task DeleteAsync<TDocument, TKey>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument, TKey>(document, null, cancellationToken);
 
         public Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+            => DeleteAsync<TDocument, string>(id, options, cancellationToken);
 
         public Task DeleteAsync<TDocument>(int id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+            => DeleteAsync<TDocument, int>(id, options, cancellationToken);
 
         public Task DeleteAsync<TDocument>(long id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+            => DeleteAsync<TDocument, long>(id, options, cancellationToken);
 
         public Task DeleteAsync<TDocument>(Guid id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
-            => DeleteAsync<TDocument>((object) id, options, cancellationToken);
+            => DeleteAsync<TDocument, Guid>(id, options, cancellationToken);
 
-        public Task DeleteAsync<TDocument>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument, TKey>(TDocument document, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var id = configuration.DocumentMaps.GetId(document);
-            return DeleteAsync<TDocument>(id, options, cancellationToken);
+            var id = (TKey)configuration.DocumentMaps.GetId(document);
+            return DeleteAsync<TDocument, TKey>(id, options, cancellationToken);
         }
 
-        async Task DeleteAsync<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
+        public Task DeleteAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
+            => DeleteAsync<TDocument, TKey>(id, null, cancellationToken);
+
+        public async Task DeleteAsync<TDocument, TKey>(TKey id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
             await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);

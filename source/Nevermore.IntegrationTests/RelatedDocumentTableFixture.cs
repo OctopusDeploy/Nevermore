@@ -108,7 +108,7 @@ namespace Nevermore.IntegrationTests
             var order = new Order() {Id = orderId};
             using (var trn = Store.BeginTransaction())
             {
-                trn.Delete(order);
+                trn.Delete<Order, string>(order);
                 trn.Commit();
             }
         }
