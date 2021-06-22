@@ -1,6 +1,6 @@
 namespace Nevermore.Mapping
 {
-    class IntPrimaryKeyHandler : PrimaryKeyHandler<int>
+    public sealed class IntPrimaryKeyHandler : PrimaryKeyHandler<int>
     {
         public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {

@@ -9,7 +9,12 @@ namespace Nevermore.Mapping
 {
     public interface IPrimaryKeyHandlerRegistry
     {
-        void Register(IPrimaryKeyHandler strategy);
+        /// <summary>
+        /// Registers a mapping of key type to PrimaryKeyHandler type. StringPrimaryKeyHandler, IntPrimaryKeyHandler, LongPrimaryKeyHandler, and GuidPrimaryKeyHandler
+        /// are registered by default, with default settings. Calling register again for them will overwrite the default, you can use this if you want to override a
+        /// global default.
+        /// </summary>
+        void Register(IPrimaryKeyHandler handler);
 
         IPrimaryKeyHandler? Resolve(Type columnType);
     }

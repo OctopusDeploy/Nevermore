@@ -3,11 +3,11 @@ using System;
 
 namespace Nevermore.Mapping
 {
-    class StringPrimaryKeyHandler : PrimaryKeyHandler<string>
+    public sealed class StringPrimaryKeyHandler : PrimaryKeyHandler<string>
     {
         readonly Func<string, string> idPrefix;
         readonly Func<(string idPrefix, int key), string> format;
-        
+
         public StringPrimaryKeyHandler(Func<string, string>? idPrefix = null, Func<(string idPrefix, int key), string>? format = null)
         {
             this.idPrefix = idPrefix ?? (tableName => $"{tableName}s");
