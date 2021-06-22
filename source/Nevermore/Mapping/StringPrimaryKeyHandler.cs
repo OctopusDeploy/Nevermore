@@ -5,19 +5,20 @@ namespace Nevermore.Mapping
 {
     public sealed class StringPrimaryKeyHandler : PrimaryKeyHandler<string>
     {
-        readonly Func<string, string> idPrefix;
         readonly Func<(string idPrefix, int key), string> format;
 
-        public StringPrimaryKeyHandler(Func<string, string>? idPrefix = null, Func<(string idPrefix, int key), string>? format = null)
+        public StringPrimaryKeyHandler(string? idPrefix = null, Func<(string idPrefix, int key), string>? format = null)
         {
-            this.idPrefix = idPrefix ?? (tableName => $"{tableName}s");
+            IdPrefix = idPrefix;
             this.format = format ?? (x => $"{x.idPrefix}-{x.key}");
         }
+
+        public string? IdPrefix { get; private set; }
 
         public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
             var nextKey = keyAllocator.NextId(tableName);
-            return format((idPrefix(tableName), nextKey));
+            return format((IdPrefix ?? $"{tableName}s", nextKey));
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Nevermore.IntegrationTests.Model
 
         public DocumentWithCustomPrefixAndStringIdMap()
         {
-            Id().KeyHandler(new StringPrimaryKeyHandler(_ => CustomPrefix));
+            Id().KeyHandler(new StringPrimaryKeyHandler(CustomPrefix));
             Column(m => m.Name);
         }
     }
