@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Assent;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
@@ -328,6 +329,15 @@ namespace Nevermore.Tests.Util
             this.Assent(Format(result));
         }
 
+        string Format(PreparedCommand[] results)
+        {
+            var sb = new StringBuilder();
+            foreach (var command in results)
+            {
+                sb.Append(Format(command));
+            }
+            return sb.ToString();
+        }
 
         string Format(PreparedCommand result)
         {

@@ -44,20 +44,15 @@ namespace Nevermore.Util
             options ??= InsertOptions.Default;
 
             var mapping = GetMapping(documents);
-            // TODO - we need to create these document parameters for each command - parameters are disposed at the end of execution in 'CommandExecutor'
-            var documentParameters = GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
 
-            // TODO - we should perform both insert/related doc insert in a single command and only create additional commands as necessary to preserve sql performance characteristics for existing users
-            var insertCommand = CreateInsertCommand(documents, mapping, documentParameters, options);
-            commands.Add(insertCommand);
-
-            var relatedDocumentCommands = CreateRelatedDocumentInsertCommands(mapping, documents, documentParameters, options);
+            var insertStatementBuilder = CreateInsertStatementBuilder(documents, mapping, options);
+            var relatedDocumentCommands = CreateInsertCommandsWithRelatedDocuments(insertStatementBuilder, mapping, documents, options);
             commands.AddRange(relatedDocumentCommands);
 
             return commands.ToArray();
         }
 
-        public PreparedCommand PrepareUpdate(object document, UpdateOptions options = null)
+        public PreparedCommand[] PrepareUpdate(object document, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
 
@@ -94,17 +89,7 @@ namespace Nevermore.Util
 
             var statement = $"UPDATE [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] {options.Hint ?? ""} SET {updates}{returnRowVersionStatement} WHERE [{mapping.IdColumn.ColumnName}] = @{mapping.IdColumn.ColumnName}{rowVersionCheckStatement}";
 
-            var parameters = GetDocumentParameters(
-                m => throw new Exception("Cannot update a document if it does not have an ID"),
-                null,
-                null,
-                document,
-                mapping,
-                DataModification.Update
-            );
-
-            statement = AppendRelatedDocumentStatementsForUpdate(statement, parameters, mapping, document);
-            return new PreparedCommand(statement, parameters, RetriableOperation.Update, mapping, options.CommandTimeout);
+            return CreateUpdateCommandsWithRelatedDocuments(statement, mapping, document, options);
         }
 
         public PreparedCommand PrepareDelete(object document, DeleteOptions options = null)
@@ -186,10 +171,9 @@ namespace Nevermore.Util
         }
 
         // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
-        PreparedCommand CreateInsertCommand(
+        StringBuilder CreateInsertStatementBuilder(
             IReadOnlyList<object> documents,
             DocumentMap mapping,
-            CommandParameterValues parameters,
             InsertOptions options)
         {
             var columns = new List<string>();
@@ -236,7 +220,7 @@ namespace Nevermore.Util
             if (documents.Count == 1)
             {
                 Append("");
-                return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
+                return sb;
             }
 
             for (var x = 0; x < documents.Count; x++)
@@ -247,7 +231,7 @@ namespace Nevermore.Util
                 Append($"{x}__");
             }
 
-            return new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout);
+            return sb;
         }
 
         CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
@@ -347,14 +331,24 @@ namespace Nevermore.Util
             return result;
         }
 
-        PreparedCommand[] CreateRelatedDocumentInsertCommands(
+        PreparedCommand[] CreateInsertCommandsWithRelatedDocuments(
+            StringBuilder insertStatementBuilder,
             DocumentMap mapping,
             IReadOnlyList<object> documents,
-            CommandParameterValues documentParameters,
             InsertOptions options)
         {
             var commands = new List<PreparedCommand>();
+            var parameters = new CommandParameterValues();
+            // we need to create these document parameters for each command - parameters are disposed at the end of execution in 'CommandExecutor'
+            Func<CommandParameterValues> documentParametersCreator = () => GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
+            parameters.AddRange(documentParametersCreator());
+
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
+            if (!relatedDocumentData.Any())
+            {
+                commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+                return commands.ToArray();
+            }
 
             foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
             {
@@ -363,14 +357,11 @@ namespace Nevermore.Util
                 var remaining = data.Related.Length;
                 while (remaining > 0)
                 {
-                    var sb = new StringBuilder();
-                    var parameters = new CommandParameterValues();
-                    parameters.AddRange(documentParameters);
                     var reachedParameterLimit = false;
 
                     while (!reachedParameterLimit && remaining > 0)
                     {
-                        sb.AppendLine(
+                        insertStatementBuilder.AppendLine(
                             $"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
                         var related = data.Related;
                         var batchSize = Math.Min(1000, remaining);
@@ -385,8 +376,8 @@ namespace Nevermore.Util
                             var relatedVariableName = relatedVariablePrefix + index;
                             parameters.Add(relatedVariableName, relatedDocumentId);
                             if (x > 0)
-                                sb.Append(",");
-                            sb.AppendLine(
+                                insertStatementBuilder.Append(",");
+                            insertStatementBuilder.AppendLine(
                                 $"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
                             remaining--;
 
@@ -398,29 +389,51 @@ namespace Nevermore.Util
                         }
                     }
 
-                    commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+                    commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+                    if (remaining > 0)
+                    {
+                        insertStatementBuilder = new StringBuilder();
+                        parameters = new CommandParameterValues();
+                        parameters.AddRange(documentParametersCreator());
+                    }
                 }
             }
 
             return commands.ToArray();
         }
 
-        string AppendRelatedDocumentStatementsForUpdate(
-            string statement,
-            CommandParameterValues parameters,
+        PreparedCommand[] CreateUpdateCommandsWithRelatedDocuments(
+            string updateStatement,
             DocumentMap mapping,
-            object document)
+            object document,
+            UpdateOptions updateOptions)
         {
+            Func<CommandParameterValues> parametersCreator = () => GetDocumentParameters(
+                m => throw new Exception("Cannot update a document if it does not have an ID"),
+                null,
+                null,
+                document,
+                mapping,
+                DataModification.Update
+            );
+            var commands = new List<PreparedCommand>();
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
+            var parameters = parametersCreator();
+
             if (relatedDocumentData.Count == 0)
-                return statement;
+            {
+                commands.Add(new PreparedCommand(updateStatement, parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
+                return commands.ToArray();
+            }
 
             var sb = new StringBuilder();
-            sb.AppendLine(statement);
+            sb.AppendLine(updateStatement);
             sb.AppendLine();
 
+            // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
+            var globalTempTableName = $"##references_{Guid.NewGuid().ToString().Replace('-', '_')}";
             if (relatedDocumentData.Any(d => d.Related.Any()))
-                sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
+                sb.AppendLine($"CREATE TABLE {globalTempTableName} (Reference nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS, ReferenceTable nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS)").AppendLine();
 
             foreach (var data in relatedDocumentData)
             {
@@ -428,33 +441,39 @@ namespace Nevermore.Util
                 {
                     var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
                     var remaining = data.Related.Length;
-
-                    sb.AppendLine();
-                    sb.AppendLine("DELETE FROM @references");
-                    sb.AppendLine();
-
                     var allValueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')").ToArray();
+
                     while (remaining > 0)
                     {
-                        var batchSize = Math.Min(1000, remaining);
+                        var batchSize = Math.Min(1000, Math.Min(SqlServerParameterLimit - parameters.Count, remaining));
                         var valueBlocks = allValueBlocks.Skip(data.Related.Length - remaining).Take(batchSize);
 
-                        sb.Append("INSERT INTO @references VALUES ");
+                        sb.Append($"INSERT INTO {globalTempTableName} VALUES ");
                         sb.AppendLine(string.Join(", ", valueBlocks));
                         sb.AppendLine();
                         remaining -= batchSize;
+
+                        for (int i = 0; i < batchSize; i++)
+                        {
+                            var paramIndex = i + data.Related.Length - remaining - batchSize;
+                            parameters.Add(relatedVariablePrefix + paramIndex, data.Related[paramIndex].relatedDocumentId);
+                        }
+
+                        if (parameters.Count >= SqlServerParameterLimit && remaining > 0)
+                        {
+                            commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
+                            sb = new StringBuilder();
+                            parameters = parametersCreator();
+                        }
                     }
 
                     sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
-                    sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM @references)");
+                    sb.AppendLine($"AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM {globalTempTableName})");
                     sb.AppendLine();
 
                     sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
+                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM {globalTempTableName} t");
                     sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
-
-                    for (var x = 0; x < data.Related.Length; x++)
-                        parameters.Add(relatedVariablePrefix + x, data.Related[x].relatedDocumentId);
                 }
                 else
                 {
@@ -462,7 +481,8 @@ namespace Nevermore.Util
                 }
             }
 
-            return sb.ToString();
+            commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
+            return commands.ToArray();
         }
 
         IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)

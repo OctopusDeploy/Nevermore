@@ -116,13 +116,17 @@ namespace Nevermore.Advanced
 
         public void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
         {
-            var command = builder.PrepareUpdate(document, options);
-            configuration.Hooks.BeforeUpdate(document, command.Mapping, this);
+            var commands = builder.PrepareUpdate(document, options);
+            foreach (var command in commands)
+            {
+                configuration.Hooks.BeforeUpdate(document, command.Mapping, this);
 
-            var newRowVersion = ExecuteSingleDataModification(command);
-            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+                var newRowVersion = ExecuteSingleDataModification(command);
+                ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            configuration.Hooks.AfterUpdate(document, command.Mapping, this);
+                configuration.Hooks.AfterUpdate(document, command.Mapping, this);
+            }
+
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -133,13 +137,17 @@ namespace Nevermore.Advanced
 
         public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var command = builder.PrepareUpdate(document, options);
-            await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
+            var commands = builder.PrepareUpdate(document, options);
+            foreach (var command in commands)
+            {
+                await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
 
-            var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
-            ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
+                var newRowVersion = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+                ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
 
-            await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
+                await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
+            }
+
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 

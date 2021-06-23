@@ -171,11 +171,15 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void Insert()
+        [TestCase(1)]
+        [TestCase(1000)]
+        [TestCase(2001)]
+        [TestCase(2096)] // exact SQL Server param per command limit
+        [TestCase(3001)] // requires 2 commands as we exceed the per command param limit
+        public void Insert(int referenceDataEntriesCount)
         {
             var referenceData = new List<string>();
-            for (int i = 0; i < 3001; i++)
+            for (int i = 0; i < referenceDataEntriesCount; i++)
             {
                 referenceData.Add("Product-" + i);
             }
@@ -199,12 +203,16 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void Update()
+        [TestCase(1)]
+        [TestCase(1000)]
+        [TestCase(2001)]
+        [TestCase(2096)] // exact SQL Server param per command limit
+        [TestCase(3001)] // requires 2 commands as we exceed the per command param limit
+        public void Update(int referenceDataEntriesCount)
         {
             var startingData = new List<string>();
             var updatedData = new List<string>();
-            for (int i = 0; i < 3001; i++)
+            for (int i = 0; i < referenceDataEntriesCount; i++)
             {
                 startingData.Add("Product-" + i);
                 updatedData.Add("Product-" + i + 1);
