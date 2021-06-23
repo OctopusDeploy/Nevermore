@@ -112,20 +112,6 @@ namespace Nevermore.Advanced
             selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(new CustomExpression(expression)), columnAlias));
             return this;
         }
-
-
-        public IQueryBuilder<TRecord> CountColumn(string columnAlias)
-        {
-            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(new CustomExpression("COUNT (*)")), columnAlias));
-            return this;
-        }
-
-        public IQueryBuilder<TRecord> CountColumn(string expression, bool distinct, string columnAlias)
-        {
-            var distinctClause = distinct ? "DISTINCT " : string.Empty;
-            selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(new CustomExpression($"COUNT ({distinctClause}{expression})")), columnAlias));
-            return this;
-        }
         
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {

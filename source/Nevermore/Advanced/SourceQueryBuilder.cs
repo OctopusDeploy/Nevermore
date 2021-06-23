@@ -404,17 +404,6 @@ namespace Nevermore.Advanced
         {
             return Builder.CalculatedColumn(expression, columnAlias);
         }
-
-        public IQueryBuilder<TRecord> CountColumn(string columnAlias)
-        {
-            return Builder.CalculatedColumn("COUNT (*)", columnAlias);
-        }
-
-        public IQueryBuilder<TRecord> CountColumn(string expression, bool distinct, string columnAlias)
-        {
-            var distinctClause = distinct ? "DISTINCT " : string.Empty;
-            return Builder.CalculatedColumn($"COUNT ({distinctClause}{expression})", columnAlias);
-        }
         
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {

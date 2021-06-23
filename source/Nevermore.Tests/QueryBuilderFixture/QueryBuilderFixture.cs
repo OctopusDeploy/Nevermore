@@ -194,6 +194,7 @@ ORDER BY [CorrelationId]";
                 .Where("IsActive = 1")
                 .OrderBy("Created");
 
+            // Note, this is less than ideal, Hint should be multi-add, and perhaps with an enum??
             var accounts = CreateQueryBuilder<object>("Accounts").Hint("WITH (UPDLOCK)");
 
             var actual = orders.InnerJoin(customers.Subquery())
@@ -258,7 +259,7 @@ WHERE ([Price] > 5)";
         }
 
         [Test]
-        public void ShouldGenerateCountBySpaceForQueryBuilder()
+        public void ShouldGenerateGroupBySpaceForQueryBuilder()
         {
             string actual = null;
             transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
@@ -267,7 +268,7 @@ WHERE ([Price] > 5)";
                 .NoLock()
                 .GroupBy("SpaceId")
                 .Column("SpaceId")
-                .CountColumn("OrderCount")
+                .CalculatedColumn("COUNT (*)", "OrderCount")
                 .ToList();
 
             const string expected = @"SELECT [SpaceId],
@@ -278,26 +279,31 @@ GROUP BY [SpaceId]";
             actual.Should().Be(expected);
         }        
         
+        
         [Test]
-        public void ShouldGenerateCountDistinctBySpaceForQueryBuilder()
+        public void ShouldGenerateGroupBySpaceWithAliasForQueryBuilder()
         {
             string actual = null;
             transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
 
-            CreateQueryBuilder<object>("Orders")
+            CreateQueryBuilder<object>("Orders", "scheme")
+                .Alias("Agg")
                 .NoLock()
-                .GroupBy("SpaceId")
-                .Column("SpaceId")
-                .CountColumn("[Name]", true,"OrderCount")
+                .GroupBy("SpaceId", "Agg")
+                .Column("SpaceId", "SpaceId", "Agg")
+                .CalculatedColumn("COUNT (*)", "OrderCount")
+                .CalculatedColumn("MAX(Agg.[DataVersion])", "Latest")
                 .ToList();
 
-            const string expected = @"SELECT [SpaceId],
-COUNT (DISTINCT [Name]) AS [OrderCount]
-FROM [dbo].[Orders] NOLOCK
-GROUP BY [SpaceId]";
+            // NOTE, this is invalid SQL, will be fixed in separate PR
+            const string expected = @"SELECT Agg.[SpaceId] AS [SpaceId],
+COUNT (*) AS [OrderCount],
+MAX(Agg.[DataVersion]) AS [Latest]
+FROM [scheme].[Orders] Agg NOLOCK
+GROUP BY Agg.[SpaceId]";
 
             actual.Should().Be(expected);
-        }   
+        }        
 
         [Test]
         public void ShouldGenerateCountForJoin()

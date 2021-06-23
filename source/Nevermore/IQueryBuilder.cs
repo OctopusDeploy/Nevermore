@@ -226,24 +226,6 @@ namespace Nevermore
         /// <param name="columnAlias">The alias for the calculated column</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias);
-
-        /// <summary>
-        /// Adds a count() column to the column selection for the query.
-        /// In this version, the rows are counted. 
-        /// </summary>
-        /// <param name="columnAlias">The alias for the calculated column</param>
-        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> CountColumn(string columnAlias);
-        
-        /// <summary>
-        /// Adds a calculated column to the column selection for the query.
-        /// In this version, the optionally distinct non null expression values are counted. 
-        /// </summary>
-        /// <param name="expression">The expression that will be used in the SQL string for the count calculation</param>
-        /// <param name="distinct">Get the distinct count</param>
-        /// <param name="columnAlias">The alias for the calculated column</param>
-        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IQueryBuilder<TRecord> CountColumn(string expression, bool distinct, string columnAlias);
         
         /// <summary>
         /// Change the type of the record returned by the QueryBuilder.
