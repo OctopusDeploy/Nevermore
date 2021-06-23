@@ -26,8 +26,7 @@
             var orderByString = orderBy != null ? $@"
 {orderBy.GenerateSql()}" : string.Empty;
             
-            var groupByString = groupBy != null ? $@"
-{groupBy.GenerateSql()}" : string.Empty;
+            var groupByString = groupBy?.GenerateSql();
             
             return $@"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()}
 FROM {from.GenerateSql()}{where.GenerateSql()}{groupByString}{orderByString}";

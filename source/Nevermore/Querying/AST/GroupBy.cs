@@ -16,7 +16,8 @@ namespace Nevermore.Querying.AST
         
         public string GenerateSql()
         {
-            return $"GROUP BY {string.Join(@", ", fields.Select(f => f.GenerateSql()))}";
+            return @$"
+GROUP BY {string.Join(@", ", fields.Select(f => f.GenerateSql()))}";
         }
 
         public override string ToString() => GenerateSql();
