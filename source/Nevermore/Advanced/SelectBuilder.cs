@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
@@ -10,13 +11,13 @@ namespace Nevermore.Advanced
     {
         protected override JoinedSource From { get; }
 
-        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<OrderByField>())
+        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        JoinSelectBuilder(JoinedSource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        JoinSelectBuilder(JoinedSource from, List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
             From = from;
         }
@@ -30,7 +31,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new JoinSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new JoinSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
 
         public override void AddWhere(UnaryWhereParameter whereParams)
@@ -75,14 +76,14 @@ namespace Nevermore.Advanced
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
         public TableSelectBuilder(ITableSource from, IColumn idColumn) 
-            : this(from, idColumn, new List<IWhereClause>(), new List<OrderByField>())
+            : this(from, idColumn, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        TableSelectBuilder(ITableSource from, IColumn idColumn, List<IWhereClause> whereClauses,
+        TableSelectBuilder(ITableSource from, IColumn idColumn, List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
             List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
-            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
             From = from;
             IdColumn = idColumn;
@@ -99,7 +100,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
     
@@ -112,13 +113,13 @@ namespace Nevermore.Advanced
         public UnionSelectBuilder(ISelect innerSelect, 
             string customAlias, 
             ITableAliasGenerator tableAliasGenerator) 
-            : this(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(), new List<OrderByField>())
+            : this(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        UnionSelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        UnionSelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator, List<IWhereClause> whereClauses,  List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
             this.innerSelect = innerSelect;
             this.customAlias = customAlias;
@@ -154,20 +155,20 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new UnionSelectBuilder(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new UnionSelectBuilder(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
 
     public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
     {
         public SubquerySelectBuilder(ISubquerySource from) 
-            : this(from, new List<IWhereClause>(), new List<OrderByField>())
+            : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
         
-        SubquerySelectBuilder(ISubquerySource from, List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        SubquerySelectBuilder(ISubquerySource from, List<IWhereClause> whereClauses,  List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
             From = @from;
         }
@@ -182,7 +183,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
 
@@ -190,16 +191,21 @@ namespace Nevermore.Advanced
     {
         protected abstract TSource From { get; }
         protected readonly List<OrderByField> OrderByClauses;
+        protected readonly List<GroupByField> GroupByClauses;
         protected readonly List<IWhereClause> WhereClauses;
         protected ISelectColumns ColumnSelection;
         protected IRowSelection RowSelection;
 
-        protected SelectBuilderBase(List<IWhereClause> whereClauses, List<OrderByField> orderByClauses, 
+        protected SelectBuilderBase(
+            List<IWhereClause> whereClauses, 
+            List<GroupByField> groupByClauses,
+            List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null,
             IRowSelection rowSelection = null)
         {
             WhereClauses = whereClauses;
             OrderByClauses = orderByClauses;
+            GroupByClauses = groupByClauses;
             this.RowSelection = rowSelection;
             this.ColumnSelection = columnSelection;
         }
@@ -227,7 +233,7 @@ namespace Nevermore.Advanced
 
         ISelect GenerateSelectInner(Func<OrderBy> getDefaultOrderBy)
         {
-            return new Select(GetRowSelection(), GetColumnSelection(), From, GetWhere() ?? new Where(), GetOrderBy(getDefaultOrderBy));
+            return new Select(GetRowSelection(), GetColumnSelection(), From, GetWhere() ?? new Where(), GetGroupBy(), GetOrderBy(getDefaultOrderBy));
         }
 
         public abstract ISelectBuilder Clone();
@@ -237,10 +243,15 @@ namespace Nevermore.Advanced
             return WhereClauses.Any() ? new Where(new AndClause(WhereClauses)) : null;
         }
 
+        GroupBy GetGroupBy()
+        {
+            return GroupByClauses.Any() ? new GroupBy(GroupByClauses) : null;
+        }
+
         OrderBy GetOrderBy(Func<OrderBy> getDefaultOrderBy)
         {
             // If you are doing something like COUNT(*) then it doesn't make sense to include an Order By clause
-            if (GetColumnSelection().AggregatesRows)
+            if (GetColumnSelection().AggregatesRows || GroupByClauses.Any())
             {
                 return null;
             }
@@ -266,6 +277,16 @@ namespace Nevermore.Advanced
             RowSelection = new Distinct();
         }
 
+        public void AddGroupBy(string fieldName)
+        {
+            GroupByClauses.Add(new GroupByField(new Column(fieldName)));
+        }
+        
+        public void AddGroupBy(string fieldName, string tableAlias)
+        {
+            GroupByClauses.Add(new GroupByField(new TableColumn(new Column(fieldName), tableAlias)));
+        }
+        
         public virtual void AddOrder(string fieldName, bool @descending)
         {
             OrderByClauses.Add(new OrderByField(new Column(fieldName), @descending ? OrderByDirection.Descending : OrderByDirection.Ascending));

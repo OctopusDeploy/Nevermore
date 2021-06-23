@@ -135,6 +135,21 @@ namespace Nevermore
         IQueryBuilder<TRecord> WhereNotNull(string fieldName);
 
         /// <summary>
+        /// Adds a group by clause to the query.  If this is used, then all selected should be included in the group by, or be a calculated column
+        /// </summary>
+        /// <param name="fieldName">The column that the query should be grouped by</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IQueryBuilder<TRecord> GroupBy(string fieldName);
+        
+        /// <summary>
+        /// Adds a group by clause to the query.  If this is used, then all selected should be included in the group by, or be a calculated column
+        /// </summary>
+        /// <param name="fieldName">The column that the query should be grouped by</param>
+        /// <param name="tableAlias">The alias for where the column exists</param>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias);
+
+        /// <summary>
         /// Adds an order by clause to the query, where the order by clause will be in the default order (ascending).
         /// If no order by clauses are added to the query, the query will be ordered by the Id column in ascending order.
         /// </summary>
@@ -211,7 +226,7 @@ namespace Nevermore
         /// <param name="columnAlias">The alias for the calculated column</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
         IQueryBuilder<TRecord> CalculatedColumn(string expression, string columnAlias);
-
+        
         /// <summary>
         /// Change the type of the record returned by the QueryBuilder.
         /// This is useful if the initial type no longer matches the columns returned by the query.

@@ -7,14 +7,16 @@
         readonly ISelectSource from;
         readonly Where where;
         readonly OrderBy orderBy; // Can be null
+        readonly GroupBy groupBy; // Can be null
 
-        public Select(IRowSelection rowSelection, ISelectColumns columns, ISelectSource from, Where where, OrderBy orderBy)
+        public Select(IRowSelection rowSelection, ISelectColumns columns, ISelectSource from, Where where, GroupBy groupBy, OrderBy orderBy)
         {
             this.rowSelection = rowSelection;
             this.columns = columns;
             this.from = from;
             this.where = where;
             this.orderBy = orderBy;
+            this.groupBy = groupBy;
         }
 
         public string Schema => @from.Schema;
@@ -23,8 +25,11 @@
         {
             var orderByString = orderBy != null ? $@"
 {orderBy.GenerateSql()}" : string.Empty;
+            
+            var groupByString = groupBy?.GenerateSql();
+            
             return $@"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()}
-FROM {from.GenerateSql()}{where.GenerateSql()}{orderByString}";
+FROM {from.GenerateSql()}{where.GenerateSql()}{groupByString}{orderByString}";
         }
 
         public override string ToString()

@@ -112,7 +112,7 @@ namespace Nevermore.Advanced
             selectBuilder.AddColumnSelection(new AliasedColumn(new CalculatedColumn(new CustomExpression(expression)), columnAlias));
             return this;
         }
-
+        
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
             return new QueryBuilder<TNewRecord, TSelectBuilder>(selectBuilder, readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, ParameterValues, Parameters, ParameterDefaults);
@@ -197,6 +197,18 @@ namespace Nevermore.Advanced
         public ISelectBuilder GetSelectBuilder()
         {
             return selectBuilder.Clone();
+        }
+
+        public IQueryBuilder<TRecord> GroupBy(string fieldName)
+        {
+            selectBuilder.AddGroupBy(fieldName);
+            return this;
+        }
+
+        public IQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
+        {
+            selectBuilder.AddGroupBy(fieldName, tableAlias);
+            return this;
         }
 
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)

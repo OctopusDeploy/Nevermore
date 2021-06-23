@@ -350,6 +350,16 @@ namespace Nevermore.Advanced
             return Final(Builder.WhereParameterized(fieldName, operand, parameterNames));
         }
 
+        public IQueryBuilder<TRecord> GroupBy(string fieldName)
+        {
+            return Final(Builder.GroupBy(fieldName));
+        }
+
+        public IQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
+        {
+            return Final(Builder.GroupBy(fieldName, tableAlias));
+        }
+
         public IOrderedQueryBuilder<TRecord> OrderBy(string fieldName)
         {
             return Final(Builder.OrderBy(fieldName));
@@ -394,7 +404,7 @@ namespace Nevermore.Advanced
         {
             return Builder.CalculatedColumn(expression, columnAlias);
         }
-
+        
         public IQueryBuilder<TNewRecord> AsType<TNewRecord>() where TNewRecord : class
         {
             return Builder.AsType<TNewRecord>();

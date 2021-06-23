@@ -194,6 +194,7 @@ ORDER BY [CorrelationId]";
                 .Where("IsActive = 1")
                 .OrderBy("Created");
 
+            // Note, this is less than ideal, Hint should be multi-add, and perhaps with an enum??
             var accounts = CreateQueryBuilder<object>("Accounts").Hint("WITH (UPDLOCK)");
 
             var actual = orders.InnerJoin(customers.Subquery())
@@ -256,6 +257,53 @@ WHERE ([Price] > 5)";
 
             actual.Should().Be(expected);
         }
+
+        [Test]
+        public void ShouldGenerateGroupBySpaceForQueryBuilder()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            CreateQueryBuilder<object>("Orders")
+                .NoLock()
+                .GroupBy("SpaceId")
+                .Column("SpaceId")
+                .CalculatedColumn("COUNT (*)", "OrderCount")
+                .ToList();
+
+            const string expected = @"SELECT [SpaceId],
+COUNT (*) AS [OrderCount]
+FROM [dbo].[Orders] NOLOCK
+GROUP BY [SpaceId]";
+
+            actual.Should().Be(expected);
+        }        
+        
+        
+        [Test]
+        public void ShouldGenerateGroupBySpaceWithAliasForQueryBuilder()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+
+            CreateQueryBuilder<object>("Orders", "scheme")
+                .Alias("Agg")
+                .NoLock()
+                .GroupBy("SpaceId", "Agg")
+                .Column("SpaceId", "SpaceId", "Agg")
+                .CalculatedColumn("COUNT (*)", "OrderCount")
+                .CalculatedColumn("MAX(Agg.[DataVersion])", "Latest")
+                .ToList();
+
+            // NOTE, this is invalid SQL, will be fixed in separate PR
+            const string expected = @"SELECT Agg.[SpaceId] AS [SpaceId],
+COUNT (*) AS [OrderCount],
+MAX(Agg.[DataVersion]) AS [Latest]
+FROM [scheme].[Orders] Agg NOLOCK
+GROUP BY Agg.[SpaceId]";
+
+            actual.Should().Be(expected);
+        }        
 
         [Test]
         public void ShouldGenerateCountForJoin()
