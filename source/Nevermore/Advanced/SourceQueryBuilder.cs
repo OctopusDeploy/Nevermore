@@ -350,12 +350,12 @@ namespace Nevermore.Advanced
             return Final(Builder.WhereParameterized(fieldName, operand, parameterNames));
         }
 
-        public IOrderedQueryBuilder<TRecord> GroupBy(string fieldName)
+        public IQueryBuilder<TRecord> GroupBy(string fieldName)
         {
             return Final(Builder.GroupBy(fieldName));
         }
 
-        public IOrderedQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
+        public IQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
         {
             return Final(Builder.GroupBy(fieldName, tableAlias));
         }

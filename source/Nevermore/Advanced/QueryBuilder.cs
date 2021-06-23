@@ -199,13 +199,13 @@ namespace Nevermore.Advanced
             return selectBuilder.Clone();
         }
 
-        public IOrderedQueryBuilder<TRecord> GroupBy(string fieldName)
+        public IQueryBuilder<TRecord> GroupBy(string fieldName)
         {
             selectBuilder.AddGroupBy(fieldName);
             return this;
         }
 
-        public IOrderedQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
+        public IQueryBuilder<TRecord> GroupBy(string fieldName, string tableAlias)
         {
             selectBuilder.AddGroupBy(fieldName, tableAlias);
             return this;
