@@ -67,7 +67,7 @@ namespace Nevermore.Transient
             });
         }
 
-        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader", CancellationToken cancellationToken)
+        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, CancellationToken cancellationToken, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy =
@@ -148,7 +148,7 @@ namespace Nevermore.Transient
             command.Connection.OpenWithRetry(retryPolicy);
             return true;
         }
-        
+
         static async Task<bool> EnsureValidConnectionAsync(DbCommand command, RetryPolicy retryPolicy, CancellationToken cancellationToken)
         {
             if (command == null) return false;

@@ -185,7 +185,7 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior))
+                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken))
                 {
                     while (await reader.ReadAsync(cancellationToken))
                     {

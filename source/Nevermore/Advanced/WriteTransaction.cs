@@ -282,7 +282,7 @@ namespace Nevermore.Advanced
 
             return await ReadResultsAsync(command,
                 async reader => await DataModificationOutput.ReadAsync(reader, command.Mapping,
-                    command.Operation == RetriableOperation.Insert, cancellationToken));
+                    command.Operation == RetriableOperation.Insert, cancellationToken), cancellationToken);
         }
 
         async Task<DataModificationOutput> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
