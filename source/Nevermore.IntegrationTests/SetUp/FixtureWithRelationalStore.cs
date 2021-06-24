@@ -30,7 +30,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+                new DocumentWithRowVersionMap(),
                 new AircraftMap(),
                 new BoatMap());
 
@@ -54,7 +54,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+                new DocumentWithRowVersionMap(),
                 new AircraftMap(),
                 new BoatMap());
 
