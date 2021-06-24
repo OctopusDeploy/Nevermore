@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
@@ -15,7 +14,6 @@ namespace Nevermore.Advanced
     [DebuggerDisplay("{ToString()}")]
     public class WriteTransaction : ReadTransaction, IRelationalTransaction
     {
-        readonly RelationalTransactionRegistry registry;
         readonly IRelationalStoreConfiguration configuration;
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
@@ -28,7 +26,6 @@ namespace Nevermore.Advanced
             string name = null
         ) : base(registry, operationsToRetry, configuration, name)
         {
-            this.registry = registry;
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
