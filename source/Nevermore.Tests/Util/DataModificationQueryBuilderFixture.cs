@@ -17,6 +17,7 @@ namespace Nevermore.Tests.Util
 {
     public class DataModificationQueryBuilderFixture
     {
+        const int SqlServerParameterLimit = 2100;
         readonly DataModificationQueryBuilder builder;
         Func<string> idAllocator;
 
@@ -263,6 +264,29 @@ namespace Nevermore.Tests.Util
                 Id = "Doc-1",
                 RelatedDocumentIds = new[] {("Rel-1", typeof(Other))}
             };
+
+            var result = builder.PrepareUpdate(
+                document
+            );
+
+            this.Assent(Format(result));
+        }
+
+        [Test]
+        public void UpdateWithMoreRelatedDocumentsThanSqlParameterLimit()
+        {
+            var document = new TestDocumentWithRelatedDocuments
+            {
+                AColumn = "AValue",
+                Id = "Doc-1",
+            };
+
+            var relatedDocumentIds = new List<(string, Type)>();
+            for (int i = 0; i < SqlServerParameterLimit + 1; i++)
+            {
+                relatedDocumentIds.Add(("Rel-" + i, typeof(Other)));
+            }
+            document.RelatedDocumentIds = relatedDocumentIds;
 
             var result = builder.PrepareUpdate(
                 document

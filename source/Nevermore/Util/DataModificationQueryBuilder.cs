@@ -425,10 +425,17 @@ namespace Nevermore.Util
             sb.AppendLine(updateStatement);
             sb.AppendLine();
 
-            // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
-            var globalTempTableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
-            if (relatedDocumentData.Any(d => d.Related.Any()))
-                sb.AppendLine($"CREATE TABLE {globalTempTableName} (Reference nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS, ReferenceTable nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS)").AppendLine();
+            string tableVariableName = "@references";
+            if (parameters.Count + relatedDocumentData.Sum(x => x.Related.Length) > SqlServerParameterLimit) // we need multiple sql commands
+            {
+                // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
+                tableVariableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
+                sb.AppendLine($"CREATE TABLE {tableVariableName} (Reference nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS, ReferenceTable nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS)").AppendLine();
+            }
+            else if (relatedDocumentData.Any(x => x.Related.Any()))
+            {
+                sb.AppendLine($"DECLARE {tableVariableName} as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
+            }
 
             foreach (var data in relatedDocumentData)
             {
@@ -443,7 +450,7 @@ namespace Nevermore.Util
                         var batchSize = Math.Min(1000, Math.Min(SqlServerParameterLimit - parameters.Count, remaining));
                         var valueBlocks = allValueBlocks.Skip(data.Related.Length - remaining).Take(batchSize);
 
-                        sb.Append($"INSERT INTO {globalTempTableName} VALUES ");
+                        sb.Append($"INSERT INTO {tableVariableName} VALUES ");
                         sb.AppendLine(string.Join(", ", valueBlocks));
                         sb.AppendLine();
                         remaining -= batchSize;
@@ -463,11 +470,11 @@ namespace Nevermore.Util
                     }
 
                     sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
-                    sb.AppendLine($"AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM {globalTempTableName})");
+                    sb.AppendLine($"AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM {tableVariableName})");
                     sb.AppendLine();
 
                     sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM {globalTempTableName} t");
+                    sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM {tableVariableName} t");
                     sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
                 }
                 else
