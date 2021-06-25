@@ -50,6 +50,8 @@ namespace Nevermore
 
             QueryLogger = new DefaultQueryLogger();
 
+            RelatedDocumentsGlobalTempTableNameGenerator = () => Guid.NewGuid().ToString().Replace('-', '_');
+
             connectionString = new Lazy<string>(() =>
             {
                 var result = connectionStringFunc();
@@ -93,6 +95,8 @@ namespace Nevermore
 
         public ISqlCommandFactory CommandFactory { get; set; }
 
+        public Func<string> RelatedDocumentsGlobalTempTableNameGenerator { get; set; }
+
         string InitializeConnectionString(string sqlConnectionString)
         {
             var builder = new SqlConnectionStringBuilder(sqlConnectionString);
@@ -107,6 +111,5 @@ namespace Nevermore
 
             return builder.ToString();
         }
-
     }
 }

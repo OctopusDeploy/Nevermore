@@ -23,6 +23,7 @@ namespace Nevermore.Tests.Util
         public DataModificationQueryBuilderFixture()
         {
             var configuration = new RelationalStoreConfiguration("");
+            configuration.RelatedDocumentsGlobalTempTableNameGenerator = () => "related_tests";
             configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
             configuration.DocumentMaps.Register(
                 new TestDocumentMap(),

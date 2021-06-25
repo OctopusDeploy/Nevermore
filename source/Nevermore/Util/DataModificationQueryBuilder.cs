@@ -344,7 +344,7 @@ namespace Nevermore.Util
             parameters.AddRange(documentParametersCreator());
 
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
-            if (!relatedDocumentData.Any())
+            if (!relatedDocumentData.Any(x => x.Related.Any()))
             {
                 commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
                 return commands.ToArray();
@@ -364,7 +364,7 @@ namespace Nevermore.Util
                         insertStatementBuilder.AppendLine(
                             $"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
                         var related = data.Related;
-                        var batchSize = Math.Min(1000, remaining);
+                        var batchSize = Math.Min(1000, Math.Min(SqlServerParameterLimit - parameters.Count, remaining));
 
                         for (var x = 0; x < batchSize; x++)
                         {
@@ -380,25 +380,20 @@ namespace Nevermore.Util
                             insertStatementBuilder.AppendLine(
                                 $"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
                             remaining--;
-
-                            if (parameters.Count >= SqlServerParameterLimit)
-                            {
-                                reachedParameterLimit = true;
-                                break;
-                            }
                         }
-                    }
 
-                    commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
-                    if (remaining > 0)
-                    {
-                        insertStatementBuilder = new StringBuilder();
-                        parameters = new CommandParameterValues();
-                        parameters.AddRange(documentParametersCreator());
+                        if (parameters.Count >= SqlServerParameterLimit && remaining > 0)
+                        {
+                            commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+                            insertStatementBuilder = new StringBuilder();
+                            parameters = new CommandParameterValues();
+                            parameters.AddRange(documentParametersCreator());
+                        }
                     }
                 }
             }
 
+            commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
             return commands.ToArray();
         }
 
@@ -431,7 +426,7 @@ namespace Nevermore.Util
             sb.AppendLine();
 
             // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
-            var globalTempTableName = $"##references_{Guid.NewGuid().ToString().Replace('-', '_')}";
+            var globalTempTableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
             if (relatedDocumentData.Any(d => d.Related.Any()))
                 sb.AppendLine($"CREATE TABLE {globalTempTableName} (Reference nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS, ReferenceTable nvarchar(400) COLLATE SQL_Latin1_General_CP1_CS_AS)").AppendLine();
 
