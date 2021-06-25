@@ -68,6 +68,7 @@ namespace Nevermore
 
         /// <summary>
         /// Defines a name generator to be used when creating global temp tables during related document updates. <para />
+        /// This is used when there are more related documents than can fit in a single SQL command
         /// </summary>
         Func<string> RelatedDocumentsGlobalTempTableNameGenerator { get; }
     }
