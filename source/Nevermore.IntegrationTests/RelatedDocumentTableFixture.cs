@@ -174,6 +174,7 @@ namespace Nevermore.IntegrationTests
         [TestCase(1000)]
         [TestCase(2001)]
         [TestCase(2096)] // exact SQL Server param per command limit
+        [TestCase(2097)]
         [TestCase(3001)] // requires 2 commands as we exceed the per command param limit
         public void Insert(int referenceDataEntriesCount)
         {
@@ -206,6 +207,7 @@ namespace Nevermore.IntegrationTests
         [TestCase(1000)]
         [TestCase(2001)]
         [TestCase(2096)] // exact SQL Server param per command limit
+        [TestCase(2097)]
         [TestCase(3001)] // requires 2 commands as we exceed the per command param limit
         public void Update(int referenceDataEntriesCount)
         {

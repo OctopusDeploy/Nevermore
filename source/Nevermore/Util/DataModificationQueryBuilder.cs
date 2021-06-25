@@ -40,16 +40,14 @@ namespace Nevermore.Util
 
         public PreparedCommand[] PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
         {
-            var commands = new List<PreparedCommand>();
             options ??= InsertOptions.Default;
 
             var mapping = GetMapping(documents);
 
             var insertStatementBuilder = CreateInsertStatementBuilder(documents, mapping, options);
-            var relatedDocumentCommands = CreateInsertCommandsWithRelatedDocuments(insertStatementBuilder, mapping, documents, options);
-            commands.AddRange(relatedDocumentCommands);
+            var insertCommands = CreateInsertCommandsWithRelatedDocuments(insertStatementBuilder, mapping, documents, options);
 
-            return commands.ToArray();
+            return insertCommands.ToArray();
         }
 
         public PreparedCommand[] PrepareUpdate(object document, UpdateOptions options = null)
