@@ -1,0 +1,12 @@
+SELECT *
+FROM (
+    SELECT [Foo],
+    [Bar],
+    [Elephant],
+    ROW_NUMBER() OVER (ORDER BY [Foo]) AS RowNum
+    FROM [dbo].[Orders]
+    WHERE ([Price] > 5)
+) ALIAS_GENERATED_1
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
+ORDER BY [RowNum]

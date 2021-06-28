@@ -31,5 +31,6 @@ namespace Nevermore
         ISelect GenerateSelectWithoutDefaultOrderBy();
 
         ISelectBuilder Clone();
+        bool HasCustomColumnSelection { get; }
     }
 }
