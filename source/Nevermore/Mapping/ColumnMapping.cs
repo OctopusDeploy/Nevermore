@@ -8,7 +8,6 @@ namespace Nevermore.Mapping
     {
         const int DefaultPrimaryKeyIdLength = 50;
         const int DefaultMaxForeignKeyIdLength = 50;
-        int? maxLength;
 
         internal ColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
         {
@@ -21,11 +20,11 @@ namespace Nevermore.Mapping
                 return;
             if (Property.Name == "Id")
             {
-                maxLength = DefaultPrimaryKeyIdLength;
+                MaxLength = DefaultPrimaryKeyIdLength;
             }
             else if (Property.Name.EndsWith("Id")) // Foreign keys
             {
-                maxLength = DefaultMaxForeignKeyIdLength;
+                MaxLength = DefaultMaxForeignKeyIdLength;
             }
         }
 
@@ -34,13 +33,13 @@ namespace Nevermore.Mapping
         public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
 
-        public int? MaxLength => maxLength;
+        public int? MaxLength { get; protected set; }
         public ColumnDirection Direction { get; protected set; }
 
 
         IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {
-            maxLength = max;
+            MaxLength = max;
             return this;
         }
 

@@ -7,12 +7,13 @@ namespace Nevermore.Mapping
 {
     public class IdColumnMapping : ColumnMapping
     {
-        internal IdColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property, bool isIdentity, IPrimaryKeyHandler primaryKeyHandler)
-            : base(columnName, type, handler, property)
+        internal IdColumnMapping(IdColumnMappingBuilder idColumn, IPrimaryKeyHandler primaryKeyHandler)
+            : base(idColumn.ColumnName, idColumn.Type, idColumn.PropertyHandler, idColumn.Property)
         {
-            IsIdentity = isIdentity;
-            Direction = IsIdentity ? ColumnDirection.FromDatabase : ColumnDirection.Both;
+            IsIdentity = idColumn.IsIdentity;
             PrimaryKeyHandler = primaryKeyHandler;
+            Direction = idColumn.Direction;
+            MaxLength = idColumn.MaxLength;
         }
 
         public bool IsIdentity { get; }
@@ -35,7 +36,7 @@ namespace Nevermore.Mapping
         {
         }
 
-        bool IsIdentity { get; set; }
+        public bool IsIdentity { get; private set; }
 
         IPrimaryKeyHandler? PrimaryKeyHandler { get; set; }
 
@@ -45,6 +46,7 @@ namespace Nevermore.Mapping
             ValidateForIdentityUse();
 
             IsIdentity = true;
+            Direction = ColumnDirection.FromDatabase;
 
             return this;
         }
@@ -82,7 +84,7 @@ namespace Nevermore.Mapping
             if (primaryKeyHandler is null)
                 throw new InvalidOperationException($"Unable to determine a primary key handler for type {Type.Name}. This could happen if the custom PrimaryKeyHandlers are not registered prior to registering the DocumentMaps");
 
-            var mapping = new IdColumnMapping(ColumnName, Type, PropertyHandler, Property, IsIdentity, primaryKeyHandler);
+            var mapping = new IdColumnMapping(this, primaryKeyHandler);
             return mapping;
         }
     }
