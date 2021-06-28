@@ -71,5 +71,11 @@ namespace Nevermore
         /// This is used when there are more related documents than can fit in a single SQL command
         /// </summary>
         Func<string> RelatedDocumentsGlobalTempTableNameGenerator { get; }
+
+        /// <summary>
+        /// Used with <see cref="RelatedDocumentsGlobalTempTableNameGenerator"/> when transferring data from the temp table to the related documents table to ensure collation matches. <para />
+        /// Defaults to SQL_Latin1_General_CP1_CS_AS
+        /// </summary>
+        public string RelatedDocumentsDatabaseCollation { get; set; }
     }
 }
