@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Nevermore.Advanced.TypeHandlers
         readonly List<ITypeHandler> typeHandlers = new List<ITypeHandler>();
         readonly ConcurrentDictionary<Type, ITypeHandler> cache = new ConcurrentDictionary<Type, ITypeHandler>();
 
-        public ITypeHandler Resolve(Type type)
+        public ITypeHandler? Resolve(Type type)
         {
             if (cache.TryGetValue(type, out var existing))
                 return existing;

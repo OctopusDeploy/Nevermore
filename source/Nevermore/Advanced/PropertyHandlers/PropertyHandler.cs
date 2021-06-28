@@ -98,7 +98,7 @@ namespace Nevermore.Advanced.PropertyHandlers
             var typeT = GetGenericListArgumentType(propertyInfo.PropertyType);
             if (typeT == null)
                 return null;
-            
+
             var collectionT = typeof(ICollection<>).MakeGenericType(typeT);
             var enumerableT = typeof(IEnumerable<>).MakeGenericType(typeT);
 
@@ -110,15 +110,15 @@ namespace Nevermore.Advanced.PropertyHandlers
 
             if (!collectionT.IsAssignableFrom(propertyInfo.PropertyType))
                 return null;
-            
+
             var setter = Expression.Lambda<Action<object, object>>(
-                Expression.Call(null, assignMethod, 
+                Expression.Call(null, assignMethod,
                     Expression.Convert(
                         Expression.Property(
                             Expression.Convert(targetArgument, propertyInfo.DeclaringType),
                             propertyInfo),
                         collectionT),
-                        
+
                     Expression.Convert(
                         valueArgument,
                         enumerableT
@@ -143,7 +143,7 @@ namespace Nevermore.Advanced.PropertyHandlers
                     return implementedInterface.GenericTypeArguments[0];
                 }
             }
-            
+
             return null;
         }
 

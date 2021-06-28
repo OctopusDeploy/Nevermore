@@ -27,7 +27,7 @@ namespace Nevermore.Tests.Delete
             mappings = Substitute.For<IDocumentMapRegistry>();
             mappings.Resolve<object>().Returns(c => new EmptyMap());
             mappings.Resolve(Arg.Any<Type>()).Returns(c => new EmptyMap());
-            
+
             queryExecutor = Substitute.For<IWriteQueryExecutor>();
             queryExecutor.ExecuteNonQuery(Arg.Any<PreparedCommand>()).Returns(info =>
             {
@@ -43,7 +43,7 @@ namespace Nevermore.Tests.Delete
             configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
             return new DeleteQueryBuilder<TDocument>(
                 new UniqueParameterNameGenerator(),
-                new DataModificationQueryBuilder(configuration, s => null),
+                new DataModificationQueryBuilder(configuration, (s, _) => null),
                 queryExecutor
             );
         }
@@ -164,7 +164,7 @@ AND ([Price] < @price_1)");
                 .Parameter("OTHERVAR", "Bar")
                 .Delete();
 #pragma warning restore NV0006
-            
+
             parameters.Count.Should().Be(2);
             foreach (var parameter in parameters)
                 query.Should().Contain("@" + parameter.Key, "Should contain @" + parameter.Key);

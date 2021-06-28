@@ -14,6 +14,7 @@ using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.Transient;
+using Nevermore.Util;
 
 namespace Nevermore.Advanced
 {
@@ -81,7 +82,7 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        private TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
@@ -544,7 +545,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{"Id", id}};
+            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.Type.IsStronglyTypedId() ? (object)id.ToString() : id }};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 

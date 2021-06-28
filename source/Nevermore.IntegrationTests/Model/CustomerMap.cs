@@ -1,3 +1,6 @@
+using System;
+using System.Data.Common;
+using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
@@ -12,6 +15,27 @@ namespace Nevermore.IntegrationTests.Model
             Column(m => m.Nickname);
             Column(m => m.Roles);
             Unique("UniqueCustomerNames", new[] { "FirstName", "LastName" }, "Customers must have a unique name");
+        }
+    }
+
+    class CustomerIdTypeHandler : ITypeHandler
+    {
+        public bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(CustomerId);
+        }
+
+        public object ReadDatabase(DbDataReader reader, int columnIndex)
+        {
+            if (reader.IsDBNull(columnIndex))
+                return default(CustomerId);
+            var text = reader.GetString(columnIndex);
+            return new CustomerId(text);
+        }
+
+        public void WriteDatabase(DbParameter parameter, object value)
+        {
+            parameter.Value = ((CustomerId)value)?.Value;
         }
     }
 }

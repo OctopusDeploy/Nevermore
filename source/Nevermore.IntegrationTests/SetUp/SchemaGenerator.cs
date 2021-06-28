@@ -52,7 +52,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         static string GetDatabaseType(ColumnMapping column)
         {
-            var dbType = DatabaseTypeConverter.AsDbType(column.Type);
+            var dbType = column.Type.IsStronglyTypedId() ? DbType.String : DatabaseTypeConverter.AsDbType(column.Type);
 
             switch (dbType)
             {
