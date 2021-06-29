@@ -17,13 +17,13 @@ namespace Nevermore.Tests.Util
 {
     public class DataModificationQueryBuilderFixture
     {
-        const int SqlServerParameterLimit = 2100;
         readonly DataModificationQueryBuilder builder;
         Func<string> idAllocator;
 
         public DataModificationQueryBuilderFixture()
         {
             var configuration = new RelationalStoreConfiguration("");
+            configuration.EnableSplittingCommands = true;
             configuration.RelatedDocumentsGlobalTempTableNameGenerator = () => "related_tests";
             configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
             configuration.DocumentMaps.Register(
@@ -282,7 +282,8 @@ namespace Nevermore.Tests.Util
             };
 
             var relatedDocumentIds = new List<(string, Type)>();
-            for (int i = 0; i < SqlServerParameterLimit + 1; i++)
+            const int aboveSqlServerParameterLimit = 2100 + 1;
+            for (int i = 0; i < aboveSqlServerParameterLimit; i++)
             {
                 relatedDocumentIds.Add(("Rel-" + i, typeof(Other)));
             }
