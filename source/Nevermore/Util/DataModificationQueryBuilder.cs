@@ -38,11 +38,9 @@ namespace Nevermore.Util
             this.keyAllocator = keyAllocator;
         }
 
-        public PreparedCommand[] PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
+        public PreparedCommand[] PrepareInsert(IReadOnlyList<object> documents, DocumentMap mapping, InsertOptions options = null)
         {
             options ??= InsertOptions.Default;
-
-            var mapping = GetMapping(documents);
 
             var insertStatementBuilder = CreateInsertStatementBuilder(documents, mapping, options);
             var insertCommands = CreateInsertCommandsWithRelatedDocuments(insertStatementBuilder, mapping, documents, options);
@@ -50,11 +48,20 @@ namespace Nevermore.Util
             return insertCommands.ToArray();
         }
 
-        public PreparedCommand[] PrepareUpdate(object document, UpdateOptions options = null)
+        DocumentMap GetMapping(IReadOnlyList<object> documents)
+        {
+            var allMappings = documents.Select(i => mappings.Resolve(i)).Distinct().ToArray();
+            if (allMappings.Length == 0)
+                throw new Exception($"No mapping found for type {documents[0].GetType()}");
+
+            if (allMappings.Length != 1)
+                throw new Exception("InsertMany cannot be used with documents that have different mappings");
+            return allMappings[0];
+        }
+
+        public PreparedCommand[] PrepareUpdate(object document, DocumentMap mapping, UpdateOptions options = null)
         {
             options ??= UpdateOptions.Default;
-
-            var mapping = mappings.Resolve(document.GetType());
 
             var updateStatements = mapping.WritableIndexedColumns().Select(c => $"[{c.ColumnName}] = @{c.ColumnName}").ToList();
             switch (mapping.JsonStorageFormat)
@@ -155,17 +162,6 @@ namespace Nevermore.Util
                 statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] in (SELECT Id FROM @Ids)");
 
             return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
-        }
-
-        DocumentMap GetMapping(IReadOnlyList<object> documents)
-        {
-            var allMappings = documents.Select(i => mappings.Resolve(i)).Distinct().ToArray();
-            if (allMappings.Length == 0)
-                throw new Exception($"No mapping found for type {documents[0].GetType()}");
-
-            if (allMappings.Length != 1)
-                throw new Exception("InsertMany cannot be used with documents that have different mappings");
-            return allMappings[0];
         }
 
         // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
