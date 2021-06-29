@@ -342,7 +342,7 @@ namespace Nevermore.Util
             parameters.AddRange(documentParametersCreator());
 
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
-            if (!relatedDocumentData.Any(x => x.Related.Any()))
+            if (!HasRelatedDocuments(relatedDocumentData))
             {
                 commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
                 return commands.ToArray();
@@ -378,6 +378,8 @@ namespace Nevermore.Util
 
                     if (parameters.Count >= SqlServerParameterLimit && remaining > 0)
                     {
+                        AssertAllowedSplitCommands(parameters.Count + remaining);
+
                         commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
                         insertStatementBuilder = new StringBuilder();
                         parameters = new CommandParameterValues();
@@ -419,13 +421,14 @@ namespace Nevermore.Util
             sb.AppendLine();
 
             string tableVariableName = "@references";
-            if (parameters.Count + relatedDocumentData.Sum(x => x.Related.Length) > SqlServerParameterLimit) // we need multiple sql commands
+            var totalParameters = parameters.Count + relatedDocumentData.Sum(x => x.Related.Length);
+            if (totalParameters > SqlServerParameterLimit)
             {
-                // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
-                tableVariableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
-                sb.AppendLine($"CREATE TABLE {tableVariableName} (Reference nvarchar(400) COLLATE {configuration.RelatedDocumentsDatabaseCollation}, ReferenceTable nvarchar(400) COLLATE {configuration.RelatedDocumentsDatabaseCollation})").AppendLine();
+                AssertAllowedSplitCommands(totalParameters);
+
+                tableVariableName = CreateGlobalTempTable(sb);
             }
-            else if (relatedDocumentData.Any(x => x.Related.Any()))
+            else if (HasRelatedDocuments(relatedDocumentData))
             {
                 sb.AppendLine($"DECLARE {tableVariableName} as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
             }
@@ -480,6 +483,25 @@ namespace Nevermore.Util
             return commands.ToArray();
         }
 
+        void AssertAllowedSplitCommands(int currentParameterCount)
+        {
+            if (!configuration.EnableSplittingCommands)
+                throw new InvalidOperationException("Too many parameters to fit into a single SQL Command (limit 2100): " + (currentParameterCount + 2));
+        }
+
+        string CreateGlobalTempTable(StringBuilder sb)
+        {
+            // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
+            var tableVariableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
+            sb.AppendLine("DECLARE @tableCollation NVARCHAR(255)");
+            sb.AppendLine("DECLARE @referenceTableCollation NVARCHAR(255)");
+            sb.AppendLine("SET @tableCollation = (SELECT c.collation_name FROM sys.columns c JOIN sys.tables t on c.object_id = t.object_id WHERE t.name = N'RelatedDocument' AND c.name = 'Table')");
+            sb.AppendLine("SET @referenceTableCollation = (SELECT c.collation_name FROM sys.columns c JOIN sys.tables t on c.object_id = t.object_id WHERE t.name = N'RelatedDocument' AND c.name = 'RelatedDocumentTable')");
+
+            sb.AppendLine($"EXEC('CREATE TABLE {tableVariableName} (Reference nvarchar(400) COLLATE ' + @tableCollation + ', ReferenceTable nvarchar(400) COLLATE ' + @referenceTableCollation + ')')").AppendLine();
+            return tableVariableName;
+        }
+
         IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
         {
             var documentAndIds = documents.Count == 1
@@ -509,6 +531,11 @@ namespace Nevermore.Util
             return groupedByTable.ToArray();
         }
 
+
+        static bool HasRelatedDocuments(IReadOnlyList<RelatedDocumentTableData> relatedDocumentData)
+        {
+            return relatedDocumentData.Any(x => x.Related.Any());
+        }
 
         class RelatedDocumentTableData
         {
