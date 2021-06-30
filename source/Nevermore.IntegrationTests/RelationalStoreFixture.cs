@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
@@ -99,6 +100,34 @@ namespace Nevermore.IntegrationTests
                     .Stream()
                     .Single();
                 customer.FirstName.Should().Be("Alice");
+            }
+        }
+
+        [Test]
+        public void ShouldHandleLoadManyWithCustomKeyType()
+        {
+            CustomerId customerId;
+            var ids = new List<CustomerId>();
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customer1 = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
+                var customer2 = new Customer {FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] {12, 13}, Nickname = "B-man", Roles = {"db-server", "app-server"}};
+                var customer3 = new Customer {FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] {12, 13}, Nickname = "Chazza", Roles = {"web-server", "app-server"}};
+                transaction.Insert(customer1);
+                transaction.Insert(customer2);
+                transaction.Insert(customer3);
+                transaction.Commit();
+                ids.Add(customer1.Id);
+                ids.Add(customer3.Id);
+                ids.Add(customer2.Id);
+            }
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                var customers = transaction.LoadMany<Customer, CustomerId>(ids);
+                customers.SingleOrDefault(c => c.FirstName == "Bob").Should().NotBeNull("Bob's entry should be returned");
+                customers.SingleOrDefault(c => c.FirstName == "Charlie").Should().NotBeNull("Charlie's entry should be returned");
+                customers.SingleOrDefault(c => c.FirstName == "Alice").Should().NotBeNull("Alice's entry should be returned");
             }
         }
 

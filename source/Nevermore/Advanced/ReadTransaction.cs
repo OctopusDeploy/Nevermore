@@ -596,7 +596,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var param = new CommandParameterValues();
-            param.AddTable("criteriaTable", idList.ToList());
+            param.AddTable("criteriaTable", idList.ToList(), configuration);
             var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }

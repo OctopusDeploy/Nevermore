@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Data;
+using Microsoft.Data.SqlClient.Server;
 
 namespace Nevermore.Mapping
 {
@@ -12,6 +14,9 @@ namespace Nevermore.Mapping
             IdPrefix = idPrefix;
             this.format = format ?? (x => $"{x.idPrefix}-{x.key}");
         }
+
+        public override SqlMetaData GetSqlMetaData(string name)
+            =>  new SqlMetaData(name, SqlDbType.NVarChar, 300);
 
         public string? IdPrefix { get; private set; }
 

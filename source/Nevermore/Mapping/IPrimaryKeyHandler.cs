@@ -1,12 +1,22 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Data.SqlClient.Server;
 
 namespace Nevermore.Mapping
 {
     public interface IPrimaryKeyHandler
     {
+        /// <summary>
+        /// The property type this handler is responsible for.
+        /// </summary>
         Type Type { get; }
+
+        /// <summary>
+        /// Gets the SqlMetaData to use for keys of this type. This is used for TableValueParameters.
+        /// </summary>
+        /// <param name="name">The name of the column.</param>
+        SqlMetaData GetSqlMetaData(string name);
 
         /// <summary>
         /// Convert the given id value to the underlying primitive type required for Sql command parameters.
