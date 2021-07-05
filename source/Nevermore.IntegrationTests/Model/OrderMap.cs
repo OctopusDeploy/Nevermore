@@ -1,4 +1,3 @@
-using System.Data;
 using Nevermore.Mapping;
 
 namespace Nevermore.IntegrationTests.Model
@@ -8,6 +7,7 @@ namespace Nevermore.IntegrationTests.Model
         public OrderMap()
         {
             RelatedDocuments(o => o.RelatedDocuments);
+            RelatedDocuments(o => o.RelatedDocuments, tableName: "AnotherRelatedTable");
         }
     }
 }
