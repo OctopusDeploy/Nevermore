@@ -27,7 +27,9 @@ namespace Nevermore.Tests.Util
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
                 new TestDocumentWithMultipleRelatedDocumentsMap(),
-                new OtherMap());
+                new OtherMap(),
+                new TestDocumentWithIdentityIdMap(),
+                new TestDocumentWithIdentityIdAndRowVersionMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
                 m => idAllocator()
@@ -71,8 +73,8 @@ namespace Nevermore.Tests.Util
                 new[] {document},
                 new InsertOptions
                 {
-                    TableName ="AltTableName",
-                    Hint ="WITH (NOLOCK)"
+                    TableName = "AltTableName",
+                    Hint = "WITH (NOLOCK)"
                 }
             );
 
@@ -86,7 +88,7 @@ namespace Nevermore.Tests.Util
 
             var result = builder.PrepareInsert(
                 new[] {document},
-                new InsertOptions { IncludeDefaultModelColumns = false}
+                new InsertOptions {IncludeDefaultModelColumns = false}
             );
 
             this.Assent(Format(result));
@@ -195,8 +197,24 @@ namespace Nevermore.Tests.Util
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1", ReadOnly = "Value"};
 
             idAllocator = () => "New-Id-" + (++n);
-            var result = builder.PrepareInsert(new [] { document });
+            var result = builder.PrepareInsert(new[] {document});
 
+            this.Assent(Format(result));
+        }
+
+        [Test]
+        public void InsertDocumentWithIdentityId()
+        {
+            var document = new TestDocumentWithIdentityId {AColumn = "AValue"};
+            var result = builder.PrepareInsert(new[] {document});
+            this.Assent(Format(result));
+        }
+
+        [Test]
+        public void InsertDocumentWithIdentityIdAndRowVersion()
+        {
+            var document = new TestDocumentWithIdentityIdAndRowVersion {AColumn = "AValue"};
+            var result = builder.PrepareInsert(new[] {document});
             this.Assent(Format(result));
         }
 
@@ -219,7 +237,7 @@ namespace Nevermore.Tests.Util
 
             var result = builder.PrepareUpdate(
                 document,
-                new UpdateOptions { Hint = "WITH (NO LOCK)"}
+                new UpdateOptions {Hint = "WITH (NO LOCK)"}
             );
 
             this.Assent(Format(result));
@@ -384,6 +402,19 @@ namespace Nevermore.Tests.Util
             public string Id { get; set; }
         }
 
+        class TestDocumentWithIdentityId
+        {
+            public int Id { get; set; }
+            public string AColumn { get; set; }
+        }
+
+        class TestDocumentWithIdentityIdAndRowVersion
+        {
+            public int Id { get; set; }
+            public string AColumn { get; set; }
+            public int RowVersion { get; set; }
+        }
+
         class TestDocumentMap : DocumentMap<TestDocument>
         {
             public TestDocumentMap()
@@ -422,6 +453,27 @@ namespace Nevermore.Tests.Util
             public OtherMap()
             {
                 TableName = "OtherTbl";
+            }
+        }
+
+        class TestDocumentWithIdentityIdMap : DocumentMap<TestDocumentWithIdentityId>
+        {
+            public TestDocumentWithIdentityIdMap()
+            {
+                TableName = "TestDocumentTbl";
+                Id(t => t.Id).Identity();
+                Column(t => t.AColumn);
+            }
+        }
+
+        class TestDocumentWithIdentityIdAndRowVersionMap : DocumentMap<TestDocumentWithIdentityIdAndRowVersion>
+        {
+            public TestDocumentWithIdentityIdAndRowVersionMap()
+            {
+                TableName = "TestDocumentTbl";
+                Id(t => t.Id).Identity();
+                Column(t => t.AColumn);
+                RowVersion(t => t.RowVersion);
             }
         }
     }

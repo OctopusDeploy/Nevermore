@@ -2,6 +2,6 @@ namespace Nevermore.Mapping
 {
     public interface IDocumentMap
     {
-        DocumentMap Build();
+        DocumentMap Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry);
     }
 }

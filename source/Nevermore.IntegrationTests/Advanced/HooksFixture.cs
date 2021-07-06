@@ -19,16 +19,16 @@ namespace Nevermore.IntegrationTests.Advanced
 
             using var transaction = Store.BeginTransaction();
 
-            var customer = new Customer {Id = "C131", FirstName = "Fred", LastName = "Freddy"};
+            var customer = new Customer {Id = "C131".ToCustomerId(), FirstName = "Fred", LastName = "Freddy"};
             transaction.Insert(customer);
             AssertLogged(log, "BeforeInsert", "AfterInsert");
 
-            customer = transaction.Load<Customer>("C131");
+            customer = transaction.Load<Customer, CustomerId>("C131".ToCustomerId());
 
             transaction.Update(customer);
             AssertLogged(log, "BeforeUpdate", "AfterUpdate");
 
-            transaction.Delete(customer);
+            transaction.Delete<Customer, CustomerId>(customer);
             AssertLogged(log, "BeforeDelete", "AfterDelete");
 
             transaction.Commit();

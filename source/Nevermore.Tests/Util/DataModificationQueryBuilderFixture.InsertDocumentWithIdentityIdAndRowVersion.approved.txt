@@ -1,0 +1,8 @@
+DECLARE @InsertedRows TABLE ([RowVersion] binary(8), [Id] int)
+INSERT INTO [dbo].[TestDocumentTbl]  ([AColumn], [JSON]) OUTPUT inserted.[RowVersion],inserted.[Id] INTO @InsertedRows VALUES 
+(@AColumn, @JSON)
+SELECT [RowVersion],[Id] FROM @InsertedRows
+
+@Id=0
+@JSON={}
+@AColumn=AValue

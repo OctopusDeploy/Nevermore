@@ -8,8 +8,6 @@ namespace Nevermore.Mapping
     {
         const int DefaultPrimaryKeyIdLength = 50;
         const int DefaultMaxForeignKeyIdLength = 50;
-        ColumnDirection direction;
-        int? maxLength;
 
         internal ColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property)
         {
@@ -22,11 +20,11 @@ namespace Nevermore.Mapping
                 return;
             if (Property.Name == "Id")
             {
-                maxLength = DefaultPrimaryKeyIdLength;
+                MaxLength = DefaultPrimaryKeyIdLength;
             }
             else if (Property.Name.EndsWith("Id")) // Foreign keys
             {
-                maxLength = DefaultMaxForeignKeyIdLength;
+                MaxLength = DefaultMaxForeignKeyIdLength;
             }
         }
 
@@ -35,36 +33,39 @@ namespace Nevermore.Mapping
         public IPropertyHandler PropertyHandler { get; private set; }
         public PropertyInfo Property { get; }
 
-        public int? MaxLength => maxLength;
-        public ColumnDirection Direction => direction;
+        public int? MaxLength { get; protected set; }
+        public ColumnDirection Direction { get; protected set; }
+
 
         IColumnMappingBuilder IColumnMappingBuilder.MaxLength(int max)
         {
-            maxLength = max;
+            MaxLength = max;
             return this;
         }
 
         IColumnMappingBuilder IColumnMappingBuilder.LoadOnly()
         {
-            direction = ColumnDirection.FromDatabase;
+            Direction = ColumnDirection.FromDatabase;
             return this;
         }
 
         IColumnMappingBuilder IColumnMappingBuilder.SaveOnly()
         {
-            direction = ColumnDirection.ToDatabase;
+            Direction = ColumnDirection.ToDatabase;
             return this;
         }
 
         IColumnMappingBuilder IColumnMappingBuilder.CustomPropertyHandler(IPropertyHandler propertyHandler)
         {
-            PropertyHandler = propertyHandler;
+            SetCustomPropertyHandler(propertyHandler);
             return this;
         }
 
+        protected virtual void SetCustomPropertyHandler(IPropertyHandler propertyHandler) => PropertyHandler = propertyHandler;
+
         public void Validate()
         {
-            if ((direction == ColumnDirection.FromDatabase || direction == ColumnDirection.Both) && !PropertyHandler.CanWrite)
+            if ((Direction == ColumnDirection.FromDatabase || Direction == ColumnDirection.Both) && !PropertyHandler.CanWrite)
             {
                 if (Property != null && PropertyHandler is PropertyHandler)
                 {

@@ -180,15 +180,17 @@ namespace Nevermore
             }
         }
 
-        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, T> mapper, CancellationToken cancellationToken = default)
+        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, Task<T>> mapper, CancellationToken cancellationToken)
         {
             try
             {
                 var data = new List<T>();
-                await using var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken: cancellationToken);
-                while (await reader.ReadAsync(cancellationToken))
+                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken))
                 {
-                    data.Add(mapper(reader));
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        data.Add(await mapper(reader));
+                    }
                 }
 
                 return data.ToArray();

@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Linq;
 using System.Text;
+using Nevermore.IntegrationTests.Model;
 using Nevermore.Mapping;
 using Nevermore.Util;
 
@@ -12,7 +13,9 @@ namespace Nevermore.IntegrationTests.SetUp
         {
             var tableName = tableNameOverride ?? mapping.TableName;
             result.AppendLine("CREATE TABLE [TestSchema].[" + tableName + "] (");
-            result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
+
+            var identity = mapping.IsIdentityId ? " IDENTITY(1,1)" : null;
+            result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)}{identity} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
 
             foreach (var column in mapping.WritableIndexedColumns())
             {
@@ -20,6 +23,10 @@ namespace Nevermore.IntegrationTests.SetUp
             }
 
             result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine();
+
+            if (mapping.IsRowVersioningEnabled)
+                result.Append("  ,[RowVersion] TIMESTAMP").AppendLine();
+
             result.AppendLine(")");
 
             foreach (var unique in mapping.UniqueConstraints)
@@ -52,7 +59,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         static string GetDatabaseType(ColumnMapping column)
         {
-            var dbType = DatabaseTypeConverter.AsDbType(column.Type);
+            var dbType = typeof(StringCustomIdType).IsAssignableFrom(column.Type) ? DbType.String : DatabaseTypeConverter.AsDbType(column.Type);
 
             switch (dbType)
             {

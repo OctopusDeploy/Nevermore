@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -26,9 +27,9 @@ namespace Nevermore.Advanced
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
-        readonly string name;
+        readonly string? name;
 
-        DbConnection connection;
+        DbConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
 
@@ -39,7 +40,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string name = null)
+        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
@@ -51,7 +52,7 @@ namespace Nevermore.Advanced
             registry.Add(this);
         }
 
-        protected DbTransaction Transaction { get; private set; }
+        protected DbTransaction? Transaction { get; private set; }
 
         public void Open()
         {
@@ -71,34 +72,35 @@ namespace Nevermore.Advanced
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
-            Transaction = connection.BeginTransaction(isolationLevel);
+            Transaction = connection!.BeginTransaction(isolationLevel);
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
             await OpenAsync();
-            Transaction = await connection.BeginTransactionAsync(isolationLevel);
+            Transaction = await connection!.BeginTransactionAsync(isolationLevel);
         }
 
         [Pure]
-        private TDocument Load<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
             return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
 
         [Pure]
-        public TDocument Load<TDocument>(string id) where TDocument : class => Load<TDocument, string>(id);
+        public TDocument? Load<TDocument>(string id) where TDocument : class => Load<TDocument, string>(id);
 
         [Pure]
-        public TDocument Load<TDocument>(int id) where TDocument : class => Load<TDocument, int>(id);
+        public TDocument? Load<TDocument>(int id) where TDocument : class => Load<TDocument, int>(id);
 
         [Pure]
-        public TDocument Load<TDocument>(long id) where TDocument : class => Load<TDocument, long>(id);
+        public TDocument? Load<TDocument>(long id) where TDocument : class => Load<TDocument, long>(id);
 
         [Pure]
-        public TDocument Load<TDocument>(Guid id) where TDocument : class => Load<TDocument, Guid>(id);
+        public TDocument? Load<TDocument>(Guid id) where TDocument : class => Load<TDocument, Guid>(id);
 
-        private async Task<TDocument> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
+        [Pure]
+        public async Task<TDocument?> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = StreamAsync<TDocument>(PrepareLoad<TDocument, TKey>(id), cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken))
@@ -107,50 +109,63 @@ namespace Nevermore.Advanced
         }
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task<TDocument?> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, string>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task<TDocument?> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, int>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task<TDocument?> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, long>(id, cancellationToken);
 
         [Pure]
-        public Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
+        public Task<TDocument?> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadAsync<TDocument, Guid>(id, cancellationToken);
 
-        private List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        [Pure]
+        public List<TDocument> LoadMany<TDocument, TKey>(params TKey[] ids) where TDocument : class
             => LoadStream<TDocument, TKey>(ids).ToList();
 
+        [Pure]
+        public List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+            => LoadStream<TDocument, TKey>(ids).ToList();
+
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params string[] ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params int[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params long[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(params Guid[] ids) where TDocument : class
           => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<string> ids) where TDocument : class
             => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<int> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<long> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
+        [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<Guid> ids) where TDocument : class
            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
-        private async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = new List<TDocument>();
             await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken))
@@ -178,7 +193,7 @@ namespace Nevermore.Advanced
             => LoadManyAsync<TDocument, Guid>(ids, cancellationToken);
 
         [Pure]
-        private TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class
+        public TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class
         {
             var result = Load<TDocument, TKey>(id);
             if (result == null)
@@ -203,7 +218,7 @@ namespace Nevermore.Advanced
             => LoadRequired<TDocument, Guid>(id);
 
         [Pure]
-        private async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
+        public async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var result = await LoadAsync<TDocument, TKey>(id, cancellationToken);
             if (result == null)
@@ -227,7 +242,12 @@ namespace Nevermore.Advanced
         public Task<TDocument> LoadRequiredAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class
             => LoadRequiredAsync<TDocument, Guid>(id, cancellationToken);
 
-        private List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        [Pure]
+        public List<TDocument> LoadManyRequired<TDocument, TKey>(params TKey[] ids) where TDocument : class
+            => LoadManyRequired<TDocument, TKey>(ids.AsEnumerable());
+
+        [Pure]
+        public List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Distinct().ToList();
             var results = LoadMany<TDocument, TKey>(idList);
@@ -240,31 +260,40 @@ namespace Nevermore.Advanced
             return results;
         }
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params string[] ids) where TDocument : class
             => LoadManyRequired<TDocument, string>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params int[] ids) where TDocument : class
             => LoadManyRequired<TDocument, int>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params long[] ids) where TDocument : class
             => LoadManyRequired<TDocument, long>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(params Guid[] ids) where TDocument : class
             => LoadManyRequired<TDocument, Guid>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
            => LoadManyRequired<TDocument, string>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<int> ids) where TDocument : class
           => LoadManyRequired<TDocument, int>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<long> ids) where TDocument : class
           => LoadManyRequired<TDocument, long>(ids);
 
+        [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<Guid> ids) where TDocument : class
           => LoadManyRequired<TDocument, Guid>(ids);
 
-        private async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
+        [Pure]
+        public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToArray();
             var results = await LoadManyAsync<TDocument, TKey>(idList, cancellationToken);
@@ -277,20 +306,28 @@ namespace Nevermore.Advanced
             return results;
         }
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<string> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, string>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<int> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, int>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<long> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, long>(ids, cancellationToken);
 
+        [Pure]
         public Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class
             => LoadManyRequiredAsync<TDocument, Guid>(ids, cancellationToken);
 
         [Pure]
-        private IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
+        public IEnumerable<TDocument> LoadStream<TDocument, TKey>(params TKey[] ids) where TDocument : class
+            => LoadStream<TDocument, TKey>(ids.AsEnumerable());
+
+        [Pure]
+        public IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
 
@@ -330,7 +367,7 @@ namespace Nevermore.Advanced
             => LoadStream<TDocument, Guid>(ids);
 
         [Pure]
-        private async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
+        public async IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, [EnumeratorCancellation] CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Where(id => id != null).Distinct().ToList();
             if (idList.Count == 0)
@@ -361,7 +398,7 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
@@ -369,12 +406,12 @@ namespace Nevermore.Advanced
             return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
-        public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
+        public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
         {
             return Stream<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.SequentialAccess | CommandBehavior.SingleResult, commandTimeout: commandTimeout));
         }
 
-        public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
             return StreamAsync<TRecord>(new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.SequentialAccess | CommandBehavior.SingleResult, commandTimeout: commandTimeout), cancellationToken);
         }
@@ -452,12 +489,12 @@ namespace Nevermore.Advanced
             }
         }
 
-        public int ExecuteNonQuery(string query, CommandParameterValues args, TimeSpan? commandTimeout = null)
+        public int ExecuteNonQuery(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
         {
             return ExecuteNonQuery(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout));
         }
 
-        public Task<int> ExecuteNonQueryAsync(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+        public Task<int> ExecuteNonQueryAsync(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
             return ExecuteNonQueryAsync(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout), cancellationToken);
         }
@@ -474,12 +511,12 @@ namespace Nevermore.Advanced
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        public TResult ExecuteScalar<TResult>(string query, CommandParameterValues args, RetriableOperation operation, TimeSpan? commandTimeout = null)
+        public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)
         {
-            return ExecuteScalar<TResult>(new PreparedCommand(query, args, operation, commandTimeout: commandTimeout));
+            return ExecuteScalar<TResult>(new PreparedCommand(query, args, retriableOperation, commandTimeout: commandTimeout));
         }
 
-        public Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+        public Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
             return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout), cancellationToken);
         }
@@ -489,7 +526,7 @@ namespace Nevermore.Advanced
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
-                return default;
+                return default!;
             return (TResult) result;
         }
 
@@ -498,16 +535,16 @@ namespace Nevermore.Advanced
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
-                return default;
+                return default!;
             return (TResult) result;
         }
 
-        public DbDataReader ExecuteReader(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null)
+        public DbDataReader ExecuteReader(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
         {
             return ExecuteReader(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout));
         }
 
-        public Task<DbDataReader> ExecuteReaderAsync(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+        public Task<DbDataReader> ExecuteReaderAsync(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
             return ExecuteReaderAsync(new PreparedCommand(query, args, RetriableOperation.Select, commandTimeout: commandTimeout), cancellationToken);
         }
@@ -530,7 +567,7 @@ namespace Nevermore.Advanced
             return command.ReadResults(mapper);
         }
 
-        protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper, CancellationToken cancellationToken = default)
+        protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken);
@@ -540,11 +577,14 @@ namespace Nevermore.Advanced
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
+            if (mapping.IdColumn is null)
+                throw new InvalidOperationException($"Cannot load {mapping.Type.Name} by Id, as no Id column has been mapped.");
+
             if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{id.GetType().FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
+                throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{"Id", id}};
+            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
             return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
@@ -552,11 +592,11 @@ namespace Nevermore.Advanced
         {
             var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
-            if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
+            if (mapping.IdColumn?.Type != typeof(TKey))
+                throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var param = new CommandParameterValues();
-            param.AddTable("criteriaTable", idList.ToList());
+            param.AddTable("criteriaTable", idList.ToList(), configuration);
             var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
@@ -628,7 +668,7 @@ namespace Nevermore.Advanced
             return $"{CreatedTime} - {connection?.State} - {name}";
         }
 
-        string ITransactionDiagnostic.Name => name;
+        string? ITransactionDiagnostic.Name => name;
 
         void ITransactionDiagnostic.WriteCurrentTransactions(StringBuilder output)
         {

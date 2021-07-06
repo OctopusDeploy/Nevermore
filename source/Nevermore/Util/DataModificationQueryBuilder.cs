@@ -24,9 +24,9 @@ namespace Nevermore.Util
         readonly IDocumentMapRegistry mappings;
         readonly IDocumentSerializer serializer;
         readonly IRelationalStoreConfiguration configuration;
-        readonly Func<DocumentMap, string> keyAllocator;
+        readonly Func<DocumentMap, object> keyAllocator;
 
-        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, string> keyAllocator)
+        public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, object> keyAllocator)
         {
             this.mappings = configuration.DocumentMaps;
             this.serializer = configuration.DocumentSerializer;
@@ -38,6 +38,9 @@ namespace Nevermore.Util
         {
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
+
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase && options.CustomAssignedId != null)
+                throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
 
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
@@ -77,8 +80,12 @@ namespace Nevermore.Util
                     throw new ArgumentOutOfRangeException();
             }
 
-            var rowVersionCheckStatement = mapping.IsRowVersioningEnabled ? $" AND [{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}" : string.Empty;
-            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            var rowVersionCheckStatement = mapping.IsRowVersioningEnabled
+                ? $" AND [{mapping.RowVersionColumn.ColumnName}] = @{mapping.RowVersionColumn.ColumnName}"
+                : string.Empty;
+            var returnRowVersionStatement = mapping.IsRowVersioningEnabled
+                ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}"
+                : string.Empty;
 
             var updates = string.Join(", ", updateStatements);
 
@@ -125,11 +132,13 @@ namespace Nevermore.Util
             var statement = new StringBuilder();
             statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
-            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName, schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
+            foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName,
+                schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
             var parameters = new CommandParameterValues {{IdVariableName, id}};
-            return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
+            return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping,
+                options.CommandTimeout);
         }
 
         public PreparedCommand PrepareDelete(Type documentType, Where where, CommandParameterValues parameters, DeleteOptions options = null)
@@ -145,7 +154,7 @@ namespace Nevermore.Util
             var actualSchemaName = options.SchemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
             if (!mapping.RelatedDocumentsMappings.Any())
-                return new PreparedCommand($"DELETE FROM [{actualSchemaName}].[{actualTableName}]{options.Hint??""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
+                return new PreparedCommand($"DELETE FROM [{actualSchemaName}].[{actualTableName}]{options.Hint ?? ""} {where.GenerateSql()}", parameters, RetriableOperation.Delete, mapping, options.CommandTimeout);
 
             var statement = new StringBuilder();
             statement.AppendLine("DECLARE @Ids as TABLE (Id nvarchar(400))");
@@ -180,7 +189,7 @@ namespace Nevermore.Util
         {
             var columns = new List<string>();
 
-            if (includeDefaultModelColumns)
+            if (includeDefaultModelColumns && !(mapping.IdColumn is null) && !mapping.IsIdentityId)
                 columns.Add(mapping.IdColumn.ColumnName);
 
             columns.AddRange(mapping.WritableIndexedColumns().Select(c => c.ColumnName));
@@ -208,9 +217,29 @@ namespace Nevermore.Util
             var actualTableName = tableName ?? mapping.TableName;
             var actualSchemaName = schemaName ?? configuration.GetSchemaNameOrDefault(mapping);
 
-            var returnRowVersionStatement = mapping.IsRowVersioningEnabled ? $" OUTPUT inserted.{mapping.RowVersionColumn.ColumnName}" : string.Empty;
+            //do we have any
+            string outputStatement = null;
+            string outputVariable = null;
+            string outputSelect = null;
+            if (mapping.HasModificationOutputs)
+            {
+                var outputColumns = new Dictionary<string, string>();
 
-            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}){returnRowVersionStatement} VALUES ");
+                if (mapping.IsRowVersioningEnabled)
+                    outputColumns.Add(mapping.RowVersionColumn.ColumnName, "binary(8)");
+
+                if (mapping.IsIdentityId)
+                    outputColumns.Add(mapping.IdColumn.ColumnName, mapping.IdColumn.Type.GetIdentityIdTypeName());
+
+                outputStatement = $"OUTPUT {string.Join(",", outputColumns.Select(kvp => $"inserted.[{kvp.Key}]"))} INTO @InsertedRows";
+                outputVariable = $"DECLARE @InsertedRows TABLE ({string.Join(", ", outputColumns.Select(kvp => $"[{kvp.Key}] {kvp.Value}"))})";
+                outputSelect = $"SELECT {string.Join(",", outputColumns.Select(kvp => $"[{kvp.Key}]"))} FROM @InsertedRows";
+            }
+
+            if (outputVariable != null)
+                sb.AppendLine(outputVariable);
+
+            sb.AppendLine($"INSERT INTO [{actualSchemaName}].[{actualTableName}] {tableHint} ({columnNames}) {outputStatement} VALUES ");
 
             void Append(string prefix)
             {
@@ -221,19 +250,23 @@ namespace Nevermore.Util
             if (numberOfInstances == 1)
             {
                 Append("");
-                return;
             }
-
-            for (var x = 0; x < numberOfInstances; x++)
+            else
             {
-                if (x > 0)
-                    sb.Append(",");
+                for (var x = 0; x < numberOfInstances; x++)
+                {
+                    if (x > 0)
+                        sb.Append(",");
 
-                Append($"{x}__");
+                    Append($"{x}__");
+                }
             }
+
+            if (outputSelect != null)
+                sb.AppendLine(outputSelect);
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, object> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, dataModification, "");
@@ -260,24 +293,36 @@ namespace Nevermore.Util
             Update
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
+        CommandParameterValues GetDocumentParameters(Func<DocumentMap, object> allocateId, object customAssignedId, CustomIdAssignmentBehavior? customIdAssignmentBehavior, object document, DocumentMap mapping, DataModification dataModification, string prefix = null)
         {
+            if (mapping.IdColumn is null)
+                throw new InvalidOperationException($"Map for {mapping.Type.Name} do not specify an Id column");
+
             var id = mapping.IdColumn.PropertyHandler.Read(document);
 
+            if (customAssignedId != null && customAssignedId.GetType() != mapping.IdColumn.Type)
+                throw new ArgumentException($"The given custom Id '{customAssignedId}' must be of type ({mapping.IdColumn.Type.Name}), to match the model's Id property");
+
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
-                customAssignedId != null && id != null && customAssignedId != id)
+                customAssignedId != null && id != null && !customAssignedId.Equals(id))
                 throw new ArgumentException("Do not pass a different Id when one is already set on the document");
 
-            if (mapping.IdColumn.Type == typeof(string) && string.IsNullOrWhiteSpace((string)id))
+            var result = new CommandParameterValues();
+
+            // we never want to allocate id's if the Id column is an Identity
+            if (!mapping.IdColumn.IsIdentity)
             {
-                id = string.IsNullOrWhiteSpace(customAssignedId as string) ? allocateId(mapping) : customAssignedId;
-                mapping.IdColumn.PropertyHandler.Write(document, id);
+                // check whether the object's Id has already been provided, if not then we'll either use the one from the InsertOptions or we'll generate one
+                if (id == null)
+                {
+                    id = customAssignedId == null || (customAssignedId is string assignedId && string.IsNullOrWhiteSpace(assignedId)) ? allocateId(mapping) : customAssignedId;
+                    mapping.IdColumn.PropertyHandler.Write(document, id);
+                }
             }
 
-            var result = new CommandParameterValues
-            {
-                [$"{prefix}{mapping.IdColumn.ColumnName}"] = id
-            };
+            var keyHandler = mapping.IdColumn.PrimaryKeyHandler;
+            var primitiveValue = keyHandler.ConvertToPrimitiveValue(id);
+            result[$"{prefix}{mapping.IdColumn.ColumnName}"] = primitiveValue;
 
             switch (mapping.JsonStorageFormat)
             {
@@ -420,7 +465,7 @@ namespace Nevermore.Util
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", document: i));
 
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
-                group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
+                group m by new {Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m)}
                 into g
                 let related = (
                     from m in g
@@ -457,7 +502,19 @@ namespace Nevermore.Util
 
     internal static class DataModificationQueryBuilderExtensions
     {
+        static readonly Dictionary<Type, string> IdentityIdTypeMap = new Dictionary<Type, string>
+        {
+            [typeof(short)] = "smallint",
+            [typeof(int)] = "int",
+            [typeof(long)] = "bigint"
+        };
+
         public static IEnumerable<ColumnMapping> WritableIndexedColumns(this DocumentMap doc) =>
             doc.Columns.Where(c => c.Direction == ColumnDirection.Both || c.Direction == ColumnDirection.ToDatabase);
+
+        public static string GetIdentityIdTypeName(this Type type)
+        {
+            return IdentityIdTypeMap[type];
+        }
     }
 }

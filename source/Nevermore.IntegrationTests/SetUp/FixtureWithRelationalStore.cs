@@ -15,11 +15,8 @@ namespace Nevermore.IntegrationTests.SetUp
 
         protected FixtureWithRelationalStore()
         {
-            var config = new RelationalStoreConfiguration(ConnectionString);
-            config.CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory());
-            config.ApplicationName = "Nevermore-IntegrationTests";
-            config.DefaultSchema = "TestSchema";
-            config.DocumentMaps.Register(
+            var documentMaps = new IDocumentMap[]
+            {
                 new CustomerMap(),
                 new BrandMap(),
                 new ProductMap(),
@@ -30,29 +27,38 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithIntIdMap(),
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+                new DocumentWithRowVersionMap(),
+                new DocumentWithIdentityIdMap(),
+                new DocumentWithIdentityIdAndRowVersionMap(),
+                new DocumentWithCustomPrefixMap(),
+                new DocumentWithCustomPrefixAndStringIdMap()
+            };
+
+            var config = new RelationalStoreConfiguration(ConnectionString)
+            {
+                CommandFactory = new ChaosSqlCommandFactory(new SqlCommandFactory()),
+                ApplicationName = "Nevermore-IntegrationTests",
+                DefaultSchema = "TestSchema"
+            };
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomPrefixId>());
+
+            config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomerId>());
+            config.PrimaryKeyHandlers.Register(new CustomPrefixIdKeyHandler());
+
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
+
+            config.DocumentMaps.Register(documentMaps);
 
             config.UseJsonNetSerialization(settings =>
             {
                 settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
 
-            GenerateSchemaAutomatically(
-                new OrderMap(),
-                new ProductMap(),
-                new CustomerMap(),
-                new LineItemMap(),
-                new BrandMap(),
-                new MachineMap(),
-                new MessageWithStringIdMap(),
-                new MessageWithIntIdMap(),
-                new MessageWithLongIdMap(),
-                new MessageWithGuidIdMap(),
-                new DocumentWithRowVersionMap());
+            GenerateSchemaAutomatically(config, documentMaps);
 
             Store = new RelationalStore(config);
         }
@@ -86,16 +92,15 @@ namespace Nevermore.IntegrationTests.SetUp
             resetBetweenTests = false;
         }
 
-        void GenerateSchemaAutomatically(params IDocumentMap[] mappings)
+        void GenerateSchemaAutomatically(RelationalStoreConfiguration configuration, params IDocumentMap[] mappings)
         {
             try
             {
                 var schema = new StringBuilder();
                 foreach (var map in mappings)
                 {
-                    SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
+                    SchemaGenerator.WriteTableSchema(map.Build(configuration.PrimaryKeyHandlers), null, schema);
                 }
-                schema.AppendLine($"ALTER TABLE [TestSchema].[{nameof(DocumentWithRowVersion)}] ADD [RowVersion] rowversion");
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }
             catch (Exception ex)

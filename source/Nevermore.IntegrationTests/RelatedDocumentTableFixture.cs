@@ -108,7 +108,7 @@ namespace Nevermore.IntegrationTests
             var order = new Order() {Id = orderId};
             using (var trn = Store.BeginTransaction())
             {
-                trn.Delete(order);
+                trn.Delete<Order, string>(order);
                 trn.Commit();
             }
         }
@@ -245,7 +245,7 @@ namespace Nevermore.IntegrationTests
 
         RelatedDocumentRow[] GetReferencesFromDb()
         {
-            var map = ((IDocumentMap)new OrderMap()).Build().RelatedDocumentsMappings.First();
+            var map = ((IDocumentMap)new OrderMap()).Build(Configuration.PrimaryKeyHandlers).RelatedDocumentsMappings.First();
 
             Func<IDataReader, RelatedDocumentRow> Callback()
                 => reader
@@ -302,7 +302,7 @@ namespace Nevermore.IntegrationTests
                     return hashCode;
                 }
             }
-            
+
             public static bool operator ==(RelatedDocumentRow left, RelatedDocumentRow right) => Equals(left, right);
             public static bool operator !=(RelatedDocumentRow left, RelatedDocumentRow right) => !Equals(left, right);
         }

@@ -1,20 +1,22 @@
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Nevermore.Querying.AST;
 
 namespace Nevermore.Mapping
 {
     public class DocumentMapRegistry : IDocumentMapRegistry
     {
+        readonly IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry;
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
 
-        public DocumentMapRegistry()
+        public DocumentMapRegistry(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
         {
+            this.primaryKeyHandlerRegistry = primaryKeyHandlerRegistry;
         }
-        
+
         public List<DocumentMap> GetAll()
         {
             return new List<DocumentMap>(mappings.Values);
@@ -35,12 +37,12 @@ namespace Nevermore.Mapping
         {
             Register(mappingsToAdd.AsEnumerable());
         }
-        
+
         public void Register(IEnumerable<IDocumentMap> mappingsToAdd)
         {
             foreach (var mapping in mappingsToAdd)
             {
-                Register(mapping.Build());
+                Register(mapping.Build(primaryKeyHandlerRegistry));
             }
         }
 
@@ -50,14 +52,14 @@ namespace Nevermore.Mapping
 
             // Walk up the inheritance chain and make sure there's only one map for the document.
             var currentType = type;
-            
+
             while (true)
             {
                 if (mappings.TryGetValue(currentType, out var m))
                 {
                     maps.Add(m);
                 }
-                
+
                 currentType = currentType.GetTypeInfo().BaseType;
                 if (currentType == typeof(object) || currentType == null)
                     break;
@@ -65,7 +67,7 @@ namespace Nevermore.Mapping
 
             if (maps.Count > 1)
                 throw new InvalidOperationException($"More than one document map is registered against the type '{type.FullName}'. The following maps could apply: " + string.Join(", ", maps.Select(m => m.GetType().FullName)));
-            
+
             map = maps.SingleOrDefault();
             return map != null;
         }
@@ -87,11 +89,11 @@ namespace Nevermore.Mapping
             {
                 throw NotRegistered(type);
             }
-            
+
             return mapping;
         }
-        
-        public object GetId(object instance)
+
+        public object? GetId(object instance)
         {
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
@@ -102,7 +104,7 @@ namespace Nevermore.Mapping
 
             return map.GetId(instance);
         }
-        
+
         static Exception NotRegistered(Type type)
         {
             return new InvalidOperationException($"To be used for this operation, the class '{type.FullName}' must have a document map that is registered with this relational store. Types without a document map cannot be used for this operation.");
