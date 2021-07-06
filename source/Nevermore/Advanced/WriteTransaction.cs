@@ -36,16 +36,16 @@ namespace Nevermore.Advanced
             var docs = new[] {document};
             var mapping = GetMapping(docs);
             var commands = builder.PrepareInsert(docs, mapping, options);
+
+            configuration.Hooks.BeforeInsert(document, mapping, this);
+
             foreach (var command in commands)
             {
-                configuration.Hooks.BeforeInsert(document, command.Mapping, this);
-
                 var newRowVersion = ExecuteSingleDataModification(command);
                 ApplyNewRowVersionIfRequired(document, command.Mapping, newRowVersion);
-
-                configuration.Hooks.AfterInsert(document, command.Mapping, this);
             }
 
+            configuration.Hooks.AfterInsert(document, mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
         }
 
@@ -81,7 +81,8 @@ namespace Nevermore.Advanced
             var mapping = GetMapping(documentList);
             var commands = builder.PrepareInsert(documentList, mapping, options);
 
-            foreach (var document in documentList) configuration.Hooks.BeforeInsert(document, mapping, this);
+            foreach (var document in documentList)
+                configuration.Hooks.BeforeInsert(document, mapping, this);
 
             foreach (var command in commands)
             {
@@ -89,7 +90,8 @@ namespace Nevermore.Advanced
                 ApplyNewRowVersionsIfRequired(documentList, command.Mapping, newRowVersions);
             }
 
-            foreach (var document in documentList) configuration.Hooks.AfterInsert(document, mapping, this);
+            foreach (var document in documentList)
+                configuration.Hooks.AfterInsert(document, mapping, this);
 
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
         }
