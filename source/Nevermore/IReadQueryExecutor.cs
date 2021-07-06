@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -19,7 +20,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] TDocument Load<TDocument>(string id) where TDocument : class;
+        [Pure] TDocument? Load<TDocument>(string id) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -27,7 +28,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] TDocument Load<TDocument>(int id) where TDocument : class;
+        [Pure] TDocument? Load<TDocument>(int id) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -35,7 +36,7 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] TDocument Load<TDocument>(long id) where TDocument : class;
+        [Pure] TDocument? Load<TDocument>(long id) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -43,25 +44,16 @@ namespace Nevermore
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] TDocument Load<TDocument>(Guid id) where TDocument : class;
+        [Pure] TDocument? Load<TDocument>(Guid id) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The type of the Id</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
-        /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] Task<TDocument> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
-
-        /// <summary>
-        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
-        /// <param name="id">The <c>Id</c> of the document to find.</param>
-        /// <param name="cancellationToken">Token to use to cancel the command.</param>
-        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] Task<TDocument> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class;
+        [Pure] TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -70,7 +62,7 @@ namespace Nevermore
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] Task<TDocument> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class;
+        [Pure] Task<TDocument?> LoadAsync<TDocument>(string id, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
@@ -79,7 +71,35 @@ namespace Nevermore
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
-        [Pure] Task<TDocument> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class;
+        [Pure] Task<TDocument?> LoadAsync<TDocument>(int id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] Task<TDocument?> LoadAsync<TDocument>(long id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] Task<TDocument?> LoadAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The type of the Id</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] Task<TDocument?> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -158,6 +178,26 @@ namespace Nevermore
         /// the results may contain less items than the number of ID's queried for).
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents.</returns>
+        [Pure] List<TDocument> LoadMany<TDocument, TKey>(params TKey[] ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents.</returns>
+        [Pure] List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The documents.</returns>
@@ -192,6 +232,17 @@ namespace Nevermore
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The documents.</returns>
         [Pure] Task<List<TDocument>> LoadManyAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The documents.</returns>
+        [Pure] Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
@@ -270,6 +321,26 @@ namespace Nevermore
         /// the results may contain less items than the number of ID's queried for).
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents as a lazy loaded stream.</returns>
+        [Pure] IEnumerable<TDocument> LoadStream<TDocument, TKey>(params TKey[] ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents as a lazy loaded stream.</returns>
+        [Pure] IEnumerable<TDocument> LoadStream<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The documents as a lazy loaded stream.</returns>
@@ -304,6 +375,17 @@ namespace Nevermore
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The documents as a lazy loaded stream.</returns>
         [Pure] IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. Documents that are not found are excluded from the result list (that is,
+        /// the results may contain less items than the number of ID's queried for).
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The documents as a lazy loaded stream.</returns>
+        [Pure] IAsyncEnumerable<TDocument> LoadStreamAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
@@ -341,6 +423,15 @@ namespace Nevermore
         /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] TDocument LoadRequired<TDocument, TKey>(TKey id) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="id">The <c>Id</c> of the document to find.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
@@ -372,6 +463,16 @@ namespace Nevermore
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The document, or <c>null</c> if the document is not found.</returns>
         [Pure] Task<TDocument> LoadRequiredAsync<TDocument>(Guid id, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
+        /// Loads a single document given its ID. If the item is not found, throws a <see cref="ResourceNotFoundException" />.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="id">The <c>Id</c> of the document to find.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The document, or <c>null</c> if the document is not found.</returns>
+        [Pure] Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
         /// Loads a set of documents by their ID's. If any of the documents are not found, a
@@ -450,6 +551,26 @@ namespace Nevermore
         /// <see cref="ResourceNotFoundException" /> will be thrown.
         /// </summary>
         /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents.</returns>
+        [Pure] List<TDocument> LoadManyRequired<TDocument, TKey>(params TKey[] ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. If any of the documents are not found, a
+        /// <see cref="ResourceNotFoundException" /> will be thrown.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <returns>The documents.</returns>
+        [Pure] List<TDocument> LoadManyRequired<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class;
+
+        /// <summary>
+        /// Loads a set of documents by their ID's. If any of the documents are not found, a
+        /// <see cref="ResourceNotFoundException" /> will be thrown.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <param name="ids">A collection of ID's to query by.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The documents.</returns>
@@ -486,6 +607,17 @@ namespace Nevermore
         [Pure] Task<List<TDocument>> LoadManyRequiredAsync<TDocument>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) where TDocument : class;
 
         /// <summary>
+        /// Loads a set of documents by their ID's. If any of the documents are not found, a
+        /// <see cref="ResourceNotFoundException" /> will be thrown.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
+        /// <typeparam name="TKey">The primary key type of the document</typeparam>
+        /// <param name="ids">A collection of ID's to query by.</param>
+        /// <param name="cancellationToken">Token to use to cancel the command.</param>
+        /// <returns>The documents.</returns>
+        [Pure] Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class;
+
+        /// <summary>
         /// Begins building a query that returns strongly typed documents.
         /// </summary>
         /// <typeparam name="TRecord">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
@@ -509,7 +641,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>A stream of resulting documents.</returns>
-        [Pure] IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null);
+        [Pure] IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null);
 
         /// <summary>
         /// Executes a query that returns strongly typed documents.
@@ -520,10 +652,10 @@ namespace Nevermore
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A stream of resulting documents.</returns>
-        [Pure] IAsyncEnumerable<TRecord> StreamAsync<TRecord>(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
+        [Pure] IAsyncEnumerable<TRecord> StreamAsync<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Executes a query that returns strongly typed documents. 
+        /// Executes a query that returns strongly typed documents.
         /// </summary>
         /// <param name="preparedCommand">Everything needed to run the query.</param>
         /// <typeparam name="TRecord">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
@@ -531,7 +663,7 @@ namespace Nevermore
         [Pure] IEnumerable<TRecord> Stream<TRecord>(PreparedCommand preparedCommand);
 
         /// <summary>
-        /// Executes a query that returns strongly typed documents. 
+        /// Executes a query that returns strongly typed documents.
         /// </summary>
         /// <param name="preparedCommand">Everything needed to run the query.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
@@ -569,7 +701,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>The number of rows affected.</returns>
-        int ExecuteNonQuery(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null);
+        int ExecuteNonQuery(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null);
 
         /// <summary>
         /// Executes a query that returns no results, typically one that will write to the database. It can also be
@@ -580,7 +712,7 @@ namespace Nevermore
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>Depends on the query, but typically the number of rows affected.</returns>
-        Task<int> ExecuteNonQueryAsync(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
+        Task<int> ExecuteNonQueryAsync(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a query that returns no results, typically one that will write to the database. It can also be
@@ -608,7 +740,7 @@ namespace Nevermore
         /// <param name="retriableOperation">The type of operation being performed. The retry policy on the transaction will then decide whether it's safe to retry this command if it fails.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>A scalar value.</returns>
-        TResult ExecuteScalar<TResult>(string query, CommandParameterValues args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null);
+        TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null);
 
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., SELECT query that returns a count).
@@ -620,7 +752,7 @@ namespace Nevermore
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A scalar value.</returns>
-        Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
+        Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a query that returns a scalar value (e.g., SELECT query that returns a count).
@@ -646,7 +778,7 @@ namespace Nevermore
         /// <param name="args">Any arguments to pass to the query as command parameters.</param>
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <returns>A data reader.</returns>
-        [Pure] DbDataReader ExecuteReader(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null);
+        [Pure] DbDataReader ExecuteReader(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null);
 
         /// <summary>
         /// Executes a query that returns a data reader that you can process manually.
@@ -656,7 +788,7 @@ namespace Nevermore
         /// <param name="commandTimeout">A custom timeout to use for the command instead of the default.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A data reader.</returns>
-        [Pure] Task<DbDataReader> ExecuteReaderAsync(string query, CommandParameterValues args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
+        [Pure] Task<DbDataReader> ExecuteReaderAsync(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a query that returns a data reader that you can process manually.

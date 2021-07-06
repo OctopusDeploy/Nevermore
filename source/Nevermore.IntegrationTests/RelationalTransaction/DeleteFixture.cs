@@ -16,7 +16,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             using (var trn = Store.BeginTransaction())
             {
                 var product = trn.Load<Product>(id);
-                trn.Delete(product);
+                trn.Delete<Product, string>(product);
                 trn.Commit();
             }
 

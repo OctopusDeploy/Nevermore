@@ -29,7 +29,9 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithGuidIdMap(),
                 new DocumentWithRowVersionMap(),
                 new DocumentWithIdentityIdMap(),
-                new DocumentWithIdentityIdAndRowVersionMap()
+                new DocumentWithIdentityIdAndRowVersionMap(),
+                new DocumentWithCustomPrefixMap(),
+                new DocumentWithCustomPrefixAndStringIdMap()
             };
 
             var config = new RelationalStoreConfiguration(ConnectionString)
@@ -38,18 +40,25 @@ namespace Nevermore.IntegrationTests.SetUp
                 ApplicationName = "Nevermore-IntegrationTests",
                 DefaultSchema = "TestSchema"
             };
-            config.DocumentMaps.Register(documentMaps);
 
             config.TypeHandlers.Register(new ReferenceCollectionTypeHandler());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
+            config.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomPrefixId>());
+
+            config.PrimaryKeyHandlers.Register(new StringCustomIdTypeIdKeyHandler<CustomerId>());
+            config.PrimaryKeyHandlers.Register(new CustomPrefixIdKeyHandler());
+
             config.InstanceTypeResolvers.Register(new ProductTypeResolver());
             config.InstanceTypeResolvers.Register(new BrandTypeResolver());
+
+            config.DocumentMaps.Register(documentMaps);
 
             config.UseJsonNetSerialization(settings =>
             {
                 settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             });
 
-            GenerateSchemaAutomatically(documentMaps);
+            GenerateSchemaAutomatically(config, documentMaps);
 
             Store = new RelationalStore(config);
         }
@@ -83,14 +92,14 @@ namespace Nevermore.IntegrationTests.SetUp
             resetBetweenTests = false;
         }
 
-        void GenerateSchemaAutomatically(params IDocumentMap[] mappings)
+        void GenerateSchemaAutomatically(RelationalStoreConfiguration configuration, params IDocumentMap[] mappings)
         {
             try
             {
                 var schema = new StringBuilder();
                 foreach (var map in mappings)
                 {
-                    SchemaGenerator.WriteTableSchema(map.Build(), null, schema);
+                    SchemaGenerator.WriteTableSchema(map.Build(configuration.PrimaryKeyHandlers), null, schema);
                 }
                 integrationTestDatabase.ExecuteScript(schema.ToString());
             }

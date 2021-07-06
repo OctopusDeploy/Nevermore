@@ -27,7 +27,6 @@ namespace Nevermore
         public RelationalStoreConfiguration(Func<string> connectionStringFunc)
         {
             CommandFactory = new SqlCommandFactory();
-            DocumentMaps = new DocumentMapRegistry();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
             InstanceTypeResolvers = new InstanceTypeRegistry();
             RelatedDocumentStore = new EmptyRelatedDocumentStore();
@@ -45,6 +44,10 @@ namespace Nevermore
             DefaultSchema = NevermoreDefaults.FallbackDefaultSchemaName;
 
             TypeHandlers = new TypeHandlerRegistry();
+
+            PrimaryKeyHandlers = new PrimaryKeyHandlerRegistry();
+
+            DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
             AllowSynchronousOperations = true;
 
@@ -80,6 +83,8 @@ namespace Nevermore
 
         public ITypeHandlerRegistry TypeHandlers { get; }
         public IInstanceTypeRegistry InstanceTypeResolvers { get; }
+
+        public IPrimaryKeyHandlerRegistry PrimaryKeyHandlers { get; }
 
         /// <summary>
         /// MARS: https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-multiple-active-result-sets-mars?view=sql-server-ver15
