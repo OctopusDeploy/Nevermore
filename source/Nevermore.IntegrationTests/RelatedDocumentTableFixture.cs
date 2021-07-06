@@ -11,7 +11,6 @@ namespace Nevermore.IntegrationTests
 
         public RelatedDocumentTableFixture()
         {
-            Store.Configuration.EnableSplittingCommands = true;
             relatedDocumentBdd = new RelatedDocumentBdd(Store);
         }
 

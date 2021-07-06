@@ -68,13 +68,7 @@ namespace Nevermore
 
         /// <summary>
         /// Defines a name generator to be used when creating global temp tables during related document updates. <para />
-        /// This is used when <see cref="EnableSplittingCommands"/> is true and there are more related documents than can fit in a single SQL command
         /// </summary>
         Func<string> RelatedDocumentsGlobalTempTableNameGenerator { get; }
-
-        /// <summary>
-        /// Allows automatic splitting of SQL commands if there are too many parameters due to related documents to fit into a single SQL command
-        /// </summary>
-        public bool EnableSplittingCommands { get; set; }
     }
 }

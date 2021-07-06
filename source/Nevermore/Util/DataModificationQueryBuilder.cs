@@ -228,7 +228,7 @@ namespace Nevermore.Util
             return sb;
         }
 
-        CommandParameterValues GetDocumentParameters(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
+        CommandParameterValues GetDocumentParametersForInsert(Func<DocumentMap, string> allocateId, object customAssignedId, IReadOnlyList<object> documents, DocumentMap mapping, DataModification dataModification)
         {
             if (documents.Count == 1)
                 return GetDocumentParameters(allocateId, customAssignedId, CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue, documents[0], mapping, dataModification, "");
@@ -334,7 +334,7 @@ namespace Nevermore.Util
             var commands = new List<PreparedCommand>();
             var parameters = new CommandParameterValues();
             // we need to create these document parameters for each command - parameters are disposed at the end of execution in 'CommandExecutor'
-            Func<CommandParameterValues> documentParametersCreator = () => GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
+            Func<CommandParameterValues> documentParametersCreator = () => GetDocumentParametersForInsert(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
             parameters.AddRange(documentParametersCreator());
 
             var relatedDocumentData = GetRelatedDocumentTableData(mapping, documents);
@@ -374,17 +374,20 @@ namespace Nevermore.Util
 
                     if (parameters.Count >= SqlServerParameterLimit && remaining > 0)
                     {
-                        AssertAllowedSplitCommands(parameters.Count + remaining);
-
                         commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
                         insertStatementBuilder = new StringBuilder();
                         parameters = new CommandParameterValues();
                         parameters.AddRange(documentParametersCreator());
                     }
                 }
+
+                commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+                insertStatementBuilder = new StringBuilder();
+                parameters = new CommandParameterValues();
+                parameters.AddRange(documentParametersCreator());
             }
 
-            commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
+            //commands.Add(new PreparedCommand(insertStatementBuilder.ToString(), parameters, RetriableOperation.Insert, mapping, options.CommandTimeout));
             return commands.ToArray();
         }
 
@@ -420,9 +423,7 @@ namespace Nevermore.Util
             var totalParameters = parameters.Count + relatedDocumentData.Sum(x => x.Related.Length);
             if (totalParameters > SqlServerParameterLimit)
             {
-                AssertAllowedSplitCommands(totalParameters);
-
-                tableVariableName = CreateGlobalTempTable(sb);
+                tableVariableName = CreateGlobalTempTable(sb, relatedDocumentData.First());
             }
             else if (HasRelatedDocuments(relatedDocumentData))
             {
@@ -473,26 +474,24 @@ namespace Nevermore.Util
                 {
                     sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @Id");
                 }
+
+                commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
+                sb = new StringBuilder();
+                parameters = parametersCreator();
             }
 
-            commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
+            //commands.Add(new PreparedCommand(sb.ToString(), parameters, RetriableOperation.Update, mapping, updateOptions.CommandTimeout));
             return commands.ToArray();
         }
 
-        void AssertAllowedSplitCommands(int currentParameterCount)
-        {
-            if (!configuration.EnableSplittingCommands)
-                throw new InvalidOperationException("Too many parameters to fit into a single SQL Command (limit 2100): " + (currentParameterCount + 2));
-        }
-
-        string CreateGlobalTempTable(StringBuilder sb)
+        string CreateGlobalTempTable(StringBuilder sb, RelatedDocumentTableData relatedDocumentTableData)
         {
             // sql commands are executed inside sp_executesql which means table variables and local temp tables won't live between commands
             var tableVariableName = $"##{configuration.RelatedDocumentsGlobalTempTableNameGenerator()}";
             sb.AppendLine("DECLARE @tableCollation NVARCHAR(255)");
             sb.AppendLine("DECLARE @referenceTableCollation NVARCHAR(255)");
-            sb.AppendLine("SET @tableCollation = (SELECT c.collation_name FROM sys.columns c JOIN sys.tables t on c.object_id = t.object_id WHERE t.name = N'RelatedDocument' AND c.name = 'Table')");
-            sb.AppendLine("SET @referenceTableCollation = (SELECT c.collation_name FROM sys.columns c JOIN sys.tables t on c.object_id = t.object_id WHERE t.name = N'RelatedDocument' AND c.name = 'RelatedDocumentTable')");
+            sb.AppendLine($"SET @tableCollation = (SELECT COLLATION_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = N'{relatedDocumentTableData.SchemaName}' AND TABLE_NAME = N'{relatedDocumentTableData.TableName}' AND COLUMN_NAME = N'{relatedDocumentTableData.IdTableColumnName}')");
+            sb.AppendLine($"SET @referenceTableCollation = (SELECT COLLATION_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = N'{relatedDocumentTableData.SchemaName}' AND TABLE_NAME = N'{relatedDocumentTableData.TableName}' AND COLUMN_NAME = N'{relatedDocumentTableData.RelatedDocumentTableColumnName}')");
 
             sb.AppendLine($"EXEC('CREATE TABLE {tableVariableName} (Reference nvarchar(400) COLLATE ' + @tableCollation + ', ReferenceTable nvarchar(400) COLLATE ' + @referenceTableCollation + ')')").AppendLine();
             return tableVariableName;
