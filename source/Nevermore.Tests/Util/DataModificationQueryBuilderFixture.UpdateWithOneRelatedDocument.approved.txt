@@ -1,13 +1,13 @@
 UPDATE [dbo].[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
 
 DELETE FROM [dbo].[RelatedDocument] WHERE [Id] = @Id
-    AND [RelatedDocumentId] not in (SELECT [RelatedDocumentId] FROM @relatedDocumentTableValuedParameter)
+    AND [RelatedDocumentId] not in (SELECT [RelatedDocumentId] FROM @0__relatedDocumentTableValuedParameter_)
 
 INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
-SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @relatedDocumentTableValuedParameter t
+SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @0__relatedDocumentTableValuedParameter_ t
 WHERE NOT EXISTS (SELECT null FROM [dbo].[RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.[RelatedDocumentId] )
 
 @Id=Doc-1
 @JSON={}
 @AColumn=AValue
-@relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter
+@0__relatedDocumentTableValuedParameter_=Nevermore.TableValuedParameter

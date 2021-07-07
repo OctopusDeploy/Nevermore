@@ -3,7 +3,7 @@ INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON])  VALUES
 ,(@1__Id, @1__AColumn, @1__JSON)
 ,(@2__Id, @2__AColumn, @2__JSON)
 INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
-SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @relatedDocumentTableValuedParameter
+SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @0__relatedDocumentTableValuedParameter
 
 @0__Id=New-Id-1
 @0__JSON={}
@@ -14,4 +14,4 @@ SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @relatedD
 @2__Id=New-Id-3
 @2__JSON={}
 @2__AColumn=Doc1
-@relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter
+@0__relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter
