@@ -1,9 +1,9 @@
 INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [AColumn], [JSON])  VALUES 
 (@Id, @AColumn, @JSON)
-INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable]) VALUES
-(@Id, 'TestDocumentTbl', @relateddocument_0, 'OtherTbl')
+INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+SELECT [Id], [Table], [RelatedDocumentId], [RelatedDocumentTable] FROM @relatedDocumentTableValuedParameter
 
 @Id=New-Id
 @JSON={}
 @AColumn=AValue
-@relateddocument_0=Rel-1
+@relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter

@@ -65,11 +65,6 @@ namespace Nevermore.IntegrationTests
         {
             var startingData = new List<string>();
             var updatedData = new List<string>();
-            for (int i = 0; i < referenceDataEntriesCount; i++)
-            {
-                trn.Delete(order);
-                trn.Commit();
-            }
             var starting = startingData.ToArray();
             var updated = updatedData.ToArray();
 

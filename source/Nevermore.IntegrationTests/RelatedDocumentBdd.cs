@@ -111,7 +111,7 @@ namespace Nevermore.IntegrationTests
             var order = new Order() {Id = orderId};
             using (var trn = store.BeginTransaction())
             {
-                trn.Delete(order);
+                trn.Delete<Order, string>(order);
                 trn.Commit();
             }
         }
@@ -164,7 +164,7 @@ namespace Nevermore.IntegrationTests
 
         RelatedDocumentRow[] GetReferencesFromDb()
         {
-            var map = ((IDocumentMap)new OrderMap()).Build().RelatedDocumentsMappings.First();
+            var map = ((IDocumentMap)new OrderMap()).Build(store.Configuration.PrimaryKeyHandlers).RelatedDocumentsMappings.First();
 
             Func<IDataReader, RelatedDocumentRow> Callback()
                 => reader
