@@ -415,7 +415,7 @@ namespace Nevermore.Util
             {
                 if (data.Related.Any())
                 {
-                    var tableVariableName = $"{index++}__relatedDocumentTableValuedParameter_";
+                    var tableVariableName = $"{index++}__relatedDocumentTableValuedParameter";
                     parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
 
                     sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
