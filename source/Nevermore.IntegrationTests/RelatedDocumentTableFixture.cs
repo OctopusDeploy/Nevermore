@@ -42,6 +42,12 @@ namespace Nevermore.IntegrationTests
             }
         };
 
+        public override void SetUp()
+        {
+            base.SetUp();
+            Configuration.SupportLargeNumberOfRelatedDocuments = true;
+        }
+
         string orderId;
         Order loadedOrder;
 

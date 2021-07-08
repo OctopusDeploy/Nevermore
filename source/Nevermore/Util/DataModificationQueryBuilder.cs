@@ -377,6 +377,7 @@ namespace Nevermore.Util
             return result;
         }
 
+
         void AppendRelatedDocumentStatementsForInsert(
             StringBuilder sb,
             CommandParameterValues parameters,
@@ -388,7 +389,38 @@ namespace Nevermore.Util
             int index = 0;
             foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
             {
-                var tableVariableName = $"{index++}__relatedDocumentTableValuedParameter";
+                if (ShouldUseTableValuedParameter(data))
+                    UseTableValuedParameter(data);
+                else
+                    UseExplicitParameters(data);
+
+                index++;
+            }
+
+            void UseExplicitParameters(RelatedDocumentTableData data)
+            {
+                var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
+
+                sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}]) VALUES");
+                var related = data.Related;
+
+                for (var x = 0; x < related.Length; x++)
+                {
+                    var parentIdVariable = related[x].parentIdVariable;
+                    var relatedDocumentId = related[x].relatedDocumentId;
+                    var relatedTableName = related[x].relatedTableName;
+
+                    var relatedVariableName = relatedVariablePrefix + x;
+                    parameters.Add(relatedVariableName, relatedDocumentId);
+                    if (x > 0)
+                        sb.Append(",");
+                    sb.AppendLine($"(@{parentIdVariable}, '{mapping.TableName}', @{relatedVariableName}, '{relatedTableName}')");
+                }
+            }
+
+            void UseTableValuedParameter(RelatedDocumentTableData data)
+            {
+                var tableVariableName = $"{index}__relatedDocumentTableValuedParameter";
                 parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
 
                 sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
@@ -410,22 +442,20 @@ namespace Nevermore.Util
             sb.AppendLine(statement);
             sb.AppendLine();
 
-            var index = 0;
+            if (relatedDocumentData.Any(d => d.Related.Any() && !ShouldUseTableValuedParameter(d)))
+                sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
+
+            int index = 0;
             foreach (var data in relatedDocumentData)
             {
                 if (data.Related.Any())
                 {
-                    //Feature flag
-                    var tableVariableName = $"{index++}__relatedDocumentTableValuedParameter";
-                    parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
+                    if (ShouldUseTableValuedParameter(data))
+                        UseTableValuedParameter(data);
+                    else
+                        UseExplicitParameters(data);
 
-                    sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
-                    sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT [{data.RelatedDocumentIdColumnName}] FROM @{tableVariableName})");
-                    sb.AppendLine();
-
-                    sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                    sb.AppendLine($"SELECT [{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}] FROM @{tableVariableName} t");
-                    sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.[{data.RelatedDocumentIdColumnName}] )");
+                    index++;
                 }
                 else
                 {
@@ -434,6 +464,51 @@ namespace Nevermore.Util
             }
 
             return sb.ToString();
+
+            void UseExplicitParameters(RelatedDocumentTableData data)
+            {
+                var relatedVariablePrefix = $"{data.TableName.ToLower()}_";
+
+                sb.AppendLine();
+                sb.AppendLine("DELETE FROM @references");
+                sb.AppendLine();
+
+                var valueBlocks = data.Related.Select((r, idx) => $"(@{relatedVariablePrefix}{idx}, '{r.relatedTableName}')");
+                sb.Append("INSERT INTO @references VALUES ");
+                sb.AppendLine(string.Join(", ", valueBlocks));
+                sb.AppendLine();
+
+                sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
+                sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT Reference FROM @references)");
+                sb.AppendLine();
+
+                sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
+                sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', Reference, ReferenceTable FROM @references t");
+                sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.Reference )");
+
+                for (var x = 0; x < data.Related.Length; x++)
+                    parameters.Add(relatedVariablePrefix + x, data.Related[x].relatedDocumentId);
+            }
+
+            void UseTableValuedParameter(RelatedDocumentTableData data)
+            {
+                var tableVariableName = $"{index}__relatedDocumentTableValuedParameter";
+                parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
+
+                sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
+                sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT [{data.RelatedDocumentIdColumnName}] FROM @{tableVariableName})");
+                sb.AppendLine();
+
+                sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
+                sb.AppendLine($"SELECT [{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}] FROM @{tableVariableName} t");
+                sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.[{data.RelatedDocumentIdColumnName}] )");
+            }
+        }
+
+        bool ShouldUseTableValuedParameter(RelatedDocumentTableData data)
+        {
+            //80 is roughly when using a table valued parameter is faster
+            return configuration.SupportLargeNumberOfRelatedDocuments && data.Related.Length >= 80;
         }
 
         static TableValuedParameter CreateRelatedDocumentTableValuedParameter(DocumentMap mapping,
@@ -448,7 +523,7 @@ namespace Nevermore.Util
             foreach (var related in data.Related)
             {
                 var record = new SqlDataRecord(idMetaData, tableMetadata, relatedIdMetadata, relatedTableMetadata);
-                record.SetString(0, related.parentId);
+                record.SetValue(0, related.parentId);
                 record.SetString(1, mapping.TableName);
                 record.SetString(2, related.relatedDocumentId);
                 record.SetString(3, related.relatedTableName);
@@ -460,7 +535,9 @@ namespace Nevermore.Util
 
         IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
         {
-            var documentAndIds = documents.Select(i => (id: (string)mapping.IdColumn.PropertyHandler.Read(i), document: i));
+            var documentAndIds = documents.Count == 1
+                ? new[] {(parentIdVariable: IdVariableName, parentId: ReadIdAsPrimitiveType(mapping, documents[0]), document: documents[0])}
+                : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", parentId: ReadIdAsPrimitiveType(mapping, i), document: i));
 
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
                 group m by new {Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m)}
@@ -470,7 +547,7 @@ namespace Nevermore.Util
                     from i in documentAndIds
                     from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
                     let relatedTableName = mappings.Resolve(relId.type).TableName
-                    select (parentId: i.id, relatedDocumentId: relId.id, relatedTableName)
+                    select (parentIdVariable: i.idVariable, parentId: i.parentId, relatedDocumentId: relId.id, relatedTableName)
                 ).Distinct().ToArray()
                 select new RelatedDocumentTableData
                 {
@@ -485,6 +562,10 @@ namespace Nevermore.Util
             return groupedByTable.ToArray();
         }
 
+        object? ReadIdAsPrimitiveType(DocumentMap mapping, object document)
+        {
+            return mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(mapping.IdColumn.PropertyHandler.Read(document));
+        }
 
         class RelatedDocumentTableData
         {
@@ -492,7 +573,7 @@ namespace Nevermore.Util
             public string SchemaName { get; set; }
             public string IdColumnName { get; set; }
             public string RelatedDocumentIdColumnName { get; set; }
-            public (string parentId, string relatedDocumentId, string relatedTableName)[] Related { get; set; }
+            public (string parentIdVariable, object parentId, string relatedDocumentId, string relatedTableName)[] Related { get; set; }
             public string IdTableColumnName { get; set; }
             public string RelatedDocumentTableColumnName { get; set; }
         }

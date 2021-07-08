@@ -96,6 +96,8 @@ namespace Nevermore
         /// </summary>
         public bool DetectQueryPlanThrashing { get; set; }
 
+        public bool SupportLargeNumberOfRelatedDocuments { get; set; }
+
         public ISqlCommandFactory CommandFactory { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
