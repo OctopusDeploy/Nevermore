@@ -28,13 +28,33 @@ namespace Nevermore.Benchmarks
         }
 
         [Benchmark]
-        public void Insert100OrdersWith2000RelatedDocuments()
+        public void Insert100OrdersWith10RelatedDocuments()
         {
             using var writer = store.BeginWriteTransaction();
 
-            for (int i = 1; i <= 500; i++)
+            for (int i = 1; i <= 100; i++)
             {
-                var customers = Enumerable.Range(1, 2000).Select(i => "Customer-" + i);
+                var customers = Enumerable.Range(1, 20).Select(i => "Customer-" + i);
+                var order = new Order(customers.Select(c => (c, typeof(Customer))))
+                {
+                    Name = "Order " + i,
+                    Price = i
+                };
+
+                writer.Insert(order);
+            }
+
+            writer.Commit();
+        }
+
+        [Benchmark]
+        public void Insert10OrdersWith1000RelatedDocuments()
+        {
+            using var writer = store.BeginWriteTransaction();
+
+            for (int i = 1; i <= 10; i++)
+            {
+                var customers = Enumerable.Range(1, 1000).Select(i => "Customer-" + i);
                 var order = new Order(customers.Select(c => (c, typeof(Customer))))
                 {
                     Name = "Order " + i,

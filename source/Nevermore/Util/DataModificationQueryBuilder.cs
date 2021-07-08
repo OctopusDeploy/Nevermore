@@ -415,6 +415,7 @@ namespace Nevermore.Util
             {
                 if (data.Related.Any())
                 {
+                    //Feature flag
                     var tableVariableName = $"{index++}__relatedDocumentTableValuedParameter";
                     parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
 

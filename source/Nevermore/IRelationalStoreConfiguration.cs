@@ -65,5 +65,7 @@ namespace Nevermore
         /// resulting in duplicate query plans being created.
         /// </summary>
         public bool DetectQueryPlanThrashing { get; set; }
+
+        public bool
     }
 }
