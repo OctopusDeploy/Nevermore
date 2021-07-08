@@ -1,16 +1,16 @@
-﻿IF NOT EXISTS (SELECT NULL FROM sys.tables WHERE name = 'KeyAllocation')
-	CREATE TABLE KeyAllocation
+﻿IF NOT EXISTS (SELECT NULL FROM sys.tables WHERE name = 'KeyAllocation' AND SCHEMA_NAME(schema_id) = 'dbo')
+	CREATE TABLE dbo.KeyAllocation
 	(
 		CollectionName nvarchar(50) constraint PK_KeyAllocation_CollectionName primary key,
 		Allocated int not null
 	)
 GO
 
-IF EXISTS (SELECT NULL FROM sys.procedures WHERE name = 'GetNextKeyBlock')
-	DROP PROCEDURE GetNextKeyBlock
+IF EXISTS (SELECT NULL FROM sys.procedures WHERE name = 'GetNextKeyBlock' AND SCHEMA_NAME(schema_id) = 'dbo')
+	DROP PROCEDURE dbo.GetNextKeyBlock
 GO
 
-CREATE PROCEDURE GetNextKeyBlock
+CREATE PROCEDURE dbo.GetNextKeyBlock
 (
 	@collectionName nvarchar(50),
 	@blockSize int
