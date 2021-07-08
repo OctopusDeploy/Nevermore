@@ -178,9 +178,10 @@ namespace Nevermore.IntegrationTests
         }
 
         [TestCase(1)]
+        [TestCase(10)]
         [TestCase(1000)]
-        [TestCase(2001)]
-        [TestCase(3001)] // exceeds the per command param limit
+        [TestCase(2001)]// exceeds the per command param limit
+        [TestCase(3001)]
         public void Insert(int referenceDataEntriesCount)
         {
             var references = Enumerable.Range(0, referenceDataEntriesCount)
@@ -205,9 +206,10 @@ namespace Nevermore.IntegrationTests
         }
 
         [TestCase(1)]
+        [TestCase(10)]
         [TestCase(1000)]
-        [TestCase(2001)]
-        [TestCase(3001)] // exceeds the per command param limit
+        [TestCase(2001)]// exceeds the per command param limit
+        [TestCase(3001)]
         public void Update(int referenceDataEntriesCount)
         {
             var starting = Enumerable.Range(0, referenceDataEntriesCount)
