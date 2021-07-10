@@ -566,7 +566,7 @@ namespace Nevermore.Util
             return groupedByTable.ToArray();
         }
 
-        object? ReadIdAsPrimitiveType(DocumentMap mapping, object document)
+        object ReadIdAsPrimitiveType(DocumentMap mapping, object document)
         {
             return mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(mapping.IdColumn.PropertyHandler.Read(document));
         }
