@@ -389,7 +389,7 @@ namespace Nevermore.Util
             int index = 0;
             foreach (var data in relatedDocumentData.Where(g => g.Related.Length > 0))
             {
-                if (ShouldUseTableValuedParameter(data))
+                if (ShouldUseTableValuedParameterForInsert(data))
                     UseTableValuedParameter(data);
                 else
                     UseExplicitParameters(data);
@@ -428,6 +428,12 @@ namespace Nevermore.Util
             }
         }
 
+        bool ShouldUseTableValuedParameterForInsert(RelatedDocumentTableData data)
+        {
+            //80 is roughly when using a table valued parameter is faster
+            return configuration.SupportLargeNumberOfRelatedDocuments && data.Related.Length >= 80;
+        }
+
         string AppendRelatedDocumentStatementsForUpdate(
             string statement,
             CommandParameterValues parameters,
@@ -442,7 +448,7 @@ namespace Nevermore.Util
             sb.AppendLine(statement);
             sb.AppendLine();
 
-            if (relatedDocumentData.Any(d => d.Related.Any() && !ShouldUseTableValuedParameter(d)))
+            if (!ShouldUseTableValuedParameterForUpdate() && relatedDocumentData.Any(d => d.Related.Any()))
                 sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
 
             int index = 0;
@@ -450,7 +456,7 @@ namespace Nevermore.Util
             {
                 if (data.Related.Any())
                 {
-                    if (ShouldUseTableValuedParameter(data))
+                    if (ShouldUseTableValuedParameterForUpdate())
                         UseTableValuedParameter(data);
                     else
                         UseExplicitParameters(data);
@@ -505,12 +511,10 @@ namespace Nevermore.Util
             }
         }
 
-        bool ShouldUseTableValuedParameter(RelatedDocumentTableData data)
+        bool ShouldUseTableValuedParameterForUpdate()
         {
-            //80 is roughly when using a table valued parameter is faster
-            return configuration.SupportLargeNumberOfRelatedDocuments && data.Related.Length >= 80;
+            return configuration.SupportLargeNumberOfRelatedDocuments;
         }
-
         static TableValuedParameter CreateRelatedDocumentTableValuedParameter(DocumentMap mapping,
             RelatedDocumentTableData data)
         {
