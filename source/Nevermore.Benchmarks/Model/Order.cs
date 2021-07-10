@@ -20,6 +20,6 @@ namespace Nevermore.Benchmarks.Model
         public string Name { get; set; }
         public decimal Price { get; set; }
 
-        public IEnumerable<(string, Type)> RelatedDocuments { get; }
+        public IEnumerable<(string, Type)> RelatedDocuments { get; set; }
     }
 }

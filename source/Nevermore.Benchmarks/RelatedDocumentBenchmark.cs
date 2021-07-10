@@ -13,7 +13,7 @@ namespace Nevermore.Benchmarks
     public class RelatedDocumentBenchmark : BenchmarkBase
     {
         IRelationalStore store;
-        IReadTransaction transaction;
+        IEnumerable<Order> documentsToUpdate;
 
         public override void SetUp()
         {
@@ -24,117 +24,126 @@ namespace Nevermore.Benchmarks
             config.DocumentMaps.Register(new OrderMap());
 
             store = new RelationalStore(config);
-            transaction = store.BeginReadTransaction();
+
+            //These are for the update tests
+            InsertDocuments(100, 55);
+            using var transaction = store.BeginReadTransaction();
+            documentsToUpdate = transaction.Query<Order>().ToList();
         }
 
         [Benchmark]
         public void Insert100OrdersWith10RelatedDocuments()
         {
-            using var writer = store.BeginWriteTransaction();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var customers = Enumerable.Range(1, 10).Select(i => "Customer-" + i);
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
-                {
-                    Name = "Order " + i,
-                    Price = i
-                };
-
-                writer.Insert(order);
-            }
-
-            writer.Commit();
+            InsertDocuments(100, 10);
         }
 
         [Benchmark]
         public void Insert100OrdersWith20RelatedDocuments()
         {
-            using var writer = store.BeginWriteTransaction();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var customers = Enumerable.Range(1, 20).Select(i => "Customer-" + i);
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
-                {
-                    Name = "Order " + i,
-                    Price = i
-                };
-
-                writer.Insert(order);
-            }
-
-            writer.Commit();
+            InsertDocuments(100, 20);
         }
 
         [Benchmark]
         public void Insert100OrdersWith50RelatedDocuments()
         {
-            using var writer = store.BeginWriteTransaction();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var customers = Enumerable.Range(1, 50).Select(i => "Customer-" + i);
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
-                {
-                    Name = "Order " + i,
-                    Price = i
-                };
-
-                writer.Insert(order);
-            }
-
-            writer.Commit();
+            InsertDocuments(100, 50);
         }
 
         [Benchmark]
         public void Insert100OrdersWith80RelatedDocuments()
         {
-            using var writer = store.BeginWriteTransaction();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var customers = Enumerable.Range(1, 80).Select(i => "Customer-" + i);
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
-                {
-                    Name = "Order " + i,
-                    Price = i
-                };
-
-                writer.Insert(order);
-            }
-
-            writer.Commit();
+            InsertDocuments(100, 80);
         }
 
         [Benchmark]
         public void Insert100OrdersWith100RelatedDocuments()
         {
-            using var writer = store.BeginWriteTransaction();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var customers = Enumerable.Range(1, 100).Select(i => "Customer-" + i);
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
-                {
-                    Name = "Order " + i,
-                    Price = i
-                };
-
-                writer.Insert(order);
-            }
-
-            writer.Commit();
+            InsertDocuments(100, 100);
         }
 
         [Benchmark]
         public void Insert100OrdersWith500RelatedDocuments()
         {
+            InsertDocuments(100, 500);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith10RelatedDocuments()
+        {
+            UpdateDocuments(10);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith20RelatedDocuments()
+        {
+            UpdateDocuments(20);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith50RelatedDocuments()
+        {
+            UpdateDocuments(50);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith80RelatedDocuments()
+        {
+            UpdateDocuments(80);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith100RelatedDocuments()
+        {
+            UpdateDocuments(100);
+        }
+        [Benchmark]
+        public void Update100OrdersWith300RelatedDocuments()
+        {
+            UpdateDocuments(300);
+        }
+
+        [Benchmark]
+        public void Update100OrdersWith500RelatedDocuments()
+        {
+            UpdateDocuments(500);
+        }
+        [Benchmark]
+        public void Update100OrdersWith700RelatedDocuments()
+        {
+            UpdateDocuments(700);
+        }
+
+        void UpdateDocuments(int numberOfRelatedDocuments)
+        {
+
+            Random rand = new Random();
+            foreach (var document in documentsToUpdate)
+            {
+                using var writer = store.BeginWriteTransaction();
+                if (document.RelatedDocuments.Count() > numberOfRelatedDocuments)
+                {
+                    var newCustomers = Enumerable.Range(1, 7).Select(i => "Customer-" + (rand.Next(1000)+5000)).Select(c => (c, typeof(Customer)));
+                    document.RelatedDocuments = newCustomers.Concat(document.RelatedDocuments).Take(numberOfRelatedDocuments).ToArray();
+                }
+                else
+                {
+                    var newCustomers = Enumerable.Range(1, numberOfRelatedDocuments).Select(i => "Customer-" + (rand.Next(1000)+5000)).Select(c => (c, typeof(Customer)));
+                    document.RelatedDocuments = document.RelatedDocuments.Concat(newCustomers).Take(numberOfRelatedDocuments).ToArray();
+                }
+
+                writer.Update(document);
+                writer.Commit();
+            }
+        }
+
+        void InsertDocuments(int numberOfDocuments, int numberOfRelatedDocuments)
+        {
             using var writer = store.BeginWriteTransaction();
 
-            for (int i = 1; i <= 100; i++)
+            Random rand = new Random();
+            for (int i = 1; i <= numberOfDocuments; i++)
             {
-                var customers = Enumerable.Range(1, 500).Select(i => "Customer-" + i);
+                var customers = Enumerable.Range(1, numberOfRelatedDocuments).Select(i => "Customer-" + rand.Next(1000));
                 var order = new Order(customers.Select(c => (c, typeof(Customer))))
                 {
                     Name = "Order " + i,
