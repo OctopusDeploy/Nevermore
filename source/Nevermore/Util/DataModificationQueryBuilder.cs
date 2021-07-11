@@ -515,6 +515,7 @@ namespace Nevermore.Util
         {
             return configuration.SupportLargeNumberOfRelatedDocuments;
         }
+
         static TableValuedParameter CreateRelatedDocumentTableValuedParameter(DocumentMap mapping,
             RelatedDocumentTableData data)
         {
