@@ -18,10 +18,11 @@ namespace Nevermore.Tests.Util
     {
         readonly DataModificationQueryBuilder builder;
         Func<string> idAllocator;
+        RelationalStoreConfiguration configuration;
 
         public DataModificationQueryBuilderFixture()
         {
-            var configuration = new RelationalStoreConfiguration("");
+            configuration = new RelationalStoreConfiguration("");
             configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
             configuration.DocumentMaps.Register(
                 new TestDocumentMap(),
@@ -131,6 +132,23 @@ namespace Nevermore.Tests.Util
         }
 
         [Test]
+        public void InsertSingleDocumentWithManyRelatedDocumentsWithTableValuedParameter()
+        {
+            configuration.SupportLargeNumberOfRelatedDocuments = true;
+            var document = new TestDocumentWithRelatedDocuments
+            {
+                AColumn = "AValue",
+                RelatedDocumentIds = Enumerable.Range(1, 80).Select(i => ("Rel-" + i, typeof(Other))).ToArray()
+            };
+
+            var result = builder.PrepareInsert(
+                new[] {document}
+            );
+
+            this.Assent(Format(result));
+        }
+
+        [Test]
         public void InsertMultipleDocuments()
         {
             var documents = new[]
@@ -178,6 +196,31 @@ namespace Nevermore.Tests.Util
                     RelatedDocumentIds1 = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))},
                     RelatedDocumentIds2 = new[] {("Rel-2", typeof(Other)), ("Rel-2", typeof(Other))},
                     RelatedDocumentIds3 = new[] {("Rel-3-Other", typeof(Other)), ("Rel-2", typeof(Other))}
+                },
+            };
+
+            int n = 0;
+            idAllocator = () => "New-Id-" + (++n);
+            var result = builder.PrepareInsert(
+                documents
+            );
+
+            this.Assent(Format(result));
+        }
+
+
+        [Test]
+        public void InsertMultipleDocumentWithMultipleRelatedDocumentsMapsWithTableValuedParameter()
+        {
+            configuration.SupportLargeNumberOfRelatedDocuments = true;
+            var documents = new[]
+            {
+                new TestDocumentWithMultipleRelatedDocuments
+                {
+                    AColumn = "Doc1",
+                    RelatedDocumentIds1 = Enumerable.Range(1, 80).Select(i => ("Rel-" + i, typeof(Other))).ToArray(),
+                    RelatedDocumentIds2 = Enumerable.Range(1, 10).Select(i => ("Rel-" + i+100, typeof(Other))).ToArray(),
+                    RelatedDocumentIds3 = Enumerable.Range(1, 80).Select(i => ("Rel-" + i+200, typeof(Other))).ToArray()
                 },
             };
 
@@ -290,6 +333,26 @@ namespace Nevermore.Tests.Util
         [Test]
         public void UpdateWithManyRelatedDocuments()
         {
+            var document = new TestDocumentWithMultipleRelatedDocuments
+            {
+                Id = "Doc-1",
+                AColumn = "Doc1",
+                RelatedDocumentIds1 = new[] {("Rel-1", typeof(Other)), ("Rel-2", typeof(Other))},
+                RelatedDocumentIds2 = new[] {("Rel-2", typeof(Other)), ("Rel-2", typeof(Other))},
+                RelatedDocumentIds3 = new[] {("Rel-3-Other", typeof(Other)), ("Rel-2", typeof(Other))}
+            };
+
+            var result = builder.PrepareUpdate(
+                document
+            );
+
+            this.Assent(Format(result));
+        }
+
+        [Test]
+        public void UpdateWithManyRelatedDocumentsWithTableValuedParameter()
+        {
+            configuration.SupportLargeNumberOfRelatedDocuments = true;
             var document = new TestDocumentWithMultipleRelatedDocuments
             {
                 Id = "Doc-1",
