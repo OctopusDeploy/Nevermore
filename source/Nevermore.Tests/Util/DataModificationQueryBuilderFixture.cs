@@ -18,7 +18,7 @@ namespace Nevermore.Tests.Util
     {
         readonly DataModificationQueryBuilder builder;
         Func<string> idAllocator;
-        RelationalStoreConfiguration configuration;
+        readonly RelationalStoreConfiguration configuration;
 
         public DataModificationQueryBuilderFixture()
         {
@@ -40,6 +40,7 @@ namespace Nevermore.Tests.Util
         [SetUp]
         public void SetUp()
         {
+            configuration.SupportLargeNumberOfRelatedDocuments = false;
             idAllocator = () => "New-Id";
         }
 
