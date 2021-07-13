@@ -46,7 +46,7 @@ namespace Nevermore.Mapping
             }
         }
 
-        public bool ResolveOptional(Type type, out DocumentMap map)
+        public bool ResolveOptional(Type type, out DocumentMap? map)
         {
             var maps = new List<DocumentMap>();
 
@@ -72,18 +72,18 @@ namespace Nevermore.Mapping
             return map != null;
         }
 
-        public DocumentMap Resolve<TDocument>()
+        public DocumentMap? Resolve<TDocument>()
         {
             return Resolve(typeof(TDocument));
         }
 
-        public DocumentMap Resolve(object instance)
+        public DocumentMap? Resolve(object instance)
         {
             var mapping = Resolve(instance.GetType());
             return mapping;
         }
 
-        public DocumentMap Resolve(Type type)
+        public DocumentMap? Resolve(Type type)
         {
             if (!ResolveOptional(type, out var mapping))
             {
@@ -102,7 +102,7 @@ namespace Nevermore.Mapping
             if (!ResolveOptional(type, out var map))
                 throw NotRegistered(type);
 
-            return map.GetId(instance);
+            return map?.GetId(instance);
         }
 
         static Exception NotRegistered(Type type)
