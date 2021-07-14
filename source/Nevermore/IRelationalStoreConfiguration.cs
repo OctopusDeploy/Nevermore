@@ -65,5 +65,10 @@ namespace Nevermore
         /// resulting in duplicate query plans being created.
         /// </summary>
         public bool DetectQueryPlanThrashing { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to support a larger number of related documents (currently Nevermore errors at 1000) by using table valued parameters
+        /// </summary>
+        public bool SupportLargeNumberOfRelatedDocuments { get; set; }
     }
 }

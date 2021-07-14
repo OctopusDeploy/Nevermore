@@ -1,9 +1,9 @@
 ﻿-- Based on the StackExchange Dapper benchmark
 Create Table Posts
 (
-    Id nvarchar(200) primary key not null, 
-    [Text] varchar(max) not null, 
-    CreationDate datetime not null, 
+    Id nvarchar(200) primary key not null,
+    [Text] varchar(max) not null,
+    CreationDate datetime not null,
     LastChangeDate datetime not null,
     Counter1 int,
     Counter2 int,
@@ -25,15 +25,15 @@ Begin
     Set @i = @i + 1;
 End
 
-go 
+go
 
 Create Table Customer
 (
-    Id nvarchar(200) primary key not null, 
-    FirstName nvarchar(20) not null,    
-    LastName nvarchar(20) not null,    
-    Nickname nvarchar(200) null,    
-    CreationDate datetime not null, 
+    Id nvarchar(200) primary key not null,
+    FirstName nvarchar(20) not null,
+    LastName nvarchar(20) not null,
+    Nickname nvarchar(200) null,
+    CreationDate datetime not null,
     LastChangeDate datetime not null,
     Counter1 int,
     Counter2 int,
@@ -52,7 +52,7 @@ alter table Customer add constraint UQ_UniqueCustomerNames unique(FirstName, Las
 
 go
 
-begin transaction 
+begin transaction
 declare @i int = 0
 While @i <= 50001
 Begin
@@ -60,25 +60,38 @@ Begin
     Set @i = @i + 1;
 End
 
-commit 
+commit
 
-go 
+go
 
 Create Table BigObject
 (
-    Id nvarchar(200) primary key not null, 
+    Id nvarchar(200) primary key not null,
     [JSON] nvarchar(max) not null
 )
 
 Create Table BigObjectCompressed
 (
-    Id nvarchar(200) primary key not null, 
+    Id nvarchar(200) primary key not null,
     [JSONBlob] varbinary(max) not null
 )
 
 Create Table BigObjectMixed
 (
-    Id nvarchar(200) primary key not null, 
+    Id nvarchar(200) primary key not null,
     [JSON] nvarchar(max) not null,
     [JSONBlob] varbinary(max) not null
+)
+
+Create Table [Order]
+(
+    Id nvarchar(200) primary key not null,
+    [JSON] nvarchar(max) not null
+)
+
+CREATE TABLE [dbo].[RelatedDocument](
+    [Id] [nvarchar](250) NOT NULL,
+    [Table] [varchar](40) NOT NULL,
+    [RelatedDocumentId] [nvarchar](250) NOT NULL,
+    [RelatedDocumentTable] [varchar](40) NOT NULL
 )
