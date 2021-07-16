@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
+using Microsoft.DotNet.PlatformAbstractions;
 using NUnit.Framework;
 
 namespace Nevermore.Analyzers.Tests
@@ -61,6 +62,67 @@ namespace Nevermore.Analyzers.Tests
 				transaction.Query<Customer>().Where('Name = ' + name).ToList();
 			";
 
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingANameOf()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {nameof(System)}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [TestCase("1")]
+        [TestCase("(int?) 1")]
+        [TestCase("100000000L")]
+        [TestCase("4.5")]
+        [TestCase("4.5m")]
+        [TestCase("true")]
+        [TestCase("Environment.SpecialFolder.Cookies")]
+        public void ShouldCompileIfAInterpolatingAPrimitive(string value)
+        {
+	        var code = $@"
+				var name = {value};
+				transaction.Query<Customer>().Where($'Name = ${{name}}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstant()
+        {
+	        var code = @"
+				const string name = 'Robert';
+				transaction.Query<Customer>().Where($'Name = {name}').ToList();
+			";
+
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstantFromAnotherType()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {Customer.Constant}').ToList();
+			";
+	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
+	        AssertPassed(results);
+        }
+
+        [Test]
+        public void ShouldCompileIfInterpolatingAConstantFromANestedClass()
+        {
+	        var code = @"
+				transaction.Query<Customer>().Where($'Name = {Customer.Attributes.Constant}').ToList();
+			";
 	        var results = CodeCompiler.Compile<NevermoreSqlInjectionAnalyzer>(code);
 	        AssertPassed(results);
         }

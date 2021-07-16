@@ -28,6 +28,12 @@ class Customer
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public int? Age { get; set; }
+
+    public const string Constant = ""ConstantValue"";
+
+    public class Attributes {
+        public const string Constant = ""ConstantValue"";
+    }
 }
 
 class Program 
