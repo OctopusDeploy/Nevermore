@@ -52,7 +52,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
             transaction.Query<Car>().Count().Should().Be(1);
 
-            transaction.Delete<Car, string>(car);
+            transaction.Delete(car);
 
             transaction.Query<Car>().Count().Should().Be(0);
 
