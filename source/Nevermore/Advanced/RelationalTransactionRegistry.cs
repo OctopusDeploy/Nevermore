@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,7 +17,7 @@ namespace Nevermore.Advanced
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
-        readonly List<ReadTransaction> transactions = new List<ReadTransaction>();
+        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
         bool highNumberAlreadyLoggedAtError;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
@@ -30,22 +31,18 @@ namespace Nevermore.Advanced
 
         public void Add(ReadTransaction trn)
         {
-            lock (transactions)
-            {
-                transactions.Add(trn);
+                transactions.TryAdd(trn, trn);
                 var numberOfTransactions = transactions.Count;
                 if (numberOfTransactions > MaxPoolSize * 0.8)
                     Log.Info($"{numberOfTransactions} transactions active");
 
                 if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
                     LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
-            }
         }
 
         public void Remove(ReadTransaction trn)
         {
-            lock (transactions)
-                transactions.Remove(trn);
+            transactions.TryRemove(trn, out _);
         }
 
         void LogHighNumberOfTransactions(bool reachedMax)
@@ -74,7 +71,7 @@ namespace Nevermore.Advanced
         {
             ReadTransaction[] copy;
             lock (transactions)
-                copy = transactions.ToArray();
+                copy = transactions.Keys.ToArray();
 
             foreach (var trn in copy.OrderBy(t => t.CreatedTime))
             {
