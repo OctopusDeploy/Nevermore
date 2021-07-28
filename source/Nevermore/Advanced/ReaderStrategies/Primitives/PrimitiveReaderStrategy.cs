@@ -13,7 +13,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Primitives
         {
             this.configuration = configuration;
         }
-        
+
         public bool CanRead(Type type)
         {
             return
@@ -23,7 +23,8 @@ namespace Nevermore.Advanced.ReaderStrategies.Primitives
                 || type.IsPrimitive
                 || type.IsValueType
                 || type.IsEnum
-                || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
+                || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                || configuration.TypeHandlers.Resolve(type) != null;
         }
 
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
@@ -53,7 +54,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Primitives
                     {
                         throw new ReaderException(rowNumber, 0, compiled.ExpressionSource, ex);
                     }
-                }; 
+                };
             };
         }
     }
