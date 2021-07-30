@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using Castle.DynamicProxy.Generators.Emitters.SimpleAST;
 using FluentAssertions;
-using Nevermore.Advanced;
 using Nevermore.Advanced.TypeHandlers;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -26,14 +24,14 @@ namespace Nevermore.IntegrationTests
             public string FirstName { get; set; }
             public string LastName { get; set; }
             public string Email { get; set; }
-            
-            // Documents can have all kinds of things on them, including arrays, nested properties, and more. 
+
+            // Documents can have all kinds of things on them, including arrays, nested properties, and more.
             // All these properties will be stored in the JSON blob.
             public HashSet<string> Tags { get; } = new HashSet<string>();
-            
+
             public int[] LuckyNumbers { get; set; }
         }
-        
+
         // To translate documents to a relational database, we need a mapping. Here's our map. It tells us which
         // properties will be stored as columns on the table (everything else is stored in a blob of JSON at the end of
         // the table).
@@ -55,15 +53,15 @@ namespace Nevermore.IntegrationTests
             // This is where you configure nevermore. The config lets you control how JSON is serialized and a whole lot
             // more. We'll start simple.
             var config = new RelationalStoreConfiguration(ConnectionString);
-            
+
             // Your mappings define how your documents will be stored in the database. You need to tell Nevermore about
             // all your mappings.
             config.DocumentMaps.Register(new PersonMap());
-            
+
             // Create your store. You'll do this once when the application starts up.
             store = new RelationalStore(config);
-            
-            // Of course, this is a SQL database, so you'll need a SQL schema. Here's ours. 
+
+            // Of course, this is a SQL database, so you'll need a SQL schema. Here's ours.
             ExecuteSql(@"
                 CREATE TABLE [Person] (
                   [Id] NVARCHAR(50) NOT NULL CONSTRAINT [PK__Id] PRIMARY KEY CLUSTERED, 
@@ -80,11 +78,11 @@ namespace Nevermore.IntegrationTests
         public void Insert()
         {
             var person = new Person {FirstName = "Donald", LastName = "Duck", Email = "donald.duck@disney.com", Tags = {"duck", "disney", "\u2103"}, LuckyNumbers = Enumerable.Range(0, 85000).ToArray()};
-            
+
             using var transaction = store.BeginTransaction();
             transaction.Insert(person);
             transaction.Commit();
-            
+
             // ID's are assigned automatically when the Insert call completes.
             person.Id.Should().Be("Persons-1");
         }
@@ -101,7 +99,7 @@ namespace Nevermore.IntegrationTests
         [Test, Order(3)]
         public void InsertMany()
         {
-            // You can insert many documents, but be careful - this is limited to a few hundred documents at a time. 
+            // You can insert many documents, but be careful - this is limited to a few hundred documents at a time.
             using var transaction = store.BeginTransaction();
             transaction.InsertMany(
                 new List<Person>
@@ -119,7 +117,7 @@ namespace Nevermore.IntegrationTests
             using var transaction = store.BeginTransaction();
             var ex = Assert.Throws<UniqueConstraintViolationException>(delegate
             {
-                // These two people have the same email. 
+                // These two people have the same email.
                 // But our document map and table schema set up a unique constraint on this field. The message
                 // comes from the document map.
                 transaction.InsertMany(
@@ -131,13 +129,13 @@ namespace Nevermore.IntegrationTests
             });
             ex.Message.Should().Be("People must have unique emails");
         }
-        
+
         [Test, Order(5)]
         public void Query()
         {
             using var transaction = store.BeginTransaction();
-            
-            // Beyond "Load", most of the queries you'll write will be against collections of documents. Since 
+
+            // Beyond "Load", most of the queries you'll write will be against collections of documents. Since
             // properties that you "map" are stored as columns, you can query against those columns.
             // Here are some different ways to query.
             // TableQuery gives you a strongly typed collection:
@@ -147,14 +145,14 @@ namespace Nevermore.IntegrationTests
                 .FirstOrDefault();
 
             person.LastName.Should().Be("Duck");
-            
-            // If for some reason you want to query a SQL database but SQL scares you, you can also use LINQ support: 
+
+            // If for some reason you want to query a SQL database but SQL scares you, you can also use LINQ support:
             person = transaction.Query<Person>()
                 .Where(m => m.FirstName == "Donald")
                 .FirstOrDefault();
 
             person.LastName.Should().Be("Duck");
-            
+
             // Or, you can use a perfectly good language for querying SQL, called... SQL!
             // Nevermore handles the mapping of the result set to the object type
             person = transaction.Stream<Person>(
@@ -163,18 +161,18 @@ namespace Nevermore.IntegrationTests
                 ).Single();
 
             person.LastName.Should().Be("Duck");
-            
-            // SQL Server 2016 and above supports JSON_VALUE as a function. This can be used to query for data stored 
+
+            // SQL Server 2016 and above supports JSON_VALUE as a function. This can be used to query for data stored
             // in the JSON blob at the end of the document.
             // For example, you can use JSON_VALUE to query a single field within the JSON. Or you can use OPENJSON
-            // to query values in an array. The only downside to doing this of course is that you won't get to take 
+            // to query values in an array. The only downside to doing this of course is that you won't get to take
             // much advantage of indexes.
             person = transaction.Query<Person>()
                 .Where("exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag1) and exists (SELECT value FROM OPENJSON([JSON],'$.Tags') where value = @tag2)")
                 .Parameter("tag1", "wb")
                 .Parameter("tag2", "duck")
                 .FirstOrDefault();
-            
+
             person.FirstName.Should().Be("Daffy");
         }
 
@@ -182,7 +180,7 @@ namespace Nevermore.IntegrationTests
         public void QueryWithTuples()
         {
             using var transaction = store.BeginTransaction();
-            
+
             // The results of your queries don't always have to be documents. You can just query an arbitrary type if
             // you want. The ID and JSON columns don't need to appear in the result set.
             var customer = transaction.Stream<(string Email, string FirstName)>(
@@ -190,7 +188,7 @@ namespace Nevermore.IntegrationTests
             ).Single();
 
             customer.Email.Should().Be("donald.duck@disney.com");
-            
+
             // This pattern can be used for just about any quick query
             var result = transaction.Stream<(string LastName, int Count)>(
                 "select LastName, count(*) from Person group by LastName order by count(*) desc, len(LastName) desc"
@@ -209,7 +207,7 @@ namespace Nevermore.IntegrationTests
         public void QueryPrimitives()
         {
             using var transaction = store.BeginTransaction();
-            
+
             // Just need a single column? No problem, you can stream primitives (Strings, numbers, and so on)
             var names = transaction.Stream<string>(
                 "select FirstName from Person order by FirstName"
@@ -225,7 +223,7 @@ namespace Nevermore.IntegrationTests
             public string FullName { get; set; }
             public string Email { get; set; }
         }
-        
+
         [Test, Order(8)]
         public void QueryWithArbitraryType()
         {
@@ -236,12 +234,12 @@ namespace Nevermore.IntegrationTests
             var result = transaction.Stream<Result>(
                 "select FirstName + ' ' + LastName as FullName, Email from Person order by FirstName"
             ).First();
-            
+
             result.FullName.Should().Be("Buggs Bunny");
         }
-        
-        // Custom types can be used when reading data rows into a type that Nevermore doesn't directly handle. For 
-        // example, here's a custom type handler for URIs. Do it by implementing ITypeHandler. It's a good idea to 
+
+        // Custom types can be used when reading data rows into a type that Nevermore doesn't directly handle. For
+        // example, here's a custom type handler for URIs. Do it by implementing ITypeHandler. It's a good idea to
         // also make it a JSON converter, so that you can store the type either in columns or in the JSON blob at the
         // end.
         public class UriTypeHandler : JsonConverter, ITypeHandler
@@ -271,27 +269,42 @@ namespace Nevermore.IntegrationTests
                     return default(Uri);
                 return new Uri(text);
             }
-            
+
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
                 writer.WriteValue(((Uri)value).ToString());
             }
         }
-        
+
         [Test, Order(9)]
-        public void CustomTypes()
+        public void CustomTupleTypes()
         {
             using var transaction = store.BeginTransaction();
-            
+
             // Call this before you first read records of this type
             store.Configuration.TypeHandlers.Register(new UriTypeHandler());
 
             var result = transaction.Stream<(Uri HomePage, Uri SignIn)>(
                 "select 'https://octopus.com' as Homepage, 'https://octopus.com/signin' as SignIn"
             ).First();
-            
+
             result.HomePage.Should().Be(new Uri("https://octopus.com"));
             result.SignIn.Should().Be(new Uri("https://octopus.com/signin"));
+        }
+
+        [Test, Order(10)]
+        public void CustomTypes()
+        {
+            using var transaction = store.BeginTransaction();
+
+            // Call this before you first read records of this type
+            store.Configuration.TypeHandlers.Register(new StringCustomIdTypeHandler<CustomerId>());
+
+            var result = transaction.Stream<CustomerId>(
+                "select 'Customers-1' as Id"
+            ).First();
+
+            result.Value.Should().Be("Customers-1");
         }
     }
 }
