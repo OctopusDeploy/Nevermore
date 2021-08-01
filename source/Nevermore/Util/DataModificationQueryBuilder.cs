@@ -424,7 +424,7 @@ namespace Nevermore.Util
                 parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
 
                 sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                sb.AppendLine($"SELECT [{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}] FROM @{tableVariableName}");
+                sb.AppendLine($"SELECT [{RelatedDocumentTableValuedParameterIdColumn}], [{RelatedDocumentTableValuedParameterTableColumn}], [{RelatedDocumentTableValuedParameterRelatedDocumentIdColumn}], [{RelatedDocumentTableValuedParameterRelatedDocumentTableColumn}] FROM @{tableVariableName}");
             }
         }
 
@@ -515,10 +515,10 @@ namespace Nevermore.Util
             return configuration.SupportLargeNumberOfRelatedDocuments;
         }
 
-        const string RelatedDocumentTableValuedParameterIdColumn = "Id";
-        const string RelatedDocumentTableValuedParameterTableColumn = "Table";
-        const string RelatedDocumentTableValuedParameterRelatedDocumentIdColumn = "RelatedDocumentId";
-        const string RelatedDocumentTableValuedParameterRelatedDocumentTableColumn = "RelatedDocumentTable";
+        const string RelatedDocumentTableValuedParameterIdColumn = "DocumentId";
+        const string RelatedDocumentTableValuedParameterTableColumn = "DocumentTable";
+        const string RelatedDocumentTableValuedParameterRelatedDocumentIdColumn = "ReferenceId";
+        const string RelatedDocumentTableValuedParameterRelatedDocumentTableColumn = "ReferenceTable";
 
         static TableValuedParameter CreateRelatedDocumentTableValuedParameter(DocumentMap mapping,
             RelatedDocumentTableData data)

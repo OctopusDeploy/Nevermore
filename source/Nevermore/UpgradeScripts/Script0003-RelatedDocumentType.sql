@@ -1,2 +1,2 @@
 ﻿IF NOT EXISTS (SELECT NULL FROM sys.table_types WHERE name = 'RelatedDocumentTableValuedParameter')
-    CREATE TYPE dbo.RelatedDocumentTableValuedParameter AS TABLE ([Id] NVARCHAR(400), [Table] NVARCHAR(400), [RelatedDocumentId] NVARCHAR(400), [RelatedDocumentTable] NVARCHAR(400))
+    CREATE TYPE dbo.RelatedDocumentTableValuedParameter AS TABLE ([DocumentId] NVARCHAR(400), [DocumentTable] NVARCHAR(400), [ReferenceId] NVARCHAR(400), [ReferenceTable] NVARCHAR(400))

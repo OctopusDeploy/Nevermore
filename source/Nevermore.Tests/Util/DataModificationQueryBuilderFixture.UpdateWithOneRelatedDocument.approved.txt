@@ -1,17 +1,17 @@
 UPDATE [dbo].[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
 
-DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))
+DECLARE @references as TABLE ([ReferenceId] nvarchar(400), [ReferenceTable] nvarchar(400))
 
 DELETE FROM @references
 
 INSERT INTO @references VALUES (@relateddocument_0, 'OtherTbl')
 
 DELETE FROM [dbo].[RelatedDocument] WHERE [Id] = @Id
-    AND [RelatedDocumentId] not in (SELECT Reference FROM @references)
+    AND [RelatedDocumentId] not in (SELECT [ReferenceId] FROM @references)
 
 INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
-SELECT @Id, 'TestDocumentTbl', Reference, ReferenceTable FROM @references t
-WHERE NOT EXISTS (SELECT null FROM [dbo].[RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.Reference )
+SELECT @Id, 'TestDocumentTbl', [ReferenceId], [ReferenceTable] FROM @references t
+WHERE NOT EXISTS (SELECT null FROM [dbo].[RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.[ReferenceId] )
 
 @Id=Doc-1
 @JSON={}
