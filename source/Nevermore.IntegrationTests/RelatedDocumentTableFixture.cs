@@ -42,12 +42,6 @@ namespace Nevermore.IntegrationTests
             }
         };
 
-        public override void SetUp()
-        {
-            base.SetUp();
-            Configuration.SupportLargeNumberOfRelatedDocuments = true;
-        }
-
         string orderId;
         Order loadedOrder;
 
@@ -174,9 +168,11 @@ namespace Nevermore.IntegrationTests
 
 #pragma warning restore xUnit1013
 
-        [Test]
-        public void Read()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Read(bool supportLargeNumberOfRelatedDocuments)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = supportLargeNumberOfRelatedDocuments;
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(new[] {"Product-1", "Product-2"}))
                 .When(_ => _.WhenTheOrderIsRead())
@@ -191,6 +187,7 @@ namespace Nevermore.IntegrationTests
         [TestCase(3001)]
         public void Insert_WithSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = true;
             TestInsertWithNumberOfRelatedDocuments(referenceDataEntriesCount);
         }
 
@@ -216,9 +213,11 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void InsertNullReferences()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void InsertNullReferences(bool supportLargeNumberOfRelatedDocuments)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = supportLargeNumberOfRelatedDocuments;
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .When(_ => _.WhenANewOrderIsInsertedReferencing(null))
                 .And(_ => _.AndThenThereAreNoReferencesForThatOrder())
@@ -233,6 +232,7 @@ namespace Nevermore.IntegrationTests
         [TestCase(3001)]
         public void Update_WithSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = true;
             TestUpdateWithNumberOfRelatedDocuments(referenceDataEntriesCount);
         }
 
@@ -261,9 +261,11 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void UpdateNullReferences()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void UpdateNullReferences(bool supportLargeNumberOfRelatedDocuments)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = supportLargeNumberOfRelatedDocuments;
             var starting = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(starting))
@@ -273,9 +275,11 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void Delete()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Delete(bool supportLargeNumberOfRelatedDocuments)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = supportLargeNumberOfRelatedDocuments;
             var references = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(references))
@@ -285,9 +289,12 @@ namespace Nevermore.IntegrationTests
                 .BDDfy();
         }
 
-        [Test]
-        public void DeleteWithQueryBuilder()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void DeleteWithQueryBuilder(bool supportLargeNumberOfRelatedDocuments)
         {
+            Configuration.SupportLargeNumberOfRelatedDocuments = supportLargeNumberOfRelatedDocuments;
+
             var references = new[] {"Product-1", "Product-2"};
             this.Given(_ => _.GivenRecordsCurrentlyExist())
                 .And(_ => _.AndGivenAnOrderReferencing(references))
