@@ -430,8 +430,8 @@ namespace Nevermore.Util
 
         bool ShouldUseTableValuedParameterForInsert(RelatedDocumentTableData data)
         {
-            //80 is roughly when using a table valued parameter is faster
-            return configuration.SupportLargeNumberOfRelatedDocuments && data.Related.Length >= 80;
+            //100 is roughly when using a table valued parameter is faster than explicit parameters
+            return configuration.SupportLargeNumberOfRelatedDocuments && data.Related.Length >= 100;
         }
 
         string AppendRelatedDocumentStatementsForUpdate(

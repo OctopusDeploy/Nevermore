@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace Nevermore.Benchmarks.Model
 {
@@ -14,14 +13,13 @@ namespace Nevermore.Benchmarks.Model
 
         public Order(IEnumerable<(string, Type)> relatedDocuments)
         {
-            RelatedDocuments = relatedDocuments?.ToArray();
+            RelatedDocuments = relatedDocuments.ToArray();
         }
 
         public string Id { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
 
-        [JsonIgnore]
         public IEnumerable<(string, Type)> RelatedDocuments { get; set; }
     }
 }
