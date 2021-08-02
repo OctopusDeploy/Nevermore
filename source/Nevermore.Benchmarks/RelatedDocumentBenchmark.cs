@@ -120,15 +120,15 @@ namespace Nevermore.Benchmarks
             foreach (var document in documentsToUpdate)
             {
                 using var writer = store.BeginWriteTransaction();
-                if (document.RelatedDocuments.Count() > numberOfRelatedDocuments)
+                if (document.SerializedRelatedDocuments.Count() > numberOfRelatedDocuments)
                 {
                     var newCustomers = Enumerable.Range(1, 7).Select(i => "Customer-" + (rand.Next(1000)+5000)).Select(c => (c, typeof(Customer)));
-                    document.RelatedDocuments = newCustomers.Concat(document.RelatedDocuments).Take(numberOfRelatedDocuments).ToArray();
+                    document.SerializedRelatedDocuments = newCustomers.Concat(document.RelatedDocuments).Take(numberOfRelatedDocuments).ToArray();
                 }
                 else
                 {
                     var newCustomers = Enumerable.Range(1, numberOfRelatedDocuments).Select(i => "Customer-" + (rand.Next(1000)+5000)).Select(c => (c, typeof(Customer)));
-                    document.RelatedDocuments = document.RelatedDocuments.Concat(newCustomers).Take(numberOfRelatedDocuments).ToArray();
+                    document.SerializedRelatedDocuments = document.RelatedDocuments.Concat(newCustomers).Take(numberOfRelatedDocuments).ToArray();
                 }
 
                 writer.Update(document);
@@ -143,11 +143,12 @@ namespace Nevermore.Benchmarks
             Random rand = new Random();
             for (int i = 1; i <= numberOfDocuments; i++)
             {
-                var customers = Enumerable.Range(1, numberOfRelatedDocuments).Select(i => "Customer-" + rand.Next(1000));
-                var order = new Order(customers.Select(c => (c, typeof(Customer))))
+                var customers = Enumerable.Range(1, numberOfRelatedDocuments).Select(i => ("Customer-" + rand.Next(1000), typeof(Customer))).ToArray();
+                var order = new Order()
                 {
                     Name = "Order " + i,
-                    Price = i
+                    Price = i,
+                    SerializedRelatedDocuments = customers
                 };
 
                 writer.Insert(order);

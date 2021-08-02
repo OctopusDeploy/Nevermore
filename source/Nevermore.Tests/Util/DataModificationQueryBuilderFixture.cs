@@ -139,7 +139,7 @@ namespace Nevermore.Tests.Util
             var document = new TestDocumentWithRelatedDocuments
             {
                 AColumn = "AValue",
-                RelatedDocumentIds = Enumerable.Range(1, 80).Select(i => ("Rel-" + i, typeof(Other))).ToArray()
+                RelatedDocumentIds = Enumerable.Range(1, 100).Select(i => ("Rel-" + i, typeof(Other))).ToArray()
             };
 
             var result = builder.PrepareInsert(
@@ -219,9 +219,9 @@ namespace Nevermore.Tests.Util
                 new TestDocumentWithMultipleRelatedDocuments
                 {
                     AColumn = "Doc1",
-                    RelatedDocumentIds1 = Enumerable.Range(1, 80).Select(i => ("Rel-" + i, typeof(Other))).ToArray(),
+                    RelatedDocumentIds1 = Enumerable.Range(1, 100).Select(i => ("Rel-" + i, typeof(Other))).ToArray(),
                     RelatedDocumentIds2 = Enumerable.Range(1, 10).Select(i => ("Rel-" + i+100, typeof(Other))).ToArray(),
-                    RelatedDocumentIds3 = Enumerable.Range(1, 80).Select(i => ("Rel-" + i+200, typeof(Other))).ToArray()
+                    RelatedDocumentIds3 = Enumerable.Range(1, 100).Select(i => ("Rel-" + i+200, typeof(Other))).ToArray()
                 },
             };
 

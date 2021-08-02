@@ -86,8 +86,11 @@ namespace Nevermore.IntegrationTests
 
         public void WhenANewOrderIsInsertedReferencing(string[] referenceIds)
         {
-            var references = referenceIds?.Select(id => (id, typeof(Product)));
-            var order = new Order(references);
+            var references = referenceIds?.Select(id => (id, typeof(Product))).ToArray();
+            var order = new Order()
+            {
+                SerializedRelatedDocuments = references
+            };
             using (var trn = Store.BeginTransaction())
             {
                 trn.Insert(order);
@@ -100,8 +103,12 @@ namespace Nevermore.IntegrationTests
 
         public void WhenTheOrderIsUpdatedReferencing(string[] referenceIds)
         {
-            var references = referenceIds?.Select(id => (id, typeof(Product)));
-            var order = new Order(references) {Id = orderId};
+            var references = referenceIds?.Select(id => (id, typeof(Product))).ToArray();
+            var order = new Order()
+            {
+                Id = orderId,
+                SerializedRelatedDocuments = references
+            };
             using (var trn = Store.BeginTransaction())
             {
                 trn.Update(order);
