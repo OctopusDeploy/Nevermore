@@ -182,7 +182,21 @@ namespace Nevermore.IntegrationTests
         [TestCase(1000)]
         [TestCase(2001)]// exceeds the per command param limit
         [TestCase(3001)]
-        public void Insert(int referenceDataEntriesCount)
+        public void Insert_WithSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
+        {
+            TestInsertWithNumberOfRelatedDocuments(referenceDataEntriesCount);
+        }
+
+        [TestCase(1)]
+        [TestCase(10)]
+        [TestCase(1000)]
+        public void Insert_WithoutSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
+        {
+            Configuration.SupportLargeNumberOfRelatedDocuments = false;
+            TestInsertWithNumberOfRelatedDocuments(referenceDataEntriesCount);
+        }
+
+        void TestInsertWithNumberOfRelatedDocuments(int referenceDataEntriesCount)
         {
             var references = Enumerable.Range(0, referenceDataEntriesCount)
                 .Select(i => "Product-" + i).ToArray();
@@ -210,7 +224,21 @@ namespace Nevermore.IntegrationTests
         [TestCase(1000)]
         [TestCase(2001)]// exceeds the per command param limit
         [TestCase(3001)]
-        public void Update(int referenceDataEntriesCount)
+        public void Update_WithSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
+        {
+            TestUpdateWithNumberOfRelatedDocuments(referenceDataEntriesCount);
+        }
+
+        [TestCase(1)]
+        [TestCase(10)]
+        [TestCase(1000)]
+        public void Update_WithoutSupportLargeNumberOfRelatedDocuments(int referenceDataEntriesCount)
+        {
+            Configuration.SupportLargeNumberOfRelatedDocuments = false;
+            TestUpdateWithNumberOfRelatedDocuments(referenceDataEntriesCount);
+        }
+
+        void TestUpdateWithNumberOfRelatedDocuments(int referenceDataEntriesCount)
         {
             var starting = Enumerable.Range(0, referenceDataEntriesCount)
                 .Select(i => "Product-" + i).ToArray();

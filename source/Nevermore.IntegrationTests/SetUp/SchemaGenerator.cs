@@ -39,14 +39,22 @@ namespace Nevermore.IntegrationTests.SetUp
             foreach (var referencedDocumentMap in mapping.RelatedDocumentsMappings)
             {
                 var refTblName = referencedDocumentMap.TableName;
-                var refSchemaName = referencedDocumentMap.SchemaName;
                 result.AppendLine($"IF NOT EXISTS (SELECT name from sys.tables WHERE name = '{refTblName}')");
-                result.AppendLine($"    CREATE TABLE TestSchema.[{refTblName}] (");
+                result.AppendLine($"    CREATE TABLE [TestSchema].[{refTblName}] (");
                 result.AppendLine($"        [{referencedDocumentMap.IdColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.IdTableColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentIdColumnName}] nvarchar(50) NOT NULL,");
                 result.AppendLine($"        [{referencedDocumentMap.RelatedDocumentTableColumnName}] nvarchar(50) NOT NULL ");
                 result.AppendLine("    )");
+
+                //We expect entries to be unique
+                result.AppendLine($@"CREATE UNIQUE NONCLUSTERED INDEX [{refTblName}_Unique_AllColumns] ON [TestSchema].[{refTblName}]
+(
+	[Id] ASC,
+	[Table] ASC,
+	[RelatedDocumentId] ASC,
+	[RelatedDocumentTable] ASC
+)");
             }
         }
 
