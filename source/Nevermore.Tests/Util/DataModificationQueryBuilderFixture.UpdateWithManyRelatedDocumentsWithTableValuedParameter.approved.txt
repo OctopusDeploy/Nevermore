@@ -1,0 +1,20 @@
+UPDATE [dbo].[TestDocumentTbl]  SET [AColumn] = @AColumn, [JSON] = @JSON WHERE [Id] = @Id
+
+DELETE FROM [dbo].[RelatedDocument] WHERE [Id] = @Id
+    AND [RelatedDocumentId] not in (SELECT [ReferenceId] FROM @0__relatedDocumentTableValuedParameter)
+
+INSERT INTO [dbo].[RelatedDocument] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+SELECT @Id, 'TestDocumentTbl', [ReferenceId], [ReferenceTable] FROM @0__relatedDocumentTableValuedParameter t
+WHERE NOT EXISTS (SELECT null FROM [dbo].[RelatedDocument] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.[ReferenceId] )
+DELETE FROM [dbo].[OtherRelatedTable] WHERE [Id] = @Id
+    AND [RelatedDocumentId] not in (SELECT [ReferenceId] FROM @1__relatedDocumentTableValuedParameter)
+
+INSERT INTO [dbo].[OtherRelatedTable] ([Id], [Table], [RelatedDocumentId], [RelatedDocumentTable])
+SELECT @Id, 'TestDocumentTbl', [ReferenceId], [ReferenceTable] FROM @1__relatedDocumentTableValuedParameter t
+WHERE NOT EXISTS (SELECT null FROM [dbo].[OtherRelatedTable] r WHERE r.[Id] = @Id AND r.[RelatedDocumentId] = t.[ReferenceId] )
+
+@Id=Doc-1
+@JSON={}
+@AColumn=Doc1
+@0__relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter
+@1__relatedDocumentTableValuedParameter=Nevermore.TableValuedParameter

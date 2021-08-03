@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Nevermore.IntegrationTests.Model
+namespace Nevermore.Benchmarks.Model
 {
     public class Order
     {
