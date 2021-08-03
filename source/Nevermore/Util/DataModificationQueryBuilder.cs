@@ -449,7 +449,7 @@ namespace Nevermore.Util
             sb.AppendLine();
 
             if (!ShouldUseTableValuedParameterForUpdate() && relatedDocumentData.Any(d => d.Related.Any()))
-                sb.AppendLine($"DECLARE @references as TABLE ([{RelatedDocumentTableValuedParameterRelatedDocumentIdColumn}] nvarchar(400), [{RelatedDocumentTableValuedParameterRelatedDocumentTableColumn}] nvarchar(400))");
+                sb.AppendLine("DECLARE @references as TABLE (Reference nvarchar(400), ReferenceTable nvarchar(400))");
 
             int index = 0;
             foreach (var data in relatedDocumentData)
@@ -484,7 +484,7 @@ namespace Nevermore.Util
                 sb.AppendLine(string.Join(", ", valueBlocks));
                 sb.AppendLine();
 
-                AppendDeleteAndInsertQueries(data, "references");
+                AppendDeleteAndInsertQueries(data, "references", "Reference", "ReferenceTable");
 
                 for (var x = 0; x < data.Related.Length; x++)
                     parameters.Add(relatedVariablePrefix + x, data.Related[x].relatedDocumentId);
@@ -495,18 +495,18 @@ namespace Nevermore.Util
                 var tableVariableName = $"{index}__relatedDocumentTableValuedParameter";
                 parameters.AddTable(tableVariableName, CreateRelatedDocumentTableValuedParameter(mapping, data));
 
-                AppendDeleteAndInsertQueries(data, tableVariableName);
+                AppendDeleteAndInsertQueries(data, tableVariableName, RelatedDocumentTableValuedParameterRelatedDocumentIdColumn, RelatedDocumentTableValuedParameterRelatedDocumentTableColumn);
             }
 
-            void AppendDeleteAndInsertQueries(RelatedDocumentTableData data, string tableVariableName)
+            void AppendDeleteAndInsertQueries(RelatedDocumentTableData data, string tableVariableName, string relatedDocumentIdColumn, string relatedDocumentTableColumn)
             {
                 sb.AppendLine($"DELETE FROM [{data.SchemaName}].[{data.TableName}] WHERE [{data.IdColumnName}] = @{IdVariableName}");
-                sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT [{RelatedDocumentTableValuedParameterRelatedDocumentIdColumn}] FROM @{tableVariableName})");
+                sb.AppendLine($"    AND [{data.RelatedDocumentIdColumnName}] not in (SELECT [{relatedDocumentIdColumn}] FROM @{tableVariableName})");
                 sb.AppendLine();
 
                 sb.AppendLine($"INSERT INTO [{data.SchemaName}].[{data.TableName}] ([{data.IdColumnName}], [{data.IdTableColumnName}], [{data.RelatedDocumentIdColumnName}], [{data.RelatedDocumentTableColumnName}])");
-                sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', [{RelatedDocumentTableValuedParameterRelatedDocumentIdColumn}], [{RelatedDocumentTableValuedParameterRelatedDocumentTableColumn}] FROM @{tableVariableName} t");
-                sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.[{RelatedDocumentTableValuedParameterRelatedDocumentIdColumn}] )");
+                sb.AppendLine($"SELECT @{IdVariableName}, '{mapping.TableName}', [{relatedDocumentIdColumn}], [{relatedDocumentTableColumn}] FROM @{tableVariableName} t");
+                sb.AppendLine($"WHERE NOT EXISTS (SELECT null FROM [{data.SchemaName}].[{data.TableName}] r WHERE r.[{data.IdColumnName}] = @{IdVariableName} AND r.[{data.RelatedDocumentIdColumnName}] = t.[{relatedDocumentIdColumn}] )");
             }
         }
 
