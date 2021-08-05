@@ -10,7 +10,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
         public IntegrationTestDatabase()
         {
-            var sqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)\\SQLEXPRESS,1433";
+            var sqlInstance = Environment.GetEnvironmentVariable("NevermoreTestServer") ?? "(local)";
             var username = Environment.GetEnvironmentVariable("NevermoreTestUsername");
             var password = Environment.GetEnvironmentVariable("NevermoreTestPassword");
             testDatabaseName = Environment.GetEnvironmentVariable("NevermoreTestDatabase") ?? "Nevermore-IntegrationTests";
@@ -31,7 +31,7 @@ namespace Nevermore.IntegrationTests.SetUp
 
             InstallSchema();
         }
-        
+
         public string ConnectionString { get; }
 
         void DropDatabase()
@@ -47,7 +47,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 Console.WriteLine("Could not drop the existing database: " + ex.GetErrorSummary());
             }
         }
-        
+
         void CreateDatabase()
         {
             ExecuteScript(@"create database [" + testDatabaseName + "] COLLATE SQL_Latin1_General_CP1_CS_AS", GetMaster());
