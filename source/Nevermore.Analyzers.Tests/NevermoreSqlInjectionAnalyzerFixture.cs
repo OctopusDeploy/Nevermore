@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using FluentAssertions;
-using Microsoft.CodeAnalysis;
-using Microsoft.DotNet.PlatformAbstractions;
 using NUnit.Framework;
 
 namespace Nevermore.Analyzers.Tests
@@ -83,8 +77,9 @@ namespace Nevermore.Analyzers.Tests
         [TestCase("4.5")]
         [TestCase("4.5m")]
         [TestCase("true")]
-        [TestCase("Environment.SpecialFolder.Cookies")]
-        public void ShouldCompileIfInterpolatingAPrimitive(string value)
+        [TestCase("new DateTime(2021,1,1)")]
+        [TestCase("Environment.SpecialFolder.Cookies")] // A convenient built in enum we can use
+        public void ShouldCompileIfAInterpolatingAPrimitive(string value)
         {
 	        var code = $@"
 				var name = {value};
