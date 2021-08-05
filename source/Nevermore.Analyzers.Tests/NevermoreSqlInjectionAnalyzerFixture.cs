@@ -84,7 +84,7 @@ namespace Nevermore.Analyzers.Tests
         [TestCase("4.5m")]
         [TestCase("true")]
         [TestCase("Environment.SpecialFolder.Cookies")]
-        public void ShouldCompileIfAInterpolatingAPrimitive(string value)
+        public void ShouldCompileIfInterpolatingAPrimitive(string value)
         {
 	        var code = $@"
 				var name = {value};
