@@ -65,8 +65,13 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync()
         {
+            await OpenAsync(CancellationToken.None);
+        }
+
+        public async Task OpenAsync(CancellationToken cancellationToken)
+        {
             connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
+            await connection.OpenWithRetryAsync(cancellationToken);
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -77,8 +82,13 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
-            await OpenAsync();
-            Transaction = await connection!.BeginTransactionAsync(isolationLevel);
+            await OpenAsync(isolationLevel, CancellationToken.None);
+        }
+
+        public async Task OpenAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+        {
+            await OpenAsync(cancellationToken);
+            Transaction = await connection!.BeginTransactionAsync(isolationLevel, cancellationToken);
         }
 
         [Pure]

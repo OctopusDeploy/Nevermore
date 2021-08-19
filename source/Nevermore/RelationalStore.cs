@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 #endif
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
 using Nevermore.Mapping;
@@ -52,11 +53,16 @@ namespace Nevermore
 
         public async Task<IReadTransaction> BeginReadTransactionAsync(RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
+            return await BeginReadTransactionAsync(CancellationToken.None, retriableOperation, name);
+        }
+
+        public async Task<IReadTransaction> BeginReadTransactionAsync(CancellationToken cancellationToken, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
             var txn = CreateReadTransaction(retriableOperation, name);
 
             try
             {
-                await txn.OpenAsync();
+                await txn.OpenAsync(cancellationToken);
                 return txn;
             }
             catch
@@ -84,10 +90,15 @@ namespace Nevermore
 
         public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
+            return await BeginReadTransactionAsync(CancellationToken.None, isolationLevel, retriableOperation, name);
+        }
+        
+        public async Task<IReadTransaction> BeginReadTransactionAsync(CancellationToken cancellationToken, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
             var txn = CreateReadTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel, cancellationToken);
                 return txn;
             }
             catch
@@ -114,10 +125,15 @@ namespace Nevermore
 
         public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
+            return await BeginWriteTransactionAsync(CancellationToken.None, isolationLevel, retriableOperation, name);
+        }
+
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(CancellationToken cancellationToken, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        {
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel, cancellationToken);
                 return txn;
             }
             catch
