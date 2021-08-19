@@ -334,7 +334,7 @@ namespace Nevermore.Advanced
             if (!mapping.IsRowVersioningEnabled) return;
 
             if (output?.RowVersion == null)
-                throw new StaleDataException($"Modification failed for '{typeof(TDocument).Name}' document with '{mapping.GetId(document)}' Id because submitted data was out of date. Refresh the document and try again.");
+                throw new StaleDataException($"Modification failed for '{mapping.Type.Name}' document with '{mapping.GetId(document)}' Id because submitted data was out of date. Refresh the document and try again.");
 
             mapping.RowVersionColumn!.PropertyHandler.Write(document, output.RowVersion);
         }
