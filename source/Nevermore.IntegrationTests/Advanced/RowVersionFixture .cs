@@ -125,6 +125,27 @@ namespace Nevermore.IntegrationTests.Advanced
             machine2.Name.Should().Be("2");
         }
 
+        [Test]
+        public void ErrorMessageIncludesMappedTypeName()
+        {
+            NoMonkeyBusiness();
+
+            var document = new DocumentWithIdentityIdAndRowVersion();
+            RunInTransaction(t => t.Insert(document));
+
+            var document1 = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithIdentityIdAndRowVersion>(document.Id));
+            var document2 = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithIdentityIdAndRowVersion>(document.Id));
+
+            document1.Name = "Name1";
+            RunInTransaction(transaction => transaction.Update(document1));
+
+            document2.Name = "Name2";
+            Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update<IId>(document2));
+
+            invalidUpdate.ShouldThrow<StaleDataException>()
+                .WithMessage("Modification failed for 'DocumentWithIdentityIdAndRowVersion' document with '1' Id because submitted data was out of date. Refresh the document and try again.");
+        }
+
         TResult RunInTransaction<TResult>(Func<IRelationalTransaction, TResult> func)
         {
             using var transaction = Store.BeginTransaction();
