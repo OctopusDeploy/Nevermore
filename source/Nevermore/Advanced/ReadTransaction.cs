@@ -72,7 +72,7 @@ namespace Nevermore.Advanced
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
-            Transaction = connection.BeginTransaction(isolationLevel, name);
+            Transaction = connection.BeginTransaction(isolationLevel, name.Substring(0, Math.Min(name.Length, 32)));
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
@@ -81,7 +81,7 @@ namespace Nevermore.Advanced
 
             // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-            Transaction = connection.BeginTransaction(isolationLevel, name);
+            Transaction = connection.BeginTransaction(isolationLevel, name.Substring(0, Math.Min(name.Length, 32)));
         }
 
         [Pure]
