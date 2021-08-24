@@ -29,7 +29,7 @@ namespace Nevermore.Advanced
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string? name;
 
-        DbConnection? connection;
+        SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
 
@@ -72,13 +72,16 @@ namespace Nevermore.Advanced
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
-            Transaction = connection!.BeginTransaction(isolationLevel);
+            Transaction = connection.BeginTransaction(isolationLevel, name);
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
             await OpenAsync();
-            Transaction = await connection!.BeginTransactionAsync(isolationLevel);
+
+            // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
+            // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+            Transaction = connection.BeginTransaction(isolationLevel, name);
         }
 
         [Pure]
