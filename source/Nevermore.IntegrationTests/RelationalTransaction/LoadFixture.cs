@@ -441,22 +441,56 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
         }
 
+        const string activeTransactionsQuery = @"
+SELECT
+    transaction_id AS Id,
+    Name
+FROM sys.dm_tran_active_transactions
+";
+
         [Test]
-        public void StoreAndLoadWithCustomPrefix()
+        public void TransactionNameShouldBeForwarded()
         {
-            using (var trn = Store.BeginTransaction())
-            {
-                var document = new DocumentWithCustomPrefixAndStringId()
-                {
-                    Name = "test"
-                };
+            var transactionName = "NamedTransaction1";
+            using var trn1 = Store.BeginTransaction(name: transactionName);
+            trn1.Load<Product>("A");
+            
+            using var trn2 = Store.BeginTransaction();
+            var list = trn2.RawSqlQuery<Transaction>(activeTransactionsQuery)
+                .Where(s => s.Name == transactionName)
+                .ToList();
+            
+            list.Should().HaveCount(1);
+        }
+        
+        [Test]
+        public void ReadTransactionNameShouldBeForwarded()
+        {
+            var transactionName = "NamedTransaction1";
+            using var trn1 = Store.BeginReadTransaction(name: transactionName);
+            trn1.Load<Product>("A");
 
-                trn.Insert(document);
+            using var trn2 = Store.BeginTransaction();
+            var list = trn2.RawSqlQuery<Transaction>(activeTransactionsQuery)
+                .Where(s => s.Name == transactionName)
+                .ToList();
+            
+            list.Should().HaveCount(1);
+        }
+        
+        [Test]
+        public void WriteTransactionNameShouldBeForwarded()
+        {
+            var transactionName = "NamedTransaction1";
+            using var trn1 = Store.BeginWriteTransaction(name: transactionName);
+            trn1.Load<Product>("A");
 
-                document.Id.Should().StartWith(DocumentWithCustomPrefixAndStringIdMap.CustomPrefix);
-
-                trn.LoadRequired<DocumentWithCustomPrefixAndStringId>(document.Id);
-            }
+            using var trn2 = Store.BeginTransaction();
+            var list = trn2.RawSqlQuery<Transaction>(activeTransactionsQuery)
+                .Where(s => s.Name == transactionName)
+                .ToList();
+            
+            list.Should().HaveCount(1);
         }
     }
 }
