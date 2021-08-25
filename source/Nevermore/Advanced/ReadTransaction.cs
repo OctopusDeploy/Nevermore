@@ -27,14 +27,14 @@ namespace Nevermore.Advanced
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
-        readonly string? name;
+        readonly string name;
 
         SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
 
         // To help track deadlocks
-        readonly List<string> commandTrace = new List<string>();
+        readonly List<string> commandTrace;
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
 
@@ -46,9 +46,11 @@ namespace Nevermore.Advanced
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
-            this.name = name ?? Thread.CurrentThread.Name;
-            if (string.IsNullOrEmpty(name))
-                this.name = "<unknown>";
+            commandTrace = new List<string>();
+
+            var transactionName = name ?? Thread.CurrentThread.Name;
+            if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
+            this.name = transactionName;
             registry.Add(this);
         }
 
@@ -72,7 +74,7 @@ namespace Nevermore.Advanced
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
-            Transaction = connection.BeginTransaction(isolationLevel, name.Substring(0, Math.Min(name.Length, 32)));
+            Transaction = connection!.BeginTransaction(isolationLevel, SqlServerTransactionName);
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
@@ -81,7 +83,7 @@ namespace Nevermore.Advanced
 
             // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-            Transaction = connection.BeginTransaction(isolationLevel, name.Substring(0, Math.Min(name.Length, 32)));
+            Transaction = connection!.BeginTransaction(isolationLevel, SqlServerTransactionName);
         }
 
         [Pure]
@@ -671,7 +673,9 @@ namespace Nevermore.Advanced
             return $"{CreatedTime} - {connection?.State} - {name}";
         }
 
-        string? ITransactionDiagnostic.Name => name;
+        string ITransactionDiagnostic.Name => name;
+
+        string SqlServerTransactionName => name.Substring(0, Math.Min(name.Length, 32));
 
         void ITransactionDiagnostic.WriteCurrentTransactions(StringBuilder output)
         {
