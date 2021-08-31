@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -8,6 +10,58 @@ namespace Nevermore.IntegrationTests.Advanced
 {
     public class RowVersionFixture : FixtureWithRelationalStore
     {
+        [Test]
+        public void ConcurrentUpdatesOverwriteEachOtherData()
+        {
+            var originalDocument = new DocumentWithoutRowVersion() {Name = "Name1", Items = new List<string>() {"Zero"}};
+
+            RunInTransaction(transaction => transaction.Insert(originalDocument));
+
+            var copy1  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithoutRowVersion>(originalDocument.Id));
+            copy1.Items.Add("One");
+
+            var copy2  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithoutRowVersion>(originalDocument.Id));
+            copy2.Items.Add("Two");
+
+            RunInTransaction(transaction => transaction.Update(copy1));
+            RunInTransaction(transaction => transaction.Update(copy2));
+
+            var finalDocument  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithoutRowVersion>(originalDocument.Id));
+        }
+
+        [Test]
+        public void ConcurrentUpdatesAreDetectedAndHandledCorrectly()
+        {
+            var originalDocument = new DocumentWithRowVersion() {Name = "Name1", Items = new List<string>() {"Zero"}};
+
+            RunInTransaction(transaction => transaction.Insert(originalDocument));
+
+            var copy1  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithRowVersion>(originalDocument.Id));
+            copy1.Items.Add("One");
+
+            var copy2  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithRowVersion>(originalDocument.Id));
+            copy2.Items.Add("Two");
+
+            RunInTransaction(transaction => transaction.Update(copy1));
+
+            try
+            {
+                RunInTransaction(transaction => transaction.Update(copy2));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            var refreshedDocument  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithRowVersion>(originalDocument.Id));
+            refreshedDocument.Items.Add("Two");
+            RunInTransaction(transaction => transaction.Update(refreshedDocument));
+
+            var finalDocument  = RunInTransaction(transaction => transaction.LoadRequired<DocumentWithRowVersion>(originalDocument.Id));
+        }
+
+
+
         [Test]
         public void UpdateChangesRowVersion()
         {

@@ -28,6 +28,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 new MessageWithLongIdMap(),
                 new MessageWithGuidIdMap(),
                 new DocumentWithRowVersionMap(),
+                new DocumentWithoutRowVersionMap(),
                 new DocumentWithIdentityIdMap(),
                 new DocumentWithIdentityIdAndRowVersionMap(),
                 new DocumentWithCustomPrefixMap(),

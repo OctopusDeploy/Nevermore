@@ -12,4 +12,14 @@ namespace Nevermore.IntegrationTests.Model
             Unique($"Unique{nameof(DocumentWithRowVersion)}Name", new[] { "Name" }, "Documents must have unique names");
         }
     }
+
+    public class DocumentWithoutRowVersionMap : DocumentMap<DocumentWithoutRowVersion>
+    {
+        public DocumentWithoutRowVersionMap()
+        {
+            Id().MaxLength(100);
+            Column(m => m.Name).MaxLength(100);
+            Unique($"Unique{nameof(DocumentWithoutRowVersion)}Name", new[] { "Name" }, "Documents must have unique names");
+        }
+    }
 }
