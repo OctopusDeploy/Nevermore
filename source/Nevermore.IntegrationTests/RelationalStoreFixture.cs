@@ -154,7 +154,6 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldHandleLoadManyWithCustomKeyType()
         {
-            CustomerId customerId;
             var ids = new List<CustomerId>();
             using (var transaction = Store.BeginTransaction())
             {
