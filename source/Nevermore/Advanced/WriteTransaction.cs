@@ -216,7 +216,7 @@ namespace Nevermore.Advanced
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
         {
-            return new DeleteQueryBuilder<TDocument>(ParameterNameGenerator, builder, this);
+            return new DeleteQueryBuilder<TDocument>(ParameterNameGeneratorFactory(), builder, this);
         }
 
         public TKey AllocateId<TKey>(Type documentType)

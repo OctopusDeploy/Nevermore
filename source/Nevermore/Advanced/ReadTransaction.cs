@@ -31,7 +31,7 @@ namespace Nevermore.Advanced
 
         SqlConnection? connection;
 
-        protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
+        protected Func<IUniqueParameterNameGenerator> ParameterNameGeneratorFactory { get; } = () => new UniqueParameterNameGenerator();
 
         // To help track deadlocks
         readonly List<string> commandTrace;
@@ -403,12 +403,12 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGeneratorFactory(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGeneratorFactory(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -611,11 +611,6 @@ namespace Nevermore.Advanced
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
-            if (command.ParameterValues != null)
-            {
-                var keys = command.ParameterValues.Keys.ToArray();
-                ParameterNameGenerator.Return(keys);
-            }
 
             if (configuration.DetectQueryPlanThrashing)
             {
