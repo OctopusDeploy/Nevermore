@@ -62,7 +62,7 @@ namespace Nevermore.Advanced
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
 
             await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
+            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken);
         }
 
         public void InsertMany<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null) where TDocument : class
@@ -103,7 +103,7 @@ namespace Nevermore.Advanced
             foreach (var document in documentList)
                 await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
 
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
+            await configuration.RelatedDocumentStore.PopulateManyRelatedDocumentsAsync(this, documentList, cancellationToken);
         }
 
         public void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
@@ -132,7 +132,7 @@ namespace Nevermore.Advanced
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
 
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
+            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken);
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
