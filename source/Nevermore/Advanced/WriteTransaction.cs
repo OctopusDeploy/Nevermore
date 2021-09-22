@@ -78,7 +78,7 @@ namespace Nevermore.Advanced
             ApplyIdentityIdsIfRequired(documentList, command.Mapping, outputs);
 
             foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, documentList);
+            configuration.RelatedDocumentStore.PopulateManyRelatedDocuments(this, documentList);
         }
 
         public Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, CancellationToken cancellationToken = default) where TDocument : class

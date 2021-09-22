@@ -8,7 +8,7 @@ namespace Nevermore.RelatedDocuments
         {
         }
 
-        public void PopulateRelatedDocuments<TDocument>(IWriteTransaction transaction, IEnumerable<TDocument> instance) where TDocument : class
+        public void PopulateManyRelatedDocuments<TDocument>(IWriteTransaction transaction, IEnumerable<TDocument> instance) where TDocument : class
         {
         }
     }
