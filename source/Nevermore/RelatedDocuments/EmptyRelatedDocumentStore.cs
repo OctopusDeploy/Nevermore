@@ -19,7 +19,7 @@ namespace Nevermore.RelatedDocuments
             return Task.CompletedTask;
         }
 
-        public Task PopulateManyRelatedDocumentsAsync<TDocument>(IWriteTransaction transaction, TDocument instance, CancellationToken cancellationToken = default) where TDocument : class
+        public Task PopulateManyRelatedDocumentsAsync<TDocument>(IWriteTransaction transaction, IEnumerable<TDocument> instance, CancellationToken cancellationToken = default) where TDocument : class
         {
             return Task.CompletedTask;
         }
