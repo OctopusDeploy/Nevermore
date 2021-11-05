@@ -178,7 +178,7 @@ namespace Nevermore.Advanced
             => DeleteAsync<TDocument>(id, null, cancellationToken);
 
         public Task DeleteAsync<TDocument>(TDocument document, CancellationToken cancellationToken = default) where TDocument : class
-            => DeleteAsyncInternal<TDocument>(document, null, cancellationToken);
+            => DeleteAsync(document, null, cancellationToken);
 
         public Task DeleteAsync<TDocument>(string id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
             => DeleteAsync<TDocument, string>(id, options, cancellationToken);
