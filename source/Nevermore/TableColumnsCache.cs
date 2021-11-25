@@ -13,6 +13,11 @@ namespace Nevermore
         {
             this.store = store;
         }
+
+        public void SetValue(string key, string tableName)
+        {
+            mappingColumnNamesSortedWithJsonLastCache.TryAdd(key, GetColumnNames(tableName));
+        }
         
         public IEnumerable<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName)
         {
@@ -21,8 +26,15 @@ namespace Nevermore
             {
                 return mappingColumnNamesSortedWithJsonLastCache[key];
             }
-            
-            //load time
+
+            var columnNames = GetColumnNames(tableName);
+            SetValue(key, tableName);
+
+            return columnNames;
+        }
+
+        protected virtual List<string> GetColumnNames(string tableName)
+        {
             using var transaction = store.BeginTransaction();
             var getColumnNamesWithJsonLastQuery = @$"
 SELECT c.name
@@ -31,10 +43,7 @@ INNER JOIN sys.all_columns AS c ON c.object_id = t.object_id
 WHERE t.name = '{tableName}'
 ORDER BY (CASE WHEN c.name = 'JSON' THEN 1 ELSE 0 END) ASC, c.column_id
 ";
-            var columnNames = transaction.Stream<string>(getColumnNamesWithJsonLastQuery).ToList();
-            mappingColumnNamesSortedWithJsonLastCache.TryAdd(key, columnNames);
-
-            return columnNames;
+            return transaction.Stream<string>(getColumnNamesWithJsonLastQuery).ToList();
         }
     }
 }

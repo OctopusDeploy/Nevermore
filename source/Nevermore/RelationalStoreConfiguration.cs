@@ -71,7 +71,7 @@ namespace Nevermore
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
-        public TableColumnsCache TableColumnsCache { get; }
+        public ITableColumnsCache TableColumnsCache { get; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 
