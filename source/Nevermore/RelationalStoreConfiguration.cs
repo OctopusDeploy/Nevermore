@@ -49,7 +49,7 @@ namespace Nevermore
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
-            TableColumnsCacheTableColumns = new TableColumnsCache(new RelationalStore(this));
+            TableColumnsCache = new TableColumnsCache(new RelationalStore(this));
 
             AllowSynchronousOperations = true;
 
@@ -71,7 +71,7 @@ namespace Nevermore
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
-        public TableColumnsCache TableColumnsCacheTableColumns { get; }
+        public TableColumnsCache TableColumnsCache { get; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 

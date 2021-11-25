@@ -14,7 +14,7 @@ namespace Nevermore.Advanced
     {
         readonly TSelectBuilder selectBuilder;
         readonly IReadQueryExecutor readQueryExecutor;
-        readonly TableColumnsCache tableColumnsCache;
+        readonly ITableColumnsCache tableColumnsCache;
         readonly ITableAliasGenerator tableAliasGenerator;
         readonly IUniqueParameterNameGenerator uniqueParameterNameGenerator;
         readonly CommandParameterValues paramValues;
@@ -24,7 +24,7 @@ namespace Nevermore.Advanced
 
         public QueryBuilder(TSelectBuilder selectBuilder,
             IReadQueryExecutor readQueryExecutor,
-            TableColumnsCache tableColumnsCache,
+            ITableColumnsCache tableColumnsCache,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues paramValues,

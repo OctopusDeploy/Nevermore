@@ -30,7 +30,7 @@ namespace Nevermore.Tests.Linq
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
                 new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), new TableColumnsCache(Substitute.For<IRelationalStore>())),
                 Substitute.For<IRelationalTransaction>(),
-                new TableColumnsCache(Substitute.For<IRelationalStore>()),
+                new MockTableColumnsCache(Substitute.For<IRelationalStore>()),
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,

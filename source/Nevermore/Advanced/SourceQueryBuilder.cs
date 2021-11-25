@@ -23,7 +23,7 @@ namespace Nevermore.Advanced
 
         public UnionSourceBuilder(ISelect select,
             IReadQueryExecutor readQueryExecutor,
-            TableColumnsCache tableColumnsCache,
+            ITableColumnsCache tableColumnsCache,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
@@ -76,7 +76,7 @@ namespace Nevermore.Advanced
 
         public SubquerySourceBuilder(ISelect select,
             IReadQueryExecutor readQueryExecutor,
-            TableColumnsCache tableColumnsCache,
+            ITableColumnsCache tableColumnsCache,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
@@ -135,7 +135,7 @@ namespace Nevermore.Advanced
             JoinType joinType,
             IAliasedSelectSource nextJoin,
             IReadQueryExecutor readQueryExecutor,
-            TableColumnsCache tableColumnsCache,
+            ITableColumnsCache tableColumnsCache,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
@@ -204,13 +204,13 @@ namespace Nevermore.Advanced
         string alias;
         string schemaName;
         string idColumnName;
-        readonly TableColumnsCache tableColumnsCache;
+        readonly ITableColumnsCache tableColumnsCache;
 
         public TableSourceQueryBuilder(string tableOrViewName,
             string schemaName,
             string idColumnName,
             IReadTransaction readQueryExecutor,
-            TableColumnsCache tableColumnsCache, 
+            ITableColumnsCache tableColumnsCache, 
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
@@ -291,7 +291,7 @@ namespace Nevermore.Advanced
     {
         protected readonly IReadQueryExecutor ReadQueryExecutor;
         protected readonly ITableAliasGenerator TableAliasGenerator;
-        protected readonly TableColumnsCache TableColumnsCache;
+        protected readonly ITableColumnsCache TableColumnsCache;
         protected readonly IUniqueParameterNameGenerator UniqueParameterNameGenerator;
         protected readonly CommandParameterValues ParamValues;
         protected readonly Parameters Params;
@@ -299,7 +299,7 @@ namespace Nevermore.Advanced
         bool finished;
 
         protected SourceQueryBuilder(IReadQueryExecutor readQueryExecutor,
-            TableColumnsCache tableColumnsCache,
+            ITableColumnsCache tableColumnsCache,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,

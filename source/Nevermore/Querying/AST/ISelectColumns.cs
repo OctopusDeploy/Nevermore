@@ -75,9 +75,9 @@ namespace Nevermore.Querying.AST
     {
         readonly string schema;
         readonly string tableName;
-        readonly TableColumnsCache tableColumnsCache;
+        readonly ITableColumnsCache tableColumnsCache;
 
-        public SelectAllJsonColumnLast(string schema, string tableName, TableColumnsCache tableColumnsCache)
+        public SelectAllJsonColumnLast(string schema, string tableName, ITableColumnsCache tableColumnsCache)
         {
             this.schema = schema;
             this.tableName = tableName;

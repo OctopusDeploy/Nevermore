@@ -75,14 +75,14 @@ namespace Nevermore.Advanced
 
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        readonly TableColumnsCache tableColumnsCache;
+        readonly ITableColumnsCache tableColumnsCache;
 
-        public TableSelectBuilder(ITableSource from, IColumn idColumn, TableColumnsCache tableColumnsCache) 
+        public TableSelectBuilder(ITableSource from, IColumn idColumn, ITableColumnsCache tableColumnsCache) 
             : this(from, idColumn, tableColumnsCache, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        TableSelectBuilder(ITableSource from, IColumn idColumn, TableColumnsCache tableColumnsCache,
+        TableSelectBuilder(ITableSource from, IColumn idColumn, ITableColumnsCache tableColumnsCache,
             List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
             List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
