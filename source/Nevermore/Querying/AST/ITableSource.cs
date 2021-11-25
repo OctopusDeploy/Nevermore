@@ -4,6 +4,7 @@ namespace Nevermore.Querying.AST
 {
     public interface ITableSource : ISelectSource
     {
+        string TableName { get; }
     }
 
     public interface ISimpleTableSource : ITableSource
@@ -21,11 +22,9 @@ namespace Nevermore.Querying.AST
             this.schemaName = schemaName;
         }
 
-        public string Schema
-        {
-            get => schemaName;
-        }
-        
+        public string Schema => schemaName;
+        public string TableName => tableOrViewName;
+
         public string GenerateSql() => $"[{schemaName}].[{tableOrViewName}]";
         public override string ToString() => GenerateSql();
     }
@@ -43,6 +42,7 @@ namespace Nevermore.Querying.AST
         public string Alias { get; }
 
         public string Schema => source.Schema;
+        public string TableName => source.TableName;
 
         public string GenerateSql() => $"{source.GenerateSql()} {Alias}";
         public override string ToString() => GenerateSql();
@@ -60,6 +60,7 @@ namespace Nevermore.Querying.AST
         }
 
         public string Schema => tableSource.Schema;
+        public string TableName => tableSource.TableName;
 
         public string GenerateSql()
         {

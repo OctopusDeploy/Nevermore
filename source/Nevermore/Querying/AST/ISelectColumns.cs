@@ -71,6 +71,23 @@ namespace Nevermore.Querying.AST
         public override string ToString() => GenerateSql();
     }
 
+    public class SelectAllJsonColumnLast : ISelectColumns
+    {
+        readonly string schema;
+        readonly string tableName;
+        readonly CacheTableColumnsBuilder cacheTableColumnsBuilder;
+
+        public SelectAllJsonColumnLast(string schema, string tableName, CacheTableColumnsBuilder cacheTableColumnsBuilder)
+        {
+            this.schema = schema;
+            this.tableName = tableName;
+            this.cacheTableColumnsBuilder = cacheTableColumnsBuilder;
+        }
+        
+        public bool AggregatesRows => false;
+        public string GenerateSql() => string.Join(',', cacheTableColumnsBuilder.GetMappingTableColumnNamesSortedWithJsonLast(schema, tableName));
+    }
+
     public class SelectCountSource : ISelectColumns
     {
         public bool AggregatesRows => true;

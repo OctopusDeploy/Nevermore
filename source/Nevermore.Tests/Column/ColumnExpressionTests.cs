@@ -64,6 +64,7 @@ ORDER BY [Id]");
                 "dbo",
                 "Id",
                 Substitute.For<IRelationalTransaction>(), 
+                Substitute.For<CacheTableColumnsBuilder>(), //TODO: this probably won't work
                 new TableAliasGenerator(), 
                 new UniqueParameterNameGenerator(), 
                 new CommandParameterValues(),
