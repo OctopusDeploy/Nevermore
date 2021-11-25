@@ -20,12 +20,12 @@ using Nevermore.RelatedDocuments;
 namespace Nevermore
 {
 
-    public class CacheTableColumnsBuilder
+    public class TableColumnsCache
     {
         readonly IRelationalStore store;
         readonly ConcurrentDictionary<string, List<string>> mappingColumnNamesSortedWithJsonLastCache = new();
 
-        public CacheTableColumnsBuilder(IRelationalStore store)
+        public TableColumnsCache(IRelationalStore store)
         {
             this.store = store;
         }
@@ -87,7 +87,7 @@ ORDER BY (CASE WHEN c.name = 'JSON' THEN 1 ELSE 0 END) ASC, c.column_id
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
-            CacheTableColumns = new CacheTableColumnsBuilder(new RelationalStore(this));
+            TableColumnsCacheTableColumns = new TableColumnsCache(new RelationalStore(this));
 
             AllowSynchronousOperations = true;
 
@@ -109,7 +109,7 @@ ORDER BY (CASE WHEN c.name = 'JSON' THEN 1 ELSE 0 END) ASC, c.column_id
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
-        public CacheTableColumnsBuilder CacheTableColumns { get; }
+        public TableColumnsCache TableColumnsCacheTableColumns { get; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 

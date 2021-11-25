@@ -403,12 +403,12 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, configuration.CacheTableColumns, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, configuration.TableColumnsCacheTableColumns, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, configuration.CacheTableColumns, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, configuration.TableColumnsCacheTableColumns, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -588,7 +588,7 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var mappingColumnNamesInOrder = configuration.CacheTableColumns.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
+            var mappingColumnNamesInOrder = configuration.TableColumnsCacheTableColumns.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
 
@@ -602,7 +602,7 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var mappingColumnNamesInOrder = configuration.CacheTableColumns.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
+            var mappingColumnNamesInOrder = configuration.TableColumnsCacheTableColumns.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
 
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);

@@ -17,7 +17,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         ITableAliasGenerator tableAliasGenerator;
         IUniqueParameterNameGenerator uniqueParameterNameGenerator;
         readonly IReadTransaction transaction = Substitute.For<IReadTransaction>();
-        readonly CacheTableColumnsBuilder cacheTableColumnsBuilder = Substitute.For<CacheTableColumnsBuilder>(); //TODO: Same 
+        readonly TableColumnsCache tableColumnsCache = Substitute.For<TableColumnsCache>(); //TODO: Same 
 
         [SetUp]
         public void SetUp()
@@ -29,7 +29,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo", string idColumnName = "Id") where TDocument : class
         {
-            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, cacheTableColumnsBuilder, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableColumnsCache, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         [Test]

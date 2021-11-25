@@ -26,10 +26,11 @@ namespace Nevermore.Tests.Linq
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
+            var cacheColumnBuilder = new TableColumnsCache(Substitute.For<IRelationalStore>());
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
-                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), Substitute.For<CacheTableColumnsBuilder>()),
+                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), new TableColumnsCache(Substitute.For<IRelationalStore>())),
                 Substitute.For<IRelationalTransaction>(),
-                Substitute.For<CacheTableColumnsBuilder>(), //TODO: This probably won't work
+                new TableColumnsCache(Substitute.For<IRelationalStore>()),
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,

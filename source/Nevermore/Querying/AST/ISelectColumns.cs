@@ -75,17 +75,17 @@ namespace Nevermore.Querying.AST
     {
         readonly string schema;
         readonly string tableName;
-        readonly CacheTableColumnsBuilder cacheTableColumnsBuilder;
+        readonly TableColumnsCache tableColumnsCache;
 
-        public SelectAllJsonColumnLast(string schema, string tableName, CacheTableColumnsBuilder cacheTableColumnsBuilder)
+        public SelectAllJsonColumnLast(string schema, string tableName, TableColumnsCache tableColumnsCache)
         {
             this.schema = schema;
             this.tableName = tableName;
-            this.cacheTableColumnsBuilder = cacheTableColumnsBuilder;
+            this.tableColumnsCache = tableColumnsCache;
         }
         
         public bool AggregatesRows => false;
-        public string GenerateSql() => string.Join(',', cacheTableColumnsBuilder.GetMappingTableColumnNamesSortedWithJsonLast(schema, tableName));
+        public string GenerateSql() => string.Join(',', tableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schema, tableName));
     }
 
     public class SelectCountSource : ISelectColumns

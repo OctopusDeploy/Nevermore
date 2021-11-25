@@ -255,7 +255,7 @@ ORDER BY [Id]");
         ITableSourceQueryBuilder<object> TableQueryBuilder(string tableName)
         {
             //TODO: Likely won't work
-            return new TableSourceQueryBuilder<object>(tableName, "dbo", "Id", transaction, Substitute.For<CacheTableColumnsBuilder>(), TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>(tableName, "dbo", "Id", transaction, Substitute.For<TableColumnsCache>(), new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
     }
 }

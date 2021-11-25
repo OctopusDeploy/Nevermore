@@ -29,7 +29,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
         IQueryBuilder<object> CreateQueryBuilder()
         {
             //TODO
-            return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, Substitute.For<CacheTableColumnsBuilder>(), new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, Substitute.For<TableColumnsCache>(), new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Test]
