@@ -281,6 +281,9 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
             if (expectsType && typeIndex < 0)
                 throw Fail($"When querying the document '{name}', the '{map.TypeResolutionColumn.ColumnName}' column must always be included. Change the select clause to include the '{map.TypeResolutionColumn.ColumnName}' column.");
 
+            if (typeIndex >= 0 && expectsJson && typeIndex > jsonIndex)
+                throw Fail($"When querying the document '{name}', the 'Type' column must always appear before the 'JSON' column. Change the order in the SELECT clause, or if selecting '*', change the order of columns in the table.");
+            
             if (typeIndex >= 0 && expectsJsonBlob && typeIndex > jsonBlobIndex)
                 throw Fail($"When querying the document '{name}', the 'Type' column must always appear before the 'JSONBlob' column. Change the order in the SELECT clause, or if selecting '*', change the order of columns in the table.");
         }

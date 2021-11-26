@@ -19,7 +19,7 @@ namespace Nevermore
             mappingColumnNamesSortedWithJsonLastCache.TryAdd(key, GetColumnNames(tableName));
         }
         
-        public IEnumerable<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName)
+        public IReadOnlyList<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName)
         {
             var key = $"{schemaName}.{tableName}";
             if (mappingColumnNamesSortedWithJsonLastCache.ContainsKey(key))

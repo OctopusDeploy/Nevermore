@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
 using NSubstitute;
@@ -28,8 +29,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         IQueryBuilder<object> CreateQueryBuilder()
         {
-            //TODO
-            return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, Substitute.For<TableColumnsCache>(), new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            var memberInfos = Activator.CreateInstance<object>().GetType().GetProperties();
+            var columnNames = memberInfos.Select(x => x.Name).ToList();
+            
+            return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, columnNames, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Test]

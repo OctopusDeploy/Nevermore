@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Nevermore.Advanced;
 using Nevermore.Querying.AST;
 using NSubstitute;
@@ -26,11 +27,14 @@ namespace Nevermore.Tests.Linq
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
-            var cacheColumnBuilder = new TestTableColumnsCache<Foo>(Substitute.For<IRelationalStore>());
+            
+            var memberInfos = Activator.CreateInstance<Foo>().GetType().GetProperties();
+            var columnNames = memberInfos.Select(x => x.Name).ToList();
+            
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
-                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), cacheColumnBuilder),
+                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), columnNames),
                 Substitute.For<IRelationalTransaction>(),
-                cacheColumnBuilder,
+                columnNames,
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,

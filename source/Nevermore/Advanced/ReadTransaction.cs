@@ -403,12 +403,17 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, configuration.TableColumnsCache, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            var schemaName = configuration.GetSchemaNameOrDefault(map);
+            var columnNames = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schemaName, map.TableName);
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, columnNames, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, configuration.TableColumnsCache, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
+            var schemaName = configuration.GetSchemaNameOrDefault(map);
+            var columnNames = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schemaName, map.TableName);
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, columnNames, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)

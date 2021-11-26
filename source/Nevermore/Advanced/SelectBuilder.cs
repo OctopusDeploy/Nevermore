@@ -75,24 +75,24 @@ namespace Nevermore.Advanced
 
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        readonly ITableColumnsCache tableColumnsCache;
+        readonly IReadOnlyList<string> columnNames;
 
-        public TableSelectBuilder(ITableSource from, IColumn idColumn, ITableColumnsCache tableColumnsCache) 
-            : this(from, idColumn, tableColumnsCache, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+        public TableSelectBuilder(ITableSource from, IColumn idColumn, IReadOnlyList<string> columnNames) 
+            : this(from, idColumn, columnNames, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        TableSelectBuilder(ITableSource from, IColumn idColumn, ITableColumnsCache tableColumnsCache,
+        TableSelectBuilder(ITableSource from, IColumn idColumn, IReadOnlyList<string> columnNames,
             List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
             List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
             : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
-            this.tableColumnsCache = tableColumnsCache;
+            this.columnNames = columnNames;
             From = from;
             IdColumn = idColumn;
 
-            DefaultSelect = new SelectAllJsonColumnLast(from.Schema, from.TableName, tableColumnsCache);
+            DefaultSelect = new SelectAllJsonColumnLast(columnNames);
         }
 
         protected override ITableSource From { get; }
@@ -106,7 +106,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new TableSelectBuilder(From, IdColumn, tableColumnsCache, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new TableSelectBuilder(From, IdColumn, columnNames, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
     

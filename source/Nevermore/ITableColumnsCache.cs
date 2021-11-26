@@ -4,6 +4,6 @@ namespace Nevermore
 {
     public interface ITableColumnsCache
     {
-        IEnumerable<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName);
+        IReadOnlyList<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName);
     }
 }
