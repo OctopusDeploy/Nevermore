@@ -404,6 +404,7 @@ namespace Nevermore.Advanced
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
             var schemaName = configuration.GetSchemaNameOrDefault(map);
+            
             var columnNames = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schemaName, map.TableName);
             return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, columnNames, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }

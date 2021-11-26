@@ -28,7 +28,7 @@ namespace Nevermore
         string DefaultSchema { get; set; }
 
         IDocumentMapRegistry DocumentMaps { get; }
-        ITableColumnsCache TableColumnsCache { get; }
+        ITableColumnsCache TableColumnsCache { get; set; }
         IDocumentSerializer DocumentSerializer { get; set; }
         IReaderStrategyRegistry ReaderStrategies { get; }
         ITypeHandlerRegistry TypeHandlers { get; }

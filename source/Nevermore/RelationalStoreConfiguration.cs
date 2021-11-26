@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
@@ -49,7 +50,7 @@ namespace Nevermore
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
-            TableColumnsCache = new TableColumnsCache(new RelationalStore(this));
+            TableColumnsCache = new TableColumnsCache(new TableColumnNameResolver(new RelationalStore(this)));
 
             AllowSynchronousOperations = true;
 
@@ -71,7 +72,7 @@ namespace Nevermore
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
-        public ITableColumnsCache TableColumnsCache { get; }
+        public ITableColumnsCache TableColumnsCache { get; set; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 

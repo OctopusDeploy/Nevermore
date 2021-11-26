@@ -1671,18 +1671,18 @@ ORDER BY [RowNum]");
         {
             string actual = null;
             CommandParameterValues parameters = null;
-            transaction.Stream<object>(Arg.Do<string>(s => actual = s),
+            transaction.Stream<TodoItem>(Arg.Do<string>(s => actual = s),
                 Arg.Do<CommandParameterValues>(p => parameters = p));
 
             var earlyDate = DateTime.Now;
             var laterDate = earlyDate + TimeSpan.FromDays(1);
-            var query = CreateQueryBuilder<object>("Todos")
+            var query = CreateQueryBuilder<TodoItem>("Todos")
                 .Where("AddedDate", UnarySqlOperand.GreaterThan, earlyDate)
                 .Where("AddedDate", UnarySqlOperand.LessThan, laterDate);
 
             query.FirstOrDefault();
 
-            const string expected = @"SELECT TOP 1 *
+            const string expected = @"SELECT TOP 1 Id,Title,Completed
 FROM [dbo].[Todos]
 WHERE ([AddedDate] > @addeddate)
 AND ([AddedDate] < @addeddate_1)
