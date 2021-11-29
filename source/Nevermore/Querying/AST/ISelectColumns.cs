@@ -41,21 +41,15 @@ namespace Nevermore.Querying.AST
         public override string ToString() => GenerateSql();
     }
 
-    public class SelectExistsSource : ISelectColumns
-    {
-        public bool AggregatesRows => true;
-        public string GenerateSql() => "*";
-        
-        public override string ToString() => GenerateSql();
-    }
-
-    public class SelectAllFrom : ISelectColumns
+    public class SelectAllFromJsonColumnLast : ISelectColumns
     {
         readonly string tableAlias;
+        readonly IReadOnlyList<string> columnNames;
 
-        public SelectAllFrom(string tableAlias)
+        public SelectAllFromJsonColumnLast(string tableAlias, IReadOnlyList<string> columnNames)
         {
             this.tableAlias = tableAlias;
+            this.columnNames = columnNames.OrderBy(x => x == "JSON").ToList();
         }
 
         public bool AggregatesRows => false;

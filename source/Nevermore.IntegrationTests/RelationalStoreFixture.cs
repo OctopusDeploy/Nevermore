@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,9 +65,11 @@ namespace Nevermore.IntegrationTests
                 var product1 = new DodgyProduct {Name = "iphane", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
                 var product2 = new DodgyProduct {Name = "samsoong", Price = 300.0M, Tax = 30.0M, Type = ProductType.Dodgy};
                 var product3 = new DodgyProduct {Name = "huwaii", Price = 200.0M, Tax = 20.0M, Type = ProductType.Dodgy};
+                var product4 = new Product {Name = "octophone", Type = ProductType.Normal};
                 transaction.Insert(product1);
                 transaction.Insert(product2);
                 transaction.Insert(product3);
+                transaction.Insert(product4);
                 transaction.Commit();
             }
 

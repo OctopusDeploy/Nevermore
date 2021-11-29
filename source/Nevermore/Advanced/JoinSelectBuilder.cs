@@ -7,20 +7,22 @@ namespace Nevermore.Advanced
 {
     public class JoinSelectBuilder : SelectBuilderBase<JoinedSource>
     {
+        readonly IReadOnlyList<string> columnNames;
         protected override JoinedSource From { get; }
 
-        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+        public JoinSelectBuilder(JoinedSource from, IReadOnlyList<string> columnNames) : this(from, columnNames, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        JoinSelectBuilder(JoinedSource from, List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
+        JoinSelectBuilder(JoinedSource from, IReadOnlyList<string> columnNames, List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
             : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
             From = from;
+            this.columnNames = columnNames;
         }
 
-        protected override ISelectColumns DefaultSelect => new SelectAllFrom(From.Source.Alias);
+        protected override ISelectColumns DefaultSelect => new SelectAllFromJsonColumnLast(From.Source.Alias, columnNames);
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()
         {
@@ -29,7 +31,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new JoinSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new JoinSelectBuilder(From, columnNames, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
 
         public override void AddWhere(UnaryWhereParameter whereParams)
