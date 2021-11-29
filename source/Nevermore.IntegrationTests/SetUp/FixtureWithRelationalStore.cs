@@ -20,7 +20,6 @@ namespace Nevermore.IntegrationTests.SetUp
                 new CustomerMap(),
                 new BrandMap(),
                 new ProductMap(),
-                new ProductSubtotalMap(),
                 new LineItemMap(),
                 new MachineMap(),
                 new OrderMap(),

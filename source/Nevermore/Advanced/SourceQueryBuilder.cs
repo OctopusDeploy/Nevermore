@@ -23,13 +23,12 @@ namespace Nevermore.Advanced
 
         public UnionSourceBuilder(ISelect select,
             IReadQueryExecutor readQueryExecutor,
-            IReadOnlyList<string> columnNames,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
             ParameterDefaults parameterDefaults)
-            : base(readQueryExecutor, columnNames, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
         }
@@ -45,7 +44,6 @@ namespace Nevermore.Advanced
                 joinType,
                 source,
                 ReadQueryExecutor,
-                ColumnNames,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
                 new CommandParameterValues(ParamValues, parameterValues),
@@ -76,13 +74,12 @@ namespace Nevermore.Advanced
 
         public SubquerySourceBuilder(ISelect select,
             IReadQueryExecutor readQueryExecutor,
-            IReadOnlyList<string> columnNames,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
             ParameterDefaults parameterDefaults)
-            : base(readQueryExecutor, columnNames, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.select = select;
         }
@@ -98,7 +95,6 @@ namespace Nevermore.Advanced
                 joinType,
                 source,
                 ReadQueryExecutor,
-                ColumnNames,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
                 new CommandParameterValues(ParamValues, parameterValues),
@@ -135,13 +131,12 @@ namespace Nevermore.Advanced
             JoinType joinType,
             IAliasedSelectSource nextJoin,
             IReadQueryExecutor readQueryExecutor,
-            IReadOnlyList<string> columnNames,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
             Parameters parameters,
             ParameterDefaults parameterDefaults)
-            : base(readQueryExecutor, columnNames, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.originalSource = originalSource;
             clauses = new List<JoinClause>();
@@ -216,7 +211,7 @@ namespace Nevermore.Advanced
             CommandParameterValues parameterValues,
             Parameters parameters,
             ParameterDefaults parameterDefaults)
-            : base(readQueryExecutor, columnNames, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
+            : base(readQueryExecutor, tableAliasGenerator, uniqueParameterNameGenerator, parameterValues, parameters, parameterDefaults)
         {
             this.schemaName = schemaName;
             this.tableOrViewName = tableOrViewName;
@@ -226,7 +221,7 @@ namespace Nevermore.Advanced
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            return new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName), ColumnNames);
+            return new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName), columnNames);
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
@@ -235,7 +230,6 @@ namespace Nevermore.Advanced
                 joinType,
                 source,
                 ReadQueryExecutor,
-                ColumnNames,
                 TableAliasGenerator,
                 UniqueParameterNameGenerator,
                 new CommandParameterValues(ParamValues, parameterValues),
@@ -269,7 +263,7 @@ namespace Nevermore.Advanced
         public IQueryBuilder<TRecord> Hint(string tableHint)
         {
             var source = new TableSourceWithHint(CreateSimpleTableSource(), tableHint);
-            return CreateQueryBuilder(new TableSelectBuilder(source, new Column(idColumnName), ColumnNames));
+            return CreateQueryBuilder(new TableSelectBuilder(source, new Column(idColumnName), columnNames));
         }
 
         ISimpleTableSource CreateSimpleTableSource()
@@ -291,7 +285,6 @@ namespace Nevermore.Advanced
     {
         protected readonly IReadQueryExecutor ReadQueryExecutor;
         protected readonly ITableAliasGenerator TableAliasGenerator;
-        protected readonly IReadOnlyList<string> ColumnNames;
         protected readonly IUniqueParameterNameGenerator UniqueParameterNameGenerator;
         protected readonly CommandParameterValues ParamValues;
         protected readonly Parameters Params;
@@ -299,7 +292,6 @@ namespace Nevermore.Advanced
         bool finished;
 
         protected SourceQueryBuilder(IReadQueryExecutor readQueryExecutor,
-            IReadOnlyList<string> columnNames,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
             CommandParameterValues parameterValues,
@@ -308,7 +300,6 @@ namespace Nevermore.Advanced
         {
             ReadQueryExecutor = readQueryExecutor;
             TableAliasGenerator = tableAliasGenerator;
-            ColumnNames = columnNames;
             UniqueParameterNameGenerator = uniqueParameterNameGenerator;
             ParamValues = parameterValues;
             Params = parameters;
@@ -328,7 +319,7 @@ namespace Nevermore.Advanced
 
         protected IQueryBuilder<TRecord> CreateQueryBuilder(ISelectBuilder selectBuilder)
         {
-            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, ReadQueryExecutor, ColumnNames, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults);
+            return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, ReadQueryExecutor, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults);
         }
 
         public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)

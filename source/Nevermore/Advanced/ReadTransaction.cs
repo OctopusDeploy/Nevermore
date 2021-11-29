@@ -411,10 +411,7 @@ namespace Nevermore.Advanced
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            var schemaName = configuration.GetSchemaNameOrDefault(map);
-            var columnNames = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schemaName, map.TableName);
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, columnNames, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)

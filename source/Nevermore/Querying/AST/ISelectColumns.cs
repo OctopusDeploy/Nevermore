@@ -77,7 +77,7 @@ namespace Nevermore.Querying.AST
 
         public SelectAllJsonColumnLast(IReadOnlyList<string> columnNames)
         {
-            this.columnNames = columnNames;
+            this.columnNames = columnNames.OrderBy(x => x == "JSON").ToList();
         }
         
         public bool AggregatesRows => false;

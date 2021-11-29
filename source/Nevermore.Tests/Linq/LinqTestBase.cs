@@ -34,7 +34,6 @@ namespace Nevermore.Tests.Linq
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
                 new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), columnNames),
                 Substitute.For<IRelationalTransaction>(),
-                columnNames,
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,
