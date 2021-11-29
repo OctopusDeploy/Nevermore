@@ -1719,7 +1719,7 @@ ORDER BY [Id]";
             query.FirstOrDefault();
 
             const string expected =
-                @"SELECT TOP 1 ALIAS_GENERATED_2.*
+                @"SELECT TOP 1 ALIAS_GENERATED_2.Id,ALIAS_GENERATED_2.Title,ALIAS_GENERATED_2.Completed
 FROM (
     SELECT Id,Title,Completed
     FROM [dbo].[Customer]
