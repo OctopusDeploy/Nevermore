@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Nevermore.Querying.AST
@@ -54,7 +55,8 @@ namespace Nevermore.Querying.AST
 
         public bool AggregatesRows => false;
 
-        public string GenerateSql() => $"{tableAlias}.*";
+        public string GenerateSql() => string.Join(',', columnNames.Select(x => $"{tableAlias}.{x}").ToArray());
+        
         public override string ToString() => GenerateSql();
     }
 

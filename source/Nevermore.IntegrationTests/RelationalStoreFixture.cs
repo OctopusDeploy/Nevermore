@@ -1,10 +1,11 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
+using Nevermore.Querying.AST;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
@@ -77,6 +78,30 @@ namespace Nevermore.IntegrationTests
             {
                 var products = transaction.Query<DodgyProduct>().ToList();
                 products.Should().HaveCount(3);
+            }
+        }
+
+        [Test]
+        public void ShouldBuildJoinSelectsWithJsonColumnLast()
+        {
+            var product1 = new DodgyProduct {Name = "iphane", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
+            var product2 = new SpecialProduct {Name = "octophone", Type = ProductType.Special, Price = 350.0M};
+            using (var transaction = Store.BeginTransaction())
+            {
+                transaction.Insert(product1);
+                transaction.Insert(product2);
+                transaction.Commit();
+            }
+        
+            using (var transaction = Store.BeginTransaction())
+            {
+                var products = transaction.Query<DodgyProduct>().Alias("dodgyProductTable")
+                    .InnerJoin(transaction.Query<SpecialProduct>().Alias("specialProductTable"))
+                    .On(nameof(DodgyProduct.Type), JoinOperand.Equal, nameof(SpecialProduct.Type))
+                    .AsType<Product>()
+                    .ToList();
+
+                products.ShouldBeEquivalentTo(new List<Product> {product1, product2});
             }
         }
 
