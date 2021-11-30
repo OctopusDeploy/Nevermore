@@ -19,6 +19,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ExecuteScalar<int>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
             // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
             transaction.Stream<object>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
+            var columns = new [] { "*" };
+            transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
         }
 
         [SetUp]
@@ -253,8 +255,8 @@ ORDER BY [Id]");
         }
 
         ITableSourceQueryBuilder<object> TableQueryBuilder(string tableName)
-        { 
-            return new TableSourceQueryBuilder<object>(tableName, "dbo", "Id", transaction, new []{"*"}, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+        {
+            return new TableSourceQueryBuilder<object>(tableName, "dbo", "Id", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
     }
 }

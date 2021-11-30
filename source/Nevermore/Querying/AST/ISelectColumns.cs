@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Nevermore.Querying.AST
@@ -41,13 +40,28 @@ namespace Nevermore.Querying.AST
         public string GenerateSql() => $"{column.GenerateSql()} AS [{columnAlias}]";
         public override string ToString() => GenerateSql();
     }
+    
+    public class SelectAllFrom : ISelectColumns
+    {
+        readonly string tableAlias;
 
-    public class SelectAllFromJsonColumnLast : ISelectColumns
+        public SelectAllFrom(string tableAlias)
+        {
+            this.tableAlias = tableAlias;
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => $"{tableAlias}.*";
+        public override string ToString() => GenerateSql();
+    }
+    
+    public class SelectAllColumnsJsonLast : ISelectColumns
     {
         readonly string tableAlias;
         readonly IReadOnlyList<string> columnNames;
 
-        public SelectAllFromJsonColumnLast(string tableAlias, IReadOnlyList<string> columnNames)
+        public SelectAllColumnsJsonLast(string tableAlias, IReadOnlyList<string> columnNames)
         {
             this.tableAlias = tableAlias;
             this.columnNames = columnNames.OrderBy(x => x == "JSON").ToList();

@@ -1,29 +1,15 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Concurrent;
 
 namespace Nevermore
 {
-    public class TableColumnsCache : ITableColumnsCache
+    internal class TableColumnsCache : ConcurrentDictionary<string, string[]>, ITableColumnsCache
     {
-        readonly TableColumnNameResolver tableColumnNameResolver;
-        readonly ConcurrentDictionary<string, List<string>> mappingColumnNamesSortedWithJsonLastCache = new();
-
-        public TableColumnsCache(TableColumnNameResolver tableColumnNameResolver)
-        {
-            this.tableColumnNameResolver = tableColumnNameResolver;
-        }
-
-        public IReadOnlyList<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName)
+        public string[] GetOrAdd(string schemaName, string tableName, Func<string, string, string[]> valueFactory)
         {
             var key = $"{schemaName}.{tableName}";
-            if (mappingColumnNamesSortedWithJsonLastCache.ContainsKey(key))
-            {
-                return mappingColumnNamesSortedWithJsonLastCache[key];
-            }
 
-            var columnNames = tableColumnNameResolver.GetColumnNames(tableName);
-            mappingColumnNamesSortedWithJsonLastCache.TryAdd(key, tableColumnNameResolver.GetColumnNames(tableName));
+            var columnNames = GetOrAdd(key, (_) => valueFactory(schemaName, tableName));
 
             return columnNames;
         }

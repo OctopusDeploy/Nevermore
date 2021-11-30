@@ -5,6 +5,7 @@ namespace Nevermore.Querying.AST
     public interface ITableSource : ISelectSource
     {
         string TableName { get; }
+        string[] ColumnNames { get; }
     }
 
     public interface ISimpleTableSource : ITableSource
@@ -13,19 +14,20 @@ namespace Nevermore.Querying.AST
 
     public class SimpleTableSource : ISimpleTableSource
     {
-        readonly string tableOrViewName;
-        readonly string schemaName;
-
-        public SimpleTableSource(string tableOrViewName, string schemaName)
+        public SimpleTableSource(string tableOrViewName, string schemaName, string[] columnNames)
         {
-            this.tableOrViewName = tableOrViewName;
-            this.schemaName = schemaName;
+            TableName = tableOrViewName;
+            Schema = schemaName;
+            ColumnNames = columnNames;
         }
 
-        public string Schema => schemaName;
-        public string TableName => tableOrViewName;
+        public string Schema { get; }
 
-        public string GenerateSql() => $"[{schemaName}].[{tableOrViewName}]";
+        public string TableName { get; }
+        
+        public string[] ColumnNames { get; }
+
+        public string GenerateSql() => $"[{Schema}].[{TableName}]";
         public override string ToString() => GenerateSql();
     }
 
@@ -43,6 +45,7 @@ namespace Nevermore.Querying.AST
 
         public string Schema => source.Schema;
         public string TableName => source.TableName;
+        public string[] ColumnNames => source.ColumnNames;
 
         public string GenerateSql() => $"{source.GenerateSql()} {Alias}";
         public override string ToString() => GenerateSql();
@@ -61,6 +64,7 @@ namespace Nevermore.Querying.AST
 
         public string Schema => tableSource.Schema;
         public string TableName => tableSource.TableName;
+        public string[] ColumnNames => tableSource.ColumnNames;
 
         public string GenerateSql()
         {
