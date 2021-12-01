@@ -5,24 +5,21 @@ namespace Nevermore.Advanced
 {
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        readonly IReadOnlyList<string> columnNames;
-
-        public TableSelectBuilder(ITableSource from, IColumn idColumn, IReadOnlyList<string> columnNames) 
-            : this(from, idColumn, columnNames, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+        public TableSelectBuilder(ITableSource from, IColumn idColumn) 
+            : this(from, idColumn, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
-        TableSelectBuilder(ITableSource from, IColumn idColumn, IReadOnlyList<string> columnNames,
+        TableSelectBuilder(ITableSource from, IColumn idColumn,
             List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
             List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
             : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
-            this.columnNames = columnNames;
             From = from;
             IdColumn = idColumn;
 
-            DefaultSelect = new SelectAllJsonColumnLast(columnNames);
+            DefaultSelect = new SelectAllJsonColumnLast(from.ColumnNames);
         }
 
         protected override ITableSource From { get; }
@@ -36,7 +33,7 @@ namespace Nevermore.Advanced
 
         public override ISelectBuilder Clone()
         {
-            return new TableSelectBuilder(From, IdColumn, columnNames, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
         }
     }
 }

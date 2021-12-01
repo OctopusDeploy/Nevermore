@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+using System;
 
 namespace Nevermore
 {
     public interface ITableColumnsCache
     {
-        IReadOnlyList<string> GetMappingTableColumnNamesSortedWithJsonLast(string schemaName, string tableName);
+        string[] GetOrAdd(string schemaName, string tableName, Func<string, string, string[]> valueFactory);
     }
 }

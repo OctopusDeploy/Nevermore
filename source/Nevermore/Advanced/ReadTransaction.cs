@@ -35,6 +35,7 @@ namespace Nevermore.Advanced
 
         // To help track deadlocks
         readonly List<string> commandTrace;
+        readonly ITableColumnNameResolver columnNameResolver;
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
 
@@ -52,6 +53,8 @@ namespace Nevermore.Advanced
             if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
             this.name = transactionName;
             registry.Add(this);
+            
+            columnNameResolver = configuration.TableColumnNameResolver(this);
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -405,8 +408,7 @@ namespace Nevermore.Advanced
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
             var schemaName = configuration.GetSchemaNameOrDefault(map);
             
-            var columnNames = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(schemaName, map.TableName);
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, columnNames, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
@@ -415,7 +417,7 @@ namespace Nevermore.Advanced
             // with re-ordered columns for you, but to have column names we need a map...
             // if you really want to join, you'd probably do it in the query already, rather than using .Join so it's probably 
             // just a limitation we accept now
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, new []{"*"}, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -595,11 +597,11 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var mappingColumnNamesInOrder = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
+            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
 
-            return new PreparedCommand($"SELECT TOP 1 {string.Join(',', mappingColumnNamesInOrder)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
+            return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
@@ -609,12 +611,16 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var mappingColumnNamesInOrder = configuration.TableColumnsCache.GetMappingTableColumnNamesSortedWithJsonLast(mapping.SchemaName, mapping.TableName);
-
+            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);
-            var statement = $"SELECT s.{string.Join(',', mappingColumnNamesInOrder)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
+            var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+        }
+        
+        public string[] GetColumnNames(string? schemaName, string tableName)
+        {
+            return columnNameResolver.GetColumnNames(schemaName, tableName);
         }
 
         CommandExecutor CreateCommand(PreparedCommand command)

@@ -29,12 +29,11 @@ namespace Nevermore.Tests.Linq
             var captures = new CommandParameterValues();
             
             var memberInfos = Activator.CreateInstance<Foo>().GetType().GetProperties();
-            var columnNames = memberInfos.Select(x => x.Name).ToList();
+            var columnNames = memberInfos.Select(x => x.Name).ToArray();
             
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
-                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id"), columnNames),
+                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo", columnNames), new Querying.AST.Column("Id")),
                 Substitute.For<IRelationalTransaction>(),
-                columnNames,
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 
                 captures,

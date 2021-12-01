@@ -35,7 +35,10 @@ namespace Nevermore.Tests.QueryBuilderFixture
                 var documentType = Activator.CreateInstance<TDocument>().GetType();
                 columns = documentType.GetProperties().Select(x => x.Name).ToArray();
             }
-            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, columns, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+
+            transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
+            
+            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
         [Test]
@@ -1719,7 +1722,7 @@ ORDER BY [Id]";
             query.FirstOrDefault();
 
             const string expected =
-                @"SELECT TOP 1 ALIAS_GENERATED_2.Id,ALIAS_GENERATED_2.Title,ALIAS_GENERATED_2.Completed
+                @"SELECT TOP 1 ALIAS_GENERATED_2.*
 FROM (
     SELECT Id,Title,Completed
     FROM [dbo].[Customer]

@@ -68,7 +68,6 @@ ORDER BY [Id]");
                 "dbo",
                 "Id",
                 Substitute.For<IRelationalTransaction>(), 
-                columnNames,
                 new TableAliasGenerator(), 
                 new UniqueParameterNameGenerator(), 
                 new CommandParameterValues(),
