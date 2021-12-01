@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Nevermore.Advanced;
+using Nevermore.Advanced.SelectBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
 

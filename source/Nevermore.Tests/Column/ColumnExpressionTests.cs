@@ -2,6 +2,7 @@
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using NSubstitute;
 using NUnit.Framework;
 

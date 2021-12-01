@@ -2,7 +2,7 @@
 using System.Linq;
 using Nevermore.Querying.AST;
 
-namespace Nevermore.Advanced
+namespace Nevermore.Advanced.SelectBuilders
 {
     public class UnionSelectBuilder : SelectBuilderBase<ISubquerySource>
     {

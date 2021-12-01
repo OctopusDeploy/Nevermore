@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Advanced.QueryBuilders;
+using Nevermore.Advanced.SelectBuilders;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 

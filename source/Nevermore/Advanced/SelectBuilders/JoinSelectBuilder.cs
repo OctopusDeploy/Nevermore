@@ -3,7 +3,7 @@ using System.Linq;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
-namespace Nevermore.Advanced
+namespace Nevermore.Advanced.SelectBuilders
 {
     public class JoinSelectBuilder : SelectBuilderBase<JoinedSource>
     {

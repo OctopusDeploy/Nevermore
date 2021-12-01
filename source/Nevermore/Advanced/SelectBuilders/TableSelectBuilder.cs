@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Nevermore.Querying.AST;
 
-namespace Nevermore.Advanced
+namespace Nevermore.Advanced.SelectBuilders
 {
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {

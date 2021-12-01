@@ -4,6 +4,7 @@ using System.Linq;
 using Assent;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
 using NUnit.Framework;

@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;

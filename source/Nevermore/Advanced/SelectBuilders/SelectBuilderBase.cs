@@ -4,7 +4,7 @@ using System.Linq;
 using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
-namespace Nevermore.Advanced
+namespace Nevermore.Advanced.SelectBuilders
 {
     public abstract class SelectBuilderBase<TSource> : ISelectBuilder where TSource : ISelectSource
     {
