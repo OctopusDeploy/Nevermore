@@ -1,4 +1,4 @@
-﻿namespace Nevermore
+﻿namespace Nevermore.TableColumnNameResolvers
 {
     public interface ITableColumnNameResolver
     {

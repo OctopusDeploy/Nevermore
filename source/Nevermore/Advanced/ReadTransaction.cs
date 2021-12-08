@@ -15,6 +15,7 @@ using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
+using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
 
 namespace Nevermore.Advanced

@@ -13,6 +13,7 @@ using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Nevermore.TableColumnNameResolvers;
 
 namespace Nevermore
 {

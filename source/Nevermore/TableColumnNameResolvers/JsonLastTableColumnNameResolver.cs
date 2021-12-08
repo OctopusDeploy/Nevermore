@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Nevermore
+namespace Nevermore.TableColumnNameResolvers
 {
     internal class JsonLastTableColumnNameResolver : ITableColumnNameResolver
     {
