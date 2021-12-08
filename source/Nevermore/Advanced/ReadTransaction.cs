@@ -11,9 +11,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
+using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
 
 namespace Nevermore.Advanced
@@ -35,6 +37,7 @@ namespace Nevermore.Advanced
 
         // To help track deadlocks
         readonly List<string> commandTrace;
+        readonly ITableColumnNameResolver columnNameResolver;
 
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
 
@@ -52,6 +55,8 @@ namespace Nevermore.Advanced
             if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
             this.name = transactionName;
             registry.Add(this);
+            
+            columnNameResolver = configuration.TableColumnNameResolver(this);
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -403,7 +408,9 @@ namespace Nevermore.Advanced
         public ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, configuration.GetSchemaNameOrDefault(map), map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            var schemaName = configuration.GetSchemaNameOrDefault(map);
+            
+            return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
@@ -588,9 +595,11 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
+            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
             var tableName = mapping.TableName;
             var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
-            return new PreparedCommand($"SELECT TOP 1 * FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
+
+            return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
@@ -600,10 +609,16 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
+            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);
-            var statement = $"SELECT s.* FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
+            var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+        }
+        
+        public string[] GetColumnNames(string? schemaName, string tableName)
+        {
+            return columnNameResolver.GetColumnNames(schemaName, tableName);
         }
 
         CommandExecutor CreateCommand(PreparedCommand command)

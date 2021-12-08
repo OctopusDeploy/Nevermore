@@ -91,7 +91,7 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([String] IN (@string1, @string2, @string3))
 ORDER BY [Id]");
@@ -106,7 +106,7 @@ ORDER BY [Id]");
             var (parameters, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([String] LIKE @string)
 ORDER BY [Id]");
@@ -120,7 +120,7 @@ ORDER BY [Id]");
             var (_, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([Int] IN (@int1, @int2, @int3))
 ORDER BY [Id]");

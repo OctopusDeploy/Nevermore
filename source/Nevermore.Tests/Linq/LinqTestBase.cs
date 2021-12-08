@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using Nevermore.Advanced;
+using Nevermore.Advanced.SelectBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
 
@@ -26,8 +28,12 @@ namespace Nevermore.Tests.Linq
         {
             var parameters = new Parameters();
             var captures = new CommandParameterValues();
+            
+            var memberInfos = Activator.CreateInstance<Foo>().GetType().GetProperties();
+            var columnNames = memberInfos.Select(x => x.Name).ToArray();
+            
             var builder = new QueryBuilder<Foo, TableSelectBuilder>(
-                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo"), new Querying.AST.Column("Id")),
+                new TableSelectBuilder(new SimpleTableSource("Foo", "dbo", columnNames), new Querying.AST.Column("Id")),
                 Substitute.For<IRelationalTransaction>(),
                 new TableAliasGenerator(),
                 uniqueParameterNameGenerator ?? CreateSubstituteParameterNameGenerator(), 

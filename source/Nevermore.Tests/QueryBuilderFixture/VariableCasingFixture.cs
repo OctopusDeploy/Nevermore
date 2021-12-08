@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using NSubstitute;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -28,6 +30,9 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
         IQueryBuilder<object> CreateQueryBuilder()
         {
+            var memberInfos = Activator.CreateInstance<object>().GetType().GetProperties();
+            var columnNames = memberInfos.Select(x => x.Name).ToList();
+            
             return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 

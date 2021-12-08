@@ -1,7 +1,7 @@
 SELECT ALIAS_Orders_2.*
 FROM [dbo].[Orders] ALIAS_Orders_2
 INNER JOIN (
-    SELECT *
+    SELECT Name
     FROM [dbo].[Customers]
     WHERE ([Name] LIKE @name)
 ) ALIAS_GENERATED_1

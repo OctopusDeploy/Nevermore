@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -19,6 +20,8 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ExecuteScalar<int>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
             // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
             transaction.Stream<object>(Arg.Do<string>(q => executedQueries.Add(q)), Arg.Any<CommandParameterValues>());
+            var columns = new [] { "*" };
+            transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
         }
 
         [SetUp]

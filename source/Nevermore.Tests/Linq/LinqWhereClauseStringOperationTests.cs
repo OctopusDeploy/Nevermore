@@ -41,7 +41,7 @@ namespace Nevermore.Tests.Linq
             var (parameters, paramValues) = captures;
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([String] LIKE @string)
 ORDER BY [Id]");

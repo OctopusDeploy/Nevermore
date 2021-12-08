@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Assent;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
 using NUnit.Framework;
@@ -28,6 +30,15 @@ namespace Nevermore.Tests.QueryBuilderFixture
         
         ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo", string idColumnName = "Id") where TDocument : class
         {
+            var columns = new[] {"*"};
+            if (typeof(TDocument) != typeof(object))
+            {
+                var documentType = Activator.CreateInstance<TDocument>().GetType();
+                columns = documentType.GetProperties().Select(x => x.Name).ToArray();
+            }
+
+            transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
+            
             return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
         
@@ -465,7 +476,7 @@ WHERE ([Price] > 5)";
         [Test]
         public void ShouldGetCorrectSqlQueryForAnyWithResults()
         {
-            const string expectedSql = @"IF EXISTS(SELECT *
+            const string expectedSql = @"IF EXISTS(SELECT Id,Completed,Items
 FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
@@ -494,7 +505,7 @@ ELSE
         [Test]
         public void ShouldGetCorrectSqlQueryForAnyWithNoResults()
         {
-            const string expectedSql = @"IF EXISTS(SELECT *
+            const string expectedSql = @"IF EXISTS(SELECT Id,Completed,Items
 FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
@@ -523,7 +534,7 @@ ELSE
         [Test]
         public void ShouldGetCorrectSqlQueryForAnyIgnoreOrderBy()
         {
-            const string expectedSql = @"IF EXISTS(SELECT *
+            const string expectedSql = @"IF EXISTS(SELECT Id,Completed,Items
 FROM [dbo].[Todos]
 WHERE ([Completed] < @completed))
     SELECT @true
@@ -1052,7 +1063,7 @@ AND ([Completed] <= @endvalue)";
         [Test]
         public void ShouldGetCorrectSqlQueryForOrderBy()
         {
-            const string expectedSql = @"SELECT TOP 1 *
+            const string expectedSql = @"SELECT TOP 1 Id,Title,Completed
 FROM [dbo].[TodoItem]
 ORDER BY [Title]";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
@@ -1075,7 +1086,7 @@ ORDER BY [Title]";
         [Test]
         public void ShouldGetCorrectSqlQueryForOrderByDescending()
         {
-            const string expectedSql = @"SELECT TOP 1 *
+            const string expectedSql = @"SELECT TOP 1 Id,Title,Completed
 FROM [dbo].[TodoItem]
 ORDER BY [Title] DESC";
             var todoItem = new TodoItem { Id = 1, Title = "Complete Nevermore", Completed = false };
@@ -1675,7 +1686,7 @@ ORDER BY [RowNum]");
 
             query.FirstOrDefault();
 
-            const string expected = @"SELECT TOP 1 *
+            const string expected = @"SELECT TOP 1 Id,Title,Completed
 FROM [dbo].[Todos]
 WHERE ([AddedDate] > @addeddate)
 AND ([AddedDate] < @addeddate_1)
@@ -1714,7 +1725,7 @@ ORDER BY [Id]";
             const string expected =
                 @"SELECT TOP 1 ALIAS_GENERATED_2.*
 FROM (
-    SELECT *
+    SELECT Id,Title,Completed
     FROM [dbo].[Customer]
     WHERE ([Date] = @date_1)
 ) ALIAS_GENERATED_2
@@ -1766,7 +1777,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
                 .Where(d => d.Name != "Alice" && d.Name != "Bob")
                 .ToList();
 
-            const string expected = @"SELECT *
+            const string expected = @"SELECT Name
 FROM [dbo].[Customers]
 WHERE ([Name] <> @name)
 AND ([Name] <> @name_1)

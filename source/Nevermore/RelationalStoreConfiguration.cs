@@ -13,6 +13,7 @@ using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Nevermore.TableColumnNameResolvers;
 
 namespace Nevermore
 {
@@ -49,6 +50,8 @@ namespace Nevermore
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
+            TableColumnNameResolver = queryExecutor => new CachingTableColumnNameResolver(new JsonLastTableColumnNameResolver(queryExecutor), new TableColumnsCache());
+
             AllowSynchronousOperations = true;
 
             QueryLogger = new DefaultQueryLogger();
@@ -69,6 +72,8 @@ namespace Nevermore
         public string DefaultSchema { get; set; }
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
+        
+        public Func<IReadQueryExecutor, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 

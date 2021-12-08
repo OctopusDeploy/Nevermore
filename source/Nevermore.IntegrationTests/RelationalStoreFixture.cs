@@ -5,6 +5,7 @@ using System.Linq;
 using FluentAssertions;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
+using Nevermore.Querying.AST;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
@@ -54,6 +55,53 @@ namespace Nevermore.IntegrationTests
                     .LikeParameter("role", "web-server")
                     .ToList();
                 customers.Count.Should().Be(2);
+            }
+        }
+
+        [Test]
+        public void TableWithTypeAfterJsonShouldBeAbleToDeserialize()
+        {
+            using (var transaction = Store.BeginTransaction())
+            {
+                var product1 = new DodgyProduct {Name = "iphane", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
+                var product2 = new DodgyProduct {Name = "samsoong", Price = 300.0M, Tax = 30.0M, Type = ProductType.Dodgy};
+                var product3 = new DodgyProduct {Name = "huwaii", Price = 200.0M, Tax = 20.0M, Type = ProductType.Dodgy};
+                var product4 = new Product {Name = "octophone", Type = ProductType.Normal};
+                transaction.Insert(product1);
+                transaction.Insert(product2);
+                transaction.Insert(product3);
+                transaction.Insert(product4);
+                transaction.Commit();
+            }
+
+            using (var transaction = Store.BeginTransaction())
+            {
+                var products = transaction.Query<DodgyProduct>().ToList();
+                products.Should().HaveCount(3);
+            }
+        }
+
+        [Test]
+        public void ShouldBuildJoinSelectsWithJsonColumnLast()
+        {
+            var product1 = new DodgyProduct {Name = "iphane", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
+            var product2 = new SpecialProduct {Name = "octophone", Type = ProductType.Special, Price = 350.0M};
+            using (var transaction = Store.BeginTransaction())
+            {
+                transaction.Insert(product1);
+                transaction.Insert(product2);
+                transaction.Commit();
+            }
+        
+            using (var transaction = Store.BeginTransaction())
+            {
+                var products = transaction.Query<DodgyProduct>().Alias("dodgyProductTable")
+                    .InnerJoin(transaction.Query<SpecialProduct>().Alias("specialProductTable"))
+                    .On(nameof(DodgyProduct.Type), JoinOperand.Equal, nameof(SpecialProduct.Type))
+                    .AsType<Product>()
+                    .ToList();
+
+                products.ShouldBeEquivalentTo(new List<Product> {product1, product2});
             }
         }
 

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
@@ -31,5 +32,6 @@ namespace Nevermore
 
         internal static string GetSchemaNameOrDefault(this IRelationalStoreConfiguration configuration, RelatedDocumentsMapping relatedDocumentsMapping)
             => GetSchemaNameOrDefault(configuration, relatedDocumentsMapping.SchemaName);
+
     }
 }

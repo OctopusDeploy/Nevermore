@@ -40,15 +40,7 @@ namespace Nevermore.Querying.AST
         public string GenerateSql() => $"{column.GenerateSql()} AS [{columnAlias}]";
         public override string ToString() => GenerateSql();
     }
-
-    public class SelectExistsSource : ISelectColumns
-    {
-        public bool AggregatesRows => true;
-        public string GenerateSql() => "*";
-        
-        public override string ToString() => GenerateSql();
-    }
-
+    
     public class SelectAllFrom : ISelectColumns
     {
         readonly string tableAlias;
@@ -62,6 +54,37 @@ namespace Nevermore.Querying.AST
 
         public string GenerateSql() => $"{tableAlias}.*";
         public override string ToString() => GenerateSql();
+    }
+    
+    internal class SelectAllColumnsWithTableAliasJsonLast : ISelectColumns
+    {
+        readonly string tableAlias;
+        readonly IReadOnlyList<string> columnNames;
+
+        public SelectAllColumnsWithTableAliasJsonLast(string tableAlias, IReadOnlyList<string> columnNames)
+        {
+            this.tableAlias = tableAlias;
+            this.columnNames = columnNames.OrderBy(x => x == "JSON").ToList();
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => string.Join(',', columnNames.Select(x => $"{tableAlias}.{x}").ToArray());
+        
+        public override string ToString() => GenerateSql();
+    }
+
+    public class SelectAllJsonColumnLast : ISelectColumns
+    {
+        readonly IReadOnlyList<string> columnNames;
+
+        public SelectAllJsonColumnLast(IReadOnlyList<string> columnNames)
+        {
+            this.columnNames = columnNames.OrderBy(x => x == "JSON").ToList();
+        }
+        
+        public bool AggregatesRows => false;
+        public string GenerateSql() => string.Join(',', columnNames);
     }
 
     public class SelectAllSource : ISelectColumns

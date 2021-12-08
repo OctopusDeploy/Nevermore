@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced;
+using Nevermore.Advanced.QueryBuilders;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -60,6 +62,9 @@ ORDER BY [Id]");
 
         static ITableSourceQueryBuilder<Record> CreateQueryBuilder()
         {
+            var memberInfos = Activator.CreateInstance<Record>().GetType().GetProperties();
+            var columnNames = memberInfos.Select(x => x.Name).ToList();
+            
             return new TableSourceQueryBuilder<Record>("Records", 
                 "dbo",
                 "Id",

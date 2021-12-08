@@ -17,12 +17,14 @@ namespace Nevermore.IntegrationTests.SetUp
             var identity = mapping.IsIdentityId ? " IDENTITY(1,1)" : null;
             result.Append($"  [Id] {GetDatabaseType(mapping.IdColumn)}{identity} NOT NULL CONSTRAINT [PK_{tableName}_Id] PRIMARY KEY CLUSTERED, ").AppendLine();
 
+            // purposely put the [JSON] column second as we want to ensure that tables don't have to be created
+            // with the type before the [JSON] column as was a previous restriction
+            result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine(); 
+            
             foreach (var column in mapping.WritableIndexedColumns())
             {
-                result.AppendFormat("  [{0}] {1} {2}, ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), IsNullable(column) ? "NULL" : "NOT NULL").AppendLine();
+                result.AppendFormat("  ,[{0}] {1} {2} ", column.ColumnName, GetDatabaseType(column).ToUpperInvariant(), IsNullable(column) ? "NULL" : "NOT NULL").AppendLine();
             }
-
-            result.AppendFormat("  [JSON] NVARCHAR(MAX) NOT NULL").AppendLine();
 
             if (mapping.IsRowVersioningEnabled)
                 result.Append("  ,[RowVersion] TIMESTAMP").AppendLine();

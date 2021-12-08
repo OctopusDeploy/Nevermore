@@ -139,7 +139,10 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
 
         public void TypeColumn(int i, ColumnMapping column)
         {
-            typeIndex = i;
+            // Only assign if it's not been assigned before
+            // This allows something like SELECT table.Type, table.* as a work around
+            // for having type before JSON without re-creating a table
+            typeIndex = typeIndex == -1 ? i : typeIndex;
             if (column != null)
             {
                 typeValueLocal = Expression.Variable(column.Type, "tempType");

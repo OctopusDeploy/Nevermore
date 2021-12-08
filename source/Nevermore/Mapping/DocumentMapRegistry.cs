@@ -11,6 +11,7 @@ namespace Nevermore.Mapping
     {
         readonly IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry;
         readonly ConcurrentDictionary<Type, DocumentMap> mappings = new ConcurrentDictionary<Type, DocumentMap>();
+        readonly ConcurrentDictionary<string, List<string>> mappingColumnNamesSortedWithJsonLastCache = new();
 
         public DocumentMapRegistry(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
         {

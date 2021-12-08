@@ -14,7 +14,7 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int]");
         }
@@ -28,7 +28,7 @@ ORDER BY [Int]");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int] DESC");
         }
@@ -44,7 +44,7 @@ ORDER BY [Int] DESC");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int]");
         }
@@ -60,7 +60,7 @@ ORDER BY [Int]");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int] DESC");
         }
@@ -74,7 +74,7 @@ ORDER BY [Int] DESC");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int], [String]");
         }
@@ -88,7 +88,7 @@ ORDER BY [Int], [String]");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int], [String] DESC");
         }
@@ -104,7 +104,7 @@ ORDER BY [Int], [String] DESC");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int], [String]");
         }
@@ -120,7 +120,7 @@ ORDER BY [Int], [String]");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 ORDER BY [Int], [String] DESC");
         }

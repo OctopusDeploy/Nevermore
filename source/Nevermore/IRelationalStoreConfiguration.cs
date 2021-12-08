@@ -1,3 +1,4 @@
+using System;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
@@ -6,6 +7,7 @@ using Nevermore.Advanced.TypeHandlers;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.RelatedDocuments;
+using Nevermore.TableColumnNameResolvers;
 
 namespace Nevermore
 {
@@ -28,6 +30,7 @@ namespace Nevermore
         string DefaultSchema { get; set; }
 
         IDocumentMapRegistry DocumentMaps { get; }
+        public Func<IReadQueryExecutor, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
         IDocumentSerializer DocumentSerializer { get; set; }
         IReaderStrategyRegistry ReaderStrategies { get; }
         ITypeHandlerRegistry TypeHandlers { get; }

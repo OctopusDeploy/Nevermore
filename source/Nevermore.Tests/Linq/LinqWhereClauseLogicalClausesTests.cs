@@ -14,7 +14,7 @@ namespace Nevermore.Tests.Linq
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([Int] < @int)
 AND ([String] = @string)
@@ -30,7 +30,7 @@ ORDER BY [Id]");
 
             result.DebugViewRawQuery()
                 .Should()
-                .Be(@"SELECT *
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
 FROM [dbo].[Foo]
 WHERE ([Int] > @int)
 AND ([Int] < @int_1)
