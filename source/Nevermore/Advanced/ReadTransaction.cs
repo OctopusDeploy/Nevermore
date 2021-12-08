@@ -414,10 +414,6 @@ namespace Nevermore.Advanced
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            //TODO: We're back to this problem... what do we send for column names? If we don't have column names, you can't join
-            // with re-ordered columns for you, but to have column names we need a map...
-            // if you really want to join, you'd probably do it in the query already, rather than using .Join so it's probably 
-            // just a limitation we accept now
             return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 

@@ -804,8 +804,7 @@ namespace Nevermore
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>A data reader.</returns>
         [Pure] Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default);
-
-        // TODO: work out a way to avoid needing to expose this
+        
         string[] GetColumnNames(string schemaName, string tableOrViewName);
     }
 }

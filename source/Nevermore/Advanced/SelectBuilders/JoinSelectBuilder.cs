@@ -21,7 +21,7 @@ namespace Nevermore.Advanced.SelectBuilders
         }
 
         protected override ISelectColumns DefaultSelect => From.Source is ISimpleTableSource fromTable 
-            ? new SelectAllColumnsJsonLast(From.Source.Alias, fromTable.ColumnNames)
+            ? new SelectAllColumnsWithTableAliasJsonLast(From.Source.Alias, fromTable.ColumnNames)
             : new SelectAllFrom(From.Source.Alias);
 
         protected override IEnumerable<OrderByField> GetDefaultOrderByFields()

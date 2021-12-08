@@ -2,7 +2,7 @@
 
 namespace Nevermore
 {
-    public class CachingTableColumnNameResolver : ITableColumnNameResolver
+    internal class CachingTableColumnNameResolver : ITableColumnNameResolver
     {
         readonly ITableColumnNameResolver inner;
         readonly ITableColumnsCache tableColumnsCache;
