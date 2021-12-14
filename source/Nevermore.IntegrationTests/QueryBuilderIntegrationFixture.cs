@@ -60,5 +60,27 @@ namespace Nevermore.IntegrationTests
                 customersNotNull.Select(c => c.FirstName).Should().BeEquivalentTo("Bob", "Charlie");
             }
         }
+
+        [Test]
+        public void WhereJsonValueClause()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                foreach (var c in new []
+                         {
+                             new Product {Name = "Product 1", Price = 100},
+                             new Product {Name = "Product 2", Price = 200},
+                             new Product {Name = "Product 3", Price = 300},
+                         })
+                    t.Insert(c);
+                t.Commit();
+                
+                var products = t.Query<Product>()
+                    .Where(c => c.Price == 100)
+                    .ToList();
+
+                products.Select(c => c.Name).Should().BeEquivalentTo("Product 1");
+            }
+        }
     }
 }
