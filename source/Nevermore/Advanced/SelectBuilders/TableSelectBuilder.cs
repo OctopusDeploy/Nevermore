@@ -7,14 +7,14 @@ namespace Nevermore.Advanced.SelectBuilders
 {
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
-        public TableSelectBuilder(ITableSource from, IColumn idColumn) 
+        public TableSelectBuilder(ITableSource from, IColumn idColumn)
             : this(from, idColumn, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
         {
         }
 
         TableSelectBuilder(ITableSource from, IColumn idColumn,
             List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
-            List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
+            List<OrderByField> orderByClauses, ISelectColumns columnSelection = null,
             IRowSelection rowSelection = null)
             : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
         {
@@ -40,50 +40,53 @@ namespace Nevermore.Advanced.SelectBuilders
 
         public override void AddWhere(UnaryWhereParameter whereParams)
         {
-            if (From.ColumnNames.Contains(whereParams.FieldName))
+            if (ShouldReadFromJsonColumn(whereParams.FieldName))
             {
-                base.AddWhere(whereParams);
+                WhereClauses.Add(new UnaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterName));
             }
             else
             {
-                WhereClauses.Add(new UnaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterName));
+                base.AddWhere(whereParams);
             }
         }
 
         public override void AddWhere(BinaryWhereParameter whereParams)
-         {
-             if (From.ColumnNames.Contains(whereParams.FieldName))
-             {
-                 base.AddWhere(whereParams);
-             }
-             else
-             {
-                 WhereClauses.Add(new BinaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.FirstParameterName, whereParams.SecondParameterName));
-             }
-         }
- 
-         public override void AddWhere(ArrayWhereParameter whereParams)
-         {
-             if (From.ColumnNames.Contains(whereParams.FieldName))
-             {
-                 base.AddWhere(whereParams);
-             }
-             else
-             {
-                 WhereClauses.Add(new ArrayWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterNames));
-             }
-         }
- 
-         public override void AddWhere(IsNullWhereParameter whereParams)
-         {
-             if (From.ColumnNames.Contains(whereParams.FieldName))
-             {
-                 base.AddWhere(whereParams);
-             }
-             else
-             {
-                 WhereClauses.Add(new IsNullClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Not));
-             }
-         }
+        {
+            if (ShouldReadFromJsonColumn(whereParams.FieldName))
+            {
+                WhereClauses.Add(new BinaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.FirstParameterName, whereParams.SecondParameterName));
+            }
+            else
+            {
+                base.AddWhere(whereParams);
+            }
+        }
+
+        public override void AddWhere(ArrayWhereParameter whereParams)
+        {
+            if (ShouldReadFromJsonColumn(whereParams.FieldName))
+            {
+                WhereClauses.Add(new ArrayWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterNames));
+            }
+            else
+            {
+                base.AddWhere(whereParams);
+            }
+        }
+
+        public override void AddWhere(IsNullWhereParameter whereParams)
+        {
+            if (ShouldReadFromJsonColumn(whereParams.FieldName))
+            {
+                WhereClauses.Add(new IsNullClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Not));
+            }
+            else
+            {
+                base.AddWhere(whereParams);
+            }
+        }
+
+        bool ShouldReadFromJsonColumn(string fieldName)
+            => From.ColumnNames.Contains("JSON") && !From.ColumnNames.Contains(fieldName);
     }
 }
