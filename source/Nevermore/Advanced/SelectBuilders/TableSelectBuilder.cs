@@ -49,5 +49,41 @@ namespace Nevermore.Advanced.SelectBuilders
                 WhereClauses.Add(new UnaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterName));
             }
         }
+
+        public override void AddWhere(BinaryWhereParameter whereParams)
+         {
+             if (From.ColumnNames.Contains(whereParams.FieldName))
+             {
+                 base.AddWhere(whereParams);
+             }
+             else
+             {
+                 WhereClauses.Add(new BinaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.FirstParameterName, whereParams.SecondParameterName));
+             }
+         }
+ 
+         public override void AddWhere(ArrayWhereParameter whereParams)
+         {
+             if (From.ColumnNames.Contains(whereParams.FieldName))
+             {
+                 base.AddWhere(whereParams);
+             }
+             else
+             {
+                 WhereClauses.Add(new ArrayWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterNames));
+             }
+         }
+ 
+         public override void AddWhere(IsNullWhereParameter whereParams)
+         {
+             if (From.ColumnNames.Contains(whereParams.FieldName))
+             {
+                 base.AddWhere(whereParams);
+             }
+             else
+             {
+                 WhereClauses.Add(new IsNullClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Not));
+             }
+         }
     }
 }

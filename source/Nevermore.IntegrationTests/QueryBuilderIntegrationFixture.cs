@@ -39,19 +39,23 @@ namespace Nevermore.IntegrationTests
         {
             using (var t = Store.BeginTransaction())
             {
-                foreach (var c in new []
+                var testCustomers = new []
                 {
                     new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
                     new Customer {FirstName = "Bob", LastName = "Banana", Nickname = ""},
                     new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
-                })
+                };
+                foreach (var c in testCustomers)
+                {
                     t.Insert(c);
+                }
+
                 t.Commit();
-                
+
                 var customersNull = t.Query<Customer>()
                     .Where(c => c.Nickname == null)
                     .ToList();
-                
+
                 var customersNotNull = t.Query<Customer>()
                     .Where(c => c.Nickname != null)
                     .ToList();
@@ -62,25 +66,99 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void WhereJsonValueClause()
+        public void WhereJsonValueUnaryClause()
         {
-            using (var t = Store.BeginTransaction())
+            using var t = Store.BeginTransaction();
+            var testProducts = new []
             {
-                foreach (var c in new []
-                         {
-                             new Product {Name = "Product 1", Price = 100},
-                             new Product {Name = "Product 2", Price = 200},
-                             new Product {Name = "Product 3", Price = 300},
-                         })
-                    t.Insert(c);
-                t.Commit();
-                
-                var products = t.Query<Product>()
-                    .Where(c => c.Price == 100)
-                    .ToList();
-
-                products.Select(c => c.Name).Should().BeEquivalentTo("Product 1");
+                new Product {Name = "Product 1", Price = 100},
+                new Product {Name = "Product 2", Price = 200},
+                new Product {Name = "Product 3", Price = 300},
+            };
+            foreach (var c in testProducts)
+            {
+                t.Insert(c);
             }
+
+            t.Commit();
+
+            var products = t.Query<Product>()
+                .Where(c => c.Price == 100)
+                .ToList();
+
+            products.Select(c => c.Name).Should().BeEquivalentTo("Product 1");
+        }
+
+        [Test]
+        public void WhereJsonValueBinaryClause()
+        {
+            using var t = Store.BeginTransaction();
+            var testProducts = new []
+            {
+                new Product {Name = "Product 1", Price = 100},
+                new Product {Name = "Product 2", Price = 200},
+                new Product {Name = "Product 3", Price = 300},
+            };
+            foreach (var c in testProducts)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var products = t.Query<Product>()
+                .Where("Price", BinarySqlOperand.Between, 90.0, 110.0)
+                .ToList();
+
+            products.Select(c => c.Name).Should().BeEquivalentTo("Product 1");
+        }
+
+        [Test]
+        public void WhereJsonValueArrayClause()
+        {
+            using var t = Store.BeginTransaction();
+            var testProducts = new[]
+            {
+                new Product { Name = "Product 1", Price = 100 },
+                new Product { Name = "Product 2", Price = 200 },
+                new Product { Name = "Product 3", Price = 300 }
+            };
+            foreach (var c in testProducts)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var products = t.Query<Product>()
+                .Where("Price", ArraySqlOperand.In, new[] { 100m, 110m, 120m })
+                .ToList();
+
+            products.Select(c => c.Name).Should().BeEquivalentTo("Product 1");
+        }
+
+        [Test]
+        public void WhereJsonValueIsNullClause()
+        {
+            using var t = Store.BeginTransaction();
+            var testCustomers = new []
+            {
+                new Customer { FirstName = "Alice", LastName = "Apply", ApiKey = "API-77182873" },
+                new Customer { FirstName = "Bob", LastName = "Banana", ApiKey = null },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", ApiKey = "API-9876123" }
+            };
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var products = t.Query<Customer>()
+                .WhereNull("ApiKey")
+                .ToList();
+
+            products.Select(c => c.FirstName).Should().BeEquivalentTo("Bob");
         }
     }
 }
