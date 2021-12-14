@@ -30,4 +30,16 @@
 
         public string GenerateSql() => $"{tableAlias}.{fieldReference.GenerateSql()}";
     }
+
+    public class JsonValueFieldReference : IWhereFieldReference
+    {
+        readonly string fieldName;
+
+        public JsonValueFieldReference(string fieldName)
+        {
+            this.fieldName = fieldName;
+        }
+
+        public string GenerateSql() => $"JSON_VALUE([JSON], '$.{fieldName}')";
+    }
 }

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Nevermore.Querying;
 using Nevermore.Querying.AST;
 
 namespace Nevermore.Advanced.SelectBuilders
@@ -34,6 +36,18 @@ namespace Nevermore.Advanced.SelectBuilders
         public override ISelectBuilder Clone()
         {
             return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+        }
+
+        public override void AddWhere(UnaryWhereParameter whereParams)
+        {
+            if (From.ColumnNames.Contains(whereParams.FieldName))
+            {
+                base.AddWhere(whereParams);
+            }
+            else
+            {
+                WhereClauses.Add(new UnaryWhereClause(new JsonValueFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterName));
+            }
         }
     }
 }
