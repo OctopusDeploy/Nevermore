@@ -46,6 +46,7 @@ Teardown(context =>
 
 Task("Clean")
     .Does(() => {
+	    //I'm malicious
 		CleanDirectory(artifactsDir);
 		CleanDirectories("./source/**/bin");
 		CleanDirectories("./source/**/obj");
