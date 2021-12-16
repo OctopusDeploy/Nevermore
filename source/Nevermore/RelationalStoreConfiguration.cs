@@ -50,7 +50,14 @@ namespace Nevermore
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
-            TableColumnNameResolver = queryExecutor => new CachingTableColumnNameResolver(new JsonLastTableColumnNameResolver(queryExecutor), new TableColumnsCache());
+            // TODO: @team-core-platform
+            // We want this to use:
+            // queryExecutor => new CachingTableColumnNameResolver(new JsonLastTableColumnNameResolver(queryExecutor), new TableColumnsCache())
+            // however there's an issue at the moment with the table cache being a cache per transaction and not for the lifetime 
+            // of the application at the moment we need to resolve before we can re-turn on the caching and selecting
+            // column names with json column last again
+            TableColumnNameResolver = _ => new SelectAllColumnsTableResolver();
+            
 
             AllowSynchronousOperations = true;
 
