@@ -50,7 +50,8 @@ namespace Nevermore
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
-            TableColumnNameResolver = queryExecutor => new CachingTableColumnNameResolver(new JsonLastTableColumnNameResolver(queryExecutor), new TableColumnsCache());
+            var tableColumnsCache = new TableColumnsCache();
+            TableColumnNameResolver = queryExecutor => new CachingTableColumnNameResolver(new JsonLastTableColumnNameResolver(queryExecutor), tableColumnsCache);
 
             AllowSynchronousOperations = true;
 
