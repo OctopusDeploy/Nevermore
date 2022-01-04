@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
@@ -411,6 +412,11 @@ namespace Nevermore.Advanced
             var schemaName = configuration.GetSchemaNameOrDefault(map);
             
             return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+        }
+
+        public IQueryable<TDocument> Queryable<TDocument>()
+        {
+            return new Query<TDocument>(new QueryProvider<TDocument>(this, configuration));
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class

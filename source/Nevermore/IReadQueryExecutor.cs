@@ -1,8 +1,10 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
@@ -623,6 +625,8 @@ namespace Nevermore
         /// <typeparam name="TRecord">The type of document being queried. Results from the database will be mapped to this type.</typeparam>
         /// <returns>A stream of resulting documents.</returns>
         [Pure] ITableSourceQueryBuilder<TRecord> Query<TRecord>() where TRecord : class;
+
+        [Pure] IQueryable<TRecord> Queryable<TRecord>();
 
         /// <summary>
         /// Returns strongly typed documents from the specified raw SQL query.
