@@ -129,7 +129,32 @@ namespace Nevermore.Advanced.Queryable
 
         void AddMethodCallWhere(MethodCallExpression expression)
         {
-            throw new NotImplementedException();
+            if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
+            {
+                AddStringMethodWhere(expression);
+            }
+        }
+
+        void AddStringMethodWhere(MethodCallExpression expression)
+        {
+            var (fieldReference, _) = GetFieldReferenceAndType(expression.Object);
+            var value = (string)GetValueFromExpression(expression.Arguments[0], typeof(string));
+
+            if (expression.Method.Name == nameof(string.Contains))
+            {
+                var parameter = AddParameter($"%{value}%");
+                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+            }
+            else if (expression.Method.Name == nameof(string.StartsWith))
+            {
+                var parameter = AddParameter($"{value}%");
+                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+            }
+            else if (expression.Method.Name == nameof(string.EndsWith))
+            {
+                var parameter = AddParameter($"%{value}");
+                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+            }
         }
 
         void AddBinaryWhere(BinaryExpression expression)
