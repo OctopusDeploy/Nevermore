@@ -147,6 +147,21 @@ namespace Nevermore.Advanced.Queryable
                 return node;
             }
 
+            if (methodInfo.Name == nameof(System.Linq.Queryable.Count))
+            {
+                Visit(node.Arguments[0]);
+
+                if (node.Arguments.Count > 1)
+                {
+                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                    AddWhere(expression.Body);
+                }
+
+                columnSelection = new SelectCountSource();
+                queryType = QueryType.Count;
+                return node;
+            }
+
             throw new NotSupportedException();
         }
 
