@@ -191,6 +191,33 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var names = new[] { "Apple", "Orange", "Peach" };
+            var customers = t.Queryable<Customer>()
+                .Where(c => names.Contains(c.LastName))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
         public void First()
         {
             using var t = Store.BeginTransaction();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -238,6 +239,15 @@ namespace Nevermore.Advanced.Queryable
             if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
             {
                 AddStringMethodWhere(expression);
+            }
+
+            if (expression.Method.Name == "Contains")
+            {
+                var (fieldReference, _) = GetFieldReferenceAndType(expression.Arguments.Count == 1 ? expression.Arguments[0] : expression.Arguments[1]);
+                var values = (IEnumerable)GetValueFromExpression(expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0], typeof(IEnumerable));
+                var parameters = (from object x in values select AddParameter(x)).ToList();
+
+                whereClauses.Add(new ArrayWhereClause(fieldReference, ArraySqlOperand.In, parameters.Select(p => p.ParameterName)));
             }
         }
 
