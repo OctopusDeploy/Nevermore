@@ -19,6 +19,7 @@ namespace Nevermore
         GreaterThanOrEqual,
         LessThan,
         LessThanOrEqual,
-        NotEqual
+        NotEqual,
+        NotLike
     }
 }

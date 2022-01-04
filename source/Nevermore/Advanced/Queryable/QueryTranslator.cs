@@ -222,23 +222,33 @@ namespace Nevermore.Advanced.Queryable
             throw new NotSupportedException();
         }
 
-        void AddWhere(Expression expression)
+        void AddWhere(Expression expression, bool invert = false)
         {
             if (expression is BinaryExpression binaryExpression)
             {
-                AddBinaryWhere(binaryExpression);
+                AddBinaryWhere(binaryExpression, invert);
+                return;
             }
-            else if (expression is MethodCallExpression methodCallExpression)
+            if (expression is MethodCallExpression methodCallExpression)
             {
-                AddMethodCallWhere(methodCallExpression);
+                AddMethodCallWhere(methodCallExpression, invert);
+                return;
             }
+
+            if (expression is UnaryExpression { NodeType: ExpressionType.Not } unaryExpression)
+            {
+                AddWhere(unaryExpression.Operand, true);
+                return;
+            }
+
+            throw new NotSupportedException();
         }
 
-        void AddMethodCallWhere(MethodCallExpression expression)
+        void AddMethodCallWhere(MethodCallExpression expression, bool invert = false)
         {
             if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
             {
-                AddStringMethodWhere(expression);
+                AddStringMethodWhere(expression, invert);
             }
 
             if (expression.Method.Name == "Contains")
@@ -247,11 +257,14 @@ namespace Nevermore.Advanced.Queryable
                 var values = (IEnumerable)GetValueFromExpression(expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0], typeof(IEnumerable));
                 var parameters = (from object x in values select AddParameter(x)).ToList();
 
-                whereClauses.Add(new ArrayWhereClause(fieldReference, ArraySqlOperand.In, parameters.Select(p => p.ParameterName)));
+                whereClauses.Add(new ArrayWhereClause(
+                    fieldReference,
+                    invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In,
+                    parameters.Select(p => p.ParameterName)));
             }
         }
 
-        void AddStringMethodWhere(MethodCallExpression expression)
+        void AddStringMethodWhere(MethodCallExpression expression, bool invert = false)
         {
             var (fieldReference, _) = GetFieldReferenceAndType(expression.Object);
             var value = (string)GetValueFromExpression(expression.Arguments[0], typeof(string));
@@ -259,21 +272,21 @@ namespace Nevermore.Advanced.Queryable
             if (expression.Method.Name == nameof(string.Contains))
             {
                 var parameter = AddParameter($"%{value}%");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
             }
             else if (expression.Method.Name == nameof(string.StartsWith))
             {
                 var parameter = AddParameter($"{value}%");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
             }
             else if (expression.Method.Name == nameof(string.EndsWith))
             {
                 var parameter = AddParameter($"%{value}");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Like, parameter.ParameterName));
+                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
             }
         }
 
-        void AddBinaryWhere(BinaryExpression expression)
+        void AddBinaryWhere(BinaryExpression expression, bool invert = false)
         {
             if (expression.NodeType == ExpressionType.AndAlso)
             {
@@ -284,12 +297,12 @@ namespace Nevermore.Advanced.Queryable
 
             var op = expression.NodeType switch
             {
-                ExpressionType.Equal => UnarySqlOperand.Equal,
-                ExpressionType.NotEqual => UnarySqlOperand.NotEqual,
-                ExpressionType.LessThan => UnarySqlOperand.LessThan,
-                ExpressionType.LessThanOrEqual => UnarySqlOperand.LessThanOrEqual,
-                ExpressionType.GreaterThan => UnarySqlOperand.GreaterThan,
-                ExpressionType.GreaterThanOrEqual => UnarySqlOperand.GreaterThanOrEqual,
+                ExpressionType.Equal => invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal,
+                ExpressionType.NotEqual => invert ? UnarySqlOperand.Equal : UnarySqlOperand.NotEqual,
+                ExpressionType.LessThan => invert ? UnarySqlOperand.GreaterThanOrEqual : UnarySqlOperand.LessThan,
+                ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
+                ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
+                ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
                 _ => throw new NotSupportedException()
             };
 

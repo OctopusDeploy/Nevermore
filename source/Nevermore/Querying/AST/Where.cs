@@ -140,6 +140,8 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
             {
                 case UnarySqlOperand.Like:
                     return "LIKE";
+                case UnarySqlOperand.NotLike:
+                    return "NOT LIKE";
                 case UnarySqlOperand.Equal:
                     return "=";
                 case UnarySqlOperand.NotEqual:
