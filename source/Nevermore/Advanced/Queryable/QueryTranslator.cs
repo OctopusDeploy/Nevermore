@@ -265,6 +265,13 @@ namespace Nevermore.Advanced.Queryable
 
         void AddBinaryWhere(BinaryExpression expression)
         {
+            if (expression.NodeType == ExpressionType.AndAlso)
+            {
+                AddWhere(expression.Left);
+                AddWhere(expression.Right);
+                return;
+            }
+
             var op = expression.NodeType switch
             {
                 ExpressionType.Equal => UnarySqlOperand.Equal,

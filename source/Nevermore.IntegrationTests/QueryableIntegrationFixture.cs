@@ -165,6 +165,32 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereComposite()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Balance >= 50m && c.Balance <= 100)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
+        }
+
+        [Test]
         public void First()
         {
             using var t = Store.BeginTransaction();
