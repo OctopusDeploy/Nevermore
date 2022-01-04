@@ -9,7 +9,7 @@ namespace Nevermore.IntegrationTests
     public class QueryableIntegrationFixture : FixtureWithRelationalStore
     {
         [Test]
-        public void Where()
+        public void WhereEqual()
         {
             using var t = Store.BeginTransaction();
 
@@ -32,6 +32,136 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereNotEqual()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName != "Alice")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana", "Cherry");
+        }
+
+        [Test]
+        public void WhereGreaterThan()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Balance > 100)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
+        }
+
+        [Test]
+        public void WhereLessThan()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Balance < 100)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
+        }
+
+        [Test]
+        public void WhereGreaterThanOrEqual()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Balance >= 301.4m)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
+        }
+
+        [Test]
+        public void WhereLessThanOrEqual()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Balance <= 56.3m)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
         }
 
         [Test]
