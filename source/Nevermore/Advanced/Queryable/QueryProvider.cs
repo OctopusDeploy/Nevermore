@@ -27,18 +27,23 @@ namespace Nevermore.Advanced.Queryable
 
         public object Execute(Expression expression)
         {
-            var command = Translate(expression);
-            return queryExecutor.Stream<T>(command);
+            var (command, singleResult) = Translate(expression);
+            var stream = queryExecutor.Stream<T>(command);
+
+            if (singleResult)
+            {
+                return stream.FirstOrDefault();
+            }
+
+            return stream;
         }
 
         public TResult Execute<TResult>(Expression expression)
         {
-            var command = Translate(expression);
-            var enumerable = queryExecutor.Stream<T>(command);
-            return (TResult)enumerable;
+            return (TResult)Execute(expression);
         }
 
-        PreparedCommand Translate(Expression expression)
+        (PreparedCommand, bool) Translate(Expression expression)
         {
             return new QueryTranslator<T>(configuration).Translate(expression);
         }

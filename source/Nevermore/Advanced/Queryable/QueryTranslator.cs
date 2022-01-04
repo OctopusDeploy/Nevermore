@@ -14,12 +14,13 @@ namespace Nevermore.Advanced.Queryable
         readonly IRelationalStoreConfiguration configuration;
         readonly DocumentMap documentMap;
         readonly CommandParameterValues parameterValues = new();
+        readonly List<OrderByField> orderByClauses = new();
+        readonly List<IWhereClause> whereClauses = new();
 
         volatile int paramCounter;
         ISelectSource from;
-        IRowSelection rowSelection = null;
-        readonly List<OrderByField> orderByClauses = new();
-        readonly List<IWhereClause> whereClauses = new();
+        IRowSelection rowSelection;
+        bool singleResult;
 
         public QueryTranslator(IRelationalStoreConfiguration configuration)
         {
@@ -27,7 +28,7 @@ namespace Nevermore.Advanced.Queryable
             documentMap = configuration.DocumentMaps.Resolve<TDocument>();
         }
 
-        public PreparedCommand Translate(Expression expression)
+        public (PreparedCommand, bool) Translate(Expression expression)
         {
             Visit(expression);
 
@@ -39,7 +40,7 @@ namespace Nevermore.Advanced.Queryable
                 null,
                 orderByClauses.Any() ? new OrderBy(orderByClauses) : null);
             var sql = select.GenerateSql();
-            return new PreparedCommand(sql, parameterValues, RetriableOperation.Select);
+            return (new PreparedCommand(sql, parameterValues, RetriableOperation.Select), singleResult);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -57,6 +58,7 @@ namespace Nevermore.Advanced.Queryable
                 AddWhere(expression.Body);
                 return node;
             }
+
             if (methodInfo.Name == nameof(System.Linq.Queryable.OrderBy))
             {
                 if (node.Arguments.Count > 2)
@@ -69,6 +71,7 @@ namespace Nevermore.Advanced.Queryable
                 orderByClauses.Add(new OrderByField(new Column(fieldName)));
                 return node;
             }
+
             if (methodInfo.Name == nameof(System.Linq.Queryable.OrderByDescending))
             {
                 if (node.Arguments.Count > 2)
@@ -79,6 +82,21 @@ namespace Nevermore.Advanced.Queryable
                 Visit(node.Arguments[0]);
                 var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
                 orderByClauses.Add(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                return node;
+            }
+
+            if (methodInfo.Name == nameof(System.Linq.Queryable.First))
+            {
+                Visit(node.Arguments[0]);
+
+                if (node.Arguments.Count > 1)
+                {
+                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                    AddWhere(expression.Body);
+                }
+
+                rowSelection = new Top(1);
+                singleResult = true;
                 return node;
             }
 
