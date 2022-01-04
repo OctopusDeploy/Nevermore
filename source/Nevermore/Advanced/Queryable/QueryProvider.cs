@@ -27,15 +27,33 @@ namespace Nevermore.Advanced.Queryable
 
         public object Execute(Expression expression)
         {
-            var (command, singleResult) = Translate(expression);
-            var stream = queryExecutor.Stream<T>(command);
+            var (command, queryType) = Translate(expression);
 
-            if (singleResult)
+            if (queryType == QueryType.SelectMany)
             {
+                var stream = queryExecutor.Stream<T>(command);
+                return stream;
+            }
+
+            if (queryType == QueryType.SelectSingle)
+            {
+                var stream = queryExecutor.Stream<T>(command);
                 return stream.FirstOrDefault();
             }
 
-            return stream;
+            if (queryType == QueryType.Count)
+            {
+                var result = queryExecutor.ExecuteScalar<int>(command);
+                return result;
+            }
+
+            if (queryType == QueryType.Exists)
+            {
+                var result = queryExecutor.ExecuteScalar<bool>(command);
+                return result;
+            }
+
+            throw new Exception("Couldn't figure out what to do");
         }
 
         public TResult Execute<TResult>(Expression expression)
@@ -43,7 +61,7 @@ namespace Nevermore.Advanced.Queryable
             return (TResult)Execute(expression);
         }
 
-        (PreparedCommand, bool) Translate(Expression expression)
+        (PreparedCommand, QueryType) Translate(Expression expression)
         {
             return new QueryTranslator<T>(configuration).Translate(expression);
         }

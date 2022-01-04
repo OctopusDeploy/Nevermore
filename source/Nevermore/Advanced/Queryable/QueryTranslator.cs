@@ -20,7 +20,8 @@ namespace Nevermore.Advanced.Queryable
         volatile int paramCounter;
         ISelectSource from;
         IRowSelection rowSelection;
-        bool singleResult;
+        ISelectColumns columnSelection = null;
+        QueryType queryType = QueryType.SelectMany;
 
         public QueryTranslator(IRelationalStoreConfiguration configuration)
         {
@@ -28,19 +29,36 @@ namespace Nevermore.Advanced.Queryable
             documentMap = configuration.DocumentMaps.Resolve<TDocument>();
         }
 
-        public (PreparedCommand, bool) Translate(Expression expression)
+        public (PreparedCommand, QueryType) Translate(Expression expression)
         {
             Visit(expression);
 
-            var select = new Select(
-                rowSelection ?? new AllRows(),
-                new SelectAllSource(),
-                from,
-                whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
-                null,
-                orderByClauses.Any() ? new OrderBy(orderByClauses) : null);
-            var sql = select.GenerateSql();
-            return (new PreparedCommand(sql, parameterValues, RetriableOperation.Select), singleResult);
+            string sql;
+            if (queryType == QueryType.Exists)
+            {
+                var select = new Select(
+                    rowSelection ?? new AllRows(),
+                    new SelectAllSource(),
+                    from,
+                    whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
+                    null,
+                    null);
+                var trueParameter = AddParameter(true);
+                var falseParameter = AddParameter(false);
+                sql = new IfExpression(new ExistsExpression(select), new SelectConstant(trueParameter), new SelectConstant(falseParameter)).GenerateSql();
+            }
+            else
+            {
+                var select = new Select(
+                    rowSelection ?? new AllRows(),
+                    columnSelection ?? new SelectAllSource(),
+                    from,
+                    whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
+                    null,
+                    orderByClauses.Any() ? new OrderBy(orderByClauses) : null);
+                sql = select.GenerateSql();
+            }
+            return (new PreparedCommand(sql, parameterValues, RetriableOperation.Select), queryType);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -96,7 +114,7 @@ namespace Nevermore.Advanced.Queryable
                 }
 
                 rowSelection = new Top(1);
-                singleResult = true;
+                queryType = QueryType.SelectSingle;
                 return node;
             }
 
@@ -111,7 +129,21 @@ namespace Nevermore.Advanced.Queryable
                 }
 
                 rowSelection = new Top(1);
-                singleResult = true;
+                queryType = QueryType.SelectSingle;
+                return node;
+            }
+
+            if (methodInfo.Name == nameof(System.Linq.Queryable.Any))
+            {
+                Visit(node.Arguments[0]);
+
+                if (node.Arguments.Count > 1)
+                {
+                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                    AddWhere(expression.Body);
+                }
+
+                queryType = QueryType.Exists;
                 return node;
             }
 
