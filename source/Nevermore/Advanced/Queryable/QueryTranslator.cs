@@ -20,8 +20,10 @@ namespace Nevermore.Advanced.Queryable
         volatile int paramCounter;
         ISelectSource from;
         IRowSelection rowSelection;
-        ISelectColumns columnSelection = null;
+        ISelectColumns columnSelection;
         QueryType queryType = QueryType.SelectMany;
+        int? skip;
+        int? take;
 
         public QueryTranslator(IRelationalStoreConfiguration configuration)
         {
@@ -34,6 +36,7 @@ namespace Nevermore.Advanced.Queryable
             Visit(expression);
 
             string sql;
+            var generateRowNumbers = skip.HasValue || take.HasValue;
             if (queryType == QueryType.Exists)
             {
                 var select = new Select(
@@ -49,13 +52,40 @@ namespace Nevermore.Advanced.Queryable
             }
             else
             {
+                var orderBy = orderByClauses.Any() ? new OrderBy(orderByClauses) : new OrderBy(new[] { new OrderByField(new Column("Id")) });
+                var columns = columnSelection ?? new SelectAllSource();
                 var select = new Select(
                     rowSelection ?? new AllRows(),
-                    columnSelection ?? new SelectAllSource(),
+                    generateRowNumbers ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), new SelectAllSource() }) : columns,
                     from,
                     whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
                     null,
-                    orderByClauses.Any() ? new OrderBy(orderByClauses) : null);
+                    orderByClauses.Any() && !generateRowNumbers ? orderBy : null);
+
+                if (generateRowNumbers)
+                {
+                    var pagingFilters = new List<IWhereClause>();
+                    if (skip.HasValue)
+                    {
+                        var skipParam = AddParameter(skip.Value);
+                        pagingFilters.Add(new UnaryWhereClause(new WhereFieldReference("RowNum"), UnarySqlOperand.GreaterThan, skipParam.ParameterName));
+                    }
+
+                    if (take.HasValue)
+                    {
+                        var takeParam = AddParameter(take.Value - (skip ?? 0));
+                        pagingFilters.Add(new UnaryWhereClause(new WhereFieldReference("RowNum"), UnarySqlOperand.LessThanOrEqual, takeParam.ParameterName));
+                    }
+
+                    select = new Select(
+                        new AllRows(),
+                        new SelectAllFrom("aliased"),
+                        new SubquerySource(select, "aliased"),
+                        new Where(new AndClause(pagingFilters)),
+                        null,
+                        new OrderBy(new[] { new OrderByField(new Column("RowNum")) }));
+                }
+
                 sql = select.GenerateSql();
             }
             return (new PreparedCommand(sql, parameterValues, RetriableOperation.Select), queryType);
@@ -159,6 +189,20 @@ namespace Nevermore.Advanced.Queryable
 
                 columnSelection = new SelectCountSource();
                 queryType = QueryType.Count;
+                return node;
+            }
+
+            if (methodInfo.Name == nameof(System.Linq.Queryable.Take))
+            {
+                Visit(node.Arguments[0]);
+                take = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                return node;
+            }
+
+            if (methodInfo.Name == nameof(System.Linq.Queryable.Skip))
+            {
+                Visit(node.Arguments[0]);
+                skip = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
                 return node;
             }
 
