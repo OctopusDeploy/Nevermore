@@ -79,9 +79,59 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var customer = t.Queryable<Customer>()
-                .FirstOrDefault(c => c.FirstName == "Alice");
+                .First(c => c.FirstName == "Alice");
 
             customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void FirstOrDefault()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .FirstOrDefault();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void FirstOrDefaultWithPredicate()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .FirstOrDefault(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
         }
 
         [Test]

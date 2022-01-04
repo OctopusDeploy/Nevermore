@@ -100,6 +100,21 @@ namespace Nevermore.Advanced.Queryable
                 return node;
             }
 
+            if (methodInfo.Name == nameof(System.Linq.Queryable.FirstOrDefault))
+            {
+                Visit(node.Arguments[0]);
+
+                if (node.Arguments.Count > 1)
+                {
+                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                    AddWhere(expression.Body);
+                }
+
+                rowSelection = new Top(1);
+                singleResult = true;
+                return node;
+            }
+
             throw new NotSupportedException();
         }
 
