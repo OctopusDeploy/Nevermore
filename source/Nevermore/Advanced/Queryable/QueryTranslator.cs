@@ -34,7 +34,7 @@ namespace Nevermore.Advanced.Queryable
             var select = new Select(
                 rowSelection ?? new AllRows(),
                 new SelectAllSource(),
-                @from,
+                from,
                 whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
                 null,
                 orderByClauses.Any() ? new OrderBy(orderByClauses) : null);
@@ -56,6 +56,42 @@ namespace Nevermore.Advanced.Queryable
                 var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
                 AddWhere(expression.Body);
                 return node;
+            }
+            if (methodInfo.Name == nameof(System.Linq.Queryable.OrderBy))
+            {
+                if (node.Arguments.Count > 2)
+                {
+                    throw new NotSupportedException("OrderBy does not support custom comparers");
+                }
+
+                Visit(node.Arguments[0]);
+                var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                orderByClauses.Add(new OrderByField(new Column(fieldName)));
+                return node;
+            }
+            if (methodInfo.Name == nameof(System.Linq.Queryable.OrderByDescending))
+            {
+                if (node.Arguments.Count > 2)
+                {
+                    throw new NotSupportedException("OrderBy does not support custom comparers");
+                }
+
+                Visit(node.Arguments[0]);
+                var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                orderByClauses.Add(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                return node;
+            }
+
+            throw new NotSupportedException();
+        }
+
+        static string GetMemberNameFromKeySelectorExpression(Expression expression)
+        {
+            var expressionWithoutQuotes = StripQuotes(expression);
+
+            if (expressionWithoutQuotes is LambdaExpression { Body: MemberExpression { NodeType: ExpressionType.MemberAccess } memberExpression })
+            {
+                return memberExpression.Member.Name;
             }
 
             throw new NotSupportedException();
