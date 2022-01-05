@@ -243,6 +243,58 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereContainsOnDocument()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "RoleA", "RoleB" }},
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "RoleA", "RoleC" }},
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "RoleB", "RoleC" }}
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Roles.Contains("RoleC"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Bob", "Charlie");
+        }
+
+        [Test]
+        public void WhereContainsOnDocumentJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 78, 321 }},
+                new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 662, 91 }},
+                new Customer { FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] { 4, 18 }}
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.LuckyNumbers.Contains(4))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Charlie");
+        }
+
+        [Test]
         public void WhereNotContains()
         {
             using var t = Store.BeginTransaction();

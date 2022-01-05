@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
+using Nevermore.Util;
 
 namespace Nevermore.Advanced.Queryable
 {
@@ -253,14 +254,51 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression.Method.Name == "Contains")
             {
-                var (fieldReference, _) = GetFieldReferenceAndType(expression.Arguments.Count == 1 ? expression.Arguments[0] : expression.Arguments[1]);
-                var values = (IEnumerable)GetValueFromExpression(expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0], typeof(IEnumerable));
-                var parameters = (from object x in values select AddParameter(x)).ToList();
+                var left = expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0];
+                var right = expression.Arguments.Count == 1 ? expression.Arguments[0] : expression.Arguments[1];
 
-                whereClauses.Add(new ArrayWhereClause(
-                    fieldReference,
-                    invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In,
-                    parameters.Select(p => p.ParameterName)));
+                if (left is MemberExpression memberExpressionL && memberExpressionL.IsBasedOff<ParameterExpression>())
+                {
+                    var (fieldReference, type) = GetFieldReferenceAndType(left);
+                    var value = GetValueFromExpression(right, type);
+
+                    if (fieldReference is WhereFieldReference)
+                    {
+                        var param = AddParameter($"%|{value}|%");
+                        whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, param.ParameterName));
+                        return;
+                    }
+
+                    if (fieldReference is JsonValueFieldReference)
+                    {
+                        var param = AddParameter(value);
+                        var op = invert ? "NOT IN" : "IN";
+                        var jsonPath = GetJsonPath(memberExpressionL);
+                        var dbType = value switch
+                        {
+                            string => "nvarchar(max)",
+                            int => "int",
+                            double => "double",
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        whereClauses.Add(new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], '{jsonPath}') WITH ([Val] {dbType} '$'))"));
+                        return;
+                    }
+                }
+                else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())
+                {
+                    var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
+                    var (fieldReference, _) = GetFieldReferenceAndType(right);
+                    var parameters = (from object x in values select AddParameter(x)).ToList();
+
+                    whereClauses.Add(new ArrayWhereClause(
+                        fieldReference,
+                        invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In,
+                        parameters.Select(p => p.ParameterName)));
+                    return;
+                }
+
+                throw new NotSupportedException();
             }
         }
 
