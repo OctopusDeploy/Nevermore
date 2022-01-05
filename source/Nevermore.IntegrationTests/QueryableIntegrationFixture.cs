@@ -423,6 +423,35 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void SkipAndTake()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" },
+                new Customer { FirstName = "Dan", LastName = "Durian" },
+                new Customer { FirstName = "Erin", LastName = "Eggplant" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Skip(2)
+                .Take(2)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Durian");
+        }
+
+        [Test]
         public void Count()
         {
             using var t = Store.BeginTransaction();

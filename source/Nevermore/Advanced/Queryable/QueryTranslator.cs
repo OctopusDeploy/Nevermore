@@ -74,7 +74,7 @@ namespace Nevermore.Advanced.Queryable
 
                     if (take.HasValue)
                     {
-                        var takeParam = AddParameter(take.Value - (skip ?? 0));
+                        var takeParam = AddParameter(take.Value + (skip ?? 0));
                         pagingFilters.Add(new UnaryWhereClause(new WhereFieldReference("RowNum"), UnarySqlOperand.LessThanOrEqual, takeParam.ParameterName));
                     }
 
