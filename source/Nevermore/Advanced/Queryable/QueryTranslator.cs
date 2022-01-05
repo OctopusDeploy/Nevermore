@@ -53,11 +53,11 @@ namespace Nevermore.Advanced.Queryable
             }
             else
             {
-                var orderBy = orderByClauses.Any() ? new OrderBy(orderByClauses) : new OrderBy(new[] { new OrderByField(new Column("Id")) });
-                var columns = columnSelection ?? new SelectAllSource();
+                var orderBy = orderByClauses.Any() ? new OrderBy(orderByClauses) : GetDefaultOrderBy();
+                var columns = columnSelection ?? new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
                 var select = new Select(
                     rowSelection ?? new AllRows(),
-                    generateRowNumbers ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), new SelectAllSource() }) : columns,
+                    generateRowNumbers ? new AggregateSelectColumns(new[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
                     from,
                     whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
                     null,
@@ -80,7 +80,7 @@ namespace Nevermore.Advanced.Queryable
 
                     select = new Select(
                         new AllRows(),
-                        new SelectAllFrom("aliased"),
+                        new SelectAllColumnsWithTableAliasJsonLast("aliased", GetDocumentColumns().ToList()),
                         new SubquerySource(select, "aliased"),
                         new Where(new AndClause(pagingFilters)),
                         null,
@@ -376,7 +376,7 @@ namespace Nevermore.Advanced.Queryable
             if (node.Value is IQueryable q && q.ElementType == typeof(TDocument))
             {
                 var schema = documentMap.SchemaName ?? configuration.DefaultSchema;
-                from = new SimpleTableSource(documentMap.TableName, schema, new[] { "*" });
+                from = new SimpleTableSource(documentMap.TableName, schema, GetDocumentColumns().ToArray());
             }
             else
             {
@@ -384,6 +384,41 @@ namespace Nevermore.Advanced.Queryable
             }
 
             return node;
+        }
+
+        IEnumerable<string> GetDocumentColumns()
+        {
+            yield return documentMap.IdColumn!.ColumnName;
+
+            if (documentMap.TypeResolutionColumn is not null)
+            {
+                yield return documentMap.TypeResolutionColumn.ColumnName;
+            }
+
+            foreach (var column in documentMap.Columns)
+            {
+                yield return column.ColumnName;
+            }
+
+            if (documentMap.RowVersionColumn is not null)
+            {
+                yield return documentMap.RowVersionColumn.ColumnName;
+            }
+
+            if (new[] { JsonStorageFormat.TextOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(documentMap.JsonStorageFormat))
+            {
+                yield return "JSON";
+            }
+
+            if (new[] { JsonStorageFormat.CompressedOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(documentMap.JsonStorageFormat))
+            {
+                yield return "JSONBlob";
+            }
+        }
+
+        OrderBy GetDefaultOrderBy()
+        {
+            return new OrderBy(new[] { new OrderByField(new Column(documentMap.IdColumn!.ColumnName)) });
         }
     }
 }
