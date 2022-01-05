@@ -355,12 +355,34 @@ namespace Nevermore.Advanced.Queryable
             if (expression is UnaryExpression unaryExpression)
                 expression = unaryExpression.Operand;
 
-            if (expression is MemberExpression { Member: PropertyInfo propertyInfo })
+            if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
             {
-                return (new WhereFieldReference(propertyInfo.Name), propertyInfo.PropertyType);
+                var column = documentMap.Columns.FirstOrDefault(c => c.Property == propertyInfo);
+                if (column is not null)
+                {
+                    return (new WhereFieldReference(column.ColumnName), propertyInfo.PropertyType);
+                }
+
+                if (documentMap.HasJsonColumn())
+                {
+                    var jsonPath = GetJsonPath(memberExpression);
+                    return (new JsonValueFieldReference(jsonPath), propertyInfo.PropertyType);
+                }
             }
 
             throw new NotSupportedException();
+        }
+
+        string GetJsonPath(MemberExpression memberExpression)
+        {
+            var segments = new List<string>();
+            do
+            {
+                segments.Add(memberExpression.Member.Name);
+                memberExpression = memberExpression.Expression as MemberExpression;
+            } while (memberExpression is not null);
+            segments.Reverse();
+            return "$." + string.Join(".", segments);
         }
 
         static Expression StripQuotes(Expression expression)
@@ -405,12 +427,12 @@ namespace Nevermore.Advanced.Queryable
                 yield return documentMap.RowVersionColumn.ColumnName;
             }
 
-            if (new[] { JsonStorageFormat.TextOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(documentMap.JsonStorageFormat))
+            if (documentMap.HasJsonColumn())
             {
                 yield return "JSON";
             }
 
-            if (new[] { JsonStorageFormat.CompressedOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(documentMap.JsonStorageFormat))
+            if (documentMap.HasJsonBlobColumn())
             {
                 yield return "JSONBlob";
             }

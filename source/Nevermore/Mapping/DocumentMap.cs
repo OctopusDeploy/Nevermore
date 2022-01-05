@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Nevermore.Advanced.InstanceTypeResolvers;
@@ -332,5 +333,8 @@ namespace Nevermore.Mapping
             var readerWriter = IdColumn.PropertyHandler;
             return readerWriter.Read(document);
         }
+
+        public bool HasJsonColumn() => new[] { JsonStorageFormat.TextOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(JsonStorageFormat);
+        public bool HasJsonBlobColumn() => new[] { JsonStorageFormat.CompressedOnly, JsonStorageFormat.MixedPreferCompressed, JsonStorageFormat.MixedPreferText }.Contains(JsonStorageFormat);
     }
 }

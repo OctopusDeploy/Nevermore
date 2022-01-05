@@ -33,6 +33,31 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
         }
+        [Test]
+        public void WhereEqualJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(m => m.Endpoint.Name == "Tentacle A")
+                .ToList();
+
+            customers.Select(m => m.Name).Should().BeEquivalentTo("Machine A");
+        }
 
         [Test]
         public void WhereNotEqual()
