@@ -263,6 +263,110 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereUnaryBool()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsVip = false },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsVip = true },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsVip = false }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.IsVip)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
+        }
+
+        [Test]
+        public void WhereNotUnaryBool()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsVip = false },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsVip = true },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsVip = false }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => !c.IsVip)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
+        }
+
+        [Test]
+        public void WhereUnaryBoolJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = false },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = true },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = false }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.IsEmployee)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
+        }
+
+        [Test]
+        public void WhereNotUnaryBoolJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = false },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = true },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = false }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => !c.IsEmployee)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
+        }
+
+        [Test]
         public void WhereComposite()
         {
             using var t = Store.BeginTransaction();

@@ -242,6 +242,14 @@ namespace Nevermore.Advanced.Queryable
                 return;
             }
 
+            if (expression is MemberExpression { Member: { MemberType: MemberTypes.Property } and PropertyInfo propertyInfo } && propertyInfo.PropertyType == typeof(bool))
+            {
+                var (fieldReference, type) = GetFieldReferenceAndType(expression);
+                var param = AddParameter(!invert);
+                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Equal, param.ParameterName));
+                return;
+            }
+
             throw new NotSupportedException();
         }
 
