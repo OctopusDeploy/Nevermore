@@ -395,6 +395,11 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
             {
+                if (documentMap.IdColumn!.Property == propertyInfo)
+                {
+                    return (new WhereFieldReference(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
+                }
+
                 var column = documentMap.Columns.FirstOrDefault(c => c.Property == propertyInfo);
                 if (column is not null)
                 {

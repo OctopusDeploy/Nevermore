@@ -33,6 +33,79 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
         }
+
+        [Test]
+        public void WhereEqualIdColumn()
+        {
+            using var t = Store.BeginTransaction();
+
+            var alice = new Customer { FirstName = "Alice", LastName = "Apple" };
+            var bob = new Customer { FirstName = "Bob", LastName = "Banana" };
+            var charlie = new Customer { FirstName = "Charlie", LastName = "Cherry" };
+
+            foreach (var c in new[] { alice, bob, charlie })
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Id == alice.Id)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualTypeResolutionColumn()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testBrands = new Brand[]
+            {
+                new BrandA { Name = "First Brand" },
+                new BrandA { Name = "Another Brand" },
+                new BrandB { Name = "Last Brand" }
+            };
+
+            foreach (var c in testBrands)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var brands = t.Queryable<Brand>()
+                .Where(b => b.Type == "BrandB")
+                .ToList();
+
+            brands.Select(c => c.Name).Should().BeEquivalentTo("Last Brand");
+        }
+
+        [Test]
+        public void WhereEqualRowVersionColumn()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testDoc1 = new DocumentWithRowVersion { Name = "First Document" };
+            var testDoc2 = new DocumentWithRowVersion { Name = "Second Document" };
+            var testDoc3 = new DocumentWithRowVersion { Name = "Third Document" };
+
+            foreach (var c in new[] { testDoc1, testDoc2, testDoc3 })
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var documents = t.Queryable<DocumentWithRowVersion>()
+                .Where(d => d.RowVersion == testDoc3.RowVersion)
+                .ToList();
+
+            documents.Select(d => d.Name).Should().BeEquivalentTo("Third Document");
+        }
+
         [Test]
         public void WhereEqualJson()
         {
