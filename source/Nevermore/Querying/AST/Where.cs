@@ -45,6 +45,19 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
         public override string ToString() => GenerateSql();
     }
 
+    public class OrClause : IWhereClause
+    {
+        readonly IReadOnlyList<IWhereClause> subClauses;
+
+        public OrClause(IReadOnlyList<IWhereClause> subClauses)
+        {
+            this.subClauses = subClauses;
+        }
+
+        public string GenerateSql() => $"({string.Join(@" OR ", subClauses.Select(c => $"({c.GenerateSql()})"))})";
+        public override string ToString() => GenerateSql();
+    }
+
     public class ArrayWhereClause : IWhereClause
     {
         readonly IWhereFieldReference whereFieldReference;

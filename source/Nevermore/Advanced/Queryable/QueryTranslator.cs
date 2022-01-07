@@ -342,28 +342,39 @@ namespace Nevermore.Advanced.Queryable
                 return;
             }
 
-            var op = expression.NodeType switch
+            if (expression.NodeType == ExpressionType.OrElse && expression.Left is BinaryExpression left && expression.Right is BinaryExpression right)
             {
-                ExpressionType.Equal => invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal,
-                ExpressionType.NotEqual => invert ? UnarySqlOperand.Equal : UnarySqlOperand.NotEqual,
-                ExpressionType.LessThan => invert ? UnarySqlOperand.GreaterThanOrEqual : UnarySqlOperand.LessThan,
-                ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
-                ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
-                ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
-                _ => throw new NotSupportedException()
-            };
-
-            var (fieldReference, propertyType) = GetFieldReferenceAndType(expression.Left);
-            var value = GetValueFromExpression(expression.Right, propertyType);
-
-            if (value == null && op is UnarySqlOperand.Equal or UnarySqlOperand.NotEqual)
-            {
-                whereClauses.Add(new IsNullClause(fieldReference, op == UnarySqlOperand.NotEqual));
+                var leftClause = CreateBinaryWhereClause(left);
+                var rightClause = CreateBinaryWhereClause(right);
+                whereClauses.Add(new OrClause(new[] { leftClause, rightClause }));
+                return;
             }
-            else
+
+            whereClauses.Add(CreateBinaryWhereClause(expression));
+
+            IWhereClause CreateBinaryWhereClause(BinaryExpression binaryExpression)
             {
+                var op = binaryExpression.NodeType switch
+                {
+                    ExpressionType.Equal => invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal,
+                    ExpressionType.NotEqual => invert ? UnarySqlOperand.Equal : UnarySqlOperand.NotEqual,
+                    ExpressionType.LessThan => invert ? UnarySqlOperand.GreaterThanOrEqual : UnarySqlOperand.LessThan,
+                    ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
+                    ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
+                    ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
+                    _ => throw new NotSupportedException()
+                };
+
+                var (fieldReference, propertyType) = GetFieldReferenceAndType(binaryExpression.Left);
+                var value = GetValueFromExpression(binaryExpression.Right, propertyType);
+
+                if (value == null && op is UnarySqlOperand.Equal or UnarySqlOperand.NotEqual)
+                {
+                    return new IsNullClause(fieldReference, op == UnarySqlOperand.NotEqual);
+                }
+
                 var parameter = AddParameter(value);
-                whereClauses.Add(new UnaryWhereClause(fieldReference, op, parameter.ParameterName));
+                return new UnaryWhereClause(fieldReference, op, parameter.ParameterName);
             }
         }
 
