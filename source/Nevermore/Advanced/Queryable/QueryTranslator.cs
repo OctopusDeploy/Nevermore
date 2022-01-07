@@ -305,9 +305,9 @@ namespace Nevermore.Advanced.Queryable
                         parameters.Select(p => p.ParameterName)));
                     return;
                 }
-
-                throw new NotSupportedException();
             }
+
+            throw new NotSupportedException();
         }
 
         void AddStringMethodWhere(MethodCallExpression expression, bool invert = false)
