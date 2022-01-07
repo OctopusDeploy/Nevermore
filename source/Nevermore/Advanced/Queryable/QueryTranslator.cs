@@ -258,6 +258,7 @@ namespace Nevermore.Advanced.Queryable
             if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
             {
                 AddStringMethodWhere(expression, invert);
+                return;
             }
 
             if (expression.Method.Name == "Contains")
