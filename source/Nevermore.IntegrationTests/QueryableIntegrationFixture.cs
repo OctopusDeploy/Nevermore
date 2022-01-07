@@ -373,9 +373,9 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
-                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
-                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m, IsEmployee = false },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m, IsEmployee = true },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m, IsEmployee = false }
             };
 
             foreach (var c in testCustomers)
@@ -386,7 +386,7 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var customers = t.Queryable<Customer>()
-                .Where(c => c.Balance >= 50m && c.Balance <= 100)
+                .Where(c => c.Balance >= 50m && c.IsEmployee && c.FirstName.StartsWith("B"))
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana");
@@ -399,9 +399,9 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
-                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
-                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m, IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m, IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m, IsEmployee = false }
             };
 
             foreach (var c in testCustomers)
@@ -412,7 +412,7 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var customers = t.Queryable<Customer>()
-                .Where(c => c.Balance < 100m || c.Balance > 900)
+                .Where(c => c.Balance < 100m || c.IsEmployee || c.LastName.Contains("a"))
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Banana");

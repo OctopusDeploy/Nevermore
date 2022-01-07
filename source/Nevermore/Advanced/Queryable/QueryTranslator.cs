@@ -223,42 +223,42 @@ namespace Nevermore.Advanced.Queryable
             throw new NotSupportedException();
         }
 
-        void AddWhere(Expression expression, bool invert = false)
+        void AddWhere(Expression expression)
+        {
+            whereClauses.Add(CreateWhereClause(expression));
+        }
+
+        IWhereClause CreateWhereClause(Expression expression, bool invert = false)
         {
             if (expression is BinaryExpression binaryExpression)
             {
-                AddBinaryWhere(binaryExpression, invert);
-                return;
+                return CreateBinaryWhere(binaryExpression);
             }
             if (expression is MethodCallExpression methodCallExpression)
             {
-                AddMethodCallWhere(methodCallExpression, invert);
-                return;
+                return CreateMethodCallWhere(methodCallExpression, invert);
             }
 
             if (expression is UnaryExpression { NodeType: ExpressionType.Not } unaryExpression)
             {
-                AddWhere(unaryExpression.Operand, true);
-                return;
+                return CreateWhereClause(unaryExpression.Operand, true);
             }
 
             if (expression is MemberExpression { Member: { MemberType: MemberTypes.Property } and PropertyInfo propertyInfo } && propertyInfo.PropertyType == typeof(bool))
             {
                 var (fieldReference, type) = GetFieldReferenceAndType(expression);
                 var param = AddParameter(!invert);
-                whereClauses.Add(new UnaryWhereClause(fieldReference, UnarySqlOperand.Equal, param.ParameterName));
-                return;
+                return new UnaryWhereClause(fieldReference, UnarySqlOperand.Equal, param.ParameterName);
             }
 
             throw new NotSupportedException();
         }
 
-        void AddMethodCallWhere(MethodCallExpression expression, bool invert = false)
+        IWhereClause CreateMethodCallWhere(MethodCallExpression expression, bool invert = false)
         {
             if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
             {
-                AddStringMethodWhere(expression, invert);
-                return;
+                return CreateStringMethodWhere(expression, invert);
             }
 
             if (expression.Method.Name == "Contains")
@@ -274,8 +274,7 @@ namespace Nevermore.Advanced.Queryable
                     if (fieldReference is WhereFieldReference)
                     {
                         var param = AddParameter($"%|{value}|%");
-                        whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, param.ParameterName));
-                        return;
+                        return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, param.ParameterName);
                     }
 
                     if (fieldReference is JsonValueFieldReference)
@@ -290,8 +289,7 @@ namespace Nevermore.Advanced.Queryable
                             double => "double",
                             _ => throw new ArgumentOutOfRangeException()
                         };
-                        whereClauses.Add(new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], '{jsonPath}') WITH ([Val] {dbType} '$'))"));
-                        return;
+                        return new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], '{jsonPath}') WITH ([Val] {dbType} '$'))");
                     }
                 }
                 else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())
@@ -300,18 +298,14 @@ namespace Nevermore.Advanced.Queryable
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
                     var parameters = (from object x in values select AddParameter(x)).ToList();
 
-                    whereClauses.Add(new ArrayWhereClause(
-                        fieldReference,
-                        invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In,
-                        parameters.Select(p => p.ParameterName)));
-                    return;
+                    return new ArrayWhereClause(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, parameters.Select(p => p.ParameterName));
                 }
             }
 
             throw new NotSupportedException();
         }
 
-        void AddStringMethodWhere(MethodCallExpression expression, bool invert = false)
+        IWhereClause CreateStringMethodWhere(MethodCallExpression expression, bool invert = false)
         {
             var (fieldReference, _) = GetFieldReferenceAndType(expression.Object);
             var value = (string)GetValueFromExpression(expression.Arguments[0], typeof(string));
@@ -319,63 +313,59 @@ namespace Nevermore.Advanced.Queryable
             if (expression.Method.Name == nameof(string.Contains))
             {
                 var parameter = AddParameter($"%{value}%");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
+                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
             }
-            else if (expression.Method.Name == nameof(string.StartsWith))
+            if (expression.Method.Name == nameof(string.StartsWith))
             {
                 var parameter = AddParameter($"{value}%");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
+                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
             }
-            else if (expression.Method.Name == nameof(string.EndsWith))
+            if (expression.Method.Name == nameof(string.EndsWith))
             {
                 var parameter = AddParameter($"%{value}");
-                whereClauses.Add(new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName));
+                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
             }
+
+            throw new NotSupportedException();
         }
 
-        void AddBinaryWhere(BinaryExpression expression, bool invert = false)
+        IWhereClause CreateBinaryWhere(BinaryExpression expression, bool invert = false)
         {
             if (expression.NodeType == ExpressionType.AndAlso)
             {
-                AddWhere(expression.Left);
-                AddWhere(expression.Right);
-                return;
+                var leftClause = CreateWhereClause(expression.Left);
+                var rightClause = CreateWhereClause(expression.Right);
+                return new AndClause(new[] { leftClause, rightClause });
             }
 
-            if (expression.NodeType == ExpressionType.OrElse && expression.Left is BinaryExpression left && expression.Right is BinaryExpression right)
+            if (expression.NodeType == ExpressionType.OrElse)
             {
-                var leftClause = CreateBinaryWhereClause(left);
-                var rightClause = CreateBinaryWhereClause(right);
-                whereClauses.Add(new OrClause(new[] { leftClause, rightClause }));
-                return;
+                var leftClause = CreateWhereClause(expression.Left);
+                var rightClause = CreateWhereClause(expression.Right);
+                return new OrClause(new[] { leftClause, rightClause });
             }
 
-            whereClauses.Add(CreateBinaryWhereClause(expression));
-
-            IWhereClause CreateBinaryWhereClause(BinaryExpression binaryExpression)
+            var op = expression.NodeType switch
             {
-                var op = binaryExpression.NodeType switch
-                {
-                    ExpressionType.Equal => invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal,
-                    ExpressionType.NotEqual => invert ? UnarySqlOperand.Equal : UnarySqlOperand.NotEqual,
-                    ExpressionType.LessThan => invert ? UnarySqlOperand.GreaterThanOrEqual : UnarySqlOperand.LessThan,
-                    ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
-                    ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
-                    ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
-                    _ => throw new NotSupportedException()
-                };
+                ExpressionType.Equal => invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal,
+                ExpressionType.NotEqual => invert ? UnarySqlOperand.Equal : UnarySqlOperand.NotEqual,
+                ExpressionType.LessThan => invert ? UnarySqlOperand.GreaterThanOrEqual : UnarySqlOperand.LessThan,
+                ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
+                ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
+                ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
+                _ => throw new NotSupportedException()
+            };
 
-                var (fieldReference, propertyType) = GetFieldReferenceAndType(binaryExpression.Left);
-                var value = GetValueFromExpression(binaryExpression.Right, propertyType);
+            var (fieldReference, propertyType) = GetFieldReferenceAndType(expression.Left);
+            var value = GetValueFromExpression(expression.Right, propertyType);
 
-                if (value == null && op is UnarySqlOperand.Equal or UnarySqlOperand.NotEqual)
-                {
-                    return new IsNullClause(fieldReference, op == UnarySqlOperand.NotEqual);
-                }
-
-                var parameter = AddParameter(value);
-                return new UnaryWhereClause(fieldReference, op, parameter.ParameterName);
+            if (value == null && op is UnarySqlOperand.Equal or UnarySqlOperand.NotEqual)
+            {
+                return new IsNullClause(fieldReference, op == UnarySqlOperand.NotEqual);
             }
+
+            var parameter = AddParameter(value);
+            return new UnaryWhereClause(fieldReference, op, parameter.ParameterName);
         }
 
         Parameter AddParameter(object value)
