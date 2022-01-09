@@ -781,6 +781,30 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void CountWithOrderBy()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Bandit" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "Chief" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Cherry Bomb" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var count = t.Queryable<Customer>().OrderBy(c => c.LastName).Count(c => c.Nickname.StartsWith("C"));
+
+            count.Should().Be(2);
+        }
+
+        [Test]
         public void OrderBy()
         {
             using var t = Store.BeginTransaction();

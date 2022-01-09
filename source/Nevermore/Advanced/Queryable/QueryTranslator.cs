@@ -62,7 +62,7 @@ namespace Nevermore.Advanced.Queryable
                     from,
                     whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
                     null,
-                    orderByClauses.Any() && !generateRowNumbers ? orderBy : null);
+                    orderByClauses.Any() && !generateRowNumbers && columnSelection is not SelectCountSource ? orderBy : null);
 
                 if (generateRowNumbers)
                 {
