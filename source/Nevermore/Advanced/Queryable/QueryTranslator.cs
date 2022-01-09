@@ -96,9 +96,19 @@ namespace Nevermore.Advanced.Queryable
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             var methodInfo = node.Method;
-            if (methodInfo.DeclaringType != typeof(System.Linq.Queryable))
+            if (methodInfo.DeclaringType != typeof(System.Linq.Queryable) && methodInfo.DeclaringType != typeof(NevermoreQueryableExtensions))
             {
                 throw new NotSupportedException();
+            }
+
+            if (methodInfo.Name == nameof(NevermoreQueryableExtensions.WhereCustom))
+            {
+                Visit(node.Arguments[0]);
+                if (node.Arguments[1] is ConstantExpression { Value: string } constantExpression)
+                {
+                    whereClauses.Add(new CustomWhereClause((string)constantExpression.Value));
+                    return node;
+                }
             }
 
             if (methodInfo.Name == nameof(System.Linq.Queryable.Where))

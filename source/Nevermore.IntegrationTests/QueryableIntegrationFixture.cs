@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using FluentAssertions;
+using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
@@ -873,6 +874,30 @@ namespace Nevermore.IntegrationTests
             var anyCustomers = t.Queryable<Customer>().Any(c => c.Nickname == "Warlock");
 
             anyCustomers.Should().BeFalse();
+        }
+
+        [Test]
+        public void WhereCustomSql()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>().WhereCustom("[Roles] LIKE '%|B%'").ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana", "Cherry");
         }
     }
 }
