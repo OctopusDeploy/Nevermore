@@ -475,19 +475,9 @@ namespace Nevermore.Advanced.Queryable
         {
             yield return documentMap.IdColumn!.ColumnName;
 
-            if (documentMap.TypeResolutionColumn is not null)
-            {
-                yield return documentMap.TypeResolutionColumn.ColumnName;
-            }
-
             foreach (var column in documentMap.Columns)
             {
                 yield return column.ColumnName;
-            }
-
-            if (documentMap.RowVersionColumn is not null)
-            {
-                yield return documentMap.RowVersionColumn.ColumnName;
             }
 
             if (documentMap.HasJsonColumn())
