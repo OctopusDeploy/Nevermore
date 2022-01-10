@@ -416,7 +416,9 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
             {
-                if (memberExpression.Expression is ParameterExpression parameterExpression && parameterExpression.Type == typeof(TDocument))
+                var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
+                var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
+                if (childPropertyExpression == null && parameterExpression.Type == typeof(TDocument))
                 {
                     if (documentMap.IdColumn!.Property.Matches(propertyInfo))
                     {
