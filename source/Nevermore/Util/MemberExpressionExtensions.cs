@@ -6,16 +6,28 @@ namespace Nevermore.Util
     {
         public static bool IsBasedOff<TExpression>(this MemberExpression memberExpression) where TExpression : Expression
         {
-            do
-            {
-                if (memberExpression.Expression is TExpression)
-                {
-                    return true;
-                }
-                memberExpression = memberExpression.Expression as MemberExpression;
-            } while (memberExpression is not null);
+            var visitor = new FindExpressionTypeVisitor<TExpression>();
+            return visitor.Find(memberExpression);
+        }
 
-            return false;
+        class FindExpressionTypeVisitor<TExpression> : ExpressionVisitor where TExpression : Expression
+        {
+            bool found;
+
+            public bool Find(Expression expression)
+            {
+                base.Visit(expression);
+                return found;
+            }
+
+            public override Expression Visit(Expression node)
+            {
+                if (node is TExpression)
+                {
+                    found = true;
+                }
+                return base.Visit(node);
+            }
         }
     }
 }
