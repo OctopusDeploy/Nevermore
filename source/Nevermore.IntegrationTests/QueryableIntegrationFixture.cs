@@ -93,6 +93,9 @@ namespace Nevermore.IntegrationTests
             var testDoc2 = new DocumentWithRowVersion { Name = "Second Document" };
             var testDoc3 = new DocumentWithRowVersion { Name = "Third Document" };
 
+            // ChaosSqlCommand is set to retry some of the reads which breaks row versioning code because INSERTS/UPDATES,
+            // even executed via SqlReader, must not be retired.
+            NoMonkeyBusiness();
             foreach (var c in new[] { testDoc1, testDoc2, testDoc3 })
             {
                 t.Insert(c);
