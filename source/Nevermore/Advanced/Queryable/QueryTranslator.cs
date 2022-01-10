@@ -416,15 +416,18 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
             {
-                if (documentMap.IdColumn!.Property == propertyInfo)
+                if (memberExpression.Expression is ParameterExpression parameterExpression && parameterExpression.Type == typeof(TDocument))
                 {
-                    return (new WhereFieldReference(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
-                }
+                    if (documentMap.IdColumn!.Property.Matches(propertyInfo))
+                    {
+                        return (new WhereFieldReference(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
+                    }
 
-                var column = documentMap.Columns.FirstOrDefault(c => c.Property == propertyInfo);
-                if (column is not null)
-                {
-                    return (new WhereFieldReference(column.ColumnName), propertyInfo.PropertyType);
+                    var column = documentMap.Columns.FirstOrDefault(c => c.Property.Matches(propertyInfo));
+                    if (column is not null)
+                    {
+                        return (new WhereFieldReference(column.ColumnName), propertyInfo.PropertyType);
+                    }
                 }
 
                 if (documentMap.HasJsonColumn())
