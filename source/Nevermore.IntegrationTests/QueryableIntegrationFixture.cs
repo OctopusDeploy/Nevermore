@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
@@ -447,6 +448,33 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
+        public void WhereContainsEmpty()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var names = Array.Empty<string>();
+            var customers = t.Queryable<Customer>()
+                .Where(c => names.Contains(c.LastName))
+                .ToList();
+
+            customers.Should().BeEmpty();
         }
 
         [Test]

@@ -307,8 +307,9 @@ namespace Nevermore.Advanced.Queryable
                     var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
                     var parameters = (from object x in values select AddParameter(x)).ToList();
-
-                    return new ArrayWhereClause(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, parameters.Select(p => p.ParameterName));
+                    return parameters.Count == 0
+                        ? new CustomWhereClause("1 = 0")
+                        : new ArrayWhereClause(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, parameters.Select(p => p.ParameterName));
                 }
             }
 
