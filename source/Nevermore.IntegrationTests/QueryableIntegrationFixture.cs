@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
@@ -658,6 +659,31 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public async Task FirstOrDefaultAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .FirstOrDefaultAsync();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
         public void FirstOrDefaultWithPredicate()
         {
             using var t = Store.BeginTransaction();
@@ -788,6 +814,30 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public async Task CountAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var count = await t.Queryable<Customer>().CountAsync();
+
+            count.Should().Be(3);
+        }
+
+        [Test]
         public void CountWithPredicate()
         {
             using var t = Store.BeginTransaction();
@@ -807,6 +857,30 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var count = t.Queryable<Customer>().Count(c => c.Nickname.StartsWith("C"));
+
+            count.Should().Be(2);
+        }
+
+        [Test]
+        public async Task CountWithPredicateAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Bandit" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "Chief" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Cherry Bomb" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var count = await t.Queryable<Customer>().CountAsync(c => c.Nickname.StartsWith("C"));
 
             count.Should().Be(2);
         }
@@ -908,6 +982,30 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public async Task AnyAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Omega" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "Alpha" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Zeta" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var anyCustomers = await t.Queryable<Customer>().AnyAsync();
+
+            anyCustomers.Should().BeTrue();
+        }
+
+        [Test]
         public void AnyWithPredicate()
         {
             using var t = Store.BeginTransaction();
@@ -927,6 +1025,30 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var anyCustomers = t.Queryable<Customer>().Any(c => c.Nickname == "Warlock");
+
+            anyCustomers.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task AnyWithPredicateAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Omega" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "Alpha" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Zeta" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var anyCustomers = await t.Queryable<Customer>().AnyAsync(c => c.Nickname == "Warlock");
 
             anyCustomers.Should().BeFalse();
         }
@@ -953,6 +1075,30 @@ namespace Nevermore.IntegrationTests
             var customers = t.Queryable<Customer>().WhereCustom("[Roles] LIKE '%|B%'").ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana", "Cherry");
+        }
+
+        [Test]
+        public async Task ToListAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Where(c => c.FirstName == "Alice").ToListAsync();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
         }
     }
 }
