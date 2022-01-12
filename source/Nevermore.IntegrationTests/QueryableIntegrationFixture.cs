@@ -709,6 +709,31 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public async Task FirstOrDefaultWithPredicateAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .FirstOrDefaultAsync(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
+        }
+
+        [Test]
         public void Skip()
         {
             using var t = Store.BeginTransaction();
