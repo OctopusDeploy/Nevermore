@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace Nevermore.Advanced.Queryable
 {
-    internal class Query<T> : IOrderedQueryable<T>
+    internal class Query<T> : INevermoreQueryable<T>
     {
         readonly QueryProvider<T> queryProvider;
 
