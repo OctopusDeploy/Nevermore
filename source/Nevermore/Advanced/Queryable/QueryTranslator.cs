@@ -299,7 +299,7 @@ namespace Nevermore.Advanced.Queryable
                             double => "double",
                             _ => throw new ArgumentOutOfRangeException()
                         };
-                        return new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], '{jsonPath}') WITH ([Val] {dbType} '$'))");
+                        return new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {dbType} '$'))");
                     }
                 }
                 else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())

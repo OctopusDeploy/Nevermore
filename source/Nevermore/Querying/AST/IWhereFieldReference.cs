@@ -40,6 +40,6 @@
             this.jsonPath = jsonPath;
         }
 
-        public string GenerateSql() => $"JSON_VALUE([JSON], '{jsonPath}')";
+        public string GenerateSql() => $"JSON_VALUE([JSON], 'strict {jsonPath}')";
     }
 }
