@@ -425,7 +425,7 @@ namespace Nevermore.Advanced.Queryable
                         return (new WhereFieldReference(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
                     }
 
-                    var column = documentMap.Columns.Where(p => p is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
+                    var column = documentMap.Columns.Where(c => c.Property is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
                     if (column is not null)
                     {
                         return (new WhereFieldReference(column.ColumnName), propertyInfo.PropertyType);
