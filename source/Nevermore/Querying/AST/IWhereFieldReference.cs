@@ -42,4 +42,16 @@
 
         public string GenerateSql() => $"JSON_VALUE([JSON], 'strict {jsonPath}')";
     }
+
+    public class JsonQueryFieldReference : IWhereFieldReference
+    {
+        readonly string jsonPath;
+
+        public JsonQueryFieldReference(string jsonPath)
+        {
+            this.jsonPath = jsonPath;
+        }
+
+        public string GenerateSql() => $"JSON_QUERY([JSON], 'strict {jsonPath}')";
+    }
 }

@@ -139,6 +139,58 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereIsNullJsonValue()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint() },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(m => m.Endpoint.Name == null || m.Endpoint.Name == "Tentacle A")
+                .ToList();
+
+            customers.Select(m => m.Name).Should().BeEquivalentTo("Machine A", "Machine B");
+        }
+
+        [Test]
+        public void WhereIsNullJsonObject()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(m => m.Endpoint == null || m.Endpoint.Name == "Tentacle A")
+                .ToList();
+
+            customers.Select(m => m.Name).Should().BeEquivalentTo("Machine A", "Machine B");
+        }
+
+        [Test]
         public void WhereNotEqual()
         {
             using var t = Store.BeginTransaction();

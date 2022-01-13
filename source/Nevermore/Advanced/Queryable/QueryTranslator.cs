@@ -287,7 +287,7 @@ namespace Nevermore.Advanced.Queryable
                         return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, param.ParameterName);
                     }
 
-                    if (fieldReference is JsonValueFieldReference)
+                    if (fieldReference is JsonValueFieldReference or JsonQueryFieldReference)
                     {
                         var param = AddParameter(value);
                         var op = invert ? "NOT IN" : "IN";
@@ -435,7 +435,10 @@ namespace Nevermore.Advanced.Queryable
                 if (documentMap.HasJsonColumn())
                 {
                     var jsonPath = GetJsonPath(memberExpression);
-                    return (new JsonValueFieldReference(jsonPath), propertyInfo.PropertyType);
+                    IWhereFieldReference fieldReference = propertyInfo.IsScalar()
+                        ? new JsonValueFieldReference(jsonPath)
+                        : new JsonQueryFieldReference(jsonPath);
+                    return (fieldReference, propertyInfo.PropertyType);
                 }
             }
 
