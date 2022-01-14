@@ -255,7 +255,7 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression.Method.Name == nameof(string.Contains))
             {
-                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}%");
             }
             if (expression.Method.Name == nameof(string.StartsWith))
             {

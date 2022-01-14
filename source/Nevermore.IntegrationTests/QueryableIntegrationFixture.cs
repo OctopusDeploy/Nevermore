@@ -470,7 +470,7 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var customers = t.Queryable<Customer>()
-                .Where(c => c.Balance < 100m || c.IsEmployee || c.LastName.Contains("a"))
+                .Where(c => c.Balance < 40m || c.IsEmployee || c.LastName.Contains("n"))
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Banana");
@@ -629,7 +629,7 @@ namespace Nevermore.IntegrationTests
             t.Commit();
 
             var customers = t.Queryable<Customer>()
-                .Where(c => !c.Nickname.StartsWith("C"))
+                .Where(c => !c.Nickname.Contains("hi"))
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
