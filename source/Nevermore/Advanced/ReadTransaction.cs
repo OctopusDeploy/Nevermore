@@ -416,7 +416,7 @@ namespace Nevermore.Advanced
 
         public IQueryable<TDocument> Queryable<TDocument>()
         {
-            return new Query<TDocument>(new QueryProvider<TDocument>(this, configuration));
+            return new Query<TDocument>(new QueryProvider(this, configuration));
         }
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class

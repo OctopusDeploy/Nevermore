@@ -8,15 +8,15 @@ namespace Nevermore.Advanced.Queryable
 {
     internal class Query<T> : INevermoreQueryable<T>
     {
-        readonly QueryProvider<T> queryProvider;
+        readonly QueryProvider queryProvider;
 
-        public Query(QueryProvider<T> queryProvider)
+        public Query(QueryProvider queryProvider)
         {
             this.queryProvider = queryProvider;
             Expression = Expression.Constant(this);
         }
 
-        public Query(QueryProvider<T> queryProvider, Expression expression)
+        public Query(QueryProvider queryProvider, Expression expression)
         {
             this.queryProvider = queryProvider;
             Expression = expression;

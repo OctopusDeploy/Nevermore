@@ -1,14 +1,30 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Util;
 
 namespace Nevermore.Advanced.Queryable
 {
-    internal class QueryProvider<T> : IAsyncQueryProvider
+    internal class QueryProvider : IAsyncQueryProvider
     {
+        static readonly MethodInfo GenericCreateQueryMethod = typeof(QueryProvider)
+            .GetRuntimeMethods().Single(m => m.Name == nameof(CreateQuery) && m.IsGenericMethod);
+        static readonly MethodInfo GenericExecuteMethod = typeof(QueryProvider)
+            .GetRuntimeMethods().Single(m => m.Name == nameof(Execute) && m.IsGenericMethod);
+        static readonly MethodInfo GenericStreamMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.Stream), new[] { typeof(PreparedCommand) });
+        static readonly MethodInfo GenericStreamAsyncMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.StreamAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
+        static readonly MethodInfo GenericExecuteScalarMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalar), new[] { typeof(PreparedCommand) });
+        static readonly MethodInfo GenericExecuteScalarAsyncMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalarAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
+
         readonly IReadQueryExecutor queryExecutor;
         readonly IRelationalStoreConfiguration configuration;
 
@@ -18,50 +34,40 @@ namespace Nevermore.Advanced.Queryable
             this.configuration = configuration;
         }
 
-        public IQueryable CreateQuery(Expression expression)
-        {
-            throw new NotSupportedException();
-        }
+        public IQueryable CreateQuery(Expression expression) =>
+            (IQueryable)GenericCreateQueryMethod
+                .MakeGenericMethod(expression.Type.GetSequenceType())
+                .Invoke(this, new object[] { expression });
 
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        {
-            return new Query<TElement>(new QueryProvider<TElement>(queryExecutor, configuration), expression);
-        }
+            => new Query<TElement>(new QueryProvider(queryExecutor, configuration), expression);
 
         public object Execute(Expression expression)
+        {
+            return GenericExecuteMethod.MakeGenericMethod(expression.Type)
+                .Invoke(this, new object[] { expression });
+        }
+
+        public TResult Execute<TResult>(Expression expression)
         {
             var (command, queryType) = Translate(expression);
 
             if (queryType == QueryType.SelectMany)
             {
-                var stream = queryExecutor.Stream<T>(command);
-                return stream;
+                var sequenceType = expression.Type.GetSequenceType();
+                return (TResult)GenericStreamMethod.MakeGenericMethod(sequenceType)
+                    .Invoke(queryExecutor, new object[] { command });
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var stream = queryExecutor.Stream<T>(command);
-                return stream.FirstOrDefault();
+                var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
+                    .Invoke(queryExecutor, new object[] { command });
+                return (TResult)stream.Cast<object>().FirstOrDefault();
             }
 
-            if (queryType == QueryType.Count)
-            {
-                var result = queryExecutor.ExecuteScalar<int>(command);
-                return result;
-            }
-
-            if (queryType == QueryType.Exists)
-            {
-                var result = queryExecutor.ExecuteScalar<bool>(command);
-                return result;
-            }
-
-            throw new Exception("Couldn't figure out what to do");
-        }
-
-        public TResult Execute<TResult>(Expression expression)
-        {
-            return (TResult)Execute(expression);
+            return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
+                .Invoke(queryExecutor, new object[] { command });
         }
 
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
@@ -69,34 +75,39 @@ namespace Nevermore.Advanced.Queryable
             var (command, queryType) = Translate(expression);
             if (queryType == QueryType.SelectMany)
             {
-                var stream = await queryExecutor.StreamAsync<T>(command, cancellationToken).ToListAsync(cancellationToken);
-                return (TResult)Convert.ChangeType(stream, typeof(List<T>));
+                var sequenceType = expression.Type.GetSequenceType();
+                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(sequenceType)
+                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
+
+                return (TResult)await CreateList(asyncStream, sequenceType);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var item = await queryExecutor.StreamAsync<T>(command, cancellationToken).FirstOrDefaultAsync(cancellationToken);
-                return (TResult)Convert.ChangeType(item, typeof(TResult));
+                var streamTask = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
+                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
+                return (TResult)Convert.ChangeType(await streamTask.FirstOrDefaultAsync(cancellationToken), typeof(TResult));
             }
 
-            if (queryType == QueryType.Count)
-            {
-                var result = await queryExecutor.ExecuteScalarAsync<int>(command, cancellationToken);
-                return (TResult)Convert.ChangeType(result, typeof(int));
-            }
-
-            if (queryType == QueryType.Exists)
-            {
-                var result = await queryExecutor.ExecuteScalarAsync<bool>(command, cancellationToken);
-                return (TResult)Convert.ChangeType(result, typeof(bool));
-            }
-
-            throw new Exception("Couldn't figure out what to do");
+            return await (Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
+                .Invoke(queryExecutor, new object[] { command, cancellationToken });
         }
 
         (PreparedCommand, QueryType) Translate(Expression expression)
         {
-            return new QueryTranslator<T>(configuration).Translate(expression);
+            return new QueryTranslator(configuration).Translate(expression);
+        }
+
+        static async Task<IList> CreateList(IAsyncEnumerable<object> items, Type elementType)
+        {
+            var listType = typeof(List<>).MakeGenericType(elementType);
+            IList list = (IList)Activator.CreateInstance(listType);
+            await foreach (var item in items)
+            {
+                list.Add(item);
+            }
+
+            return list;
         }
     }
 }

@@ -11,10 +11,9 @@ using Nevermore.Util;
 
 namespace Nevermore.Advanced.Queryable
 {
-    internal class QueryTranslator<TDocument> : ExpressionVisitor
+    internal class QueryTranslator : ExpressionVisitor
     {
         readonly IRelationalStoreConfiguration configuration;
-        readonly DocumentMap documentMap;
         readonly CommandParameterValues parameterValues = new();
         readonly List<OrderByField> orderByClauses = new();
         readonly List<IWhereClause> whereClauses = new();
@@ -24,13 +23,13 @@ namespace Nevermore.Advanced.Queryable
         IRowSelection rowSelection;
         ISelectColumns columnSelection;
         QueryType queryType = QueryType.SelectMany;
+        DocumentMap documentMap;
         int? skip;
         int? take;
 
         public QueryTranslator(IRelationalStoreConfiguration configuration)
         {
             this.configuration = configuration;
-            documentMap = configuration.DocumentMaps.Resolve<TDocument>();
         }
 
         public (PreparedCommand, QueryType) Translate(Expression expression)
@@ -418,7 +417,7 @@ namespace Nevermore.Advanced.Queryable
             {
                 var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
                 var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
-                if (childPropertyExpression == null && parameterExpression.Type == typeof(TDocument))
+                if (childPropertyExpression == null && parameterExpression.Type == documentMap.Type)
                 {
                     if (documentMap.IdColumn!.Property.Matches(propertyInfo))
                     {
@@ -467,8 +466,9 @@ namespace Nevermore.Advanced.Queryable
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            if (node.Value is IQueryable q && q.ElementType == typeof(TDocument))
+            if (node.Value is IQueryable q)
             {
+                documentMap = configuration.DocumentMaps.Resolve(q.ElementType);
                 var schema = documentMap.SchemaName ?? configuration.DefaultSchema;
                 from = new SimpleTableSource(documentMap.TableName, schema, GetDocumentColumns().ToArray());
             }
