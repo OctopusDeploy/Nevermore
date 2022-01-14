@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
-using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.Util;
 
@@ -13,83 +11,30 @@ namespace Nevermore.Advanced.Queryable
 {
     internal class QueryTranslator : ExpressionVisitor
     {
-        readonly IRelationalStoreConfiguration configuration;
-        readonly CommandParameterValues parameterValues = new();
-        readonly List<OrderByField> orderByClauses = new();
-        readonly List<IWhereClause> whereClauses = new();
-
-        volatile int paramCounter;
-        ISelectSource from;
-        IRowSelection rowSelection;
-        ISelectColumns columnSelection;
-        QueryType queryType = QueryType.SelectMany;
-        DocumentMap documentMap;
-        int? skip;
-        int? take;
+        readonly SqlExpressionBuilder sqlBuilder;
 
         public QueryTranslator(IRelationalStoreConfiguration configuration)
         {
-            this.configuration = configuration;
+            sqlBuilder = new SqlExpressionBuilder(configuration);
         }
 
         public (PreparedCommand, QueryType) Translate(Expression expression)
         {
             Visit(expression);
 
-            string sql;
-            var generateRowNumbers = skip.HasValue || take.HasValue;
-            if (queryType == QueryType.Exists)
+            var (sqlExpression, parameterValues, queryType) = sqlBuilder.Build();
+            return (new PreparedCommand(sqlExpression.GenerateSql(), parameterValues, RetriableOperation.Select), queryType);
+        }
+
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Value is IQueryable q)
             {
-                var select = new Select(
-                    rowSelection ?? new AllRows(),
-                    new SelectAllSource(),
-                    from,
-                    whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
-                    null,
-                    null);
-                var trueParameter = AddParameter(true);
-                var falseParameter = AddParameter(false);
-                sql = new IfExpression(new ExistsExpression(select), new SelectConstant(trueParameter), new SelectConstant(falseParameter)).GenerateSql();
+                sqlBuilder.From(q.ElementType);
+                return node;
             }
-            else
-            {
-                var orderBy = orderByClauses.Any() ? new OrderBy(orderByClauses) : GetDefaultOrderBy();
-                var columns = columnSelection ?? new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
-                var select = new Select(
-                    rowSelection ?? new AllRows(),
-                    generateRowNumbers ? new AggregateSelectColumns(new[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
-                    from,
-                    whereClauses.Any() ? new Where(new AndClause(whereClauses)) : new Where(),
-                    null,
-                    orderByClauses.Any() && !generateRowNumbers && columnSelection is not SelectCountSource ? orderBy : null);
 
-                if (generateRowNumbers)
-                {
-                    var pagingFilters = new List<IWhereClause>();
-                    if (skip.HasValue)
-                    {
-                        var skipParam = AddParameter(skip.Value);
-                        pagingFilters.Add(new UnaryWhereClause(new WhereFieldReference("RowNum"), UnarySqlOperand.GreaterThan, skipParam.ParameterName));
-                    }
-
-                    if (take.HasValue)
-                    {
-                        var takeParam = AddParameter(take.Value + (skip ?? 0));
-                        pagingFilters.Add(new UnaryWhereClause(new WhereFieldReference("RowNum"), UnarySqlOperand.LessThanOrEqual, takeParam.ParameterName));
-                    }
-
-                    select = new Select(
-                        new AllRows(),
-                        new SelectAllColumnsWithTableAliasJsonLast("aliased", GetDocumentColumns().ToList()),
-                        new SubquerySource(select, "aliased"),
-                        new Where(new AndClause(pagingFilters)),
-                        null,
-                        new OrderBy(new[] { new OrderByField(new Column("RowNum")) }));
-                }
-
-                sql = select.GenerateSql();
-            }
-            return (new PreparedCommand(sql, parameterValues, RetriableOperation.Select), queryType);
+            throw new NotSupportedException();
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -105,7 +50,7 @@ namespace Nevermore.Advanced.Queryable
                 Visit(node.Arguments[0]);
                 if (node.Arguments[1] is ConstantExpression { Value: string } constantExpression)
                 {
-                    whereClauses.Add(new CustomWhereClause((string)constantExpression.Value));
+                    sqlBuilder.Where(new CustomWhereClause((string)constantExpression.Value));
                     return node;
                 }
             }
@@ -114,7 +59,7 @@ namespace Nevermore.Advanced.Queryable
             {
                 Visit(node.Arguments[0]);
                 var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                AddWhere(expression.Body);
+                sqlBuilder.Where(CreateWhereClause(expression.Body));
                 return node;
             }
 
@@ -127,7 +72,7 @@ namespace Nevermore.Advanced.Queryable
 
                 Visit(node.Arguments[0]);
                 var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                orderByClauses.Add(new OrderByField(new Column(fieldName)));
+                sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
                 return node;
             }
 
@@ -140,7 +85,7 @@ namespace Nevermore.Advanced.Queryable
 
                 Visit(node.Arguments[0]);
                 var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                orderByClauses.Add(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
                 return node;
             }
 
@@ -151,11 +96,10 @@ namespace Nevermore.Advanced.Queryable
                 if (node.Arguments.Count > 1)
                 {
                     var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    AddWhere(expression.Body);
+                    sqlBuilder.Where(CreateWhereClause(expression.Body));
                 }
 
-                rowSelection = new Top(1);
-                queryType = QueryType.SelectSingle;
+                sqlBuilder.Single();
                 return node;
             }
 
@@ -166,11 +110,10 @@ namespace Nevermore.Advanced.Queryable
                 if (node.Arguments.Count > 1)
                 {
                     var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    AddWhere(expression.Body);
+                    sqlBuilder.Where(CreateWhereClause(expression.Body));
                 }
 
-                rowSelection = new Top(1);
-                queryType = QueryType.SelectSingle;
+                sqlBuilder.Single();
                 return node;
             }
 
@@ -181,10 +124,10 @@ namespace Nevermore.Advanced.Queryable
                 if (node.Arguments.Count > 1)
                 {
                     var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    AddWhere(expression.Body);
+                    sqlBuilder.Where(CreateWhereClause(expression.Body));
                 }
 
-                queryType = QueryType.Exists;
+                sqlBuilder.Exists();
                 return node;
             }
 
@@ -195,25 +138,26 @@ namespace Nevermore.Advanced.Queryable
                 if (node.Arguments.Count > 1)
                 {
                     var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    AddWhere(expression.Body);
+                    sqlBuilder.Where(CreateWhereClause(expression.Body));
                 }
 
-                columnSelection = new SelectCountSource();
-                queryType = QueryType.Count;
+                sqlBuilder.Count();
                 return node;
             }
 
             if (methodInfo.Name == nameof(System.Linq.Queryable.Take))
             {
                 Visit(node.Arguments[0]);
-                take = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                var take = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                sqlBuilder.Take(take);
                 return node;
             }
 
             if (methodInfo.Name == nameof(System.Linq.Queryable.Skip))
             {
                 Visit(node.Arguments[0]);
-                skip = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                var skip = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                sqlBuilder.Skip(skip);
                 return node;
             }
 
@@ -230,11 +174,6 @@ namespace Nevermore.Advanced.Queryable
             }
 
             throw new NotSupportedException();
-        }
-
-        void AddWhere(Expression expression)
-        {
-            whereClauses.Add(CreateWhereClause(expression));
         }
 
         IWhereClause CreateWhereClause(Expression expression, bool invert = false)
@@ -255,9 +194,8 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: { MemberType: MemberTypes.Property } and PropertyInfo propertyInfo } && propertyInfo.PropertyType == typeof(bool))
             {
-                var (fieldReference, type) = GetFieldReferenceAndType(expression);
-                var param = AddParameter(!invert);
-                return new UnaryWhereClause(fieldReference, UnarySqlOperand.Equal, param.ParameterName);
+                var (fieldReference, _) = GetFieldReferenceAndType(expression);
+                return sqlBuilder.CreateWhere(fieldReference, UnarySqlOperand.Equal, !invert);
             }
 
             throw new NotSupportedException();
@@ -282,13 +220,11 @@ namespace Nevermore.Advanced.Queryable
 
                     if (fieldReference is WhereFieldReference)
                     {
-                        var param = AddParameter($"%|{value}|%");
-                        return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, param.ParameterName);
+                        return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%|{value}|%");
                     }
 
                     if (fieldReference is JsonValueFieldReference or JsonQueryFieldReference)
                     {
-                        var param = AddParameter(value);
                         var op = invert ? "NOT IN" : "IN";
                         var jsonPath = GetJsonPath(memberExpressionL);
                         var dbType = value switch
@@ -298,17 +234,14 @@ namespace Nevermore.Advanced.Queryable
                             double => "double",
                             _ => throw new ArgumentOutOfRangeException()
                         };
-                        return new CustomWhereClause($"@{param.ParameterName} {op} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {dbType} '$'))");
+                        return sqlBuilder.CreateWhere($"@0 {op} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {dbType} '$'))", value);
                     }
                 }
                 else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())
                 {
                     var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
-                    var parameters = (from object x in values select AddParameter(x)).ToList();
-                    return parameters.Count == 0
-                        ? new CustomWhereClause("1 = 0")
-                        : new ArrayWhereClause(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, parameters.Select(p => p.ParameterName));
+                    return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
                 }
             }
 
@@ -322,18 +255,15 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression.Method.Name == nameof(string.Contains))
             {
-                var parameter = AddParameter($"%{value}%");
-                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
             }
             if (expression.Method.Name == nameof(string.StartsWith))
             {
-                var parameter = AddParameter($"{value}%");
-                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"{value}%");
             }
             if (expression.Method.Name == nameof(string.EndsWith))
             {
-                var parameter = AddParameter($"%{value}");
-                return new UnaryWhereClause(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, parameter.ParameterName);
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
             }
 
             throw new NotSupportedException();
@@ -374,16 +304,7 @@ namespace Nevermore.Advanced.Queryable
                 return new IsNullClause(fieldReference, op == UnarySqlOperand.NotEqual);
             }
 
-            var parameter = AddParameter(value);
-            return new UnaryWhereClause(fieldReference, op, parameter.ParameterName);
-        }
-
-        Parameter AddParameter(object value)
-        {
-            var index = Interlocked.Increment(ref paramCounter);
-            var paramName = $"p{index}";
-            parameterValues[paramName] = value;
-            return new Parameter(paramName);
+            return sqlBuilder.CreateWhere(fieldReference, op, value);
         }
 
         object GetValueFromExpression(Expression expression, Type propertyType)
@@ -415,6 +336,7 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
             {
+                var documentMap = sqlBuilder.DocumentMap;
                 var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
                 var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
                 if (childPropertyExpression == null && parameterExpression.Type == documentMap.Type)
@@ -444,7 +366,7 @@ namespace Nevermore.Advanced.Queryable
             throw new NotSupportedException();
         }
 
-        string GetJsonPath(MemberExpression memberExpression)
+        static string GetJsonPath(MemberExpression memberExpression)
         {
             var segments = new List<string>();
             do
@@ -462,47 +384,6 @@ namespace Nevermore.Advanced.Queryable
                 expression = ((UnaryExpression)expression).Operand;
 
             return expression;
-        }
-
-        protected override Expression VisitConstant(ConstantExpression node)
-        {
-            if (node.Value is IQueryable q)
-            {
-                documentMap = configuration.DocumentMaps.Resolve(q.ElementType);
-                var schema = documentMap.SchemaName ?? configuration.DefaultSchema;
-                from = new SimpleTableSource(documentMap.TableName, schema, GetDocumentColumns().ToArray());
-            }
-            else
-            {
-                throw new Exception();
-            }
-
-            return node;
-        }
-
-        IEnumerable<string> GetDocumentColumns()
-        {
-            yield return documentMap.IdColumn!.ColumnName;
-
-            foreach (var column in documentMap.Columns)
-            {
-                yield return column.ColumnName;
-            }
-
-            if (documentMap.HasJsonColumn())
-            {
-                yield return "JSON";
-            }
-
-            if (documentMap.HasJsonBlobColumn())
-            {
-                yield return "JSONBlob";
-            }
-        }
-
-        OrderBy GetDefaultOrderBy()
-        {
-            return new OrderBy(new[] { new OrderByField(new Column(documentMap.IdColumn!.ColumnName)) });
         }
     }
 }
