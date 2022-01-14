@@ -22,9 +22,9 @@ namespace Nevermore.Advanced.Queryable
             Expression = expression;
         }
 
-        public IEnumerator<T> GetEnumerator() => queryProvider.Execute<IEnumerable<object>>(Expression).Cast<T>().GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => queryProvider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)queryProvider.Execute(Expression)).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => queryProvider.Execute<IEnumerable>(Expression).GetEnumerator();
 
         public Type ElementType => typeof(T);
         public Expression Expression { get; }
