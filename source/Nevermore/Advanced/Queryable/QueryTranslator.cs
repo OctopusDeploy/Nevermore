@@ -213,7 +213,7 @@ namespace Nevermore.Advanced.Queryable
                 var left = expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0];
                 var right = expression.Arguments.Count == 1 ? expression.Arguments[0] : expression.Arguments[1];
 
-                if (left is MemberExpression memberExpressionL && memberExpressionL.IsBasedOff<ParameterExpression>())
+                if (left is MemberExpression { Member: PropertyInfo propertyInfo } memberExpressionL && memberExpressionL.IsBasedOff<ParameterExpression>())
                 {
                     var (fieldReference, type) = GetFieldReferenceAndType(left);
                     var value = GetValueFromExpression(right, type);
@@ -225,16 +225,9 @@ namespace Nevermore.Advanced.Queryable
 
                     if (fieldReference is JsonValueFieldReference or JsonQueryFieldReference)
                     {
-                        var op = invert ? "NOT IN" : "IN";
                         var jsonPath = GetJsonPath(memberExpressionL);
-                        var dbType = value switch
-                        {
-                            string => "nvarchar(max)",
-                            int => "int",
-                            double => "double",
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        return sqlBuilder.CreateWhere($"@0 {op} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {dbType} '$'))", value);
+                        var elementType = propertyInfo.PropertyType.GetSequenceType();
+                        return sqlBuilder.CreateWhere(value, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, jsonPath, elementType);
                     }
                 }
                 else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())

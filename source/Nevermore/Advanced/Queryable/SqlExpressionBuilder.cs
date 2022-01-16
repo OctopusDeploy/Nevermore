@@ -48,11 +48,10 @@ namespace Nevermore.Advanced.Queryable
                 : new ArrayWhereClause(fieldReference, operand, parameters.Select(p => p.ParameterName));
         }
 
-        public IWhereClause CreateWhere(string whereClause, params object[] values)
+        public IWhereClause CreateWhere(object value, ArraySqlOperand operand, string jsonPath, Type elementType)
         {
-            var parameters = values.Select(AddParameter).ToArray();
-            var processedWhereClause = Regex.Replace(whereClause, @"@\d+", m => $"@{parameters[int.Parse(m.Value[1..])].ParameterName}");
-            return new CustomWhereClause(processedWhereClause);
+            var parameter = AddParameter(value);
+            return new JsonArrayWhereClause(parameter.ParameterName, operand, jsonPath, elementType);
         }
 
         public void OrderBy(OrderByField field)
