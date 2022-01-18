@@ -116,7 +116,8 @@ namespace Nevermore.Advanced.Queryable
                 from,
                 CreateWhereClause(),
                 null,
-                orderByFields.Any() && !skip.HasValue ? orderBy : null);
+                orderByFields.Any() && !skip.HasValue ? orderBy : null,
+                new Option(Array.Empty<OptionClause>()));
 
             if (skip.HasValue)
             {
@@ -136,7 +137,8 @@ namespace Nevermore.Advanced.Queryable
                     new SubquerySource(select, "aliased"),
                     new Where(new AndClause(pagingFilters)),
                     null,
-                    new OrderBy(new[] { new OrderByField(new Column("RowNum")) }));
+                    new OrderBy(new[] { new OrderByField(new Column("RowNum")) }),
+                    new Option(Array.Empty<OptionClause>()));
             }
 
             return select;
@@ -151,7 +153,8 @@ namespace Nevermore.Advanced.Queryable
                 from,
                 CreateWhereClause(),
                 null,
-                null);
+                null,
+                new Option(Array.Empty<OptionClause>()));
             var trueParameter = AddParameter(true);
             var falseParameter = AddParameter(false);
 
@@ -166,7 +169,8 @@ namespace Nevermore.Advanced.Queryable
                 from,
                 CreateWhereClause(),
                 null,
-                null);
+                null,
+                new Option(Array.Empty<OptionClause>()));
         }
 
         Where CreateWhereClause()
