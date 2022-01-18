@@ -12,23 +12,26 @@ namespace Nevermore.Advanced.SelectBuilders
         protected readonly List<OrderByField> OrderByClauses;
         protected readonly List<GroupByField> GroupByClauses;
         protected readonly List<IWhereClause> WhereClauses;
+        protected readonly List<IOptionClause> OptionClauses;
         protected ISelectColumns ColumnSelection;
         protected IRowSelection RowSelection;
 
         protected SelectBuilderBase(
-            List<IWhereClause> whereClauses, 
+            List<IWhereClause> whereClauses,
             List<GroupByField> groupByClauses,
-            List<OrderByField> orderByClauses, 
+            List<OrderByField> orderByClauses,
+            List<IOptionClause> optionClauses,
             ISelectColumns columnSelection = null,
             IRowSelection rowSelection = null)
         {
             WhereClauses = whereClauses;
             OrderByClauses = orderByClauses;
             GroupByClauses = groupByClauses;
-            this.RowSelection = rowSelection;
-            this.ColumnSelection = columnSelection;
+            OptionClauses = optionClauses;
+            RowSelection = rowSelection;
+            ColumnSelection = columnSelection;
         }
-        
+
         public ISelectSource SelectSource { get; }
 
         protected abstract ISelectColumns DefaultSelect { get; }
@@ -52,7 +55,7 @@ namespace Nevermore.Advanced.SelectBuilders
 
         ISelect GenerateSelectInner(Func<OrderBy> getDefaultOrderBy)
         {
-            return new Select(GetRowSelection(), GetColumnSelection(), From, GetWhere() ?? new Where(), GetGroupBy(), GetOrderBy(getDefaultOrderBy));
+            return new Select(GetRowSelection(), GetColumnSelection(), From, GetWhere() ?? new Where(), GetGroupBy(), GetOrderBy(getDefaultOrderBy), GetOption());
         }
 
         public abstract ISelectBuilder Clone();
@@ -84,6 +87,11 @@ namespace Nevermore.Advanced.SelectBuilders
         {
             var orderByFields = GetDefaultOrderByFields().ToList();
             return !orderByFields.Any() ? null : new OrderBy(orderByFields);
+        }
+
+        IOption GetOption()
+        {
+            return new Option(OptionClauses);
         }
 
         public void AddTop(int top)
@@ -183,6 +191,11 @@ namespace Nevermore.Advanced.SelectBuilders
         public void AddDefaultColumnSelection()
         {
             AddColumnSelection(DefaultSelect);
+        }
+
+        public void AddOption(string queryHint)
+        {
+            OptionClauses.Add(new OptionClause(queryHint));
         }
 
         ISelectColumns GetColumnSelection() => ColumnSelection ?? DefaultSelect;

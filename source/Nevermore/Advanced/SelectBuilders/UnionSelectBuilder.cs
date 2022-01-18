@@ -13,13 +13,14 @@ namespace Nevermore.Advanced.SelectBuilders
         public UnionSelectBuilder(ISelect innerSelect, 
             string customAlias, 
             ITableAliasGenerator tableAliasGenerator) 
-            : this(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+            : this(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>(), new List<IOptionClause>())
         {
         }
 
-        UnionSelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator, List<IWhereClause> whereClauses,  List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
-            ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
+        UnionSelectBuilder(ISelect innerSelect, string customAlias, ITableAliasGenerator tableAliasGenerator,
+            List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, List<IOptionClause> optionClauses,
+            ISelectColumns columnSelection = null, IRowSelection rowSelection = null)
+            : base(whereClauses, groupByClauses, orderByClauses, optionClauses, columnSelection, rowSelection)
         {
             this.innerSelect = innerSelect;
             this.customAlias = customAlias;
@@ -55,7 +56,13 @@ namespace Nevermore.Advanced.SelectBuilders
 
         public override ISelectBuilder Clone()
         {
-            return new UnionSelectBuilder(innerSelect, customAlias, tableAliasGenerator, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new UnionSelectBuilder(innerSelect, customAlias, tableAliasGenerator,
+                new List<IWhereClause>(WhereClauses),
+                new List<GroupByField>(GroupByClauses),
+                new List<OrderByField>(OrderByClauses),
+                new List<IOptionClause>(OptionClauses),
+                ColumnSelection,
+                RowSelection);
         }
     }
 }

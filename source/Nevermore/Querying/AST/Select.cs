@@ -8,8 +8,9 @@
         readonly Where where;
         readonly OrderBy orderBy; // Can be null
         readonly GroupBy groupBy; // Can be null
+        readonly IOption option;
 
-        public Select(IRowSelection rowSelection, ISelectColumns columns, ISelectSource from, Where where, GroupBy groupBy, OrderBy orderBy)
+        public Select(IRowSelection rowSelection, ISelectColumns columns, ISelectSource from, Where where, GroupBy groupBy, OrderBy orderBy, IOption option)
         {
             this.rowSelection = rowSelection;
             this.columns = columns;
@@ -17,6 +18,7 @@
             this.where = where;
             this.orderBy = orderBy;
             this.groupBy = groupBy;
+            this.option = option;
         }
 
         public string Schema => @from.Schema;
@@ -29,7 +31,7 @@
             var groupByString = groupBy?.GenerateSql();
             
             return $@"SELECT {rowSelection.GenerateSql()}{columns.GenerateSql()}
-FROM {from.GenerateSql()}{where.GenerateSql()}{groupByString}{orderByString}";
+FROM {from.GenerateSql()}{where.GenerateSql()}{groupByString}{orderByString}{option.GenerateSql()}";
         }
 
         public override string ToString()

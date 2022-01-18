@@ -321,5 +321,10 @@ namespace Nevermore.Advanced.QueryBuilders
         {
             return Builder.DebugViewRawQuery();
         }
+
+        public IQueryBuilder<TRecord> Option(string queryHint)
+        {
+            return Final(Builder.Option(queryHint));
+        }
     }
 }

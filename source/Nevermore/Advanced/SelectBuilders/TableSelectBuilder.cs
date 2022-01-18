@@ -6,15 +6,15 @@ namespace Nevermore.Advanced.SelectBuilders
     public class TableSelectBuilder : SelectBuilderBase<ITableSource>
     {
         public TableSelectBuilder(ITableSource from, IColumn idColumn) 
-            : this(from, idColumn, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+            : this(from, idColumn, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>(), new List<IOptionClause>())
         {
         }
 
         TableSelectBuilder(ITableSource from, IColumn idColumn,
             List<IWhereClause> whereClauses, List<GroupByField> groupByClauses,
-            List<OrderByField> orderByClauses, ISelectColumns columnSelection = null, 
+            List<OrderByField> orderByClauses, List<IOptionClause> optionClauses, ISelectColumns columnSelection = null, 
             IRowSelection rowSelection = null)
-            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, optionClauses, columnSelection, rowSelection)
         {
             From = from;
             IdColumn = idColumn;
@@ -33,7 +33,14 @@ namespace Nevermore.Advanced.SelectBuilders
 
         public override ISelectBuilder Clone()
         {
-            return new TableSelectBuilder(From, IdColumn, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new TableSelectBuilder(From,
+                IdColumn,
+                new List<IWhereClause>(WhereClauses),
+                new List<GroupByField>(GroupByClauses),
+                new List<OrderByField>(OrderByClauses),
+                new List<IOptionClause>(OptionClauses),
+                ColumnSelection,
+                RowSelection);
         }
     }
 }
