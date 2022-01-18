@@ -237,6 +237,12 @@ namespace Nevermore.Advanced
             return this;
         }
 
+        public IQueryBuilder<TRecord> Option(string queryHint)
+        {
+            selectBuilder.AddOption(queryHint);
+            return this;
+        }
+
         public IQueryBuilder<TRecord> Column(string name)
         {
             selectBuilder.AddColumn(name);

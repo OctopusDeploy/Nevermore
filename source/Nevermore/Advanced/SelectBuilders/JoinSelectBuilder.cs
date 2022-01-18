@@ -9,13 +9,14 @@ namespace Nevermore.Advanced.SelectBuilders
     {
         protected override JoinedSource From { get; }
 
-        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+        public JoinSelectBuilder(JoinedSource from) : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>(), new List<IOptionClause>())
         {
         }
 
-        JoinSelectBuilder(JoinedSource from, List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
+        JoinSelectBuilder(JoinedSource from,
+            List<IWhereClause> whereClauses, List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, List<IOptionClause> optionClauses,
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, optionClauses, columnSelection, rowSelection)
         {
             From = from;
         }
@@ -31,7 +32,13 @@ namespace Nevermore.Advanced.SelectBuilders
 
         public override ISelectBuilder Clone()
         {
-            return new JoinSelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new JoinSelectBuilder(From,
+                new List<IWhereClause>(WhereClauses),
+                new List<GroupByField>(GroupByClauses),
+                new List<OrderByField>(OrderByClauses),
+                new List<IOptionClause>(OptionClauses),
+                ColumnSelection,
+                RowSelection);
         }
 
         public override void AddWhere(UnaryWhereParameter whereParams)

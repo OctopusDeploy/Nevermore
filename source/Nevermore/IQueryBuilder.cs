@@ -345,6 +345,13 @@ namespace Nevermore
         /// </summary>
         /// <returns>The row SQL string that well be executed</returns>
         string DebugViewRawQuery();
+
+        /// <summary>
+        /// Adds an Option query hint.
+        /// </summary>
+        /// <param name="queryHint"></param>
+        /// <returns></returns>
+        IQueryBuilder<TRecord> Option(string queryHint);
     }
 
     public class ColumnFromTable

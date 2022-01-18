@@ -6,13 +6,14 @@ namespace Nevermore.Advanced.SelectBuilders
     public class SubquerySelectBuilder : SelectBuilderBase<ISubquerySource>
     {
         public SubquerySelectBuilder(ISubquerySource from) 
-            : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>())
+            : this(from, new List<IWhereClause>(), new List<GroupByField>(), new List<OrderByField>(), new List<IOptionClause>())
         {
         }
         
-        SubquerySelectBuilder(ISubquerySource from, List<IWhereClause> whereClauses,  List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, 
+        SubquerySelectBuilder(ISubquerySource from,
+            List<IWhereClause> whereClauses,  List<GroupByField> groupByClauses, List<OrderByField> orderByClauses, List<IOptionClause> optionClauses,
             ISelectColumns columnSelection = null, IRowSelection rowSelection = null) 
-            : base(whereClauses, groupByClauses, orderByClauses, columnSelection, rowSelection)
+            : base(whereClauses, groupByClauses, orderByClauses, optionClauses, columnSelection, rowSelection)
         {
             From = @from;
         }
@@ -27,7 +28,13 @@ namespace Nevermore.Advanced.SelectBuilders
 
         public override ISelectBuilder Clone()
         {
-            return new SubquerySelectBuilder(From, new List<IWhereClause>(WhereClauses), new List<GroupByField>(GroupByClauses), new List<OrderByField>(OrderByClauses), ColumnSelection, RowSelection);
+            return new SubquerySelectBuilder(From,
+                new List<IWhereClause>(WhereClauses),
+                new List<GroupByField>(GroupByClauses),
+                new List<OrderByField>(OrderByClauses),
+                new List<IOptionClause>(OptionClauses),
+                ColumnSelection,
+                RowSelection);
         }
     }
 }

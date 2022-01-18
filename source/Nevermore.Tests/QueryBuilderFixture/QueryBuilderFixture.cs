@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Assent;
 using FluentAssertions;
-using Nevermore.Advanced;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
@@ -1799,6 +1798,37 @@ ORDER BY [Id]";
                 .GenerateSql();
 
             this.Assent(subquerySql);
+        }
+
+        [Test]
+        public void ShouldGenerateOptionUnknown()
+        {
+            var actual = CreateQueryBuilder<object>("Orders")
+                .Option("OPTIMIZE FOR UNKNOWN")
+                .DebugViewRawQuery();
+
+            const string expected = @"SELECT *
+FROM [dbo].[Orders]
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN)";
+
+            actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void ShouldGenerateOptionUnknownAndForceExternalPushDown()
+        {
+            var actual = CreateQueryBuilder<object>("Orders")
+                .Option("OPTIMIZE FOR UNKNOWN")
+                .Option("FORCE EXTERNALPUSHDOWN")
+                .DebugViewRawQuery();
+
+            const string expected = @"SELECT *
+FROM [dbo].[Orders]
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN, FORCE EXTERNALPUSHDOWN)";
+
+            actual.Should().Be(expected);
         }
     }
 
