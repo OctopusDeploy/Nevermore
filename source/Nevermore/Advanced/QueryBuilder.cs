@@ -21,6 +21,7 @@ namespace Nevermore.Advanced
         readonly CommandParameterValues paramValues;
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
+        readonly List<string> optionClauses = new();
         TimeSpan? commandTimeout;
 
         public QueryBuilder(TSelectBuilder selectBuilder,
@@ -239,7 +240,7 @@ namespace Nevermore.Advanced
 
         public IQueryBuilder<TRecord> Option(string queryHint)
         {
-            selectBuilder.AddOption(queryHint);
+            optionClauses.Add(queryHint);
             return this;
         }
 
@@ -265,6 +266,10 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+
+            foreach (var option in optionClauses)
+                clonedSelectBuilder.AddOption(option);
+
             var count = readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
             return count;
         }
@@ -410,7 +415,7 @@ namespace Nevermore.Advanced
             return results;
         }
 
-        SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parmeterValues)
+        SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parameterValues)
         {
             const string rowNumberColumnName = "RowNum";
             var minRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_minrow"));
@@ -428,7 +433,10 @@ namespace Nevermore.Advanced
                 maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
 
-            parmeterValues = new CommandParameterValues(paramValues)
+            foreach (var option in optionClauses)
+                subqueryBuilder.AddOption(option);
+
+            parameterValues = new CommandParameterValues(paramValues)
             {
                 {minRowParameter.ParameterName, skip + 1},
                 {maxRowParameter.ParameterName, take + skip}

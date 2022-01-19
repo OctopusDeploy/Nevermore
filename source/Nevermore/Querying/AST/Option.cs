@@ -26,7 +26,7 @@ namespace Nevermore.Querying.AST
         {
             return optionClauses.Any()
                 ? $@"
-OPTION ({string.Join(@", ", optionClauses.Select(f => f.GenerateSql()))})"
+OPTION ({string.Join(@", ", optionClauses.Select(f => f.GenerateSql()).Distinct())})"
                 : string.Empty;
         }
 
