@@ -27,6 +27,7 @@ namespace Nevermore
         void AddRowNumberColumn(string alias, IReadOnlyList<TableColumn> partitionBys);
         void AddDefaultColumnSelection();
         void AddOption(string queryHint);
+        void AddOptions(IReadOnlyList<string> queryHints);
         void RemoveOrderBys();
         ISelect GenerateSelect();
         ISelect GenerateSelectWithoutDefaultOrderBy();

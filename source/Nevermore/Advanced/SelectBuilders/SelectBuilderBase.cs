@@ -198,6 +198,14 @@ namespace Nevermore.Advanced.SelectBuilders
             OptionClauses.Add(new OptionClause(queryHint));
         }
 
+        public void AddOptions(IReadOnlyList<string> queryHints)
+        {
+            foreach (var queryHint in queryHints)
+            {
+                AddOption(queryHint);
+            }
+        }
+
         ISelectColumns GetColumnSelection() => ColumnSelection ?? DefaultSelect;
 
         IRowSelection GetRowSelection() => RowSelection ?? new AllRows();

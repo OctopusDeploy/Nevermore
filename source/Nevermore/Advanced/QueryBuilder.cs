@@ -266,10 +266,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
-
-            foreach (var option in optionClauses)
-                clonedSelectBuilder.AddOption(option);
-
+            clonedSelectBuilder.AddOptions(optionClauses);
             var count = readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
             return count;
         }
@@ -278,8 +275,14 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+            clonedSelectBuilder.AddOptions(optionClauses);
             var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
             return count;
+        }
+
+        IOption GetOption()
+        {
+            return new Option(optionClauses.Select(o => new OptionClause(o)).ToList());
         }
 
         public bool Any()
@@ -308,7 +311,8 @@ namespace Nevermore.Advanced
                 clonedSelectBuilder.RemoveOrderBys();
                 return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
                     new SelectConstant(trueParameter),
-                    new SelectConstant(falseParameter));
+                    new SelectConstant(falseParameter),
+                    GetOption());
             }
         }
 
@@ -338,7 +342,8 @@ namespace Nevermore.Advanced
                 clonedSelectBuilder.RemoveOrderBys();
                 return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
                     new SelectConstant(trueParameter),
-                    new SelectConstant(falseParameter));
+                    new SelectConstant(falseParameter),
+                    GetOption());
             }
         }
 
@@ -365,6 +370,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddDistinct();
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
@@ -373,6 +379,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddDistinct();
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
@@ -381,6 +388,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
@@ -389,6 +397,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
@@ -432,9 +441,7 @@ namespace Nevermore.Advanced
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual,
                 maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
-
-            foreach (var option in optionClauses)
-                subqueryBuilder.AddOption(option);
+            subqueryBuilder.AddOptions(optionClauses);
 
             parameterValues = new CommandParameterValues(paramValues)
             {
@@ -485,13 +492,17 @@ namespace Nevermore.Advanced
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            var stream = readQueryExecutor.Stream<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddOptions(optionClauses);
+            var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
         {
-            var stream = readQueryExecutor.StreamAsync<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddOptions(optionClauses);
+            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
 

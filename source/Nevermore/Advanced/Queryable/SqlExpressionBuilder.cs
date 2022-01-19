@@ -157,7 +157,7 @@ namespace Nevermore.Advanced.Queryable
             var trueParameter = AddParameter(true);
             var falseParameter = AddParameter(false);
 
-            return new IfExpression(new ExistsExpression(select), new SelectConstant(trueParameter), new SelectConstant(falseParameter));
+            return new IfExpression(new ExistsExpression(select), new SelectConstant(trueParameter), new SelectConstant(falseParameter), new Option(Array.Empty<OptionClause>()));
         }
 
         IExpression CreateCountQuery()

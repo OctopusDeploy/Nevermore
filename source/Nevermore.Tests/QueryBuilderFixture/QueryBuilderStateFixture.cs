@@ -65,6 +65,30 @@ ELSE
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
+
+        [Test]
+        public void ShouldNotModifyQueryBuilderStateFromAnyWithQueryHint()
+        {
+            var queryBuilder = QueryBuilder("Accounts")
+                .Option("OPTIMIZE FOR UNKNOWN")
+                .Option("FAST 1");
+
+            queryBuilder.Any();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
+FROM [dbo].[Accounts])
+    SELECT @true
+ELSE
+    SELECT @false
+OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
+
+            queryBuilder.ToList();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM [dbo].[Accounts]
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
+        }
         
         
         [Test]
@@ -201,7 +225,8 @@ OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
-ORDER BY [Id]");
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
         }
 
         [Test]
@@ -234,7 +259,8 @@ OPTION (OPTIMIZE FOR UNKNOWN)");
 
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
-ORDER BY [Id]");
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN)");
         }
 
         [Test]
