@@ -112,7 +112,8 @@ namespace Nevermore.Advanced.Queryable
 
         static async ValueTask<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
         {
-            var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+
             if (await enumerator.MoveNextAsync())
             {
                 return enumerator.Current;
