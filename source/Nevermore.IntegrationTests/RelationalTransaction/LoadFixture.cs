@@ -91,7 +91,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             var c = customers.Single(p => p.Id == "Customers-01");
             c.FirstName.Should().Be("Bob", "Type isn't serializing into column correctly");
             c.Nickname.Should().Be("Bob the builder", "Type isn't serializing into column correctly");
-            c.JSON.Should().Be("{\"LuckyNumbers\":null,\"ApiKey\":null,\"Passphrases\":null}");
+            c.JSON.Should().Be("{\"LuckyNumbers\":null,\"ApiKey\":null,\"Passphrases\":null,\"IsEmployee\":false}");
         }
 
         [Test]

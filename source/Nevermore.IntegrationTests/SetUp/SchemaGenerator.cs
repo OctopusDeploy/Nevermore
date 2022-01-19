@@ -90,7 +90,7 @@ namespace Nevermore.IntegrationTests.SetUp
                 case DbType.DateTime:
                     return "datetime";
                 case DbType.Decimal:
-                    return "decimal";
+                    return "decimal(7,2)";
                 case DbType.Double:
                     return "float";
                 case DbType.Guid:

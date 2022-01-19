@@ -17,6 +17,9 @@ namespace Nevermore.IntegrationTests.Model
         public int[] LuckyNumbers { get; set; }
         public string ApiKey { get; set; }
         public string[] Passphrases { get; set; }
+        public decimal Balance { get; set; }
+        public bool IsVip { get; set; }
+        public bool IsEmployee { get; set; }
     }
 
     public class CustomerId : StringCustomIdType

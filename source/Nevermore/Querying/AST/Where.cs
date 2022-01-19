@@ -45,6 +45,19 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
         public override string ToString() => GenerateSql();
     }
 
+    public class OrClause : IWhereClause
+    {
+        readonly IReadOnlyList<IWhereClause> subClauses;
+
+        public OrClause(IReadOnlyList<IWhereClause> subClauses)
+        {
+            this.subClauses = subClauses;
+        }
+
+        public string GenerateSql() => $"({string.Join(@" OR ", subClauses.Select(c => $"({c.GenerateSql()})"))})";
+        public override string ToString() => GenerateSql();
+    }
+
     public class ArrayWhereClause : IWhereClause
     {
         readonly IWhereFieldReference whereFieldReference;
@@ -72,6 +85,56 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
                 default:
                     throw new ArgumentOutOfRangeException("Operand " + operand + " is not supported!");
             }
+        }
+    }
+
+    public class JsonArrayWhereClause : IWhereClause
+    {
+        readonly string parameterName;
+        readonly ArraySqlOperand operand;
+        readonly string jsonPath;
+        readonly Type elementType;
+
+        public JsonArrayWhereClause(string parameterName, ArraySqlOperand operand, string jsonPath, Type elementType)
+        {
+            this.parameterName = parameterName;
+            this.operand = operand;
+            this.jsonPath = jsonPath;
+            this.elementType = elementType;
+        }
+
+        public string GenerateSql()
+        {
+            return $"@{parameterName} {GetQueryOperandSql()} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {GetDbType()} '$'))";
+        }
+
+        string GetDbType()
+        {
+            return Type.GetTypeCode(elementType) switch
+            {
+                TypeCode.String => "nvarchar(max)",
+                TypeCode.Int16 => "int",
+                TypeCode.Double => "double",
+                TypeCode.Boolean => "bit",
+                TypeCode.Char => "char(max)",
+                TypeCode.DateTime => "datetime2",
+                TypeCode.Decimal => "decimal(18,8)",
+                TypeCode.Int32 => "int",
+                TypeCode.Int64 => "bigint",
+                TypeCode.SByte => "tinyint",
+                TypeCode.Single => "float",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        string GetQueryOperandSql()
+        {
+            return operand switch
+            {
+                ArraySqlOperand.In => "IN",
+                ArraySqlOperand.NotIn => "NOT IN",
+                _ => throw new ArgumentOutOfRangeException($"Operand {operand} is not supported!")
+            };
         }
     }
 
@@ -140,6 +203,8 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
             {
                 case UnarySqlOperand.Like:
                     return "LIKE";
+                case UnarySqlOperand.NotLike:
+                    return "NOT LIKE";
                 case UnarySqlOperand.Equal:
                     return "=";
                 case UnarySqlOperand.NotEqual:
