@@ -5,14 +5,12 @@
         readonly IExpression predicate;
         readonly ISelect trueValue;
         readonly ISelect falseValue;
-        readonly IOption option;
 
-        public IfExpression(IExpression predicate, ISelect trueValue, ISelect falseValue, IOption option)
+        public IfExpression(IExpression predicate, ISelect trueValue, ISelect falseValue)
         {
             this.predicate = predicate;
             this.trueValue = trueValue;
             this.falseValue = falseValue;
-            this.option = option;
         }
 
         public string GenerateSql()
@@ -20,7 +18,7 @@
             return $@"IF {predicate.GenerateSql()}
     {trueValue.GenerateSql()}
 ELSE
-    {falseValue.GenerateSql()}{option.GenerateSql()}";
+    {falseValue.GenerateSql()}";
         }
     }
 }

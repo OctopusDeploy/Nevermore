@@ -311,8 +311,7 @@ namespace Nevermore.Advanced
                 clonedSelectBuilder.RemoveOrderBys();
                 return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
                     new SelectConstant(trueParameter),
-                    new SelectConstant(falseParameter),
-                    GetOption());
+                    new SelectConstant(falseParameter));
             }
         }
 
@@ -342,8 +341,7 @@ namespace Nevermore.Advanced
                 clonedSelectBuilder.RemoveOrderBys();
                 return new IfExpression(new ExistsExpression(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy()),
                     new SelectConstant(trueParameter),
-                    new SelectConstant(falseParameter),
-                    GetOption());
+                    new SelectConstant(falseParameter));
             }
         }
 
