@@ -84,9 +84,9 @@ namespace Nevermore.Advanced.Queryable
 
             if (queryType == QueryType.SelectSingle)
             {
-                var streamTask = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
+                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                return (TResult)Convert.ChangeType(await streamTask.FirstOrDefaultAsync(cancellationToken), typeof(TResult));
+                return (TResult)Convert.ChangeType(await FirstOrDefaultAsync(asyncStream, cancellationToken), typeof(TResult));
             }
 
             return await (Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
@@ -108,6 +108,17 @@ namespace Nevermore.Advanced.Queryable
             }
 
             return list;
+        }
+
+        static async ValueTask<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
+        {
+            var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+            if (await enumerator.MoveNextAsync())
+            {
+                return enumerator.Current;
+            }
+
+            return default;
         }
     }
 }
