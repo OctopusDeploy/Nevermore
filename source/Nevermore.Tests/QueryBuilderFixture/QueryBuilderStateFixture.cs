@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Nevermore.Advanced;
 using Nevermore.Advanced.QueryBuilders;
 using NSubstitute;
 using NUnit.Framework;
@@ -122,7 +121,7 @@ ORDER BY [Id]");
         }
 
         [Test]
-        public void ShouldNotModifyQueryBuilderStateFromToListPageinated()
+        public void ShouldNotModifyQueryBuilderStateFromToListPaginated()
         {
             var queryBuilder = QueryBuilder("Accounts");
 
@@ -147,11 +146,11 @@ ORDER BY [Id]");
         }
 
         [Test]
-        public void ShouldNotModifyQueryBuilderStateFromToListPageinatedWithCount()
+        public void ShouldNotModifyQueryBuilderStateFromToListPaginatedWithCount()
         {
             var queryBuilder = QueryBuilder("Accounts");
 
-            queryBuilder.ToList(10, 20, out var _);
+            queryBuilder.ToList(10, 20, out _);
 
             executedQueries.Count.ShouldBeEquivalentTo(2);
             executedQueries.First().ShouldBeEquivalentTo(@"SELECT COUNT(*)
@@ -174,6 +173,70 @@ ORDER BY [RowNum]");
             LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
+        }
+
+        [Test]
+        public void ShouldNotModifyQueryBuilderStateFromToListPaginatedWithQueryHint()
+        {
+            var queryBuilder = QueryBuilder("Accounts")
+                .Option("OPTIMIZE FOR UNKNOWN")
+                .Option("OPTIMIZE FOR UNKNOWN") // make sure it will deduplicate
+                .Option("FAST 1");
+
+            queryBuilder.ToList(10, 20);
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM (
+    SELECT *,
+    ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
+    FROM [dbo].[Accounts]
+) ALIAS_GENERATED_1
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
+ORDER BY [RowNum]
+OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
+
+            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+            queryBuilder.ToList();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM [dbo].[Accounts]
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
+        }
+
+        [Test]
+        public void ShouldNotModifyQueryBuilderStateFromToListPaginatedWithCountAndQueryHint()
+        {
+            var queryBuilder = QueryBuilder("Accounts")
+                .Option("OPTIMIZE FOR UNKNOWN");
+
+            queryBuilder.ToList(10, 20, out _);
+
+            executedQueries.Count.ShouldBeEquivalentTo(2);
+            executedQueries.First().ShouldBeEquivalentTo(@"SELECT COUNT(*)
+FROM [dbo].[Accounts]
+OPTION (OPTIMIZE FOR UNKNOWN)");
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM (
+    SELECT *,
+    ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
+    FROM [dbo].[Accounts]
+) ALIAS_GENERATED_1
+WHERE ([RowNum] >= @_minrow)
+AND ([RowNum] <= @_maxrow)
+ORDER BY [RowNum]
+OPTION (OPTIMIZE FOR UNKNOWN)");
+
+            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+
+            queryBuilder.ToList();
+
+            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+FROM [dbo].[Accounts]
+ORDER BY [Id]
+OPTION (OPTIMIZE FOR UNKNOWN)");
         }
 
         [Test]

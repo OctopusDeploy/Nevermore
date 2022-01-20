@@ -21,6 +21,7 @@ namespace Nevermore.Advanced
         readonly CommandParameterValues paramValues;
         readonly Parameters @params;
         readonly ParameterDefaults paramDefaults;
+        readonly List<string> optionClauses = new();
         TimeSpan? commandTimeout;
 
         public QueryBuilder(TSelectBuilder selectBuilder,
@@ -239,7 +240,7 @@ namespace Nevermore.Advanced
 
         public IQueryBuilder<TRecord> Option(string queryHint)
         {
-            selectBuilder.AddOption(queryHint);
+            optionClauses.Add(queryHint);
             return this;
         }
 
@@ -265,6 +266,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+            clonedSelectBuilder.AddOptions(optionClauses);
             var count = readQueryExecutor.ExecuteScalar<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout);
             return count;
         }
@@ -273,6 +275,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
+            clonedSelectBuilder.AddOptions(optionClauses);
             var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
             return count;
         }
@@ -360,6 +363,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddDistinct();
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
@@ -368,6 +372,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddDistinct();
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
@@ -376,6 +381,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
@@ -384,6 +390,7 @@ namespace Nevermore.Advanced
         {
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddTop(take);
+            clonedSelectBuilder.AddOptions(optionClauses);
             var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
@@ -410,7 +417,7 @@ namespace Nevermore.Advanced
             return results;
         }
 
-        SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parmeterValues)
+        SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parameterValues)
         {
             const string rowNumberColumnName = "RowNum";
             var minRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_minrow"));
@@ -427,8 +434,9 @@ namespace Nevermore.Advanced
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual,
                 maxRowParameter));
             subqueryBuilder.AddOrder("RowNum", false);
+            subqueryBuilder.AddOptions(optionClauses);
 
-            parmeterValues = new CommandParameterValues(paramValues)
+            parameterValues = new CommandParameterValues(paramValues)
             {
                 {minRowParameter.ParameterName, skip + 1},
                 {maxRowParameter.ParameterName, take + skip}
@@ -477,13 +485,17 @@ namespace Nevermore.Advanced
         [Pure]
         public IEnumerable<TRecord> Stream()
         {
-            var stream = readQueryExecutor.Stream<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddOptions(optionClauses);
+            var stream = readQueryExecutor.Stream<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout);
             return stream;
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync(CancellationToken cancellationToken = default)
         {
-            var stream = readQueryExecutor.StreamAsync<TRecord>(selectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            var clonedSelectBuilder = selectBuilder.Clone();
+            clonedSelectBuilder.AddOptions(optionClauses);
+            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
 
