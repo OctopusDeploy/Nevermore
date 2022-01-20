@@ -280,11 +280,6 @@ namespace Nevermore.Advanced
             return count;
         }
 
-        IOption GetOption()
-        {
-            return new Option(optionClauses.Select(o => new OptionClause(o)).ToList());
-        }
-
         public bool Any()
         {
             const int trueValue = 1;
