@@ -12,7 +12,6 @@ namespace Nevermore.Advanced.Queryable
     {
         static readonly MethodInfo WhereCustomMethodInfo = new Func<IQueryable<object>, string, IQueryable<object>>(WhereCustom).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo HintMethodInfo = new Func<IQueryable<object>, string, IQueryable<object>>(Hint).GetMethodInfo().GetGenericMethodDefinition();
-        static readonly MethodInfo RawDebugViewInfo = new Func<IQueryable<object>, string>(RawDebugView).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultMethodInfo = new Func<IQueryable<object>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultWithPredicateMethodInfo = new Func<IQueryable<object>, Expression<Func<object, bool>>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo CountMethodInfo = new Func<IQueryable<object>, int>(System.Linq.Queryable.Count).GetMethodInfo().GetGenericMethodDefinition();
