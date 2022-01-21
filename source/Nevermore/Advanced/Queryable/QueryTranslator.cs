@@ -145,6 +145,14 @@ namespace Nevermore.Advanced.Queryable
                 return node;
             }
 
+            if (methodInfo.Name == nameof(NevermoreQueryableExtensions.Hint))
+            {
+                Visit(node.Arguments[0]);
+                var hint = (string)GetValueFromExpression(node.Arguments[1], typeof(string));
+                sqlBuilder.Hint(hint);
+                return node;
+            }
+
             if (methodInfo.Name == nameof(System.Linq.Queryable.Take))
             {
                 Visit(node.Arguments[0]);

@@ -11,6 +11,7 @@ namespace Nevermore.Advanced.Queryable
     public static class NevermoreQueryableExtensions
     {
         static readonly MethodInfo WhereCustomMethodInfo = new Func<IQueryable<object>, string, IQueryable<object>>(WhereCustom).GetMethodInfo().GetGenericMethodDefinition();
+        static readonly MethodInfo HintMethodInfo = new Func<IQueryable<object>, string, IQueryable<object>>(Hint).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultMethodInfo = new Func<IQueryable<object>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultWithPredicateMethodInfo = new Func<IQueryable<object>, Expression<Func<object, bool>>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo CountMethodInfo = new Func<IQueryable<object>, int>(System.Linq.Queryable.Count).GetMethodInfo().GetGenericMethodDefinition();
@@ -30,6 +31,34 @@ namespace Nevermore.Advanced.Queryable
                     null,
                     WhereCustomMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression, Expression.Constant(whereClause)));
+        }
+
+        public static IQueryable<TSource> Hint<TSource>(this IQueryable<TSource> source, string hint)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (string.IsNullOrEmpty(hint))
+                throw new ArgumentNullException(nameof(hint));
+
+            return source.Provider.CreateQuery<TSource>(
+                Expression.Call(
+                    null,
+                    HintMethodInfo.MakeGenericMethod(typeof(TSource)),
+                    source.Expression, Expression.Constant(hint)));
+        }
+
+        public static string RawDebugView<TSource>(this IQueryable<TSource> source)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            
+            if (source.Provider is QueryProvider queryProvider)
+            {
+                var (command, _) = queryProvider.Translate(source.Expression);
+                return command.Statement;
+            }
+
+            throw new NotSupportedException();
         }
 
         public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)

@@ -51,7 +51,7 @@ namespace Nevermore.Advanced.Queryable
         public TResult Execute<TResult>(Expression expression)
         {
             var (command, queryType) = Translate(expression);
-
+            
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
@@ -93,7 +93,7 @@ namespace Nevermore.Advanced.Queryable
                 .Invoke(queryExecutor, new object[] { command, cancellationToken });
         }
 
-        (PreparedCommand, QueryType) Translate(Expression expression)
+        public (PreparedCommand, QueryType) Translate(Expression expression)
         {
             return new QueryTranslator(configuration).Translate(expression);
         }
