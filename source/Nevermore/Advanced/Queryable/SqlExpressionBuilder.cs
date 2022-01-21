@@ -14,8 +14,9 @@ namespace Nevermore.Advanced.Queryable
 
         readonly List<OrderByField> orderByFields = new();
         readonly List<IWhereClause> whereClauses = new();
+        string hint;
         readonly CommandParameterValues parameterValues = new();
-        ISelectSource from;
+        ITableSource from;
         int? skip;
         int? take;
         QueryType queryType = QueryType.SelectMany;
@@ -74,6 +75,11 @@ namespace Nevermore.Advanced.Queryable
             queryType = QueryType.Count;
         }
 
+        public void Debug()
+        {
+            queryType = QueryType.Debug;
+        }
+
         public void Skip(int numberOfRows)
         {
             skip = numberOfRows;
@@ -82,6 +88,11 @@ namespace Nevermore.Advanced.Queryable
         public void Take(int numberOfRows)
         {
             take = numberOfRows;
+        }
+
+        public void Hint(string hint)
+        {
+            this.hint = hint;
         }
 
         public void From(Type documentType)
@@ -93,6 +104,11 @@ namespace Nevermore.Advanced.Queryable
 
         public (IExpression, CommandParameterValues, QueryType) Build()
         {
+            if (from is ISimpleTableSource simpleTableSource && !string.IsNullOrEmpty(hint))
+            {
+                from = new TableSourceWithHint(simpleTableSource, hint);
+            }
+            
             var sqlExpression = queryType switch
             {
                 QueryType.Exists => CreateExistsQuery(),
@@ -146,6 +162,8 @@ namespace Nevermore.Advanced.Queryable
         IExpression CreateExistsQuery()
         {
             IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
+
+            
             var select = new Select(
                 rowSelection ?? new AllRows(),
                 new SelectAllSource(),

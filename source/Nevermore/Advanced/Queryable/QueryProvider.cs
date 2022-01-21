@@ -24,6 +24,8 @@ namespace Nevermore.Advanced.Queryable
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalar), new[] { typeof(PreparedCommand) });
         static readonly MethodInfo GenericExecuteScalarAsyncMethod = typeof(IReadQueryExecutor)
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalarAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
+        static readonly MethodInfo RawDebugViewMethod = typeof(QueryProvider)
+            .GetRuntimeMethods().Single(m => m.Name == nameof(RawDebugView));
 
         readonly IReadQueryExecutor queryExecutor;
         readonly IRelationalStoreConfiguration configuration;
@@ -48,10 +50,15 @@ namespace Nevermore.Advanced.Queryable
                 .Invoke(this, new object[] { expression });
         }
 
+        public string RawDebugView(PreparedCommand command)
+        {
+            return command.Statement;
+        }
+
         public TResult Execute<TResult>(Expression expression)
         {
             var (command, queryType) = Translate(expression);
-
+            
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
@@ -64,6 +71,11 @@ namespace Nevermore.Advanced.Queryable
                 var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command });
                 return (TResult)stream.Cast<object>().FirstOrDefault();
+            }
+
+            if (queryType == QueryType.Debug)
+            {
+                return (TResult)RawDebugViewMethod.Invoke(this, new object[] { command });
             }
 
             return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)

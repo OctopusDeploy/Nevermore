@@ -915,6 +915,31 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void Hint()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var a = t.Queryable<Customer>().Where(x => x.FirstName == "Alice").Hint("WITH (ROWLOCK, UPDLOCK, NOWAIT)").RawDebugView();
+            a.Should().Be($"SELECT Id,FirstName,LastName,Nickname,Roles,Balance,IsVip,JSON{Environment.NewLine}" +
+            $"FROM [TestSchema].[Customer] WITH (ROWLOCK, UPDLOCK, NOWAIT){Environment.NewLine}" +
+            "WHERE ([FirstName] = @p1)");
+        }
+
+        [Test]
         public void CountWithPredicate()
         {
             using var t = Store.BeginTransaction();

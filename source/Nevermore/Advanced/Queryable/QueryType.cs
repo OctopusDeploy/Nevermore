@@ -5,6 +5,7 @@
         SelectMany,
         SelectSingle,
         Count,
-        Exists
+        Exists,
+        Debug
     }
 }
