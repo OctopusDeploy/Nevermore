@@ -53,12 +53,13 @@ namespace Nevermore.Advanced.Queryable
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
             
-            var expression = Expression.Call(
-                null,
-                RawDebugViewInfo.MakeGenericMethod(typeof(TSource)),
-                source.Expression);
+            if (source.Provider is QueryProvider queryProvider)
+            {
+                var (command, _) = queryProvider.Translate(source.Expression);
+                return command.Statement;
+            }
 
-            return source.Provider.Execute<string>(expression);
+            throw new NotSupportedException();
         }
 
         public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)

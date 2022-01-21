@@ -75,11 +75,6 @@ namespace Nevermore.Advanced.Queryable
             queryType = QueryType.Count;
         }
 
-        public void Debug()
-        {
-            queryType = QueryType.Debug;
-        }
-
         public void Skip(int numberOfRows)
         {
             skip = numberOfRows;

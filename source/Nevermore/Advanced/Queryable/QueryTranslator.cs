@@ -145,13 +145,6 @@ namespace Nevermore.Advanced.Queryable
                 return node;
             }
 
-            if (methodInfo.Name == nameof(NevermoreQueryableExtensions.RawDebugView))
-            {
-                Visit(node.Arguments[0]);
-                sqlBuilder.Debug();
-                return node;
-            }
-
             if (methodInfo.Name == nameof(NevermoreQueryableExtensions.Hint))
             {
                 Visit(node.Arguments[0]);
