@@ -113,6 +113,38 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereEqualPolymorphicDocumentColumn()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testProducts = new Product[]
+            {
+                new DodgyProduct { Name = "iPhane", Price = 350.0m, Tax = 35.0m },
+                new SpecialProduct { Name = "OctoPhone", Price = 300.0m },
+            };
+
+            foreach (var p in testProducts)
+            {
+                t.Insert(p);
+            }
+
+            t.Commit();
+
+            // query by base type
+            var dodgyProduct = t.Queryable<Product>()
+                .First(p => p.Name == "iPhane");
+
+            dodgyProduct.Price.Should().Be(350);
+
+            // query by derived type
+            var specialProduct = t
+                .Queryable<SpecialProduct>()
+                .First(p => p.Name == "OctoPhone");
+
+            specialProduct.Price.Should().Be(300);
+        }
+
+        [Test]
         public void WhereEqualJson()
         {
             using var t = Store.BeginTransaction();

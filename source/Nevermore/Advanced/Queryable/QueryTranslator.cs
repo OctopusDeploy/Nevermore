@@ -340,7 +340,7 @@ namespace Nevermore.Advanced.Queryable
                 var documentMap = sqlBuilder.DocumentMap;
                 var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
                 var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
-                if (childPropertyExpression == null && parameterExpression.Type == documentMap.Type)
+                if (childPropertyExpression == null && documentMap.Type.IsAssignableFrom(parameterExpression.Type))
                 {
                     if (documentMap.IdColumn!.Property.Matches(propertyInfo))
                     {
