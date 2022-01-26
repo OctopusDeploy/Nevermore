@@ -300,7 +300,7 @@ namespace Nevermore.Analyzers
                             values.AddRange(creationExpressionSyntax.ArgumentList.Arguments.Select(e => GetStringValue(e.Expression, model)));
                         }
 
-                        return string.Join(", ", values.Select(v => '@' + v.TrimStart('@')));
+                        return string.Join(", ", values.Where(x => x != null).Select(v => '@' + v.TrimStart('@')));
                     }
 
                     return "???? " + typeSymbol.Name;

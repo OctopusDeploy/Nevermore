@@ -61,5 +61,22 @@ namespace Nevermore.Analyzers.Tests
 	        var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
 	        AssertPassed(results);
         }
+
+        [Test]
+        public void ShouldHandlePropertiesSetOnCommandParameterValuesAsWellAsParameters()
+        {
+            var code = @"
+                var parameters = new CommandParameterValues
+                {
+                    [""searchParam""] = ""abc"",
+                    CommandType = System.Data.CommandType.StoredProcedure
+                };
+
+                var results = transaction.Stream<string>(""FullTextSearch"", parameters).ToList();
+            ";
+
+            var results = CodeCompiler.Compile<NevermoreEmbeddedSqlExpressionAnalyzer>(code);
+            AssertPassed(results);
+        }
    }
 }
