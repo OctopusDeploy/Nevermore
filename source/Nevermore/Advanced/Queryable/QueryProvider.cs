@@ -70,6 +70,7 @@ namespace Nevermore.Advanced.Queryable
                 .Invoke(queryExecutor, new object[] { command });
         }
 
+        
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var (command, queryType) = Translate(expression);
@@ -86,7 +87,27 @@ namespace Nevermore.Advanced.Queryable
             {
                 var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                return (TResult)Convert.ChangeType(await FirstOrDefaultAsync(asyncStream, cancellationToken), typeof(TResult));
+                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken);
+
+                if (firstOrDefaultAsync is null)
+                {
+                    if (typeof(TResult).IsValueType)
+                    {
+                        throw new InvalidCastException("");
+                    }
+
+                    // TODO: This NEEDS to go away when we turn nullable on in Nevermore
+                    // This method needs to be able to return null for instances like `FirstOrDefaultAsync` 
+                    object GetNull() => null;
+                    return (TResult) GetNull();
+                }
+                
+                if (!firstOrDefaultAsync.GetType().IsAssignableFrom(typeof(TResult)))
+                {
+                    throw new InvalidCastException($"Type {firstOrDefaultAsync.GetType()} is not castable to type {typeof(TResult)}");
+                }
+                
+                return (TResult) firstOrDefaultAsync;
             }
 
             return await (Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
