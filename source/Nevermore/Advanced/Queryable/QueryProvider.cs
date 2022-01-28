@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Util;
 
 namespace Nevermore.Advanced.Queryable
@@ -16,10 +18,6 @@ namespace Nevermore.Advanced.Queryable
             .GetRuntimeMethods().Single(m => m.Name == nameof(CreateQuery) && m.IsGenericMethod);
         static readonly MethodInfo GenericExecuteMethod = typeof(QueryProvider)
             .GetRuntimeMethods().Single(m => m.Name == nameof(Execute) && m.IsGenericMethod);
-        static readonly MethodInfo GenericStreamMethod = typeof(IReadQueryExecutor)
-            .GetRuntimeMethod(nameof(IReadQueryExecutor.Stream), new[] { typeof(PreparedCommand) });
-        static readonly MethodInfo GenericStreamAsyncMethod = typeof(IReadQueryExecutor)
-            .GetRuntimeMethod(nameof(IReadQueryExecutor.StreamAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
         static readonly MethodInfo GenericExecuteScalarMethod = typeof(IReadQueryExecutor)
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalar), new[] { typeof(PreparedCommand) });
         static readonly MethodInfo GenericExecuteScalarAsyncMethod = typeof(IReadQueryExecutor)
@@ -55,15 +53,12 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                return (TResult)GenericStreamMethod.MakeGenericMethod(sequenceType)
-                    .Invoke(queryExecutor, new object[] { command });
+                return (TResult)ReadList(command, sequenceType);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command });
-                return (TResult)stream.Cast<object>().FirstOrDefault();
+                return (TResult)ReadSingle(command, expression.Type);
             }
 
             return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
@@ -77,25 +72,12 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(sequenceType)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
-
-                return (TResult)await CreateList(asyncStream, sequenceType).ConfigureAwait(false);
+                return (TResult)await ReadList(command, sequenceType, cancellationToken).ConfigureAwait(false);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken).ConfigureAwait(false);
-
-                if (firstOrDefaultAsync is not null) return (TResult) firstOrDefaultAsync;
-
-                // TODO: This NEEDS to go away when we turn nullable on in Nevermore
-                // This method needs to be able to return null for instances like `FirstOrDefaultAsync`
-                object GetNull() => null;
-                return (TResult) GetNull();
-
+                return (TResult)await ReadSingle(command, expression.Type, cancellationToken).ConfigureAwait(false);
             }
 
             return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
@@ -108,31 +90,100 @@ namespace Nevermore.Advanced.Queryable
             return new QueryTranslator(configuration).Translate(expression);
         }
 
-        static async Task<IList> CreateList(IAsyncEnumerable<object> items, Type elementType)
+        IList ReadList(PreparedCommand command, Type elementType)
         {
-            var listType = typeof(List<>).MakeGenericType(elementType);
-            IList list = (IList)Activator.CreateInstance(listType);
-            await foreach (var item in items.ConfigureAwait(false))
+            var list = CreateList(elementType);
+            var readerStrategy = GetReaderStrategy(elementType, command);
+            using var reader = queryExecutor.ExecuteReader(command);
+            while (reader.Read())
             {
-                list.Add(item);
+                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
+                if (success)
+                {
+                    list.Add(item);
+                }
+            }
+
+            return list;
+        }
+        
+        async Task<IList> ReadList(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
+        {
+            var list = CreateList(elementType);
+            var readerStrategy = GetReaderStrategy(elementType, command);
+            using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
+                if (success)
+                {
+                    list.Add(item);
+                }
             }
 
             return list;
         }
 
-        static async ValueTask<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
+        object ReadSingle(PreparedCommand command, Type elementType)
         {
-#pragma warning disable CA2007
-            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
-            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
-#pragma warning restore CA2007
-
-            if (await enumerator.MoveNextAsync())
+            var readerStrategy = GetReaderStrategy(elementType, command);
+            using var reader = queryExecutor.ExecuteReader(command);
+            if (reader.Read())
             {
-                return enumerator.Current;
+                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
+                if (success)
+                {
+                    return item;
+                }
             }
 
-            return default;
+            return elementType.GetDefaultValue();
+        }
+
+        async Task<object> ReadSingle(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
+        {
+            var readerStrategy = GetReaderStrategy(elementType, command);
+            await using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
+                if (success)
+                {
+                    return item;
+                }
+            }
+
+            return elementType.GetDefaultValue();
+        }
+
+        static bool TryProcessRow(Delegate readerStrategy, Type elementType, DbDataReader reader, out object item)
+        {
+            var readResult = readerStrategy.DynamicInvoke(reader);
+            var tupleType = typeof(ValueTuple<,>).MakeGenericType(elementType, typeof(bool));
+            // ReSharper disable once PossibleNullReferenceException
+            var success = (bool)tupleType.GetField("Item2").GetValue(readResult);
+            // ReSharper disable once PossibleNullReferenceException
+            item = success
+                ? tupleType.GetField("Item1").GetValue(readResult)
+                : null;
+
+            return success;
+        }
+
+        Delegate GetReaderStrategy(Type elementType, PreparedCommand command)
+        {
+            // ReSharper disable once PossibleNullReferenceException
+            return (Delegate)typeof(IReaderStrategyRegistry)
+                .GetMethod(nameof(IReaderStrategyRegistry.Resolve), 1, new[] { typeof(PreparedCommand) })
+                .MakeGenericMethod(elementType)
+                .Invoke(configuration.ReaderStrategies, new object[] { command });
+        }
+
+        static IList CreateList(Type elementType)
+        {
+            var listType = typeof(List<>).MakeGenericType(elementType);
+            var list = (IList)Activator.CreateInstance(listType);
+            return list;
         }
     }
 }
