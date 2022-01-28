@@ -93,7 +93,7 @@ namespace Nevermore.Advanced.Queryable
                 {
                     if (typeof(TResult).IsValueType)
                     {
-                        throw new InvalidCastException("");
+                        throw new InvalidCastException("Null object cannot be converted to a value type");
                     }
 
                     // TODO: This NEEDS to go away when we turn nullable on in Nevermore
