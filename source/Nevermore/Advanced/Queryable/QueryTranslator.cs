@@ -183,9 +183,37 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Skip(skip);
                     return node;
                 }
+                case nameof(System.Linq.Queryable.Select):
+                {
+                    Visit(node.Arguments[0]);
+                    AddProjection(node.Arguments[1]);
+                    return node;
+                }
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        void AddProjection(Expression expression)
+        {
+            expression = StripQuotes(expression);
+            if (expression is LambdaExpression { Body: MemberExpression { NodeType: ExpressionType.MemberAccess } memberExpression })
+            {
+                var (selectColumns, _) = GetSelectFieldReferenceAndType(memberExpression);
+                sqlBuilder.Select(selectColumns);
+                return;
+            }
+
+            if (expression is LambdaExpression { Body: NewExpression newExpression })
+            {
+                foreach (var arg in newExpression.Arguments)
+                {
+                    var (selectColumn, _) = GetSelectFieldReferenceAndType(arg);
+                    sqlBuilder.Select(selectColumn);
+                }
+            }
+
+            throw new NotSupportedException();
         }
 
         static string GetMemberNameFromKeySelectorExpression(Expression expression)
@@ -347,6 +375,41 @@ namespace Nevermore.Advanced.Queryable
                 return Enum.ToObject(propertyType, result);
 
             return result;
+        }
+
+        (ISelectColumns, Type) GetSelectFieldReferenceAndType(Expression expression)
+        {
+            if (expression is UnaryExpression unaryExpression)
+                expression = unaryExpression.Operand;
+
+            if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
+            {
+                var documentMap = sqlBuilder.DocumentMap;
+                var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
+                var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
+                if (childPropertyExpression == null && documentMap.Type.IsAssignableFrom(parameterExpression.Type))
+                {
+                    if (documentMap.IdColumn!.Property.Matches(propertyInfo))
+                    {
+                        return (new SelectColumn(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
+                    }
+
+                    var column = documentMap.Columns.Where(c => c.Property is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
+                    if (column is not null)
+                    {
+                        return (new SelectColumn(column.ColumnName), propertyInfo.PropertyType);
+                    }
+                }
+
+                if (documentMap.HasJsonColumn())
+                {
+                    var jsonPath = GetJsonPath(memberExpression);
+                    var fieldReference = new SelectJsonValue(jsonPath, propertyInfo.PropertyType);
+                    return (fieldReference, propertyInfo.PropertyType);
+                }
+            }
+
+            throw new NotSupportedException();
         }
 
         (IWhereFieldReference, Type) GetFieldReferenceAndType(Expression expression)

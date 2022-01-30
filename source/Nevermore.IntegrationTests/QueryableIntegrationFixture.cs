@@ -1475,5 +1475,56 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
         }
+
+        [Test]
+        public async Task ProjectColumnField()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = t.Queryable<Customer>().Select(c => c.FirstName);
+
+            customers.Should().BeEquivalentTo("Alice", "Bob", "Charlie");
+        }
+
+        [Test]
+        public async Task ProjectJsonField()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = t.Queryable<Customer>().Select(c => new { c.FirstName, c.IsEmployee });
+
+            customers.Should().BeEquivalentTo(
+                new { FirstName = "Alice", IsEmployee = true },
+                new { FirstName = "Bob", IsEmployee = false },
+                new { FirstName = "Charlie", IsEmployee = true });
+        }
     }
 }

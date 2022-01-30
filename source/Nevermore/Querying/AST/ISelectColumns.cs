@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Nevermore.Querying.AST
@@ -109,5 +110,54 @@ namespace Nevermore.Querying.AST
 
         public string GenerateSql() => $"ROW_NUMBER() {over.GenerateSql()} AS {alias}";
         public override string ToString() => GenerateSql();
+    }
+
+    public class SelectColumn : ISelectColumns
+    {
+        readonly string columnName;
+
+        public SelectColumn(string columnName)
+        {
+            this.columnName = columnName;
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => $"[{columnName}]";
+    }
+
+    public class SelectJsonValue : ISelectColumns
+    {
+        readonly string jsonPath;
+        readonly Type elementType;
+
+        public SelectJsonValue(string jsonPath, Type elementType)
+        {
+            this.jsonPath = jsonPath;
+            this.elementType = elementType;
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => $"CONVERT({GetDbType()}, JSON_VALUE([JSON], '{jsonPath}'))";
+
+        string GetDbType()
+        {
+            return Type.GetTypeCode(elementType) switch
+            {
+                TypeCode.String => "nvarchar(max)",
+                TypeCode.Int16 => "int",
+                TypeCode.Double => "double",
+                TypeCode.Boolean => "bit",
+                TypeCode.Char => "char(max)",
+                TypeCode.DateTime => "datetime2",
+                TypeCode.Decimal => "decimal(18,8)",
+                TypeCode.Int32 => "int",
+                TypeCode.Int64 => "bigint",
+                TypeCode.SByte => "tinyint",
+                TypeCode.Single => "float",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
     }
 }
