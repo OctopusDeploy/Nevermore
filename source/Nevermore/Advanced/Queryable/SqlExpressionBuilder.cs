@@ -14,6 +14,7 @@ namespace Nevermore.Advanced.Queryable
 
         readonly List<OrderByField> orderByFields = new();
         readonly List<IWhereClause> whereClauses = new();
+        readonly List<ISelectColumns> columnSelections = new();
         string hint;
         readonly CommandParameterValues parameterValues = new();
         ITableSource from;
@@ -101,6 +102,11 @@ namespace Nevermore.Advanced.Queryable
             this.hint = hint;
         }
 
+        public void Select(ISelectColumns columnSelector)
+        {
+            columnSelections.Add(columnSelector);
+        }
+
         public void From(Type documentType)
         {
             DocumentMap = configuration.DocumentMaps.Resolve(documentType);
@@ -140,10 +146,12 @@ namespace Nevermore.Advanced.Queryable
         {
             IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
             var orderBy = orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
-            var columns = new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
+            ISelectColumns columns = columnSelections.Any()
+                ? new AggregateSelectColumns(columnSelections.ToArray())
+                : new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
             var select = new Select(
                 rowSelection ?? new AllRows(),
-                skip.HasValue ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
+                skip.HasValue ? new AggregateSelectColumns(new[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
                 from,
                 CreateWhereClause(),
                 null,
