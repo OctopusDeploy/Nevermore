@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Nevermore.Advanced.Queryable;
@@ -113,7 +114,7 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void WhereEqualPolymorphicDocumentColumn()
+        public async Task WhereEqualPolymorphicDocumentColumn()
         {
             using var t = Store.BeginTransaction();
 
@@ -132,14 +133,14 @@ namespace Nevermore.IntegrationTests
 
             // query by base type
             var dodgyProduct = t.Queryable<Product>()
-                .First(p => p.Name == "iPhane");
+                .FirstOrDefault(p => p.Name == "iPhane");
 
             dodgyProduct.Price.Should().Be(350);
 
             // query by derived type
-            var specialProduct = t
+            var specialProduct = await t
                 .Queryable<SpecialProduct>()
-                .First(p => p.Name == "OctoPhone");
+                .FirstOrDefaultAsync(p => p.Name == "OctoPhone", CancellationToken.None);
 
             specialProduct.Price.Should().Be(300);
         }

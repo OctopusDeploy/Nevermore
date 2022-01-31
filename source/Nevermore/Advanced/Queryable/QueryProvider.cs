@@ -70,6 +70,7 @@ namespace Nevermore.Advanced.Queryable
                 .Invoke(queryExecutor, new object[] { command });
         }
 
+        
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var (command, queryType) = Translate(expression);
@@ -86,7 +87,15 @@ namespace Nevermore.Advanced.Queryable
             {
                 var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                return (TResult)Convert.ChangeType(await FirstOrDefaultAsync(asyncStream, cancellationToken), typeof(TResult));
+                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken);
+
+                if (firstOrDefaultAsync is not null) return (TResult) firstOrDefaultAsync;
+
+                // TODO: This NEEDS to go away when we turn nullable on in Nevermore
+                // This method needs to be able to return null for instances like `FirstOrDefaultAsync` 
+                object GetNull() => null;
+                return (TResult) GetNull();
+
             }
 
             return await (Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)

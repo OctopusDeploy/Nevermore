@@ -209,7 +209,7 @@ namespace Nevermore
 
         Exception WrapException(Exception ex)
         {
-            if (ex is SqlException sqlEx && sqlEx.Number == 1205) // deadlock
+            if (ex is SqlException {Number: 1205 or 1222 or -2}) // 1205 deadlock, 1222 row lock timeout, -2 timeout
             {
                 var builder = new StringBuilder();
                 builder.AppendLine(ex.Message);
