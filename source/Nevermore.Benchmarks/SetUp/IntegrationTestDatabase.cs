@@ -13,7 +13,7 @@ namespace Nevermore.Benchmarks.SetUp
             var username = Environment.GetEnvironmentVariable("NevermoreTestUsername");
             var password = Environment.GetEnvironmentVariable("NevermoreTestPassword");
             testDatabaseName = Environment.GetEnvironmentVariable("NevermoreBenchmarkDatabase") ?? "Nevermore-Benchmarks";
-            var builder = new SqlConnectionStringBuilder($"Server={sqlInstance};Database={testDatabaseName};{(username == null ? "Trusted_connection=true;" : string.Empty)}")
+            var builder = new SqlConnectionStringBuilder($"Server={sqlInstance};Database={testDatabaseName};{(username == null ? "Trusted_connection=true;" : string.Empty)}; Encrypt=False;")
             {
                 ApplicationName = testDatabaseName,
             };
