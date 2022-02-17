@@ -23,7 +23,7 @@ namespace Nevermore
         {
             Configuration = configuration;
             registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
-            keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize));
+            keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize, configuration.KeyAllocatorLoggingEnabled));
             tableColumnsCache = new TableColumnsCache();
         }
 

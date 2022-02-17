@@ -104,6 +104,8 @@ namespace Nevermore
 
         public bool SupportLargeNumberOfRelatedDocuments { get; set; }
 
+        public bool KeyAllocatorLoggingEnabled { get; set; }
+
         public ISqlCommandFactory CommandFactory { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)

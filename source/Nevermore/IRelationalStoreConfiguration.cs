@@ -74,5 +74,10 @@ namespace Nevermore
         /// This is a temporary feature switch, we will always be using table valued parameters once we're satisfied with the stability
         /// </summary>
         public bool SupportLargeNumberOfRelatedDocuments { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to enable the logging of Id allocations in key allocators.
+        /// </summary>
+        public bool KeyAllocatorLoggingEnabled { get; set; }
     }
 }

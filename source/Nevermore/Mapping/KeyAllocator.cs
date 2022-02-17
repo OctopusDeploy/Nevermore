@@ -1,20 +1,29 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data;
+using Nevermore.Diagnositcs;
 using Nevermore.Transient;
+
+#nullable enable
 
 namespace Nevermore.Mapping
 {
     public class KeyAllocator : IKeyAllocator
     {
+        readonly Guid uuid = Guid.NewGuid();
         readonly IRelationalStore store;
         readonly int blockSize;
-        readonly ConcurrentDictionary<string, Allocation> allocations = new ConcurrentDictionary<string, Allocation>(StringComparer.OrdinalIgnoreCase);
+        readonly ILog? log;
+        readonly ConcurrentDictionary<string, Allocation> allocations = new(StringComparer.OrdinalIgnoreCase);
 
-        public KeyAllocator(IRelationalStore store, int blockSize)
+        public KeyAllocator(IRelationalStore store, int blockSize, bool loggingEnabled = false)
         {
             this.store = store;
             this.blockSize = blockSize;
+            if (loggingEnabled)
+            {
+                log = LogProvider.For<KeyAllocator>();
+            }
         }
 
         public void Reset()
@@ -24,25 +33,32 @@ namespace Nevermore.Mapping
 
         public int NextId(string tableName)
         {
-            var allocation = allocations.GetOrAdd(tableName, _ => new Allocation(store, tableName, blockSize));
-            return allocation.Next();
+            var allocation = allocations.GetOrAdd(tableName, _ => new Allocation(store, tableName, blockSize, uuid, log));
+            var result = allocation.Next();
+            return result;
         }
 
         class Allocation
         {
             readonly IRelationalStore store;
+            readonly ILog? log;
             readonly string collectionName;
             readonly int blockSize;
+            readonly Guid uuid = Guid.NewGuid();
+            readonly Guid parentId;
             readonly object sync = new object();
             volatile int blockStart;
             volatile int blockNext;
             volatile int blockFinish;
 
-            public Allocation(IRelationalStore store, string collectionName, int blockSize)
+            public Allocation(IRelationalStore store, string collectionName, int blockSize, Guid parentId, ILog? log)
             {
                 this.store = store;
                 this.collectionName = collectionName;
                 this.blockSize = blockSize;
+                this.parentId = parentId;
+                this.log = log;
+                log?.DebugFormat($"{nameof(KeyAllocator)} {{0}} {nameof(Allocation)} {{1}} Collection {{2}} was created. BlockSize: {{3}}", parentId, uuid, collectionName, blockSize);
             }
 
             public int Next()
@@ -54,7 +70,7 @@ namespace Nevermore.Mapping
 
                     var result = blockNext;
                     blockNext++;
-
+                    log?.DebugFormat($"{nameof(KeyAllocator)} {{0}} {nameof(Allocation)} {{1}} Collection {{2}} allocated {nameof(NextId)}: {{3}}", parentId, uuid, collectionName, result);
                     return result;
                 }
             }
@@ -70,6 +86,7 @@ namespace Nevermore.Mapping
             {
                 var max = GetNextMaxValue();
                 SetRange(max);
+                log?.DebugFormat($"{nameof(KeyAllocator)} {{0}} {nameof(Allocation)} {{1}} Collection {{2}} extended allocation to {{3}}", parentId, uuid, collectionName, max);
             }
 
             void SetRange(int max)
