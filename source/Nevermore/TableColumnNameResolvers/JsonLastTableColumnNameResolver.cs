@@ -19,7 +19,11 @@ namespace Nevermore.TableColumnNameResolvers
 
             var getColumnNamesWithJsonLastQuery = @$"
 SELECT c.name
-FROM sys.tables AS t
+FROM (
+    SELECT object_id, schema_id, name FROM sys.tables
+    UNION ALL 
+    SELECT object_id, schema_id, name FROM sys.views
+) as t
 INNER JOIN sys.all_columns AS c ON c.object_id = t.object_id
 INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
 WHERE t.name = @tableName {schemaClause}
