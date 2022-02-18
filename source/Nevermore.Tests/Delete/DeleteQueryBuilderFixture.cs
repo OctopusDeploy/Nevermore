@@ -150,7 +150,7 @@ AND ([Price] < @price_1)");
         {
             CreateQueryBuilder<object>()
                 .WhereParameterised("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
-                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).Should().Throw<ArgumentException>();
         }
 
         [Test]

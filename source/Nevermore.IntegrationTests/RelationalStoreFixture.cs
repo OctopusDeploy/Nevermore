@@ -92,7 +92,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(product2);
                 transaction.Commit();
             }
-        
+
             using (var transaction = Store.BeginTransaction())
             {
                 var products = transaction.Query<DodgyProduct>().Alias("dodgyProductTable")
@@ -101,7 +101,7 @@ namespace Nevermore.IntegrationTests
                     .AsType<Product>()
                     .ToList();
 
-                products.ShouldBeEquivalentTo(new List<Product> {product1, product2});
+                products.Should().BeEquivalentTo(new List<Product> {product1, product2});
             }
         }
 
@@ -285,7 +285,7 @@ namespace Nevermore.IntegrationTests
                         Nickname = "Ally",
                         Roles = {"web-server", "app-server"}
                     });
-                exec.ShouldThrow<StringTooLongException>()
+                exec.Should().Throw<StringTooLongException>()
                     .WithMessage("An attempt was made to store 21 characters in the Customer.FirstName column, which only allows 20 characters.");
             }
         }

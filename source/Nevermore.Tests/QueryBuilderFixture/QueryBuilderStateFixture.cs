@@ -36,12 +36,12 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             queryBuilder.Count();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT COUNT(*)
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT COUNT(*)
 FROM [dbo].[Accounts]");
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -53,7 +53,7 @@ ORDER BY [Id]");
 
             queryBuilder.Any();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"IF EXISTS(SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"IF EXISTS(SELECT *
 FROM [dbo].[Accounts])
     SELECT @true
 ELSE
@@ -61,7 +61,7 @@ ELSE
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -74,12 +74,12 @@ ORDER BY [Id]");
 
             queryBuilder.Distinct();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT DISTINCT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT DISTINCT *
 FROM [dbo].[Accounts]");
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -91,13 +91,13 @@ ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT TOP 1 *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -109,13 +109,13 @@ ORDER BY [Id]");
 
             queryBuilder.FirstOrDefault();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT TOP 1 *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -127,7 +127,7 @@ ORDER BY [Id]");
 
             queryBuilder.ToList(10, 20);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
@@ -137,10 +137,10 @@ WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
-            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+            queryBuilder.ParameterValues.Should().HaveCount(0);
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -152,11 +152,11 @@ ORDER BY [Id]");
 
             queryBuilder.ToList(10, 20, out _);
 
-            executedQueries.Count.ShouldBeEquivalentTo(2);
-            executedQueries.First().ShouldBeEquivalentTo(@"SELECT COUNT(*)
+            executedQueries.Should().HaveCount(2);
+            executedQueries.First().Should().BeEquivalentTo(@"SELECT COUNT(*)
 FROM [dbo].[Accounts]");
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
@@ -166,11 +166,11 @@ WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
-            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+            queryBuilder.ParameterValues.Should().HaveCount(0);
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -185,7 +185,7 @@ ORDER BY [Id]");
 
             queryBuilder.ToList(10, 20);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
@@ -196,10 +196,10 @@ AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]
 OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
 
-            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+            queryBuilder.ParameterValues.Should().HaveCount(0);
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]
 OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
@@ -213,12 +213,12 @@ OPTION (OPTIMIZE FOR UNKNOWN, FAST 1)");
 
             queryBuilder.ToList(10, 20, out _);
 
-            executedQueries.Count.ShouldBeEquivalentTo(2);
-            executedQueries.First().ShouldBeEquivalentTo(@"SELECT COUNT(*)
+            executedQueries.Should().HaveCount(2);
+            executedQueries.First().Should().BeEquivalentTo(@"SELECT COUNT(*)
 FROM [dbo].[Accounts]
 OPTION (OPTIMIZE FOR UNKNOWN)");
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
@@ -229,11 +229,11 @@ AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]
 OPTION (OPTIMIZE FOR UNKNOWN)");
 
-            queryBuilder.ParameterValues.Count.ShouldBeEquivalentTo(0);
+            queryBuilder.ParameterValues.Should().HaveCount(0);
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]
 OPTION (OPTIMIZE FOR UNKNOWN)");
@@ -246,13 +246,13 @@ OPTION (OPTIMIZE FOR UNKNOWN)");
 
             queryBuilder.ToList();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT TOP 1 *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -264,13 +264,13 @@ ORDER BY [Id]");
 
             queryBuilder.Stream();
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT TOP 1 *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
@@ -282,13 +282,13 @@ ORDER BY [Id]");
 
             queryBuilder.ToDictionary(d => d.GetHashCode().ToString());
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
 
             queryBuilder.Take(1);
 
-            LastExecutedQuery().ShouldBeEquivalentTo(@"SELECT TOP 1 *
+            LastExecutedQuery().Should().BeEquivalentTo(@"SELECT TOP 1 *
 FROM [dbo].[Accounts]
 ORDER BY [Id]");
         }
