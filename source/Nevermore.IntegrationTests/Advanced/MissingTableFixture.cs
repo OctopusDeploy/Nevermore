@@ -37,7 +37,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 => transaction.Query<Missing>().ToArray();
 
             ((Action)Run).Should().Throw<Exception>()
-                .WithMessage("No columns found for table or view 'TestSchema.Missing'. The table or view likely does not exist in that schema.");
+                .WithMessage("No columns found for table or view 'TestSchema.Missing'. The table or view likely does not exist in that schema, or the user does not have view definition SQL permission.");
         }
     }
 }
