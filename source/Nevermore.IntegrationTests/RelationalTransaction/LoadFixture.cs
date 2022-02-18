@@ -343,9 +343,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             }
             trn.Commit();
 
-            var loadedMessages = trn.LoadMany<MessageWithStringId>(messages.Select(m => m.Id));
-
-            loadedMessages.Should().AllBeEquivalentTo(messages);
+            var loadedMessages = trn.LoadMany<MessageWithStringId>(messages.Select(m => m.Id));loadedMessages.Should().BeEquivalentTo(messages);
         }
 
         [Test]
@@ -366,7 +364,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithIntId>(messages.Select(m => m.Id));
 
-            loadedMessages.Should().AllBeEquivalentTo(messages);
+            loadedMessages.Should().BeEquivalentTo(messages);
         }
 
         [Test]
@@ -387,7 +385,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithLongId>(messages.Select(m => m.Id));
 
-            loadedMessages.Should().AllBeEquivalentTo(messages);
+            loadedMessages.Should().BeEquivalentTo(messages);
         }
 
         [Test]
@@ -408,7 +406,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithGuidId>(messages.Select(m => m.Id));
 
-            loadedMessages.Should().AllBeEquivalentTo(messages);
+            loadedMessages.Should().BeEquivalentTo(messages);
         }
 
         [Test]
