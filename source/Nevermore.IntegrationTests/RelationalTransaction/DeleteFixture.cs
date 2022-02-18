@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 Action target = () => trn.Delete<Product>(Guid.NewGuid());
 
-                target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.Guid' does not match configured type of 'System.String'.");
+                target.Should().Throw<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.Guid' does not match configured type of 'System.String'.");
             }
         }
 

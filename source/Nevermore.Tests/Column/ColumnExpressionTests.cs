@@ -19,7 +19,7 @@ namespace Nevermore.Tests.Column
                 .Column(c => c.Baz)
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo(@"SELECT [Foo],
+            actual.Should().BeEquivalentTo(@"SELECT [Foo],
 [Bar],
 [Baz]
 FROM [dbo].[Records]
@@ -35,7 +35,7 @@ ORDER BY [Id]");
                 .Column(c => c.Baz, "C")
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo(@"SELECT [Foo] AS [A],
+            actual.Should().BeEquivalentTo(@"SELECT [Foo] AS [A],
 [Bar] AS [B],
 [Baz] AS [C]
 FROM [dbo].[Records]
@@ -53,7 +53,7 @@ ORDER BY [Id]");
                 .Column(c => c.Baz, "C", tableAlias)
                 .DebugViewRawQuery();
 
-            actual.ShouldBeEquivalentTo(@"SELECT MyTable.[Foo] AS [A],
+            actual.Should().BeEquivalentTo(@"SELECT MyTable.[Foo] AS [A],
 MyTable.[Bar] AS [B],
 MyTable.[Baz] AS [C]
 FROM [dbo].[Records] MyTable
@@ -64,13 +64,13 @@ ORDER BY [Id]");
         {
             var memberInfos = Activator.CreateInstance<Record>().GetType().GetProperties();
             var columnNames = memberInfos.Select(x => x.Name).ToList();
-            
-            return new TableSourceQueryBuilder<Record>("Records", 
+
+            return new TableSourceQueryBuilder<Record>("Records",
                 "dbo",
                 "Id",
-                Substitute.For<IRelationalTransaction>(), 
-                new TableAliasGenerator(), 
-                new UniqueParameterNameGenerator(), 
+                Substitute.For<IRelationalTransaction>(),
+                new TableAliasGenerator(),
+                new UniqueParameterNameGenerator(),
                 new CommandParameterValues(),
                 new Parameters(),
                 new ParameterDefaults()

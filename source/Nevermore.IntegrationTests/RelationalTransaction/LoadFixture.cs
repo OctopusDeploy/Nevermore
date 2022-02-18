@@ -324,7 +324,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var _ = trn.Load<MessageWithGuidId>(1);
             };
 
-            target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.Int32' does not match configured type of 'System.Guid'.");
+            target.Should().Throw<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.Int32' does not match configured type of 'System.Guid'.");
         }
 
         [Test]
@@ -345,7 +345,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithStringId>(messages.Select(m => m.Id));
 
-            loadedMessages.ShouldAllBeEquivalentTo(messages);
+            loadedMessages.Should().AllBeEquivalentTo(messages);
         }
 
         [Test]
@@ -366,7 +366,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithIntId>(messages.Select(m => m.Id));
 
-            loadedMessages.ShouldAllBeEquivalentTo(messages);
+            loadedMessages.Should().AllBeEquivalentTo(messages);
         }
 
         [Test]
@@ -387,7 +387,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithLongId>(messages.Select(m => m.Id));
 
-            loadedMessages.ShouldAllBeEquivalentTo(messages);
+            loadedMessages.Should().AllBeEquivalentTo(messages);
         }
 
         [Test]
@@ -408,7 +408,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             var loadedMessages = trn.LoadMany<MessageWithGuidId>(messages.Select(m => m.Id));
 
-            loadedMessages.ShouldAllBeEquivalentTo(messages);
+            loadedMessages.Should().AllBeEquivalentTo(messages);
         }
 
         [Test]
@@ -420,7 +420,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 var _ = trn.LoadMany<MessageWithGuidId>("Messages-1");
             };
 
-            target.ShouldThrow<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.String' does not match configured type of 'System.Guid'.");
+            target.Should().Throw<ArgumentException>().Which.Message.Should().Be("Provided Id of type 'System.String' does not match configured type of 'System.Guid'.");
         }
 
         [Test]

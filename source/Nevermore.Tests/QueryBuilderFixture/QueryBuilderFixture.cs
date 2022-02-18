@@ -1652,7 +1652,7 @@ ORDER BY [Title] DESC";
                 .Where("Id", UnarySqlOperand.Equal, "1")
                 .ToList(10, 20);
 
-            query.ShouldBeEquivalentTo(@"SELECT *
+            query.Should().BeEquivalentTo(@"SELECT *
 FROM (
     SELECT *,
     ROW_NUMBER() OVER (ORDER BY [Id]) AS RowNum
@@ -1663,10 +1663,10 @@ WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
 
-            parameterValues.Count.ShouldBeEquivalentTo(3);
-            parameterValues["id"].ShouldBeEquivalentTo("1");
-            parameterValues["_minrow"].ShouldBeEquivalentTo(11);
-            parameterValues["_maxrow"].ShouldBeEquivalentTo(30);
+            parameterValues.Should().HaveCount(3);
+            parameterValues["id"].Should().BeEquivalentTo("1");
+            parameterValues["_minrow"].Should().BeEquivalentTo(11);
+            parameterValues["_maxrow"].Should().BeEquivalentTo(30);
         }
 
         [Test]
@@ -1691,11 +1691,11 @@ WHERE ([AddedDate] > @addeddate)
 AND ([AddedDate] < @addeddate_1)
 ORDER BY [Id]";
 
-            parameters.Values.Count.ShouldBeEquivalentTo(2);
-            parameters["addeddate"].ShouldBeEquivalentTo(earlyDate);
-            parameters["addeddate_1"].ShouldBeEquivalentTo(laterDate);
+            parameters.Values.Should().HaveCount(2);
+            parameters["addeddate"].Should().BeEquivalentTo(earlyDate);
+            parameters["addeddate_1"].Should().BeEquivalentTo(laterDate);
 
-            actual.ShouldBeEquivalentTo(expected);
+            actual.Should().BeEquivalentTo(expected);
         }
 
         [Test]
@@ -1736,11 +1736,11 @@ INNER JOIN (
 ON ALIAS_GENERATED_2.[Id] = ALIAS_GENERATED_1.[CustomerId]
 ORDER BY ALIAS_GENERATED_2.[Id]";
 
-            parameters.Values.Count.ShouldBeEquivalentTo(2);
-            parameters["date"].ShouldBeEquivalentTo(createdDate);
-            parameters["date_1"].ShouldBeEquivalentTo(joinDate);
+            parameters.Values.Should().HaveCount(2);
+            parameters["date"].Should().BeEquivalentTo(createdDate);
+            parameters["date_1"].Should().BeEquivalentTo(joinDate);
 
-            actual.ShouldBeEquivalentTo(expected);
+            actual.Should().BeEquivalentTo(expected);
         }
 
         [Test]
@@ -1748,7 +1748,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         {
             CreateQueryBuilder<object>("Todo")
                 .WhereParameterized("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
-                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+                .Invoking(qb => qb.ParameterValues(new [] { "Foo" })).Should().Throw<ArgumentException>();
         }
 
         [Test]
@@ -1756,7 +1756,7 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
         {
             CreateQueryBuilder<object>("Todo")
                 .WhereParameterized("Name", ArraySqlOperand.In, new[] {new Parameter("foo"), new Parameter("bar")})
-                .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).ShouldThrow<ArgumentException>();
+                .Invoking(qb => qb.ParameterDefaults(new [] { "Foo" })).Should().Throw<ArgumentException>();
         }
 
         public class Customer2
@@ -1783,7 +1783,7 @@ AND ([Name] <> @name_1)
 ORDER BY [Id]";
 
             actual.Should().BeEquivalentTo(expected);
-            parameters.Count.ShouldBeEquivalentTo(2);
+            parameters.Should().HaveCount(2);
             parameters.Should().Contain("name", "Alice");
             parameters.Should().Contain("name_1", "Bob");
         }

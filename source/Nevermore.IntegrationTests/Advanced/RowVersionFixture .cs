@@ -87,7 +87,7 @@ namespace Nevermore.IntegrationTests.Advanced
             document2.Name = "Name2";
             Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update(document2));
 
-            invalidUpdate.ShouldThrow<StaleDataException>();
+            invalidUpdate.Should().Throw<StaleDataException>();
 
             var document3 = RunInTransaction(transaction => transaction.Load<DocumentWithRowVersion>(document.Id));
             document3.Name.Should().Be(document1.Name);
@@ -104,7 +104,7 @@ namespace Nevermore.IntegrationTests.Advanced
             var document2 = new DocumentWithRowVersion {Name = "Name"};
             Action invalidUpdate = () => RunInTransaction(transaction => transaction.Insert(document2));
 
-            invalidUpdate.ShouldThrow<UniqueConstraintViolationException>();
+            invalidUpdate.Should().Throw<UniqueConstraintViolationException>();
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace Nevermore.IntegrationTests.Advanced
             document2.Name = "Name2";
             Action invalidUpdate = () => RunInTransaction(transaction => transaction.Update<IId>(document2));
 
-            invalidUpdate.ShouldThrow<StaleDataException>()
+            invalidUpdate.Should().Throw<StaleDataException>()
                 .WithMessage("Modification failed for 'DocumentWithIdentityIdAndRowVersion' document with '1' Id because submitted data was out of date. Refresh the document and try again.");
         }
 
