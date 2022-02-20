@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace Nevermore.TableColumnNameResolvers
 {
@@ -35,7 +36,12 @@ ORDER BY (CASE WHEN c.name = 'JSON' THEN 1 ELSE 0 END) ASC, c.column_id";
                 { nameof(schemaName), schemaName }
             };
 
-            return queryExecutor.Stream<string>(getColumnNamesWithJsonLastQuery, parameters).ToArray();
+            var columnNames = queryExecutor.Stream<string>(getColumnNamesWithJsonLastQuery, parameters).ToArray();
+
+            if (!columnNames.Any())
+                throw new Exception($"No columns found for table or view '{schemaName}.{tableName}'. The table or view likely does not exist in that schema, or the user does not have view definition SQL permission.");
+
+            return columnNames;
         }
     }
 }
