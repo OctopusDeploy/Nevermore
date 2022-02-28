@@ -14,7 +14,7 @@ namespace Nevermore.Transient
 
         public static DbTransaction BeginTransactionWithRetry(this SqlConnection connection, IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Beginning Database Transaction").ExecuteAction(() => connection.BeginTransaction());
+            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Beginning Database Transaction").ExecuteAction(() => connection.BeginTransaction(isolationLevel, sqlServerTransactionName));
         }
     }
 }
