@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Nevermore.Transient;
 
 namespace Nevermore
@@ -36,6 +33,7 @@ namespace Nevermore
                 {
                     {RetryManagerSqlExtensions.DefaultStrategyConnectionTechnologyName, DefaultExponentialStrategyName},
                     {RetryManagerSqlExtensions.DefaultStrategyCommandTechnologyName, DefaultExponentialStrategyName},
+                    {RetryManagerSqlExtensions.DefaultStrategyTransactionTechnologyName, DefaultExponentialStrategyName}
                 }));
         }
     }}

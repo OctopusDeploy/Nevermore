@@ -6,6 +6,7 @@ namespace Nevermore.Transient
     {
         public static readonly string DefaultStrategyCommandTechnologyName = "SQL";
         public static readonly string DefaultStrategyConnectionTechnologyName = "SQLConnection";
+        public static readonly string DefaultStrategyTransactionTechnologyName = "SQLTransaction";
 
         public static RetryPolicy GetDefaultSqlCommandRetryPolicy(this RetryManager retryManager)
         {
@@ -40,6 +41,20 @@ namespace Nevermore.Transient
             {
                 return retryManager.GetDefaultRetryStrategy(DefaultStrategyCommandTechnologyName);
             }
+        }
+
+        public static RetryPolicy GetDefaultSqlTransactionRetryPolicy(this RetryManager retryManager)
+        {
+            if (retryManager == null) throw new ArgumentNullException("retryManager");
+
+            return new RetryPolicy(new SqlDatabaseTransientErrorDetectionStrategy(), retryManager.GetDefaultSqlTransactionRetryStrategy());
+        }
+
+        public static RetryStrategy GetDefaultSqlTransactionRetryStrategy(this RetryManager retryManager)
+        {
+            if (retryManager == null) throw new ArgumentNullException("retryManager");
+
+            return retryManager.GetDefaultRetryStrategy(DefaultStrategyTransactionTechnologyName);
         }
     }
 }
