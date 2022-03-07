@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Nevermore.TableColumnNameResolvers
 {
-    internal class JsonLastTableColumnNameResolver : ITableColumnNameResolver
+    public class JsonLastTableColumnNameResolver : ITableColumnNameResolver
     {
         readonly IReadQueryExecutor queryExecutor;
 
