@@ -2,6 +2,7 @@ using System;
 using FluentAssertions;
 using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
+using Nevermore.TableColumnNameResolvers;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.Advanced
@@ -26,6 +27,7 @@ namespace Nevermore.IntegrationTests.Advanced
             base.OneTimeSetUp();
             NoMonkeyBusiness();
             Configuration.DocumentMaps.Register(new MissingMap());
+            Configuration.TableColumnNameResolver = queryExecutor => new JsonLastTableColumnNameResolver(queryExecutor);
         }
 
         [Test]

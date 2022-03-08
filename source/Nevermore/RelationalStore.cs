@@ -17,14 +17,12 @@ namespace Nevermore
     {
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly Lazy<KeyAllocator> keyAllocator;
-        readonly ITableColumnsCache tableColumnsCache;
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
             Configuration = configuration;
             registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
             keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize));
-            tableColumnsCache = new TableColumnsCache();
         }
 
         public void WriteCurrentTransactions(StringBuilder output) => registry.Value.WriteCurrentTransactions(output);
