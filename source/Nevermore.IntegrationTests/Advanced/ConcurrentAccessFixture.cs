@@ -11,18 +11,20 @@ namespace Nevermore.IntegrationTests.Advanced
 {
     public class ConcurrentAccessFixture : FixtureWithRelationalStore
     {
+        const int NumberOfDocuments = 100;
+        const int DegreeOfParallelism = 512;
+
         [Test]
         public void ConcurrentAccessDoesNotGoBoom()
         {
             NoMonkeyBusiness();
 
             var namePrefix = $"{Guid.NewGuid()}-";
-            const int numberOfDocuments = 100;
 
             // Create a bunch of documents so that we can query for them.
             using (var transaction = Store.BeginTransaction())
             {
-                Enumerable.Range(0, numberOfDocuments)
+                Enumerable.Range(0, NumberOfDocuments)
                     .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
                     .AsParallel()
                     .WithDegreeOfParallelism(512)
@@ -39,9 +41,9 @@ namespace Nevermore.IntegrationTests.Advanced
             // Now hit it really hard and see if we can provoke a failure.
             using (var transaction = Store.BeginTransaction())
             {
-                Enumerable.Range(0, 64)
+                Enumerable.Range(0, DegreeOfParallelism)
                     .AsParallel()
-                    .WithDegreeOfParallelism(512)
+                    .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(i =>
                     {
                         // ReSharper disable AccessToDisposedClosure
@@ -50,21 +52,21 @@ namespace Nevermore.IntegrationTests.Advanced
                         var documents = transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToArray();
-                        documents.Should().HaveCount(numberOfDocuments);
+                        documents.Should().HaveCount(NumberOfDocuments);
 
                         var id = documents.First().Id;
                         var ids = documents.Select(d => d.Id).ToArray();
 
-                         transaction.Load<DocumentWithIdentityId>(id);
-                         transaction.LoadRequired<DocumentWithIdentityId>(id);
-                         transaction.LoadMany<DocumentWithIdentityId>(ids);
-                         transaction.LoadManyRequired<DocumentWithIdentityId>(ids);
-                         transaction.Query<DocumentWithIdentityId>().Any();
-                         transaction.Query<DocumentWithIdentityId>().Count();
-                         transaction.Query<DocumentWithIdentityId>().ToList();
-                         transaction.Query<DocumentWithIdentityId>().ToArray();
-                         transaction.Query<DocumentWithIdentityId>().FirstOrDefault();
-                         transaction.Query<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
+                        transaction.Load<DocumentWithIdentityId>(id);
+                        transaction.LoadRequired<DocumentWithIdentityId>(id);
+                        transaction.LoadMany<DocumentWithIdentityId>(ids);
+                        transaction.LoadManyRequired<DocumentWithIdentityId>(ids);
+                        transaction.Query<DocumentWithIdentityId>().Any();
+                        transaction.Query<DocumentWithIdentityId>().Count();
+                        transaction.Query<DocumentWithIdentityId>().ToList();
+                        transaction.Query<DocumentWithIdentityId>().ToArray();
+                        transaction.Query<DocumentWithIdentityId>().FirstOrDefault();
+                        transaction.Query<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
 
                         return 0;
                         // ReSharper restore ReturnValueOfPureMethodIsNotUsed
@@ -80,12 +82,11 @@ namespace Nevermore.IntegrationTests.Advanced
             NoMonkeyBusiness();
 
             var namePrefix = $"{Guid.NewGuid()}-";
-            const int numberOfDocuments = 100;
 
             // Create a bunch of documents so that we can query for them.
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
-                await Enumerable.Range(0, numberOfDocuments)
+                await Enumerable.Range(0, NumberOfDocuments)
                     .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
                     // ReSharper disable once AccessToDisposedClosure
                     .Select(document => transaction.InsertAsync(document))
@@ -96,7 +97,7 @@ namespace Nevermore.IntegrationTests.Advanced
             // Now hit it really hard and see if we can provoke a failure.
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
-                await Enumerable.Range(0, 64)
+                await Enumerable.Range(0, DegreeOfParallelism)
                     .Select(async i =>
                     {
                         // ReSharper disable AccessToDisposedClosure
@@ -104,7 +105,7 @@ namespace Nevermore.IntegrationTests.Advanced
                         var documents = await transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToListAsync();
-                        documents.Should().HaveCount(numberOfDocuments);
+                        documents.Should().HaveCount(NumberOfDocuments);
 
                         var id = documents.First().Id;
                         var ids = documents.Select(d => d.Id).ToArray();
@@ -117,7 +118,7 @@ namespace Nevermore.IntegrationTests.Advanced
                         await transaction.Query<DocumentWithIdentityId>().CountAsync();
                         await transaction.Query<DocumentWithIdentityId>().ToListAsync();
                         await transaction.Query<DocumentWithIdentityId>().FirstOrDefaultAsync();
-                        await transaction.Query<DocumentWithIdentityId>().ToListWithCountAsync(0,numberOfDocuments);
+                        await transaction.Query<DocumentWithIdentityId>().ToListWithCountAsync(0, NumberOfDocuments);
                         await transaction.Query<DocumentWithIdentityId>().ToDictionaryAsync(x => x.Id.ToString());
 
                         // ReSharper restore ReturnValueOfPureMethodIsNotUsed
