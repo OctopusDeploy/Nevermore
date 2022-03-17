@@ -44,12 +44,31 @@ namespace Nevermore.IntegrationTests.Advanced
                     .WithDegreeOfParallelism(512)
                     .Select(i =>
                     {
-                        // ReSharper disable once AccessToDisposedClosure
+                        // ReSharper disable AccessToDisposedClosure
+                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
+
                         var documents = transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToArray();
                         documents.Should().HaveCount(numberOfDocuments);
+
+                        var id = documents.First().Id;
+                        var ids = documents.Select(d => d.Id).ToArray();
+
+                         transaction.Load<DocumentWithIdentityId>(id);
+                         transaction.LoadRequired<DocumentWithIdentityId>(id);
+                         transaction.LoadMany<DocumentWithIdentityId>(ids);
+                         transaction.LoadManyRequired<DocumentWithIdentityId>(ids);
+                         transaction.Query<DocumentWithIdentityId>().Any();
+                         transaction.Query<DocumentWithIdentityId>().Count();
+                         transaction.Query<DocumentWithIdentityId>().ToList();
+                         transaction.Query<DocumentWithIdentityId>().ToArray();
+                         transaction.Query<DocumentWithIdentityId>().FirstOrDefault();
+                         transaction.Query<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
+
                         return 0;
+                        // ReSharper restore ReturnValueOfPureMethodIsNotUsed
+                        // ReSharper restore AccessToDisposedClosure
                     })
                     .ToArray();
             }
@@ -80,11 +99,29 @@ namespace Nevermore.IntegrationTests.Advanced
                 await Enumerable.Range(0, 64)
                     .Select(async i =>
                     {
-                        // ReSharper disable once AccessToDisposedClosure
+                        // ReSharper disable AccessToDisposedClosure
+                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
                         var documents = await transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToListAsync();
                         documents.Should().HaveCount(numberOfDocuments);
+
+                        var id = documents.First().Id;
+                        var ids = documents.Select(d => d.Id).ToArray();
+
+                        await transaction.LoadAsync<DocumentWithIdentityId>(id);
+                        await transaction.LoadRequiredAsync<DocumentWithIdentityId>(id);
+                        await transaction.LoadManyAsync<DocumentWithIdentityId>(ids);
+                        await transaction.LoadManyRequiredAsync<DocumentWithIdentityId>(ids);
+                        await transaction.Query<DocumentWithIdentityId>().AnyAsync();
+                        await transaction.Query<DocumentWithIdentityId>().CountAsync();
+                        await transaction.Query<DocumentWithIdentityId>().ToListAsync();
+                        await transaction.Query<DocumentWithIdentityId>().FirstOrDefaultAsync();
+                        await transaction.Query<DocumentWithIdentityId>().ToListWithCountAsync(0,numberOfDocuments);
+                        await transaction.Query<DocumentWithIdentityId>().ToDictionaryAsync(x => x.Id.ToString());
+
+                        // ReSharper restore ReturnValueOfPureMethodIsNotUsed
+                        // ReSharper restore AccessToDisposedClosure
                     })
                     .WhenAll();
             }
