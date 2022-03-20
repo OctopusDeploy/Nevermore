@@ -12,7 +12,7 @@ namespace Nevermore.IntegrationTests.Advanced
     public class ConcurrentAccessFixture : FixtureWithRelationalStore
     {
         const int NumberOfDocuments = 100;
-        const int DegreeOfParallelism = 512;
+        const int DegreeOfParallelism = NumberOfDocuments;
 
         [Test]
         public void ConcurrentAccessDoesNotGoBoom()
