@@ -12,31 +12,33 @@ namespace Nevermore
     internal class UniqueParameterNameGenerator : IUniqueParameterNameGenerator
     {
         readonly HashSet<string> assigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        
+
         public string GenerateUniqueParameterName(string parameterName)
         {
-            var original = Parameter.Normalize(parameterName);
-            var candidate = original;
-            var counter = 0;
-            
-            while (true)
+            lock (assigned)
             {
-                if (!assigned.Contains(candidate))
+                var original = Parameter.Normalize(parameterName);
+                var candidate = original;
+                var counter = 0;
+
+                while (!assigned.Add(candidate))
                 {
-                    assigned.Add(candidate);
-                    return candidate;
+                    counter++;
+                    candidate = original + "_" + counter;
                 }
-                
-                counter++;
-                candidate = original + "_" + counter;
+
+                return candidate;
             }
         }
-    
+
         public void Return(IEnumerable<string> names)
         {
-            foreach (var name in names)
+            lock (assigned)
             {
-                assigned.Remove(name);
+                foreach (var name in names)
+                {
+                    assigned.Remove(name);
+                }
             }
         }
     }

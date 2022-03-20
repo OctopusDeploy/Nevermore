@@ -25,13 +25,13 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = Store.BeginTransaction())
             {
                 Enumerable.Range(0, NumberOfDocuments)
-                    .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
+                    .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
                     .AsParallel()
-                    .WithDegreeOfParallelism(512)
+                    .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(document =>
                     {
-                        // ReSharper disable once AccessToDisposedClosure
-                        transaction.Insert(document);
+                            // ReSharper disable once AccessToDisposedClosure
+                            transaction.Insert(document);
                         return 0;
                     })
                     .ToArray();
@@ -46,10 +46,10 @@ namespace Nevermore.IntegrationTests.Advanced
                     .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(i =>
                     {
-                        // ReSharper disable AccessToDisposedClosure
-                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
+                            // ReSharper disable AccessToDisposedClosure
+                            // ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
-                        var documents = transaction.Query<DocumentWithIdentityId>()
+                            var documents = transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToArray();
                         documents.Should().HaveCount(NumberOfDocuments);
@@ -69,9 +69,9 @@ namespace Nevermore.IntegrationTests.Advanced
                         transaction.Query<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
 
                         return 0;
-                        // ReSharper restore ReturnValueOfPureMethodIsNotUsed
-                        // ReSharper restore AccessToDisposedClosure
-                    })
+                            // ReSharper restore ReturnValueOfPureMethodIsNotUsed
+                            // ReSharper restore AccessToDisposedClosure
+                        })
                     .ToArray();
             }
         }
@@ -87,7 +87,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
                 await Enumerable.Range(0, NumberOfDocuments)
-                    .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
+                    .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
                     // ReSharper disable once AccessToDisposedClosure
                     .Select(document => transaction.InsertAsync(document))
                     .WhenAll();
