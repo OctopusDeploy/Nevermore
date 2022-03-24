@@ -1,0 +1,6 @@
+UPDATE [dbo].[TestDocumentTbl]  SET [BaseColumn] = @BaseColumn, [DerivedColumn] = @DerivedColumn, [JSON] = @JSON OUTPUT inserted.RowVersion WHERE [Id] = @Id AND [RowVersion] = @RowVersion
+@Id=Doc-1
+@JSON={}
+@BaseColumn=Base
+@DerivedColumn=Derived
+@RowVersion=System.Byte[]
