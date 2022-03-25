@@ -125,8 +125,6 @@ namespace Nevermore.Advanced
 
         public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            using var mutex = await Semaphore.LockAsync(cancellationToken);
-
             var command = builder.PrepareUpdate(document, options);
             await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
 

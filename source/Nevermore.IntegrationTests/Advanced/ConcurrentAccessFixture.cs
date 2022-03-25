@@ -30,8 +30,8 @@ namespace Nevermore.IntegrationTests.Advanced
                     .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(document =>
                     {
-                            // ReSharper disable once AccessToDisposedClosure
-                            transaction.Insert(document);
+                        // ReSharper disable once AccessToDisposedClosure
+                        transaction.Insert(document);
                         return 0;
                     })
                     .ToArray();
@@ -46,15 +46,16 @@ namespace Nevermore.IntegrationTests.Advanced
                     .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(i =>
                     {
-                            // ReSharper disable AccessToDisposedClosure
-                            // ReSharper disable ReturnValueOfPureMethodIsNotUsed
+                        // ReSharper disable AccessToDisposedClosure
+                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
-                            var documents = transaction.Query<DocumentWithIdentityId>()
+                        var documents = transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToArray();
                         documents.Should().HaveCount(NumberOfDocuments);
 
-                        var id = documents.First().Id;
+                        var firstDocument = documents.First();
+                        var id = firstDocument.Id;
                         var ids = documents.Select(d => d.Id).ToArray();
 
                         transaction.Load<DocumentWithIdentityId>(id);
@@ -67,11 +68,18 @@ namespace Nevermore.IntegrationTests.Advanced
                         transaction.Query<DocumentWithIdentityId>().ToArray();
                         transaction.Query<DocumentWithIdentityId>().FirstOrDefault();
                         transaction.Query<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
+                        transaction.Queryable<DocumentWithIdentityId>().Any();
+                        transaction.Queryable<DocumentWithIdentityId>().Count();
+                        transaction.Queryable<DocumentWithIdentityId>().ToList();
+                        transaction.Queryable<DocumentWithIdentityId>().ToArray();
+                        transaction.Queryable<DocumentWithIdentityId>().FirstOrDefault();
+                        transaction.Queryable<DocumentWithIdentityId>().ToDictionary(x => x.Id.ToString());
+                        transaction.Update(firstDocument);
 
                         return 0;
-                            // ReSharper restore ReturnValueOfPureMethodIsNotUsed
-                            // ReSharper restore AccessToDisposedClosure
-                        })
+                        // ReSharper restore ReturnValueOfPureMethodIsNotUsed
+                        // ReSharper restore AccessToDisposedClosure
+                    })
                     .ToArray();
             }
         }
@@ -107,7 +115,8 @@ namespace Nevermore.IntegrationTests.Advanced
                             .ToListAsync();
                         documents.Should().HaveCount(NumberOfDocuments);
 
-                        var id = documents.First().Id;
+                        var firstDocument = documents.First();
+                        var id = firstDocument.Id;
                         var ids = documents.Select(d => d.Id).ToArray();
 
                         await transaction.LoadAsync<DocumentWithIdentityId>(id);
@@ -120,6 +129,7 @@ namespace Nevermore.IntegrationTests.Advanced
                         await transaction.Query<DocumentWithIdentityId>().FirstOrDefaultAsync();
                         await transaction.Query<DocumentWithIdentityId>().ToListWithCountAsync(0, NumberOfDocuments);
                         await transaction.Query<DocumentWithIdentityId>().ToDictionaryAsync(x => x.Id.ToString());
+                        await transaction.UpdateAsync(firstDocument);
 
                         // ReSharper restore ReturnValueOfPureMethodIsNotUsed
                         // ReSharper restore AccessToDisposedClosure
