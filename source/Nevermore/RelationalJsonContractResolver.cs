@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
-using Nevermore.Mapping;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Linq;
@@ -16,35 +16,44 @@ namespace Nevermore
             this.configuration = configuration;
         }
 
-        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
-            configuration.DocumentMaps.ResolveOptional(member.DeclaringType, out var map);
-
-            var property = base.CreateProperty(member, memberSerialization);
-
-            // ID properties are stored as columns
-            if (property.PropertyName == "Id" && map != null)
+            var members = GetSerializableMembers(type);
+            if (members is null)
             {
-                property.Ignored = true;
+                throw new JsonSerializationException("Null collection of serializable members returned.");
             }
 
-            // Indexed properties are stored as columns
-            if (map != null && map.Columns.Any(c => c.Property != null && c.Property.Name == member.Name))
-            {
-                property.Ignored = true;
-            }
+            configuration.DocumentMaps.ResolveOptional(type, out var map);
 
-            if (!property.Writable)
+            var properties = new JsonPropertyCollection(type);
+            foreach (var member in members)
             {
-                var property2 = member as PropertyInfo;
-                if (property2 != null)
+                var property = CreateProperty(member, memberSerialization);
+
+                // ID properties are stored as columns
+                if (map?.IdColumn?.ColumnName == member.Name)
                 {
-                    var hasPrivateSetter = property2.GetSetMethod(true) != null;
+                    property.Ignored = true;
+                }
+
+                // Indexed properties are stored as columns
+                if (map?.Columns.Any(c => c.Property?.Name == member.Name) ?? false)
+                {
+                    property.Ignored = true;
+                }
+
+                if (!property.Writable && member is PropertyInfo propertyMember)
+                {
+                    var hasPrivateSetter = propertyMember.GetSetMethod(true) is not null;
                     property.Writable = hasPrivateSetter;
                 }
+
+                properties.AddProperty(property);
             }
 
-            return property;
+            var orderedProperties = properties.OrderBy(p => p.Order ?? -1).ToList();
+            return orderedProperties;
         }
     }
 }

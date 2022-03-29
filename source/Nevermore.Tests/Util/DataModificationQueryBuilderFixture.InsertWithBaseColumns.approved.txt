@@ -1,0 +1,9 @@
+DECLARE @InsertedRows TABLE ([RowVersion] binary(8))
+INSERT INTO [dbo].[TestDocumentTbl]  ([Id], [BaseColumn], [DerivedColumn], [JSON]) OUTPUT inserted.[RowVersion] INTO @InsertedRows VALUES 
+(@Id, @BaseColumn, @DerivedColumn, @JSON)
+SELECT [RowVersion] FROM @InsertedRows
+
+@Id=New-Id
+@JSON={}
+@BaseColumn=Base
+@DerivedColumn=Derived

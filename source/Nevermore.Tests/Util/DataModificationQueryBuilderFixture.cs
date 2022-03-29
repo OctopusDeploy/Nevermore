@@ -30,7 +30,8 @@ namespace Nevermore.Tests.Util
                 new TestDocumentWithMultipleRelatedDocumentsMap(),
                 new OtherMap(),
                 new TestDocumentWithIdentityIdMap(),
-                new TestDocumentWithIdentityIdAndRowVersionMap());
+                new TestDocumentWithIdentityIdAndRowVersionMap(),
+                new TestDocumentWithColumnsFromBaseMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
                 m => idAllocator()
@@ -263,6 +264,19 @@ namespace Nevermore.Tests.Util
         }
 
         [Test]
+        public void InsertWithBaseColumns()
+        {
+            var document = new TestDocumentWithColumnsFromBase
+            {
+                BaseColumn = "Base",
+                DerivedColumn = "Derived"
+            };
+
+            var result = builder.PrepareInsert(new[] { document });
+            this.Assent(Format(result));
+        }
+
+        [Test]
         public void Update()
         {
             var document = new TestDocument {AColumn = "AValue", NotMapped = "NonMappedValue", Id = "Doc-1"};
@@ -371,6 +385,21 @@ namespace Nevermore.Tests.Util
         }
 
         [Test]
+        public void UpdateWithBaseColumns()
+        {
+            var document = new TestDocumentWithColumnsFromBase
+            {
+                Id = "Doc-1",
+                BaseColumn = "Base",
+                DerivedColumn = "Derived",
+                RowVersion = new[] { (byte)0x01 }
+            };
+
+            var result = builder.PrepareUpdate(document);
+            this.Assent(Format(result));
+        }
+
+        [Test]
         public void DeleteByDocument()
         {
             var document = new TestDocument {Id = "Doc-1",};
@@ -409,7 +438,6 @@ namespace Nevermore.Tests.Util
 
             this.Assent(Format(result));
         }
-
 
         string Format(PreparedCommand result)
         {
@@ -479,6 +507,18 @@ namespace Nevermore.Tests.Util
             public int RowVersion { get; set; }
         }
 
+        class TestDocumentWithColumnsFromBase : BaseWithColumns
+        {
+            public string Id { get; set; }
+            public string DerivedColumn { get; set; }
+        }
+
+        abstract class BaseWithColumns
+        {
+            public string BaseColumn { get; set; }
+            public byte[] RowVersion { get; set; }
+        }
+
         class TestDocumentMap : DocumentMap<TestDocument>
         {
             public TestDocumentMap()
@@ -537,6 +577,18 @@ namespace Nevermore.Tests.Util
                 TableName = "TestDocumentTbl";
                 Id(t => t.Id).Identity();
                 Column(t => t.AColumn);
+                RowVersion(t => t.RowVersion);
+            }
+        }
+
+        class TestDocumentWithColumnsFromBaseMap : DocumentMap<TestDocumentWithColumnsFromBase>
+        {
+            public TestDocumentWithColumnsFromBaseMap()
+            {
+                TableName = "TestDocumentTbl";
+                Id(t => t.Id);
+                Column(t => t.BaseColumn);
+                Column(t => t.DerivedColumn);
                 RowVersion(t => t.RowVersion);
             }
         }
