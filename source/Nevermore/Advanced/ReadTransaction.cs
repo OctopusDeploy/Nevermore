@@ -53,10 +53,12 @@ namespace Nevermore.Advanced
             commandTrace = new List<string>();
 
             var transactionName = name ?? Thread.CurrentThread.Name;
+
+            // TODO: Transaction name should be mandatory.
             if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
             this.name = transactionName;
             registry.Add(this);
-            
+
             columnNameResolver = configuration.TableColumnNameResolver(this);
         }
 
@@ -149,15 +151,15 @@ namespace Nevermore.Advanced
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params int[] ids) where TDocument : class
-          => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params long[] ids) where TDocument : class
-          => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params Guid[] ids) where TDocument : class
-          => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<string> ids) where TDocument : class
@@ -165,15 +167,15 @@ namespace Nevermore.Advanced
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<int> ids) where TDocument : class
-           => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<long> ids) where TDocument : class
-           => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<Guid> ids) where TDocument : class
-           => LoadStream<TDocument>(ids).ToList();
+            => LoadStream<TDocument>(ids).ToList();
 
         [Pure]
         public async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
@@ -289,19 +291,19 @@ namespace Nevermore.Advanced
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<string> ids) where TDocument : class
-           => LoadManyRequired<TDocument, string>(ids);
+            => LoadManyRequired<TDocument, string>(ids);
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<int> ids) where TDocument : class
-          => LoadManyRequired<TDocument, int>(ids);
+            => LoadManyRequired<TDocument, int>(ids);
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<long> ids) where TDocument : class
-          => LoadManyRequired<TDocument, long>(ids);
+            => LoadManyRequired<TDocument, long>(ids);
 
         [Pure]
         public List<TDocument> LoadManyRequired<TDocument>(IEnumerable<Guid> ids) where TDocument : class
-          => LoadManyRequired<TDocument, Guid>(ids);
+            => LoadManyRequired<TDocument, Guid>(ids);
 
         [Pure]
         public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
@@ -410,7 +412,7 @@ namespace Nevermore.Advanced
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
             var schemaName = configuration.GetSchemaNameOrDefault(map);
-            
+
             return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
@@ -545,7 +547,7 @@ namespace Nevermore.Advanced
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
                 return default!;
-            return (TResult) result;
+            return (TResult)result;
         }
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
@@ -554,7 +556,7 @@ namespace Nevermore.Advanced
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
                 return default!;
-            return (TResult) result;
+            return (TResult)result;
         }
 
         public DbDataReader ExecuteReader(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -603,7 +605,7 @@ namespace Nevermore.Advanced
 
             var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
             var tableName = mapping.TableName;
-            var args = new CommandParameterValues {{ "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) }};
+            var args = new CommandParameterValues { { "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) } };
 
             return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
@@ -621,7 +623,7 @@ namespace Nevermore.Advanced
             var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
-        
+
         public string[] GetColumnNames(string? schemaName, string tableName)
         {
             return columnNameResolver.GetColumnNames(schemaName, tableName);

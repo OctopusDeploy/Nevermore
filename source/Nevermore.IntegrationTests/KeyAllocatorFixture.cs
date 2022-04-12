@@ -81,12 +81,11 @@ namespace Nevermore.IntegrationTests
             var random = new Random(1);
 
             var tasks = Enumerable.Range(0, threadCount)
-                .Select(_ => Task.Factory.StartNew(()=>
+                .Select(_ => Task.Factory.StartNew(() =>
                 {
-                for (var i = 0; i < allocationCount; i++)
-                {
-                    using (var transaction = Store.BeginTransaction())
+                    for (var i = 0; i < allocationCount; i++)
                     {
+                        using var transaction = Store.BeginTransaction(name: $"{nameof(KeyAllocatorFixture)}.{nameof(ShouldAllocateInParallel)}");
                         var sequence = random.Next(3);
                         if (sequence == 0)
                         {
@@ -109,14 +108,13 @@ namespace Nevermore.IntegrationTests
                             transaction.Commit();
                         }
                     }
-                }
-            })).ToArray();
+                })).ToArray();
 
             Task.WaitAll(tasks);
-            Func<string, int> removePrefix = x => int.Parse(x.Split('-')[1]);
+            int RemovePrefix(string x) => int.Parse(x.Split('-')[1]);
 
-            var customerIdsAfter = customerIds.Select(x => removePrefix(x.Value)).OrderBy(x => x).ToArray();
-            var deploymentIdsAfter = deploymentIds.Select(removePrefix).OrderBy(x => x).ToArray();
+            var customerIdsAfter = customerIds.Select(x => RemovePrefix(x.Value)).OrderBy(x => x).ToArray();
+            var deploymentIdsAfter = deploymentIds.Select(RemovePrefix).OrderBy(x => x).ToArray();
 
             customerIdsAfter.Distinct().Count().Should().Be(customerIdsAfter.Length);
             deploymentIdsAfter.Distinct().Count().Should().Be(deploymentIdsAfter.Length);
