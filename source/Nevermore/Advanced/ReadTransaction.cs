@@ -53,7 +53,8 @@ namespace Nevermore.Advanced
             commandTrace = new List<string>();
 
             var transactionName = name ?? Thread.CurrentThread.Name;
-            if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
+            if (string.IsNullOrWhiteSpace(transactionName)) throw new ArgumentNullException(nameof(name));
+            // if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
             this.name = transactionName;
             registry.Add(this);
             
