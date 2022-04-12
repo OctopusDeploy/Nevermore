@@ -82,24 +82,22 @@ namespace Nevermore.Mapping
 
             int GetNextMaxValue()
             {
-                using (var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable))
+                using var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}");
+                var parameters = new CommandParameterValues
                 {
-                    var parameters = new CommandParameterValues
-                    {
-                        {"collectionName", collectionName},
-                        {"blockSize", blockSize}
-                    };
-                    parameters.CommandType = CommandType.StoredProcedure;
+                    {"collectionName", collectionName},
+                    {"blockSize", blockSize}
+                };
+                parameters.CommandType = CommandType.StoredProcedure;
 
-                    var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
-                    transaction.Commit();
-                    return result;
-                }
+                var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
+                transaction.Commit();
+                return result;
             }
 
             public override string ToString()
             {
-                return string.Format("{0} to {1} (next: {2})", blockStart, blockNext, blockFinish);
+                return $"{blockStart} to {blockNext} (next: {blockFinish})";
             }
         }
     }

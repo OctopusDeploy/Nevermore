@@ -16,11 +16,11 @@ namespace Nevermore.IntegrationTests.Advanced
             // even executed via SqlReader, must not be retired.
             NoMonkeyBusiness();
 
-            var document1 = new DocumentWithIdentityId {Name = "Name"};
+            var document1 = new DocumentWithIdentityId { Name = "Name" };
 
             document1.Id.Should().Be(0);
 
-            RunInTransaction(transaction => transaction.Insert(document1));
+            RunInTransaction(transaction => transaction.Insert(document1), $"{nameof(IdentityIdFixture)}.{nameof(InsertUpdatesDocumentId)}");
 
             document1.Id.Should().NotBe(0);
         }
@@ -32,23 +32,23 @@ namespace Nevermore.IntegrationTests.Advanced
             // even executed via SqlReader, must not be retired.
             NoMonkeyBusiness();
 
-            var document1 = new DocumentWithIdentityId {Name = "Name"};
-            var document2 = new DocumentWithIdentityId {Name = "Name"};
+            var document1 = new DocumentWithIdentityId { Name = "Name" };
+            var document2 = new DocumentWithIdentityId { Name = "Name" };
 
             document1.Id.Should().Be(0);
             document2.Id.Should().Be(0);
 
             RunInTransaction(transaction => transaction.InsertMany(new[]
             {
-                document1, 
+                document1,
                 document2
-            }));
+            }), $"{nameof(IdentityIdFixture)}.{nameof(InsertManyUpdatesDocumentIds)}");
 
             document1.Id.Should().NotBe(0);
             document2.Id.Should().NotBe(0);
             document1.Id.Should().NotBe(document2.Id);
         }
-        
+
         [Test]
         public async Task InsertAsyncUpdatesDocumentIdAndRowVersion()
         {
@@ -56,16 +56,16 @@ namespace Nevermore.IntegrationTests.Advanced
             // even executed via SqlReader, must not be retired.
             NoMonkeyBusiness();
 
-            var document1 = new DocumentWithIdentityId {Name = "Name"};
+            var document1 = new DocumentWithIdentityId { Name = "Name" };
 
             document1.Id.Should().Be(0);
 
-            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1));
+            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentIdAndRowVersion)}");
 
             document1.Id.Should().NotBe(0);
         }
 
-        
+
         [Test]
         public async Task InsertAsyncUpdatesDocumentId()
         {
@@ -73,58 +73,56 @@ namespace Nevermore.IntegrationTests.Advanced
             // even executed via SqlReader, must not be retired.
             NoMonkeyBusiness();
 
-            var document1 = new DocumentWithIdentityIdAndRowVersion {Name = "Name"};
+            var document1 = new DocumentWithIdentityIdAndRowVersion { Name = "Name" };
 
             document1.Id.Should().Be(0);
 
-            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1));
+            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentId)}1");
 
             document1.Id.Should().NotBe(0);
-            
-            var document2  = RunInTransaction(transaction => transaction.Load<DocumentWithIdentityIdAndRowVersion>(document1.Id));
+
+            var document2 = RunInTransaction(transaction => transaction.Load<DocumentWithIdentityIdAndRowVersion>(document1.Id), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentId)}2");
 
             document2.RowVersion.Should().Equal(document1.RowVersion);
 
             document2.Name = "Name2";
-            RunInTransaction(transaction => transaction.Update(document2));
+            RunInTransaction(transaction => transaction.Update(document2), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentId)}3");
 
             document2.RowVersion.Should().NotEqual(document1.RowVersion);
         }
 
-        TResult RunInTransaction<TResult>(Func<IRelationalTransaction, TResult> func)
+        TResult RunInTransaction<TResult>(Func<IRelationalTransaction, TResult> func, string name)
         {
-            using var transaction = Store.BeginTransaction();
+            using var transaction = Store.BeginTransaction(name: name);
             var result = func(transaction);
             transaction.Commit();
 
             return result;
         }
 
-        void RunInTransaction(Action<IRelationalTransaction> action)
+        void RunInTransaction(Action<IRelationalTransaction> action, string name)
         {
             RunInTransaction(transaction =>
             {
                 action(transaction);
                 return string.Empty;
-            });
+            }, name);
         }
-        
-        async Task<TResult> RunInTransactionAsync<TResult>(Func<IRelationalTransaction, Task<TResult>> func)
+
+        async Task RunInTransactionAsync<TResult>(Func<IRelationalTransaction, Task<TResult>> func, string name)
         {
-            using var transaction = Store.BeginTransaction();
+            using var transaction = Store.BeginTransaction(name: name);
             var result = await func(transaction);
             await transaction.CommitAsync();
-
-            return result;
         }
-        
-        async Task RunInTransactionAsync(Func<IRelationalTransaction,Task> action)
+
+        async Task RunInTransactionAsync(Func<IRelationalTransaction, Task> action, string name)
         {
-           await RunInTransactionAsync(async transaction =>
+            await RunInTransactionAsync(async transaction =>
             {
                 await action(transaction);
                 return true;
-            });
+            }, name);
         }
     }
 }
