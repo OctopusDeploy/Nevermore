@@ -1,16 +1,14 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Diagnostics.Events;
 
 namespace Nevermore.Transient
 {
     internal static class DbCommandExtensions
     {
-        static readonly DiagnosticSource RetrySource = new DiagnosticListener("Nevermore.Retry");
-
         public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery")
         {
             GuardConnectionIsNotNull(command);
@@ -26,16 +24,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -56,17 +46,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
-                        
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -87,17 +68,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
-                        
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -119,17 +91,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
-
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -150,17 +113,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
-
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -181,17 +135,8 @@ namespace Nevermore.Transient
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
-                        if (RetrySource.IsEnabled("ConnectionClosed"))
-                        {
-                            RetrySource.Write("ConnectionClosed", new
-                            {
-                                Command = command,
-                                RetryPolicy = commandRetryPolicy,
-                                OperationName = operationName
-                            });
-                        }
-
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
                 }
             });
@@ -216,14 +161,7 @@ namespace Nevermore.Transient
             if (command.Connection.State == ConnectionState.Open) return false;
 
             command.Connection.OpenWithRetry(retryPolicy);
-            if (RetrySource.IsEnabled("ConnectionReopened"))
-            {
-                RetrySource.Write("ConnectionReopened", new
-                {
-                    Command = command,
-                    Policy = retryPolicy
-                });
-            }
+            DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
         }
 
@@ -236,14 +174,7 @@ namespace Nevermore.Transient
             if (command.Connection.State == ConnectionState.Open) return false;
 
             await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken);
-            if (RetrySource.IsEnabled("ConnectionReopened"))
-            {
-                RetrySource.Write("ConnectionReopened", new
-                {
-                    Command = command,
-                    Policy = retryPolicy
-                });
-            }
+            DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
         }
     }
