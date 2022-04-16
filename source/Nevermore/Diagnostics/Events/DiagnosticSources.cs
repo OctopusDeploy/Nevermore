@@ -35,6 +35,18 @@ namespace Nevermore.Diagnostics.Events
                 }
             }
 
+            public static void ConnectionReopening(DbCommand command, RetryPolicy retryPolicy)
+            {
+                if (Source.IsEnabled(nameof(ConnectionReopening)))
+                {
+                    Source.Write(nameof(ConnectionReopening), new
+                    {
+                        Command = command,
+                        RetryPolicy = retryPolicy
+                    });
+                }
+            }
+
             public static void ConnectionReopened(DbCommand command, RetryPolicy retryPolicy)
             {
                 if (Source.IsEnabled(nameof(ConnectionReopened)))

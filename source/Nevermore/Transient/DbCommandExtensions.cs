@@ -160,6 +160,7 @@ namespace Nevermore.Transient
 
             if (command.Connection.State == ConnectionState.Open) return false;
 
+            DiagnosticSources.Retry.ConnectionReopening(command, retryPolicy);
             command.Connection.OpenWithRetry(retryPolicy);
             DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
@@ -173,6 +174,7 @@ namespace Nevermore.Transient
 
             if (command.Connection.State == ConnectionState.Open) return false;
 
+            DiagnosticSources.Retry.ConnectionReopening(command, retryPolicy);
             await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken);
             DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
