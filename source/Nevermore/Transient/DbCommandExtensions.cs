@@ -64,13 +64,15 @@ namespace Nevermore.Transient
                 {
                     return command.ExecuteReader(behavior);
                 }
-                finally
+                catch (Exception)
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
                         command.Connection.Close();
                         DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
+
+                    throw;
                 }
             });
         }
@@ -87,13 +89,15 @@ namespace Nevermore.Transient
                 {
                     return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
                 }
-                finally
+                catch (Exception)
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
                     {
                         await command.Connection.CloseAsync();
                         DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
                     }
+
+                    throw;
                 }
             });
         }
