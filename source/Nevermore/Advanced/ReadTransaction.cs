@@ -36,7 +36,7 @@ namespace Nevermore.Advanced
         SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
-        protected SemaphoreSlim Semaphore { get; } = new(1, 1);
+        protected DeadlockAwareLock Semaphore { get; } = new();
 
         // To help track deadlocks
         readonly List<string> commandTrace;

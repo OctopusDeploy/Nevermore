@@ -8,23 +8,23 @@ namespace Nevermore.Advanced
     internal class ThreadSafeEnumerable<T> : IEnumerable<T>
     {
         readonly Func<IEnumerable<T>> innerFunc;
-        readonly SemaphoreSlim semaphore;
+        readonly DeadlockAwareLock deadlockAwareLock;
 
-        public ThreadSafeEnumerable(IEnumerable<T> inner, SemaphoreSlim semaphore) : this(() => inner, semaphore)
+        public ThreadSafeEnumerable(IEnumerable<T> inner, DeadlockAwareLock deadlockAwareLock) : this(() => inner, deadlockAwareLock)
         {
         }
 
-        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, SemaphoreSlim semaphore)
+        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, DeadlockAwareLock deadlockAwareLock)
         {
             this.innerFunc = innerFunc;
-            this.semaphore = semaphore;
+            this.deadlockAwareLock = deadlockAwareLock;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            semaphore.Wait();
+            deadlockAwareLock.Wait();
             var inner = innerFunc();
-            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => semaphore.Release());
+            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => deadlockAwareLock.Release());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
