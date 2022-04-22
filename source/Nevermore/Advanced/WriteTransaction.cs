@@ -10,7 +10,6 @@ using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Querying;
 using Nevermore.Util;
-using Nito.AsyncEx;
 
 namespace Nevermore.Advanced
 {
@@ -22,12 +21,13 @@ namespace Nevermore.Advanced
         readonly DataModificationQueryBuilder builder;
 
         public WriteTransaction(
+            IRelationalStore store,
             RelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
             string name = null
-        ) : base(registry, operationsToRetry, configuration, name)
+        ) : base(store, registry, operationsToRetry, configuration, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;

@@ -46,7 +46,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
+        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
@@ -61,7 +61,7 @@ namespace Nevermore.Advanced
             this.name = transactionName;
             registry.Add(this);
 
-            columnNameResolver = configuration.TableColumnNameResolver(this);
+            columnNameResolver = configuration.TableColumnNameResolver(store);
         }
 
         protected DbTransaction? Transaction { get; private set; }

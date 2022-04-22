@@ -5,11 +5,11 @@ namespace Nevermore.TableColumnNameResolvers
 {
     public class JsonLastTableColumnNameResolver : ITableColumnNameResolver
     {
-        readonly IReadQueryExecutor queryExecutor;
+        readonly IRelationalStore store;
 
-        public JsonLastTableColumnNameResolver(IReadQueryExecutor queryExecutor)
+        public JsonLastTableColumnNameResolver(IRelationalStore store)
         {
-            this.queryExecutor = queryExecutor;
+            this.store = store;
         }
 
         public string[] GetColumnNames(string schemaName, string tableName)
@@ -32,10 +32,16 @@ ORDER BY (CASE WHEN c.name = 'JSON' THEN 1 ELSE 0 END) ASC, c.column_id";
 
             var parameters = new CommandParameterValues
             {
-                { nameof(tableName), tableName },
-                { nameof(schemaName), schemaName }
+                {nameof(tableName), tableName},
+                {nameof(schemaName), schemaName}
             };
 
+            // We open our own transaction here rather than reusing an existing one as it's entirely likely that
+            // something will already be reading from an existing one when we attempt to lazily load the available
+            // columns for another query. That would cause a deadlock, which is generally suboptimal.
+            // By creating our own transaction we can guarantee that we're not going to cause either a deadlock
+            // or a "multiple active record sets" condition when we load column names.
+            using var queryExecutor = store.BeginReadTransaction();
             var columnNames = queryExecutor.Stream<string>(getColumnNamesWithJsonLastQuery, parameters).ToArray();
 
             if (!columnNames.Any())

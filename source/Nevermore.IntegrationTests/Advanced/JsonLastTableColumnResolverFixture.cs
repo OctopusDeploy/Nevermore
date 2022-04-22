@@ -13,7 +13,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             base.OneTimeSetUp();
             NoMonkeyBusiness();
-            Configuration.TableColumnNameResolver = executor => new JsonLastTableColumnNameResolver(executor);
+            Configuration.TableColumnNameResolver = executor => new JsonLastTableColumnNameResolver(Store);
         }
 
         [Test]
