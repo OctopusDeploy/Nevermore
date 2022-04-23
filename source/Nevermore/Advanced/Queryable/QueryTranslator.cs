@@ -199,8 +199,8 @@ namespace Nevermore.Advanced.Queryable
             expression = StripQuotes(expression);
             if (expression is LambdaExpression { Body: MemberExpression { NodeType: ExpressionType.MemberAccess } memberExpression })
             {
-                var (selectColumns, _) = GetSelectFieldReferenceAndType(memberExpression);
-                sqlBuilder.Select(selectColumns);
+                var selectColumn = GetSelectFieldReference(memberExpression);
+                sqlBuilder.Select(selectColumn);
                 return;
             }
 
@@ -208,7 +208,7 @@ namespace Nevermore.Advanced.Queryable
             {
                 foreach (var arg in newExpression.Arguments)
                 {
-                    var (selectColumn, _) = GetSelectFieldReferenceAndType(arg);
+                    var selectColumn = GetSelectFieldReference(arg);
                     sqlBuilder.Select(selectColumn);
                 }
             }
@@ -247,7 +247,7 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression is MemberExpression { Member: { MemberType: MemberTypes.Property } and PropertyInfo propertyInfo } && propertyInfo.PropertyType == typeof(bool))
             {
-                var (fieldReference, _) = GetFieldReferenceAndType(expression);
+                var (fieldReference, _) = GetWhereFieldReferenceAndType(expression);
                 return sqlBuilder.CreateWhere(fieldReference, UnarySqlOperand.Equal, !invert);
             }
 
@@ -268,7 +268,7 @@ namespace Nevermore.Advanced.Queryable
 
                 if (left is MemberExpression { Member: PropertyInfo propertyInfo } memberExpressionL && memberExpressionL.IsBasedOff<ParameterExpression>())
                 {
-                    var (fieldReference, type) = GetFieldReferenceAndType(left);
+                    var (fieldReference, type) = GetWhereFieldReferenceAndType(left);
                     var value = GetValueFromExpression(right, type);
 
                     if (fieldReference is WhereFieldReference)
@@ -286,7 +286,7 @@ namespace Nevermore.Advanced.Queryable
                 else if (right is MemberExpression memberExpressionR && memberExpressionR.IsBasedOff<ParameterExpression>())
                 {
                     var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
-                    var (fieldReference, _) = GetFieldReferenceAndType(right);
+                    var (fieldReference, _) = GetWhereFieldReferenceAndType(right);
                     return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
                 }
             }
@@ -296,7 +296,7 @@ namespace Nevermore.Advanced.Queryable
 
         IWhereClause CreateStringMethodWhere(MethodCallExpression expression, bool invert = false)
         {
-            var (fieldReference, _) = GetFieldReferenceAndType(expression.Object);
+            var (fieldReference, _) = GetWhereFieldReferenceAndType(expression.Object);
             var value = ((string)GetValueFromExpression(expression.Arguments[0], typeof(string))).EscapeForLikeComparison();
 
             if (expression.Method.Name == nameof(string.Contains))
@@ -344,7 +344,7 @@ namespace Nevermore.Advanced.Queryable
                 _ => throw new NotSupportedException()
             };
 
-            var (fieldReference, propertyType) = GetFieldReferenceAndType(expression.Left);
+            var (fieldReference, propertyType) = GetWhereFieldReferenceAndType(expression.Left);
             var value = GetValueFromExpression(expression.Right, propertyType);
 
             if (value == null && op is UnarySqlOperand.Equal or UnarySqlOperand.NotEqual)
@@ -377,42 +377,29 @@ namespace Nevermore.Advanced.Queryable
             return result;
         }
 
-        (ISelectColumns, Type) GetSelectFieldReferenceAndType(Expression expression)
+        ISelectColumns GetSelectFieldReference(Expression expression)
         {
-            if (expression is UnaryExpression unaryExpression)
-                expression = unaryExpression.Operand;
+            var (reference, type, isJson) = FindField(expression);
 
-            if (expression is MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
-            {
-                var documentMap = sqlBuilder.DocumentMap;
-                var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
-                var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
-                if (childPropertyExpression == null && documentMap.Type.IsAssignableFrom(parameterExpression.Type))
-                {
-                    if (documentMap.IdColumn!.Property.Matches(propertyInfo))
-                    {
-                        return (new SelectColumn(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
-                    }
-
-                    var column = documentMap.Columns.Where(c => c.Property is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
-                    if (column is not null)
-                    {
-                        return (new SelectColumn(column.ColumnName), propertyInfo.PropertyType);
-                    }
-                }
-
-                if (documentMap.HasJsonColumn())
-                {
-                    var jsonPath = GetJsonPath(memberExpression);
-                    var fieldReference = new SelectJsonValue(jsonPath, propertyInfo.PropertyType);
-                    return (fieldReference, propertyInfo.PropertyType);
-                }
-            }
-
-            throw new NotSupportedException();
+            return isJson ? new SelectJsonValue(reference, type) : new SelectColumn(reference);
         }
 
-        (IWhereFieldReference, Type) GetFieldReferenceAndType(Expression expression)
+        (IWhereFieldReference, Type) GetWhereFieldReferenceAndType(Expression expression)
+        {
+            var (reference, type, isJson) = FindField(expression);
+
+            if (!isJson)
+            {
+                return (new WhereFieldReference(reference), type);
+            }
+
+            IWhereFieldReference fieldReference = type.IsScalar()
+                ? new JsonValueFieldReference(reference)
+                : new JsonQueryFieldReference(reference);
+            return (fieldReference, type);
+        }
+
+        (string, Type, bool) FindField(Expression expression)
         {
             if (expression is UnaryExpression unaryExpression)
                 expression = unaryExpression.Operand;
@@ -426,23 +413,20 @@ namespace Nevermore.Advanced.Queryable
                 {
                     if (documentMap.IdColumn!.Property.Matches(propertyInfo))
                     {
-                        return (new WhereFieldReference(documentMap.IdColumn.ColumnName), documentMap.IdColumn.Type);
+                        return (documentMap.IdColumn.ColumnName, documentMap.IdColumn.Type, false);
                     }
 
                     var column = documentMap.Columns.Where(c => c.Property is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
                     if (column is not null)
                     {
-                        return (new WhereFieldReference(column.ColumnName), propertyInfo.PropertyType);
+                        return (column.ColumnName, propertyInfo.PropertyType, false);
                     }
                 }
 
                 if (documentMap.HasJsonColumn())
                 {
                     var jsonPath = GetJsonPath(memberExpression);
-                    IWhereFieldReference fieldReference = propertyInfo.IsScalar()
-                        ? new JsonValueFieldReference(jsonPath)
-                        : new JsonQueryFieldReference(jsonPath);
-                    return (fieldReference, propertyInfo.PropertyType);
+                    return (jsonPath, propertyInfo.PropertyType, true);
                 }
             }
 

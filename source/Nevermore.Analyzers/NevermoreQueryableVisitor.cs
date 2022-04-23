@@ -20,6 +20,7 @@ public class NevermoreQueryableVisitor : CSharpSyntaxVisitor<Issue>
         nameof(Queryable.Count),
         nameof(Queryable.Take),
         nameof(Queryable.Skip),
+        nameof(Queryable.Select)
     };
     
     public override Issue DefaultVisit(SyntaxNode node)

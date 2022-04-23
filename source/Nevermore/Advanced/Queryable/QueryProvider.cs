@@ -22,6 +22,8 @@ namespace Nevermore.Advanced.Queryable
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalar), new[] { typeof(PreparedCommand) });
         static readonly MethodInfo GenericExecuteScalarAsyncMethod = typeof(IReadQueryExecutor)
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalarAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
+        static readonly MethodInfo GenericStreamAsyncMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.StreamAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
 
         readonly IReadQueryExecutor queryExecutor;
         readonly IRelationalStoreConfiguration configuration;
@@ -124,8 +126,8 @@ namespace Nevermore.Advanced.Queryable
         {
             var list = CreateList(elementType);
             var readerStrategy = GetReaderStrategy(elementType, command);
-            using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
+            using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
                 if (success)
@@ -156,8 +158,10 @@ namespace Nevermore.Advanced.Queryable
         async Task<object> ReadSingle(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
         {
             var readerStrategy = GetReaderStrategy(elementType, command);
-            await using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
-            if (await reader.ReadAsync(cancellationToken))
+#pragma warning disable CA2007
+            await using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA2007
+            if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
                 if (success)
