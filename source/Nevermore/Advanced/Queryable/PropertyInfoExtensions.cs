@@ -10,14 +10,5 @@ namespace Nevermore.Advanced.Queryable
             return propertyInfo.Name.Equals(other.Name) &&
                    propertyInfo.PropertyType.IsAssignableFrom(other.PropertyType);
         }
-
-        public static bool IsScalar(this PropertyInfo propertyInfo)
-        {
-            return Type.GetTypeCode(propertyInfo.PropertyType) switch
-            {
-                TypeCode.Object => false,
-                _ => true
-            };
-        }
     }
 }

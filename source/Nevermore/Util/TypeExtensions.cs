@@ -29,5 +29,14 @@ namespace Nevermore.Util
                 ? Activator.CreateInstance(type)
                 : null;
         }
+
+        public static bool IsScalar(this Type type)
+        {
+            return Type.GetTypeCode(type) switch
+            {
+                TypeCode.Object => false,
+                _ => true
+            };
+        }
     }
 }
