@@ -1410,10 +1410,11 @@ namespace Nevermore.IntegrationTests
 
             var customers = t.Queryable<Customer>().Select(c => new { c.FirstName, c.IsEmployee });
 
-            customers.Should().BeEquivalentTo(
+            customers.Should().BeEquivalentTo(new [] {
                 new { FirstName = "Alice", IsEmployee = true },
                 new { FirstName = "Bob", IsEmployee = false },
-                new { FirstName = "Charlie", IsEmployee = true });
+                new { FirstName = "Charlie", IsEmployee = true }
+            });
         }
     }
 }
