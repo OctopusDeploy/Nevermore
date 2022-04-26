@@ -4,7 +4,7 @@ namespace Nevermore.Advanced
 {
     public static class NevermoreDefaults
     {
-        public const RetriableOperation RetriableOperations = RetriableOperation.Select | RetriableOperation.Delete;
+        public const RetriableOperation RetriableOperations = RetriableOperation.None;
         public const IsolationLevel IsolationLevel = System.Data.IsolationLevel.ReadCommitted;
 
         // Increase the default connection timeout to try and prevent transaction.Commit() to timeout on slower SQL Servers.
