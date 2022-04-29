@@ -73,7 +73,7 @@ namespace Nevermore
 
         public IDocumentMapRegistry DocumentMaps { get; set; }
         
-        public Func<IReadQueryExecutor, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
+        public Func<IRelationalStore, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
 
         public IDocumentSerializer DocumentSerializer { get; set; }
 

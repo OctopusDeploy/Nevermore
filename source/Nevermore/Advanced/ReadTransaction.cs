@@ -18,6 +18,7 @@ using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
+using Nito.AsyncEx;
 
 namespace Nevermore.Advanced
 {
@@ -35,6 +36,7 @@ namespace Nevermore.Advanced
         SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
+        protected DeadlockAwareLock Semaphore { get; } = new();
 
         // To help track deadlocks
         readonly List<string> commandTrace;
@@ -44,7 +46,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        public ReadTransaction(RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
+        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
@@ -59,7 +61,7 @@ namespace Nevermore.Advanced
             this.name = transactionName;
             registry.Add(this);
 
-            columnNameResolver = configuration.TableColumnNameResolver(this);
+            columnNameResolver = configuration.TableColumnNameResolver(store);
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -438,16 +440,26 @@ namespace Nevermore.Advanced
 
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
         {
-            using var reader = ExecuteReader(command);
-            foreach (var item in ProcessReader<TRecord>(reader, command))
-                yield return item;
+            IEnumerable<TRecord> Execute()
+            {
+                using var reader = ExecuteReader(command);
+                foreach (var item in ProcessReader<TRecord>(reader, command))
+                    yield return item;
+            }
+
+            return new ThreadSafeEnumerable<TRecord>(Execute, Semaphore);
         }
 
-        public async IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
         {
-            await using var reader = await ExecuteReaderAsync(command, cancellationToken);
-            await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken))
-                yield return result;
+            async IAsyncEnumerable<TRecord> Execute()
+            {
+                await using var reader = await ExecuteReaderAsync(command, cancellationToken);
+                await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken))
+                    yield return result;
+            }
+
+            return new ThreadSafeAsyncEnumerable<TRecord>(Execute, Semaphore);
         }
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
@@ -521,12 +533,14 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
+            using var mutex = Semaphore.Lock();
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteNonQuery();
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
+            using var mutex = await Semaphore.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -543,6 +557,7 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
+            using var mutex = Semaphore.Lock();
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
@@ -552,6 +567,7 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
+            using var mutex = await Semaphore.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
@@ -583,12 +599,16 @@ namespace Nevermore.Advanced
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
         {
+            using var mutex = Semaphore.Lock();
+
             using var command = CreateCommand(preparedCommand);
             return command.ReadResults(mapper);
         }
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
+            using var mutex = await Semaphore.LockAsync(cancellationToken);
+
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken);
         }

@@ -30,7 +30,7 @@ namespace Nevermore
         string DefaultSchema { get; set; }
 
         IDocumentMapRegistry DocumentMaps { get; }
-        public Func<IReadQueryExecutor, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
+        public Func<IRelationalStore, ITableColumnNameResolver> TableColumnNameResolver { get; set; }
         IDocumentSerializer DocumentSerializer { get; set; }
         IReaderStrategyRegistry ReaderStrategies { get; }
         ITypeHandlerRegistry TypeHandlers { get; }
