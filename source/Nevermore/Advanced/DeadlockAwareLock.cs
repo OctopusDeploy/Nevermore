@@ -14,7 +14,7 @@ namespace Nevermore.Advanced
     /// </summary>
     public class DeadlockAwareLock : SemaphoreSlim
     {
-        int? taskWhichAsAcquiredLock;
+        int? taskWhichHasAcquiredLock;
         int? threadWhichHasAcquiredLock;
 
         public DeadlockAwareLock() : base(1, 1)
@@ -38,19 +38,19 @@ namespace Nevermore.Advanced
         public new void Release()
         {
             threadWhichHasAcquiredLock = null;
-            taskWhichAsAcquiredLock = null;
+            taskWhichHasAcquiredLock = null;
             base.Release();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void AssertNoDeadlock()
         {
-            if (taskWhichAsAcquiredLock is not null)
+            if (taskWhichHasAcquiredLock is not null)
             {
                 // If we have a task then we can rely on the task ID. It's not guaranteed (one task can still spawn another) but it's better than nothing.
                 // If it's a different task which has acquired the lock then there's at least _some_ hope that that task might complete without requiring
                 // this task to complete. If this task has the lock and is attempting to acquire it again then there's no way out - deadlock.
-                if (taskWhichAsAcquiredLock == Task.CurrentId)
+                if (taskWhichHasAcquiredLock == Task.CurrentId)
                     throw new DeadlockException("This task context has already acquired this lock and has attempted to do so again.");
             }
             else
@@ -69,7 +69,7 @@ namespace Nevermore.Advanced
         void RecordLockAcquisition()
         {
             threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
-            taskWhichAsAcquiredLock = Task.CurrentId;
+            taskWhichHasAcquiredLock = Task.CurrentId;
         }
     }
 }
