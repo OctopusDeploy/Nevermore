@@ -27,7 +27,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = Store.BeginTransaction())
             {
                 Enumerable.Range(0, NumberOfDocuments)
-                    .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
+                    .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
                     .AsParallel()
                     .WithDegreeOfParallelism(DegreeOfParallelism)
                     .Select(document =>

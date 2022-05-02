@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
+using Nito.AsyncEx;
 using NUnit.Framework;
 
 namespace Nevermore.Tests
@@ -130,6 +131,34 @@ namespace Nevermore.Tests
             }
 
             // ReSharper restore AccessToDisposedClosure
+        }
+
+        [Test]
+        public void UsingSyncExtensionMethods_AndReleasingLocksCorrectly_ShouldNotThrow()
+        {
+            using var deadlockAwareLock = new DeadlockAwareLock();
+
+            using (var _ = deadlockAwareLock.Lock())
+            {
+            }
+
+            using (var _ = deadlockAwareLock.Lock())
+            {
+            }
+        }
+
+        [Test]
+        public async Task UsingAsyncExtensionMethods_AndReleasingLocksCorrectly_ShouldNotThrow()
+        {
+            using var deadlockAwareLock = new DeadlockAwareLock();
+
+            using (var _ = await deadlockAwareLock.LockAsync(cancellationToken))
+            {
+            }
+
+            using (var _ = await deadlockAwareLock.LockAsync(cancellationToken))
+            {
+            }
         }
     }
 }
