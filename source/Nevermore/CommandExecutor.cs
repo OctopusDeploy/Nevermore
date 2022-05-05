@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -207,20 +206,11 @@ namespace Nevermore
             }
         }
 
-        Exception WrapException(Exception ex)
+        Exception WrapException(SqlException ex)
         {
-            if (ex is SqlException {Number: 1205 or 1222 or -2}) // 1205 deadlock, 1222 row lock timeout, -2 timeout
-            {
-                var builder = new StringBuilder();
-                builder.AppendLine(ex.Message);
-                builder.AppendLine("Current transactions: ");
-                transaction.WriteCurrentTransactions(builder);
-                throw new Exception(builder.ToString());
-            }
-
             Log.DebugException($"Error while executing SQL command in transaction '{transaction.Name}'", ex);
 
-            return new Exception($"Error while executing SQL command in transaction '{transaction.Name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
+            return new NevermoreCommandException(command, transaction, ex);
         }
 
         static void DetectAndThrowIfKnownException(SqlException ex, DocumentMap mapping)
