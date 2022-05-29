@@ -498,15 +498,20 @@ namespace Nevermore.Advanced
             }
         }
 
-        public async IAsyncEnumerable<TResult> StreamAsync<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<TResult> StreamAsync<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
-            var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
-            await using var reader = await ExecuteReaderAsync(command, cancellationToken);
-            var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
-            while (await reader.ReadAsync(cancellationToken))
+            async IAsyncEnumerable<TResult> Execute()
             {
-                yield return projectionMapper(mapper);
+                var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
+                await using var reader = await ExecuteReaderAsync(command, cancellationToken);
+                var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    yield return projectionMapper(mapper);
+                }
             }
+
+            return new ThreadSafeAsyncEnumerable<TResult>(Execute, DeadlockAwareLock);
         }
 
         void AddCommandTrace(string commandText)

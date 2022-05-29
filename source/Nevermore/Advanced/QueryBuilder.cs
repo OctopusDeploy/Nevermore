@@ -417,6 +417,81 @@ namespace Nevermore.Advanced
             return results;
         }
 
+        CteSelectSource BuildToListCount(int skip, int take, out CommandParameterValues parameterValues, out string countColumnName)
+        {
+            const string rowNumberColumnName = "RowNum";
+            const string totalCountColumnName = "CrossJoinCount";
+            countColumnName = totalCountColumnName;
+            var minRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_minrow"));
+            var maxRowParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("_maxrow"));
+            parameterValues = new CommandParameterValues(paramValues)
+            {
+                {minRowParameter.ParameterName, skip + 1},
+                {maxRowParameter.ParameterName, take + skip}
+            };
+
+            var cteTableReference = new SchemalessTableSource(tableAliasGenerator.GenerateTableAlias());
+            var originalSelectBuilder = selectBuilder.Clone();
+            var originalOrderBys = originalSelectBuilder.RemoveOrderBys();
+
+            var cteTableBuilder = CreateCteQuery(cteTableReference, originalOrderBys);
+            var primaryQuery = CreateSubQueryFromCte(cteTableBuilder);
+            var innerCountSubQuery = CreateCountQueryFromCte(cteTableReference);
+            var crossJoinPrimaryWithCount = CrossJoinDataWithTotalCount(primaryQuery, innerCountSubQuery);
+            return new CteSelectSource(originalSelectBuilder.GenerateSelectWithoutDefaultOrderBy(), cteTableReference.TableName, crossJoinPrimaryWithCount);
+
+            TableSelectBuilder CreateCteQuery(SchemalessTableSource cteTableSource, OrderByField[] orderBys)
+            {
+                var nullColumn = new CalculatedColumn(new RawSql("(SELECT NULL)")); //This Column Will be ignored unless there is no ordering since we just end up returning the Count(*)
+                var tableSelectBuilder = new TableSelectBuilder(cteTableSource, nullColumn);
+                foreach (var order in orderBys)
+                {
+                    // Strip off any table alias information, the CTW will expect the columns to already be unique
+                    var orderByField = order.Column is TableColumn tableColumn ? new OrderByField(tableColumn.Column, order.Direction) : order;
+                    tableSelectBuilder.AddOrder(orderByField);
+                }
+                tableSelectBuilder.AddColumnSelection(new SelectAllSource());
+                tableSelectBuilder.AddRowNumberColumn(rowNumberColumnName);
+                return tableSelectBuilder;
+            }
+
+            SubquerySource CreateSubQueryFromCte(TableSelectBuilder cte)
+            {
+                var subQueryBuilder = CreateSubqueryBuilder(cte);
+                subQueryBuilder.AddDefaultColumnSelection();
+                subQueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
+                subQueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
+                subQueryBuilder.AddOptions(optionClauses);
+                var subQuery = subQueryBuilder.GenerateSelectWithoutDefaultOrderBy();
+                return new SubquerySource(subQuery, tableAliasGenerator.GenerateTableAlias());
+            }
+
+            ISelectBuilder CrossJoinDataWithTotalCount(SubquerySource originalQuery, SubquerySource countQuery)
+            {
+                var combinedQueryWithCount = new JoinSourceQueryBuilder<TRecord>(originalQuery,
+                        JoinType.CrossJoin,
+                        countQuery,
+                        readQueryExecutor,
+                        tableAliasGenerator,
+                        uniqueParameterNameGenerator,
+                        new CommandParameterValues(ParameterValues),
+                        new Parameters(Parameters),
+                        new ParameterDefaults(ParameterDefaults))
+                    .GetSelectBuilder();
+                combinedQueryWithCount.AddDefaultColumnSelection();
+                combinedQueryWithCount.AddColumnSelection(new TableColumn(new Column(totalCountColumnName), innerCountSubQuery.Alias));
+                combinedQueryWithCount.AddOrder(rowNumberColumnName, false);
+                return combinedQueryWithCount;
+            }
+
+            SubquerySource CreateCountQueryFromCte(SchemalessTableSource cteTableSource)
+            {
+                var innerCountTableBuilder = new TableSelectBuilder(cteTableSource, new Column(totalCountColumnName));
+                innerCountTableBuilder.AddColumnSelection(new SelectCountSource(totalCountColumnName));
+                return new SubquerySource(innerCountTableBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
+            }
+        }
+
         SubquerySelectBuilder BuildToList(int skip, int take, out CommandParameterValues parameterValues)
         {
             const string rowNumberColumnName = "RowNum";
@@ -435,7 +510,7 @@ namespace Nevermore.Advanced
                 minRowParameter));
             subqueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual,
                 maxRowParameter));
-            subqueryBuilder.AddOrder("RowNum", false);
+            subqueryBuilder.AddOrder(rowNumberColumnName, false);
             subqueryBuilder.AddOptions(optionClauses);
 
             parameterValues = new CommandParameterValues(paramValues)
@@ -454,12 +529,41 @@ namespace Nevermore.Advanced
             return ToList(skip, take);
         }
 
-        [Pure]
-        public async Task<(List<TRecord>, int)> ToListWithCountAsync(int skip, int take, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Query using legacy 2-step operation.
+        /// TODO: Remove this once we can deprecate the legacy approach 
+        /// </summary>
+        async Task<(List<TRecord>, int)> ToListWithCountAsyncLegacy(int skip, int take, CancellationToken cancellationToken = default)
         {
             var count = await CountAsync(cancellationToken);
             var list = await ToListAsync(skip, take, cancellationToken);
-            return (list, count);
+            return (list, count);            
+        }
+        
+        async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
+        {
+            var selectSource = BuildToListCount(skip, take, out var parmeterValues, out var countColumnName);
+            int total = 0;
+            var stream = readQueryExecutor.StreamAsync(selectSource.GenerateSql(), parmeterValues, map =>
+            {
+                if (total == 0)
+                {
+                    total = map.Read(reader => int.Parse(reader[countColumnName].ToString()));
+                }
+                return map.Map<TRecord>(string.Empty);
+            }, commandTimeout, cancellationToken);
+            
+            var results = new List<TRecord>();
+            await foreach (var item in stream)
+                results.Add(item);
+
+            return (results, total);
+        }
+
+        [Pure]
+        public async Task<(List<TRecord>, int)> ToListWithCountAsync(int skip, int take, CancellationToken cancellationToken = default)
+        {
+            return FeatureFlags.UseCteBasedListWithCount ? await ToListWithCountAsyncCte(skip, take, cancellationToken) : await ToListWithCountAsyncLegacy(skip, take, cancellationToken);
         }
 
         [Pure]

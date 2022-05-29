@@ -38,9 +38,11 @@ namespace Nevermore.Advanced.SelectBuilders
 
         protected abstract IEnumerable<OrderByField> GetDefaultOrderByFields();
 
-        public void RemoveOrderBys()
+        public OrderByField[] RemoveOrderBys()
         {
+            var originalClauses = OrderByClauses.ToArray();
             OrderByClauses.Clear();
+            return originalClauses;
         }
 
         public ISelect GenerateSelect()
@@ -115,6 +117,11 @@ namespace Nevermore.Advanced.SelectBuilders
         {
             GroupByClauses.Add(new GroupByField(new TableColumn(new Column(fieldName), tableAlias)));
         }
+
+        public virtual void AddOrder(OrderByField orderBy)
+        {
+            OrderByClauses.Add(orderBy);
+        }
         
         public virtual void AddOrder(string fieldName, bool @descending)
         {
@@ -172,6 +179,11 @@ namespace Nevermore.Advanced.SelectBuilders
         public virtual void AddRowNumberColumn(string alias, IReadOnlyList<Column> partitionBys)
         {
             InnerAddRowNumberColumn(alias, partitionBys);
+        }
+        
+        public void AddRowNumberColumn(string alias)
+        {
+            InnerAddRowNumberColumn(alias, Array.Empty<IColumn>());
         }
 
         public void AddRowNumberColumn(string alias, IReadOnlyList<TableColumn> partitionBys)
