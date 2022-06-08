@@ -59,6 +59,8 @@ namespace Nevermore.Advanced.SelectBuilders
         }
 
         public abstract ISelectBuilder Clone();
+        
+        public bool HasCustomColumnSelection => ColumnSelection != null;
 
         Where GetWhere()
         {

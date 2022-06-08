@@ -342,7 +342,49 @@ GROUP BY Agg.[SpaceId]";
             
             this.Assent(actual);
         }
-
+        
+        [Test]
+        public void ShouldGeneratePaginateWithSpecifiedColumn()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
+                .Column("Foo")
+                .Where("[Price] > 5")
+                .OrderBy("Foo")
+                .ToList(10, 20);
+            
+            this.Assent(actual);
+        }
+        
+        [Test]
+        public void ShouldGeneratePaginateWithMultipleSpecifiedColumns()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
+                .Column("Foo")
+                .Column("Bar")
+                .Column("Elephant")
+                .Where("[Price] > 5")
+                .OrderBy("Foo")
+                .ToList(10, 20);
+            
+            this.Assent(actual);
+        }
+        
+        [Test]
+        public void ShouldGeneratePaginateWithSpecifiedColumnAndNoSort()
+        {
+            string actual = null;
+            transaction.Stream<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
+                .Column("Foo")
+                .Where("[Price] > 5")
+                .ToList(10, 20);
+            
+            this.Assent(actual);
+        }
 
         [Test]
         public void ShouldGeneratePaginateForJoin()
