@@ -373,7 +373,7 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddDistinct();
             clonedSelectBuilder.AddOptions(optionClauses);
-            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, commandTimeout, cancellationToken);
+            var stream = readQueryExecutor.StreamAsync<TRecord>(clonedSelectBuilder.GenerateSelectWithoutDefaultOrderBy().GenerateSql(), paramValues, commandTimeout, cancellationToken);
             return stream;
         }
 
