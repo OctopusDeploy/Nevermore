@@ -456,6 +456,24 @@ WHERE ([Price] > 5)";
             actual.Should().Be(expected);
         }
 
+        [Test]
+        public void ShouldGenerateDistinctAsync()
+        {
+            string actual = null;
+            transaction.StreamAsync<object>(Arg.Do<string>(s => actual = s), Arg.Any<CommandParameterValues>());
+            CreateQueryBuilder<object>("Orders")
+                .NoLock()
+                .Where("[Price] > 5")
+                .Column("Name")
+                .DistinctAsync();
+
+            var expected = @"SELECT DISTINCT [Name]
+FROM [dbo].[Orders] NOLOCK
+WHERE ([Price] > 5)";
+
+            actual.Should().Be(expected);
+        }
+
 
         [Test]
         public void ShouldGenerateDistinctForJoin()
