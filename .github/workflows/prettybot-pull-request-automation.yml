@@ -3,7 +3,7 @@ name: "PrettyBot Pull Request Automation"
 on:
   pull_request:
     branches:    
-      - main
+      - master
 
 # Increase the access for the GITHUB_TOKEN
 permissions:
