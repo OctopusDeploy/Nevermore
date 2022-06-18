@@ -899,6 +899,30 @@ ORDER BY [Id]";
 
             queryBuilder.DebugViewRawQuery().Should().Be(expectedSql);
         }
+        
+        [Test]
+        public void ShouldGetCorrectSqlQueryForWhereSubQueryInWhere()
+        {
+            const string expectedSql = @"SELECT Id,Completed,Items
+FROM [dbo].[Todos]
+WHERE ([Id] IN (SELECT [ToDoId]
+FROM [dbo].[TodoItem]
+WHERE ([Completed] <= @completed)))
+ORDER BY [Id]";
+
+            var subQuery = CreateQueryBuilder<TodoItem>("TodoItem")
+                .Column("ToDoId")
+                .Where(nameof(TodoItem.Completed), UnarySqlOperand.LessThanOrEqual, true);
+
+            CreateQueryBuilder<Todos>("Todos")
+                .WhereIn("Id", subQuery)
+                .ToList();
+
+            transaction.Received(1).Stream<Todos>(
+                Arg.Is(expectedSql),
+                Arg.Is<CommandParameterValues>(cp => bool.Parse(cp["completed"].ToString()) == true),
+                Arg.Any<TimeSpan?>());
+        }
 
         [Test]
         public void ShouldGetCorrectSqlQueryForWhereInUsingWhereList()
