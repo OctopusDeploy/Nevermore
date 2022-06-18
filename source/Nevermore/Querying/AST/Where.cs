@@ -88,6 +88,35 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
         }
     }
 
+    public class SubQueryWhereClause : IWhereClause
+    {
+        readonly IWhereFieldReference whereFieldReference;
+        readonly ArraySqlOperand operand;
+        readonly ISelect subQuery;
+
+        public SubQueryWhereClause(IWhereFieldReference whereFieldReference, ArraySqlOperand operand, ISelect subQuery)
+        {
+            this.whereFieldReference = whereFieldReference;
+            this.operand = operand;
+            this.subQuery = subQuery;
+        }
+
+        public string GenerateSql() => $"{whereFieldReference.GenerateSql()} {GetQueryOperandSql()} ({subQuery.GenerateSql()})";
+        public override string ToString() => GenerateSql();
+
+        string GetQueryOperandSql()
+        {
+            switch (operand)
+            {
+                case ArraySqlOperand.In:
+                    return "IN";
+                case ArraySqlOperand.NotIn:
+                    return "NOT IN";
+                default:
+                    throw new ArgumentOutOfRangeException("Operand " + operand + " is not supported!");
+            }
+        }
+    }
     public class JsonArrayWhereClause : IWhereClause
     {
         readonly string parameterName;

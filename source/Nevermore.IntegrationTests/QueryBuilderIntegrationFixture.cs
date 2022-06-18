@@ -35,6 +35,41 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereSubQueryClause()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                var product1 = new Product() {Name = "Item1", Type = ProductType.Normal};
+                t.Insert(product1);
+                var product2 = new Product() {Name = "Item2", Type = ProductType.Dodgy};
+                t.Insert(product2);
+                foreach (var lineItems in new []
+                         {
+                             new LineItem(){ProductId = product1.Id, Name = "NormalLine1"},
+                             new LineItem(){ProductId = product1.Id, Name = "NormalLine2"},
+                             new LineItem(){ProductId = product2.Id, Name = "DodgyLine1"}
+                         })
+                    t.Insert(lineItems);
+                t.Commit();
+                
+                var productSubQuery = t.Query<Product>()
+                    .Column(nameof(Product.Id))
+                    .Where(nameof(Product.Type), UnarySqlOperand.Like, ProductType.Normal.ToString());
+                
+                var normalLineItems = t.Query<LineItem>().AllColumns()
+                    .WhereIn(nameof(LineItem.ProductId), productSubQuery)
+                    .ToList().Select(p => p.Name);
+
+                var dodgyLineItems = t.Query<LineItem>().AllColumns()
+                    .WhereNotIn(nameof(LineItem.ProductId), productSubQuery)
+                    .ToList().Select(p => p.Name);
+
+                normalLineItems.Should().BeEquivalentTo("NormalLine1", "NormalLine2");
+                dodgyLineItems.Should().BeEquivalentTo("DodgyLine1");
+            }
+        }
+
+        [Test]
         public void WhereNullClause()
         {
             using (var t = Store.BeginTransaction())
@@ -45,7 +80,7 @@ namespace Nevermore.IntegrationTests
                     new Customer {FirstName = "Bob", LastName = "Banana", Nickname = ""},
                     new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
                 })
-                    t.Insert(c);
+                t.Insert(c);
                 t.Commit();
                 
                 var customersNull = t.Query<Customer>()

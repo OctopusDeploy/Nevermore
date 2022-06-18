@@ -63,6 +63,26 @@ namespace Nevermore.Advanced
             return this;
         }
 
+        public IQueryBuilder<TRecord> WhereIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> inner) where TRecordInner : class
+        {
+            return WhereSubQuery(fieldName, ArraySqlOperand.In, inner);
+        }
+
+        public IQueryBuilder<TRecord> WhereNotIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> inner) where TRecordInner : class
+        {
+            return WhereSubQuery(fieldName, ArraySqlOperand.NotIn, inner);
+        }
+
+        IQueryBuilder<TRecord> WhereSubQuery<TRecordInner>(string fieldName, ArraySqlOperand operand, IQueryBuilder<TRecordInner> inner) where TRecordInner : class
+        {
+            @params.AddRange(inner.Parameters);
+            paramDefaults.AddRange(inner.ParameterDefaults);
+            paramValues.AddRange(inner.ParameterValues);
+            var innerQuery = inner.GetSelectBuilder().GenerateSelectWithoutDefaultOrderBy();
+            selectBuilder.AddWhere(new SubQueryWhereParameter(fieldName, operand, innerQuery));
+            return this;
+        }
+
         public IQueryBuilder<TRecord> WhereNotNull(string fieldName)
         {
             selectBuilder.AddWhere(new IsNullWhereParameter(fieldName, true));

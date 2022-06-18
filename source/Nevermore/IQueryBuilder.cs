@@ -101,6 +101,26 @@ namespace Nevermore
         IQueryBuilder<TRecord> Where(string whereClause);
 
         /// <summary>
+        /// Adds a where expression to the query checking the <paramref name="fieldName"/> exists in the <paramref name="innerQuery"/>  
+        /// </summary>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="innerQuery">The inner query that returns an array of values to be compared with the <paramref name="fieldName"/>.
+        /// This query MUST only contain one SELECT field or the resulting SQL statement will be invalid.</param>
+        /// <typeparam name="TRecordInner">The type of the inner query</typeparam>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IQueryBuilder<TRecord> WhereIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> innerQuery) where TRecordInner : class;
+
+        /// <summary>
+        /// Adds a where expression to the query checking the <paramref name="fieldName"/> does not exist in the <paramref name="innerQuery"/>  
+        /// </summary>
+        /// <param name="fieldName">The name of one of the columns in the query. The where condition will be evaluated against the value of this column.</param>
+        /// <param name="innerQuery">The inner query that returns an array of values to be compared with the <paramref name="fieldName"/>.
+        /// This query MUST only contain one SELECT field or the resulting SQL statement will be invalid.</param>
+        /// <typeparam name="TRecordInner">The type of the inner query</typeparam>
+        /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
+        IQueryBuilder<TRecord> WhereNotIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> innerQuery) where TRecordInner : class;
+
+        /// <summary>
         /// Adds a parameterised unary where clause to the query. This does not add a value for that parameter, and is therefore useful for Functions and Stored Procedures.
         /// Prefer using Where methods from <see cref="QueryBuilderWhereExtensions" /> in normal queries, which allows you to additionally provide a value for the parameter.
         /// </summary>

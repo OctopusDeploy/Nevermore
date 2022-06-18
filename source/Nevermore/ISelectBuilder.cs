@@ -19,6 +19,7 @@ namespace Nevermore
         void AddWhere(BinaryWhereParameter whereParams);
         void AddWhere(ArrayWhereParameter whereParams);
         void AddWhere(IsNullWhereParameter isNull);
+        void AddWhere(SubQueryWhereParameter whereParams);
         void AddWhere(string whereClause);
         void AddColumn(string columnName);
         void AddColumn(string columnName, string columnAlias);

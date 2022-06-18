@@ -135,6 +135,11 @@ namespace Nevermore.Advanced.SelectBuilders
                 whereParams.FirstParameterName, whereParams.SecondParameterName));
         }
 
+        public virtual void AddWhere(SubQueryWhereParameter whereParams)
+        {
+            WhereClauses.Add(new SubQueryWhereClause(new WhereFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.SubQuery));
+        }
+
         public virtual void AddWhere(ArrayWhereParameter whereParams)
         {
             WhereClauses.Add(new ArrayWhereClause(new WhereFieldReference(whereParams.FieldName), whereParams.Operand, whereParams.ParameterNames));

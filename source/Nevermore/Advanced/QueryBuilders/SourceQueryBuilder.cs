@@ -56,6 +56,16 @@ namespace Nevermore.Advanced.QueryBuilders
             return new QueryBuilder<TRecord, ISelectBuilder>(selectBuilder, ReadQueryExecutor, TableAliasGenerator, UniqueParameterNameGenerator, ParamValues, Params, ParamDefaults);
         }
 
+        public IQueryBuilder<TRecord> WhereIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> innerQuery) where TRecordInner : class
+        {
+            return Builder.WhereIn(fieldName, innerQuery);
+        }
+
+        public IQueryBuilder<TRecord> WhereNotIn<TRecordInner>(string fieldName, IQueryBuilder<TRecordInner> innerQuery) where TRecordInner : class
+        {
+            return Builder.WhereIn(fieldName, innerQuery);
+        }
+
         public ICompleteQuery<TRecord> WithTimeout(TimeSpan commandTimeout)
         {
             return Builder.WithTimeout(commandTimeout);
