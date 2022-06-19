@@ -39,14 +39,18 @@ namespace Nevermore.Querying.AST
             this.clauses = clauses;
             this.source = source;
             this.type = type;
+
+            if (!type.RequiresJoinClause() && clauses.Any())
+            {
+                throw new Exception("CROSS APPLY joins cannot include any join clauses");
+            }
         }
 
         public string GenerateSql()
         {
-            var separator = @"
-AND ";
+            var joinClauses = $"ON {string.Join($"{Environment.NewLine}AND ", clauses.Select(c => c.GenerateSql()))}";
             return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}
-ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
+{joinClauses}";
         }
 
         string DebugSql() => GenerateSql();
@@ -59,16 +63,27 @@ ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
                     return "INNER JOIN";
                 case JoinType.LeftHashJoin:
                     return "LEFT HASH JOIN";
+                case JoinType.CrossApply:
+                    return "CROSS JOIN";
                 default:
                     throw new NotSupportedException($"Join {joinType} is not supported");
             }
         }
     }
 
+    public static class JoinTypeExtensions
+    {
+        public static bool RequiresJoinClause(this JoinType joinType)
+        {
+            return joinType != JoinType.CrossApply;
+        }
+    }
+
     public enum JoinType
     {
         InnerJoin,
-        LeftHashJoin
+        LeftHashJoin,
+        CrossApply
     }
 
     public enum JoinOperand

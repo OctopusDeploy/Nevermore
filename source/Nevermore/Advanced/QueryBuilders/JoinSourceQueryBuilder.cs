@@ -33,7 +33,7 @@ namespace Nevermore.Advanced.QueryBuilders
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            if (clauses.Count == 0)
+            if (clauses.Count == 0 && type.RequiresJoinClause())
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }
@@ -43,7 +43,7 @@ namespace Nevermore.Advanced.QueryBuilders
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            if (clauses.Count == 0)
+            if (clauses.Count == 0  && joinType.RequiresJoinClause())
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }

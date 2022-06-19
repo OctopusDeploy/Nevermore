@@ -179,7 +179,28 @@ ORDER BY [CorrelationId]";
 
             this.Assent(actual);
         }
+       
         
+        [Test]
+        public void ShouldGenerateSelectForCrossApply()
+        {
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
+                .Alias("ORD")
+                .Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
+                
+            var join1QueryBuilder = CreateQueryBuilder<object>("Accounts")
+                .Alias("Acc")
+                .Where("Name", UnarySqlOperand.Equal, "Abc");
+
+            var actual = leftQueryBuilder
+                .CrossApply(join1QueryBuilder.Subquery())
+                .Column("Id", "OrderId", "ORD")
+                .Column("Id", "AccountId", "Acc")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
         [Test]
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {
