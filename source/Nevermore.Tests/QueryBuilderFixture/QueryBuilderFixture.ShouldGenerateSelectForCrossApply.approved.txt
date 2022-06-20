@@ -10,5 +10,4 @@ CROSS JOIN (
     FROM [dbo].[Accounts] Acc
     WHERE ([Name] = @name)
 ) ALIAS_GENERATED_1
-ON 
 ORDER BY ALIAS_GENERATED_2.[Id]

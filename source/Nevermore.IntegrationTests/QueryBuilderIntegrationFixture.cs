@@ -45,7 +45,7 @@ namespace Nevermore.IntegrationTests
                     new Customer {FirstName = "Bob", LastName = "Banana", Nickname = ""},
                     new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
                 })
-                    t.Insert(c);
+                t.Insert(c);
                 t.Commit();
                 
                 var customersNull = t.Query<Customer>()
@@ -59,6 +59,47 @@ namespace Nevermore.IntegrationTests
                 customersNull.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
                 customersNotNull.Select(c => c.FirstName).Should().BeEquivalentTo("Bob", "Charlie");
             }
+        }
+        
+        
+        [Test]
+        public void CrossApplyJoin()
+        {
+            using (var t = Store.BeginTransaction())
+            {
+                t.InsertMany(new [] {
+                    new Product { Name = "Shoe Horn" },
+                    new Product { Name = "Widget" }}
+                );
+                t.InsertMany(new []
+                {
+                    new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
+                    new Customer {FirstName = "Bob", LastName = "Barker", Nickname = "Bazza"},
+                    new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
+                });
+                t.Commit();
+                
+                var customersNull = t.Query<Customer>()
+                    .Where(n => n.Nickname != null)
+                    .Subquery().Alias("Customer");
+                
+                var customersNotNull = t.Query<Product>()
+                    .Alias("Product")
+                    .CrossApply(customersNull)
+                    .AsType<CustomerProductCross>()
+                    .Column(nameof(Customer.Nickname), "CustomerName", "Customer")
+                    .Column(nameof(Product.Name), "ProductName", "Product")
+                    .ToList();
+
+                customersNotNull.Select(cpc => $"{cpc.CustomerName}-{cpc.ProductName}")
+                    .Should().BeEquivalentTo(new[] {"Bazza-Shoe Horn", "Bazza-Widget", "Chazza-Shoe Horn", "Chazza-Widget"});
+            }
+        }
+
+        class CustomerProductCross
+        {
+            public string CustomerName { get; set; }
+            public string ProductName { get; set; }
         }
     }
 }

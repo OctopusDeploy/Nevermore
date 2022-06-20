@@ -153,10 +153,12 @@ ORDER BY [CorrelationId]";
             var leftQueryBuilder = CreateQueryBuilder<object>("Orders");
             var join1QueryBuilder = CreateQueryBuilder<object>("Customers");
             var join2QueryBuilder = CreateQueryBuilder<object>("Accounts");
+            var join3QueryBuilder = CreateQueryBuilder<object>("Bar");
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
                 .InnerJoin(join2QueryBuilder).On("AccountId", JoinOperand.Equal, "Id")
+                .CrossApply(join3QueryBuilder)
                 .DebugViewRawQuery();
 
             this.Assent(actual);

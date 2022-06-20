@@ -48,9 +48,11 @@ namespace Nevermore.Querying.AST
 
         public string GenerateSql()
         {
-            var joinClauses = $"ON {string.Join($"{Environment.NewLine}AND ", clauses.Select(c => c.GenerateSql()))}";
-            return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}
-{joinClauses}";
+            var joinClauses = clauses.Any() ?
+                $"{Environment.NewLine}ON {string.Join($"{Environment.NewLine}AND ", clauses.Select(c => c.GenerateSql()))}" :
+                string.Empty;
+
+            return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}{joinClauses}";
         }
 
         string DebugSql() => GenerateSql();
