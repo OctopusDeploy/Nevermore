@@ -73,7 +73,7 @@ namespace Nevermore
         }
         
         /// <summary>
-        /// Adds an cross apply join to the query.
+        /// Adds an cross join to the query.
         /// The query that has been built up so far in the left hand side query builder may be converted to a subquery to capture more complex modifications, such as where clauses.
         /// </summary>
         /// <typeparam name="TRecordLeft">The record type of the left hand side query builder</typeparam>
@@ -81,16 +81,16 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder which represents the left hand side of the join</param>
         /// <param name="rightHandQueryBuilder">The query builder which represents the right hand side of the join</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecordLeft> CrossApply<TRecordLeft, TRecordRight>(this IQueryBuilder<TRecordLeft> queryBuilder,
+        public static IQueryBuilder<TRecordLeft> CrossJoin<TRecordLeft, TRecordRight>(this IQueryBuilder<TRecordLeft> queryBuilder,
             ITableSourceQueryBuilder<TRecordRight> rightHandQueryBuilder) 
             where TRecordLeft : class 
             where TRecordRight : class
         {
-            return queryBuilder.Join(rightHandQueryBuilder.AsAliasedSource(), JoinType.CrossApply, rightHandQueryBuilder.ParameterValues, rightHandQueryBuilder.Parameters, rightHandQueryBuilder.ParameterDefaults);
+            return queryBuilder.Join(rightHandQueryBuilder.AsAliasedSource(), JoinType.CrossJoin, rightHandQueryBuilder.ParameterValues, rightHandQueryBuilder.Parameters, rightHandQueryBuilder.ParameterDefaults);
         }
         
         /// <summary>
-        /// Adds an cross apply join to the query.
+        /// Adds an cross join to the query.
         /// The query that has been built up so far in the left hand side query builder may be converted to a subquery to capture more complex modifications, such as where clauses.
         /// </summary>
         /// <typeparam name="TRecordLeft">The record type of the left hand side query builder</typeparam>
@@ -98,12 +98,12 @@ namespace Nevermore
         /// <param name="queryBuilder">The query builder which represents the left hand side of the join</param>
         /// <param name="rightHandQueryBuilder">The query builder which represents the right hand side of the join</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        public static IQueryBuilder<TRecordLeft> CrossApply<TRecordLeft, TRecordRight>(this IQueryBuilder<TRecordLeft> queryBuilder,
+        public static IQueryBuilder<TRecordLeft> CrossJoin<TRecordLeft, TRecordRight>(this IQueryBuilder<TRecordLeft> queryBuilder,
             ISubquerySourceBuilder<TRecordRight> rightHandQueryBuilder) 
             where TRecordLeft : class 
             where TRecordRight : class
         {
-            return queryBuilder.Join(rightHandQueryBuilder.AsSource(), JoinType.CrossApply, rightHandQueryBuilder.ParameterValues, rightHandQueryBuilder.Parameters, rightHandQueryBuilder.ParameterDefaults);
+            return queryBuilder.Join(rightHandQueryBuilder.AsSource(), JoinType.CrossJoin, rightHandQueryBuilder.ParameterValues, rightHandQueryBuilder.Parameters, rightHandQueryBuilder.ParameterDefaults);
         }
     }
 }

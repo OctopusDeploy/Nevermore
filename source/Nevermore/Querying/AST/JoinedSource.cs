@@ -60,8 +60,8 @@ namespace Nevermore.Querying.AST
                     return "INNER JOIN";
                 case JoinType.LeftHashJoin:
                     return "LEFT HASH JOIN";
-                case JoinType.CrossApply:
-                    return "CROSS APPLY";
+                case JoinType.CrossJoin:
+                    return "CROSS JOIN";
                 default:
                     throw new NotSupportedException($"Join {joinType} is not supported");
             }
@@ -72,7 +72,7 @@ namespace Nevermore.Querying.AST
     {
         InnerJoin,
         LeftHashJoin,
-        CrossApply
+        CrossJoin
     }
 
     public enum JoinOperand

@@ -157,7 +157,7 @@ ORDER BY [CorrelationId]";
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
-                .CrossApply(join3QueryBuilder)
+                .CrossJoin(join3QueryBuilder)
                 .InnerJoin(join2QueryBuilder).On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -184,7 +184,7 @@ ORDER BY [CorrelationId]";
        
         
         [Test]
-        public void ShouldGenerateSelectForCrossApply()
+        public void ShouldGenerateSelectForCrossJoin()
         {
             var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
                 .Alias("ORD")
@@ -195,7 +195,7 @@ ORDER BY [CorrelationId]";
                 .Where("Name", UnarySqlOperand.Equal, "Abc");
 
             var actual = leftQueryBuilder
-                .CrossApply(join1QueryBuilder.Subquery())
+                .CrossJoin(join1QueryBuilder.Subquery())
                 .Column("Id", "OrderId", "ORD")
                 .Column("Id", "AccountId", "Acc")
                 .DebugViewRawQuery();

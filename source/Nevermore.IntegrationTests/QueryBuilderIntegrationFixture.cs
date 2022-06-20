@@ -63,7 +63,7 @@ namespace Nevermore.IntegrationTests
         
         
         [Test]
-        public void CrossApplyJoin()
+        public void CrossJoin()
         {
             using (var t = Store.BeginTransaction())
             {
@@ -85,7 +85,7 @@ namespace Nevermore.IntegrationTests
                 
                 var customersNotNull = t.Query<Product>()
                     .Alias("Product")
-                    .CrossApply(customersNull)
+                    .CrossJoin(customersNull)
                     .AsType<CustomerProductCross>()
                     .Column(nameof(Customer.Nickname), "CustomerName", "Customer")
                     .Column(nameof(Product.Name), "ProductName", "Product")

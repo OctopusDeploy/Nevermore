@@ -74,12 +74,12 @@ namespace Nevermore.Advanced.QueryBuilders
         
         void ValidateJoinClausesForType()
         {
-            if (type == JoinType.CrossApply && clauses.Any())
+            if (type == JoinType.CrossJoin && clauses.Any())
             {
-                throw new InvalidOperationException("'CROSS APPLY' joins cannot include any join clauses");
+                throw new InvalidOperationException("'CROSS JOIN' joins cannot include any join clauses");
             }
 
-            if (type != JoinType.CrossApply && !clauses.Any())
+            if (type != JoinType.CrossJoin && !clauses.Any())
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }
