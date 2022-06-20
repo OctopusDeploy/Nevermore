@@ -39,11 +39,6 @@ namespace Nevermore.Querying.AST
             this.clauses = clauses;
             this.source = source;
             this.type = type;
-
-            if (!type.RequiresJoinClause() && clauses.Any())
-            {
-                throw new Exception("CROSS APPLY joins cannot include any join clauses");
-            }
         }
 
         public string GenerateSql()
@@ -70,14 +65,6 @@ namespace Nevermore.Querying.AST
                 default:
                     throw new NotSupportedException($"Join {joinType} is not supported");
             }
-        }
-    }
-
-    public static class JoinTypeExtensions
-    {
-        public static bool RequiresJoinClause(this JoinType joinType)
-        {
-            return joinType != JoinType.CrossApply;
         }
     }
 

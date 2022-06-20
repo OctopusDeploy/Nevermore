@@ -33,21 +33,14 @@ namespace Nevermore.Advanced.QueryBuilders
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            if (clauses.Count == 0 && type.RequiresJoinClause())
-            {
-                throw new InvalidOperationException("Must have at least one 'ON' clause per join");
-            }
+            ValidateJoinClauses(type);
             var joinedSource = new JoinedSource(originalSource, intermediateJoins.Concat(new [] {new Join(clauses.ToList(), joinSource, type)}).ToList());
             return new JoinSelectBuilder(joinedSource);
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            if (clauses.Count == 0  && joinType.RequiresJoinClause())
-            {
-                throw new InvalidOperationException("Must have at least one 'ON' clause per join");
-            }
-
+            ValidateJoinClauses(joinType);
             intermediateJoins.Add(new Join(clauses.ToList(), joinSource, type));
             clauses = new List<JoinClause>();
             joinSource = source;
@@ -77,6 +70,19 @@ namespace Nevermore.Advanced.QueryBuilders
             var newClause = new JoinClause(leftTableAlias, leftField, operand, joinSource.Alias, rightField);
             clauses.Add(newClause);
             return this;
+        }
+        
+        void ValidateJoinClauses(JoinType joinType)
+        {
+            if (joinType == JoinType.CrossApply && clauses.Any())
+            {
+                throw new InvalidOperationException("'CROSS APPLY' joins cannot include any join clauses");
+            }
+
+            if (joinType != JoinType.CrossApply && !clauses.Any())
+            {
+                throw new InvalidOperationException("Must have at least one 'ON' clause per join");
+            }
         }
     }
 }
