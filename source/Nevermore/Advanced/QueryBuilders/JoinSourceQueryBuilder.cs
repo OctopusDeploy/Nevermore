@@ -33,14 +33,14 @@ namespace Nevermore.Advanced.QueryBuilders
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            ValidateJoinClauses(type);
+            ValidateJoinClausesForType();
             var joinedSource = new JoinedSource(originalSource, intermediateJoins.Concat(new [] {new Join(clauses.ToList(), joinSource, type)}).ToList());
             return new JoinSelectBuilder(joinedSource);
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            ValidateJoinClauses(joinType);
+            ValidateJoinClausesForType();
             intermediateJoins.Add(new Join(clauses.ToList(), joinSource, type));
             clauses = new List<JoinClause>();
             joinSource = source;
@@ -72,14 +72,14 @@ namespace Nevermore.Advanced.QueryBuilders
             return this;
         }
         
-        void ValidateJoinClauses(JoinType joinType)
+        void ValidateJoinClausesForType()
         {
-            if (joinType == JoinType.CrossApply && clauses.Any())
+            if (type == JoinType.CrossApply && clauses.Any())
             {
                 throw new InvalidOperationException("'CROSS APPLY' joins cannot include any join clauses");
             }
 
-            if (joinType != JoinType.CrossApply && !clauses.Any())
+            if (type != JoinType.CrossApply && !clauses.Any())
             {
                 throw new InvalidOperationException("Must have at least one 'ON' clause per join");
             }

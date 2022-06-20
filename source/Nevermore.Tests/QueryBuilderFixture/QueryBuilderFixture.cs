@@ -157,8 +157,8 @@ ORDER BY [CorrelationId]";
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
-                .InnerJoin(join2QueryBuilder).On("AccountId", JoinOperand.Equal, "Id")
                 .CrossApply(join3QueryBuilder)
+                .InnerJoin(join2QueryBuilder).On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
             this.Assent(actual);
