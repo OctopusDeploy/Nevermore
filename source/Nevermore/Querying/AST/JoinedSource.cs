@@ -61,7 +61,7 @@ namespace Nevermore.Querying.AST
                 case JoinType.LeftHashJoin:
                     return "LEFT HASH JOIN";
                 case JoinType.CrossApply:
-                    return "CROSS JOIN";
+                    return "CROSS APPLY JOIN";
                 default:
                     throw new NotSupportedException($"Join {joinType} is not supported");
             }
