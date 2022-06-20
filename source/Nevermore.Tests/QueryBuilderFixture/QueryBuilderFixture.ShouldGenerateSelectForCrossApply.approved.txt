@@ -5,7 +5,7 @@ FROM (
     FROM [dbo].[Orders] ORD
     WHERE ([CustomerId] = @customerid)
 ) ALIAS_GENERATED_2
-CROSS JOIN (
+CROSS APPLY (
     SELECT *
     FROM [dbo].[Accounts] Acc
     WHERE ([Name] = @name)

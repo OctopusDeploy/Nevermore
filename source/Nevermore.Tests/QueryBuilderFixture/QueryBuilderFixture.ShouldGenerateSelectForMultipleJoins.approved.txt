@@ -2,7 +2,7 @@ SELECT ALIAS_Orders_2.*
 FROM [dbo].[Orders] ALIAS_Orders_2
 INNER JOIN [dbo].[Customers] ALIAS_Customers_1
 ON ALIAS_Orders_2.[CustomerId] = ALIAS_Customers_1.[Id]
-CROSS JOIN [dbo].[Bar] ALIAS_Bar_3
+CROSS APPLY [dbo].[Bar] ALIAS_Bar_3
 INNER JOIN [dbo].[Accounts] ALIAS_Accounts_4
 ON ALIAS_Orders_2.[AccountId] = ALIAS_Accounts_4.[Id]
 ORDER BY ALIAS_Orders_2.[Id]
