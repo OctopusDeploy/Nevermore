@@ -1,0 +1,13 @@
+SELECT ORD.[Id] AS [OrderId],
+Acc.[Id] AS [AccountId]
+FROM (
+    SELECT *
+    FROM [dbo].[Orders] ORD
+    WHERE ([CustomerId] = @customerid)
+) ALIAS_GENERATED_2
+CROSS JOIN (
+    SELECT *
+    FROM [dbo].[Accounts] Acc
+    WHERE ([Name] = @name)
+) ALIAS_GENERATED_1
+ORDER BY ALIAS_GENERATED_2.[Id]

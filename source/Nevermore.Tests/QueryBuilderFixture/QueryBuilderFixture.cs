@@ -153,9 +153,11 @@ ORDER BY [CorrelationId]";
             var leftQueryBuilder = CreateQueryBuilder<object>("Orders");
             var join1QueryBuilder = CreateQueryBuilder<object>("Customers");
             var join2QueryBuilder = CreateQueryBuilder<object>("Accounts");
+            var join3QueryBuilder = CreateQueryBuilder<object>("Bar");
 
             var actual = leftQueryBuilder
                 .InnerJoin(join1QueryBuilder).On("CustomerId", JoinOperand.Equal, "Id")
+                .CrossJoin(join3QueryBuilder)
                 .InnerJoin(join2QueryBuilder).On("AccountId", JoinOperand.Equal, "Id")
                 .DebugViewRawQuery();
 
@@ -179,7 +181,28 @@ ORDER BY [CorrelationId]";
 
             this.Assent(actual);
         }
+       
         
+        [Test]
+        public void ShouldGenerateSelectForCrossJoin()
+        {
+            var leftQueryBuilder = CreateQueryBuilder<object>("Orders")
+                .Alias("ORD")
+                .Where("CustomerId", UnarySqlOperand.Equal, "customers-1");
+                
+            var join1QueryBuilder = CreateQueryBuilder<object>("Accounts")
+                .Alias("Acc")
+                .Where("Name", UnarySqlOperand.Equal, "Abc");
+
+            var actual = leftQueryBuilder
+                .CrossJoin(join1QueryBuilder.Subquery())
+                .Column("Id", "OrderId", "ORD")
+                .Column("Id", "AccountId", "Acc")
+                .DebugViewRawQuery();
+
+            this.Assent(actual);
+        }
+
         [Test]
         public void ShouldGenerateSelectForMultipleJoinsWithParameter()
         {

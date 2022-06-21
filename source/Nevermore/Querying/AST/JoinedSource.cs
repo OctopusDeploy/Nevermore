@@ -43,10 +43,11 @@ namespace Nevermore.Querying.AST
 
         public string GenerateSql()
         {
-            var separator = @"
-AND ";
-            return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}
-ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
+            var joinClauses = clauses.Any() ?
+                $"{Environment.NewLine}ON {string.Join($"{Environment.NewLine}AND ", clauses.Select(c => c.GenerateSql()))}" :
+                string.Empty;
+
+            return $@"{GenerateJoinTypeSql(type)} {source.GenerateSql()}{joinClauses}";
         }
 
         string DebugSql() => GenerateSql();
@@ -59,6 +60,8 @@ ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
                     return "INNER JOIN";
                 case JoinType.LeftHashJoin:
                     return "LEFT HASH JOIN";
+                case JoinType.CrossJoin:
+                    return "CROSS JOIN";
                 default:
                     throw new NotSupportedException($"Join {joinType} is not supported");
             }
@@ -68,7 +71,8 @@ ON {string.Join(separator, clauses.Select(c => c.GenerateSql()))}";
     public enum JoinType
     {
         InnerJoin,
-        LeftHashJoin
+        LeftHashJoin,
+        CrossJoin
     }
 
     public enum JoinOperand
