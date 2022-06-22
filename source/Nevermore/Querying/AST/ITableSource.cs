@@ -15,7 +15,7 @@ namespace Nevermore.Querying.AST
 
     public class SchemalessTableSource : ISimpleTableSource
     {
-        public string Schema => throw new NotImplementedException();
+        public string Schema => throw new InvalidOperationException("Schemaless Tables do not have a schema");
         public string GenerateSql() => $"[{TableName}]";
 
         public SchemalessTableSource(string tableOrViewName)
