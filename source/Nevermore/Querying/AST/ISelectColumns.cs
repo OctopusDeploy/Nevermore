@@ -94,23 +94,6 @@ namespace Nevermore.Querying.AST
         public override string ToString() => GenerateSql();
     }
 
-    public class SelectCountSource : ISelectColumns
-    {
-        readonly string alias;
-        public SelectCountSource(string alias): this()
-        {
-            this.alias = alias;
-        }
-        
-        public SelectCountSource()
-        {
-        }
-        
-        public bool AggregatesRows => true;
-        public string GenerateSql() => string.IsNullOrEmpty(alias) ? "COUNT(*)" : $"COUNT(*) AS {alias}";
-        public override string ToString() => GenerateSql();
-    }
-
     public class SelectRowNumber : ISelectColumns
     {
         readonly Over over;

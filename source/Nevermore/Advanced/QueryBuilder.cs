@@ -438,7 +438,7 @@ namespace Nevermore.Advanced
             var primaryQuery = CreateSubQueryFromCte(cteTableBuilder);
             var innerCountSubQuery = CreateCountQueryFromCte(cteTableReference);
             var crossJoinPrimaryWithCount = CrossJoinDataWithTotalCount(primaryQuery, innerCountSubQuery);
-            return new CteSelectSource(originalSelectBuilder.GenerateSelectWithoutDefaultOrderBy(), cteTableReference.TableName, crossJoinPrimaryWithCount);
+            return new CteSelectSource(originalSelectBuilder.GenerateSelectWithoutDefaultOrderBy(), cteTableReference.TableName, crossJoinPrimaryWithCount.GenerateSelect());
 
             TableSelectBuilder CreateCteQuery(SchemalessTableSource cteTableSource, OrderByField[] orderBys)
             {
@@ -487,8 +487,8 @@ namespace Nevermore.Advanced
             SubquerySource CreateCountQueryFromCte(SchemalessTableSource cteTableSource)
             {
                 var innerCountTableBuilder = new TableSelectBuilder(cteTableSource, new Column(totalCountColumnName));
-                innerCountTableBuilder.AddColumnSelection(new SelectCountSource(totalCountColumnName));
-                return new SubquerySource(innerCountTableBuilder.GenerateSelect(), tableAliasGenerator.GenerateTableAlias());
+                innerCountTableBuilder.AddColumnSelection(new AliasedColumn(new SelectCountSource(), totalCountColumnName));
+                return new SubquerySource(innerCountTableBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias());
             }
         }
 

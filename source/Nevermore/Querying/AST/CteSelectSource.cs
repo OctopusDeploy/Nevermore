@@ -5,26 +5,25 @@ namespace Nevermore.Querying.AST
     public class CteSelectSource : IAliasedSelectSource
     {
         
-        readonly ISelect source;
-        readonly ISelectBuilder inner;
+        readonly ISelect cteSelect;
+        readonly ISelect querySelect;
 
-        public CteSelectSource(ISelect source, string alias, ISelectBuilder inner)
+        public CteSelectSource(ISelect cteSelect, string alias, ISelect querySelect)
         {
             Alias = alias;
-            this.source = source;
-            this.inner = inner;
+            this.cteSelect = cteSelect;
+            this.querySelect = querySelect;
         }
 
         public string Alias { get; }
 
-        public string Schema => source.Schema;
+        public string Schema => cteSelect.Schema;
 
         public string GenerateSql()
         {
-            var alias = string.IsNullOrEmpty(Alias) ? string.Empty : $" {Alias}";
-            return $@"With {alias} as (
-{Format.IndentLines(source.GenerateSql())}
-){Environment.NewLine}{inner.GenerateSelect()}";
+            return $@"With {Alias} as (
+{Format.IndentLines(cteSelect.GenerateSql())}
+){Environment.NewLine}{querySelect.GenerateSql()}";
         }
 
         public override string ToString() => GenerateSql();

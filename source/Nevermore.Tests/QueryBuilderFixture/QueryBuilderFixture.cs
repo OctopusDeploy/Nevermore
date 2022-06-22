@@ -1774,7 +1774,7 @@ ORDER BY [RowNum]");
                 .Where("Id", UnarySqlOperand.Equal, "1")
                 .ToListWithCountAsync(10, 20);
 
-                query.Should().BeEquivalentTo(@"With  ALIAS_GENERATED_1 as (
+                query.Should().BeEquivalentTo(@"With ALIAS_GENERATED_1 as (
     SELECT *
     FROM [dbo].[Orders]
     WHERE ([Id] = @id)
@@ -1792,7 +1792,7 @@ FROM (
     AND ([RowNum] <= @_maxrow)
 ) ALIAS_GENERATED_3
 CROSS JOIN (
-    SELECT COUNT(*) AS CrossJoinCount
+    SELECT COUNT(*) AS [CrossJoinCount]
     FROM [ALIAS_GENERATED_1]
 ) ALIAS_GENERATED_4
 ORDER BY ALIAS_GENERATED_3.[RowNum]");

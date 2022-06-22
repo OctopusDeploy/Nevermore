@@ -47,4 +47,11 @@
         public string GenerateSql() => $"{TableAlias}.{Column.GenerateSql()}";
         public override string ToString() => GenerateSql();
     }
+
+    public class SelectCountSource : IColumn
+    {
+        public bool AggregatesRows => true;
+        public string GenerateSql() =>  "COUNT(*)";
+        public override string ToString() => GenerateSql();
+    }
 }
