@@ -12,7 +12,8 @@ namespace Nevermore
         
         void AddGroupBy(string fieldName);
         void AddGroupBy(string fieldName, string tableAlias);
-        
+
+        void AddOrder(OrderByField orderBy);
         void AddOrder(string fieldName, bool descending);
         void AddOrder(string fieldName, string tableAlias, bool descending);
         void AddWhere(UnaryWhereParameter whereParams);
@@ -28,7 +29,7 @@ namespace Nevermore
         void AddDefaultColumnSelection();
         void AddOption(string queryHint);
         void AddOptions(IReadOnlyList<string> queryHints);
-        void RemoveOrderBys();
+        OrderByField[] RemoveOrderBys();
         ISelect GenerateSelect();
         ISelect GenerateSelectWithoutDefaultOrderBy();
 

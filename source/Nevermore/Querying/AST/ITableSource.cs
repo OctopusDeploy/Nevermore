@@ -1,4 +1,5 @@
-﻿using Nevermore.Advanced;
+﻿using System;
+using Nevermore.Advanced;
 
 namespace Nevermore.Querying.AST
 {
@@ -10,6 +11,20 @@ namespace Nevermore.Querying.AST
 
     public interface ISimpleTableSource : ITableSource
     {
+    }
+
+    public class SchemalessTableSource : ISimpleTableSource
+    {
+        public string Schema => throw new InvalidOperationException("Schemaless Tables do not have a schema");
+        public string GenerateSql() => $"[{TableName}]";
+
+        public SchemalessTableSource(string tableOrViewName)
+        {
+            TableName = tableOrViewName;
+        }
+        
+        public string TableName { get; }
+        public string[] ColumnNames => Array.Empty<string>();
     }
 
     public class SimpleTableSource : ISimpleTableSource

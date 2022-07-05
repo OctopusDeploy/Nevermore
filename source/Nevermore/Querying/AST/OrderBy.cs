@@ -27,23 +27,4 @@ namespace Nevermore.Querying.AST
         Ascending,
         Descending
     }
-
-    public class OrderByField
-    {
-        readonly IColumn column;
-        readonly OrderByDirection direction;
-
-        public OrderByField(IColumn column, OrderByDirection direction = OrderByDirection.Ascending)
-        {
-            this.column = column;
-            this.direction = direction;
-        }
-
-        public string GenerateSql()
-        {
-            return $"{column.GenerateSql()}{(direction == OrderByDirection.Descending ? " DESC" : string.Empty)}";
-        }
-
-        public override string ToString() => GenerateSql();
-    }
 }

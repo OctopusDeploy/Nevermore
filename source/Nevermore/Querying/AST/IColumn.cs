@@ -34,17 +34,24 @@
 
     public class TableColumn : IColumn
     {
-        readonly Column column;
-        readonly string tableAlias;
+        public readonly Column Column;
+        public readonly string TableAlias;
 
         public TableColumn(Column column, string tableAlias)
         {
-            this.column = column;
-            this.tableAlias = tableAlias;
+            this.Column = column;
+            this.TableAlias = tableAlias;
         }
 
         public bool AggregatesRows => false;
-        public string GenerateSql() => $"{tableAlias}.{column.GenerateSql()}";
+        public string GenerateSql() => $"{TableAlias}.{Column.GenerateSql()}";
+        public override string ToString() => GenerateSql();
+    }
+
+    public class SelectCountSource : IColumn
+    {
+        public bool AggregatesRows => true;
+        public string GenerateSql() =>  "COUNT(*)";
         public override string ToString() => GenerateSql();
     }
 }

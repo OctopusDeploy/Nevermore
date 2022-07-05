@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Assent;
 using FluentAssertions;
+using Nevermore.Advanced;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Querying.AST;
 using NSubstitute;
@@ -1745,6 +1748,54 @@ FROM (
 WHERE ([RowNum] >= @_minrow)
 AND ([RowNum] <= @_maxrow)
 ORDER BY [RowNum]");
+
+            parameterValues.Should().HaveCount(3);
+            parameterValues["id"].Should().BeEquivalentTo("1");
+            parameterValues["_minrow"].Should().BeEquivalentTo(11);
+            parameterValues["_maxrow"].Should().BeEquivalentTo(30);
+        }
+
+        //TODO: Call into contract defined ToListWithCountAsync once legacy mechanism is deprecated
+        [Test]
+        public async Task ShouldCreateIncludeTotalListCount()
+        {
+            CommandParameterValues parameterValues = null;
+            string query = null;
+            transaction.StreamAsync<object>(
+                Arg.Do<string>(q => query = q),
+                Arg.Do<CommandParameterValues>(pv => parameterValues = pv),
+                Arg.Any<Func<IProjectionMapper, object>>(), 
+                null,
+                Arg.Any<CancellationToken>());
+
+            FeatureFlags.UseCteBasedListWithCount = true; 
+            await CreateQueryBuilder<object>("Orders")
+                .OrderByDescending("LastModified")
+                .Where("Id", UnarySqlOperand.Equal, "1")
+                .ToListWithCountAsync(10, 20);
+
+                query.Should().BeEquivalentTo(@"With ALIAS_GENERATED_1 as (
+    SELECT *
+    FROM [dbo].[Orders]
+    WHERE ([Id] = @id)
+)
+SELECT ALIAS_GENERATED_3.*,
+ALIAS_GENERATED_4.[CrossJoinCount]
+FROM (
+    SELECT *
+    FROM (
+        SELECT *,
+        ROW_NUMBER() OVER (ORDER BY [LastModified] DESC) AS RowNum
+        FROM [ALIAS_GENERATED_1]
+    ) ALIAS_GENERATED_2
+    WHERE ([RowNum] >= @_minrow)
+    AND ([RowNum] <= @_maxrow)
+) ALIAS_GENERATED_3
+CROSS JOIN (
+    SELECT COUNT(*) AS [CrossJoinCount]
+    FROM [ALIAS_GENERATED_1]
+) ALIAS_GENERATED_4
+ORDER BY ALIAS_GENERATED_3.[RowNum]");
 
             parameterValues.Should().HaveCount(3);
             parameterValues["id"].Should().BeEquivalentTo("1");
