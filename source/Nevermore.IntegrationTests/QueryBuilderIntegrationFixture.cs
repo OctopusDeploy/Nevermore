@@ -103,34 +103,5 @@ namespace Nevermore.IntegrationTests
             public string CustomerName { get; set; }
             public string ProductName { get; set; }
         }
-
-        [Test]
-        [TestCase(false)]
-        [TestCase(true)] //Temporary test to cover and compare legacy mechanism for loading data. Remove once legacy approach deprecated
-        public async Task WhereToListWithCountAsync(bool useCteOperation)
-        {
-            using (var t = Store.BeginTransaction())
-            {
-                foreach (var c in new[]
-                         {
-                             new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
-                             new Customer {FirstName = "Bob", LastName = "Banana", Nickname = ""},
-                             new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"},
-                             new Customer {FirstName = "David", LastName = "Derkins", Nickname = "Dazza"},
-                             new Customer {FirstName = "Eric", LastName = "Evans", Nickname = "Bob"}
-                         })
-                    t.Insert(c);
-                await t.CommitAsync(CancellationToken.None);
-
-                FeatureFlags.UseCteBasedListWithCount = useCteOperation;
-                var (items, count) = await t.Query<Customer>()
-                    .OrderByDescending(o => o.LastName)
-                    .Where(n => n.Nickname != null)
-                    .ToListWithCountAsync(1, 2, CancellationToken.None);
-
-                CollectionAssert.AreEqual(items.Select(p => p.FirstName), new []{"David", "Charlie"});
-                count.Should().Be(4);
-            }
-        }
     }
 }

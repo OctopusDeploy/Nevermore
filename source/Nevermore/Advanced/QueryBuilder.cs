@@ -542,6 +542,12 @@ namespace Nevermore.Advanced
         
         async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
         {
+            // Short circuit query if no results will be retrieved
+            if (take == 0)
+            {
+                return await ReturnJustCount();
+            }
+
             var selectSource = BuildToListCount(skip, take, out var parmeterValues, out var countColumnName);
             int total = 0;
             var stream = readQueryExecutor.StreamAsync(selectSource.GenerateSql(), parmeterValues, map =>
@@ -556,6 +562,19 @@ namespace Nevermore.Advanced
             var results = new List<TRecord>();
             await foreach (var item in stream)
                 results.Add(item);
+
+            // If no result came back its possible that the page is greater than whats available
+            // Fall back to using just the count
+            if (!results.Any())
+            {
+                return await ReturnJustCount();
+            }
+
+            async Task<(List<TRecord>, int)> ReturnJustCount()
+            {
+                var count = await CountAsync(cancellationToken);
+                return (new List<TRecord>(), count); 
+            }
 
             return (results, total);
         }
