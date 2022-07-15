@@ -27,7 +27,6 @@ namespace Nevermore.IntegrationTests.Advanced
             configuration.DocumentMaps.Register(new TableDocumentMap());
 
             ExecuteSql($"create table {DefaultSchemaName}.{nameof(TableDocument)} (Id nvarchar(50), ColumnName nvarchar(10))");
-
             ExecuteSql($"create schema {DifferentSchemaName}");
             ExecuteSql($"create table {DifferentSchemaName}.{nameof(TableDocument)} (ColumnInOtherSchema nvarchar(10))");
         }
@@ -67,10 +66,11 @@ namespace Nevermore.IntegrationTests.Advanced
         async Task AssertSchemaIsCorrectAfterMethodCall<T>(Func<IRelationalTransaction, Task<T>> func)
         {
             var store = new RelationalStore(configuration);
-
             var recordingColumnResolver = new TableColumnNameResolverThatRecordsTheSchema();
             configuration.TableColumnNameResolver = _ => recordingColumnResolver;
+
             using var transaction = store.BeginTransaction();
+            
             try {
                 await func(transaction);
             }
