@@ -649,7 +649,7 @@ namespace Nevermore.Advanced
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
 
-        public string[] GetColumnNames(string? schemaName, string tableName)
+        public string[] GetColumnNames(string schemaName, string tableName)
         {
             return columnNameResolver.GetColumnNames(schemaName, tableName);
         }
