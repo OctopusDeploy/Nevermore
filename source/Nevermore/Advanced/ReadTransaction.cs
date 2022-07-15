@@ -628,7 +628,7 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
+            var columnNames = GetColumnNames(configuration.GetSchemaNameOrDefault(mapping), mapping.TableName);
             var tableName = mapping.TableName;
             var args = new CommandParameterValues { { "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) } };
 
@@ -642,7 +642,7 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
+            var columnNames = GetColumnNames(configuration.GetSchemaNameOrDefault(mapping), mapping.TableName);
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);
             var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
