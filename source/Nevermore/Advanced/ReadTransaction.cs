@@ -628,11 +628,12 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
+            var schema = configuration.GetSchemaNameOrDefault(mapping);
+            var columnNames = GetColumnNames(schema, mapping.TableName);
             var tableName = mapping.TableName;
             var args = new CommandParameterValues { { "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) } };
 
-            return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
+            return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
         PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
@@ -642,14 +643,15 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
-            var columnNames = GetColumnNames(mapping.SchemaName, mapping.TableName);
+            var schema = configuration.GetSchemaNameOrDefault(mapping);
+            var columnNames = GetColumnNames(schema, mapping.TableName);
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);
-            var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{configuration.GetSchemaNameOrDefault(mapping)}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
+            var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{schema}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }
 
-        public string[] GetColumnNames(string? schemaName, string tableName)
+        public string[] GetColumnNames(string schemaName, string tableName)
         {
             return columnNameResolver.GetColumnNames(schemaName, tableName);
         }
