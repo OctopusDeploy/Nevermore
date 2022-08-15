@@ -215,7 +215,7 @@ namespace Nevermore
                 builder.AppendLine(ex.Message);
                 builder.AppendLine("Current transactions: ");
                 transaction.WriteCurrentTransactions(builder);
-                throw new Exception(builder.ToString());
+                throw new Exception(builder.ToString(), ex);
             }
 
             Log.DebugException($"Error while executing SQL command in transaction '{transaction.Name}'", ex);
