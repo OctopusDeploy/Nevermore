@@ -40,4 +40,6 @@
 *.csproj text merge=union 
 *.vbproj text merge=union 
 
-*.sln text eol=crlf merge=union 
+*.sln text eol=crlf merge=union
+
+build.sh eol=lf
