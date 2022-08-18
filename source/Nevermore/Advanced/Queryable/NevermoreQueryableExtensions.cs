@@ -47,6 +47,14 @@ namespace Nevermore.Advanced.Queryable
                     source.Expression, Expression.Constant(hint)));
         }
 
+        // This method does nothing, but is necessary to support using this extension with
+        // an EnumerableQuery-backed IQueryable<T>.
+        // ReSharper disable once UnusedParameter.Global
+        public static IEnumerable<TSource> Hint<TSource>(this IEnumerable<TSource> source, string hint)
+        {
+            return source;
+        }
+
         public static string RawDebugView<TSource>(this IQueryable<TSource> source)
         {
             if (source == null)
