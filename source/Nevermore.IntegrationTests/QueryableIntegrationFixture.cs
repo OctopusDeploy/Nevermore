@@ -1527,5 +1527,29 @@ namespace Nevermore.IntegrationTests
                 new { FirstName = "Charlie", IsEmployee = true }
             });
         }
+
+        [Test]
+        public async Task ProjectValueType()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => c.IsEmployee).ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[] { true, false, true });
+        }
     }
 }
