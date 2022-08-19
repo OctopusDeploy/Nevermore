@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Nevermore.Advanced.ReaderStrategies;
 using Nevermore.Util;
 
 namespace Nevermore.Advanced.Queryable
@@ -18,6 +15,10 @@ namespace Nevermore.Advanced.Queryable
             .GetRuntimeMethods().Single(m => m.Name == nameof(CreateQuery) && m.IsGenericMethod);
         static readonly MethodInfo GenericExecuteMethod = typeof(QueryProvider)
             .GetRuntimeMethods().Single(m => m.Name == nameof(Execute) && m.IsGenericMethod);
+        static readonly MethodInfo GenericStreamMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.Stream), new[] { typeof(PreparedCommand) } );
+        static readonly MethodInfo GenericStreamAsyncMethod = typeof(IReadQueryExecutor)
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.StreamAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
         static readonly MethodInfo GenericExecuteScalarMethod = typeof(IReadQueryExecutor)
             .GetRuntimeMethod(nameof(IReadQueryExecutor.ExecuteScalar), new[] { typeof(PreparedCommand) });
         static readonly MethodInfo GenericExecuteScalarAsyncMethod = typeof(IReadQueryExecutor)
@@ -53,18 +54,16 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                return (TResult)ReadList(command, sequenceType);
+                return (TResult)ExecuteStream(command, sequenceType);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                return (TResult)ReadSingle(command, expression.Type);
+                return (TResult)FirstOrDefault(ExecuteStream(command, expression.Type));
             }
 
-            return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
-                .Invoke(queryExecutor, new object[] { command });
+            return (TResult)ExecuteScalar(command, expression.Type);
         }
-
 
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
@@ -72,12 +71,12 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                return (TResult)await ReadList(command, sequenceType, cancellationToken).ConfigureAwait(false);
+                return (TResult)await ExecuteStreamAsync(command, sequenceType, cancellationToken);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                return (TResult)await ReadSingle(command, expression.Type, cancellationToken).ConfigureAwait(false);
+                return (TResult)FirstOrDefault(await ExecuteStreamAsync(command, expression.Type, cancellationToken));
             }
 
             return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
@@ -90,100 +89,37 @@ namespace Nevermore.Advanced.Queryable
             return new QueryTranslator(configuration).Translate(expression);
         }
 
-        IList ReadList(PreparedCommand command, Type elementType)
+        IEnumerable ExecuteStream(PreparedCommand command, Type elementType)
         {
-            var list = CreateList(elementType);
-            var readerStrategy = GetReaderStrategy(elementType, command);
-            using var reader = queryExecutor.ExecuteReader(command);
-            while (reader.Read())
+            return (IEnumerable)GenericStreamMethod.MakeGenericMethod(elementType)
+                .Invoke(queryExecutor, new object[] { command });
+        }
+
+        async Task<IEnumerable> ExecuteStreamAsync(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
+        {
+            var stream = GenericStreamAsyncMethod.MakeGenericMethod(elementType)
+                .Invoke(queryExecutor, new object[] { command, cancellationToken });
+
+            return await AsyncEnumerableAdapter.ConvertToEnumerable(stream, elementType, cancellationToken);
+        }
+
+        object ExecuteScalar(PreparedCommand command, Type resultType)
+        {
+            return GenericExecuteScalarMethod.MakeGenericMethod(resultType)
+                .Invoke(queryExecutor, new object[] { command });
+        }
+
+        static object FirstOrDefault(IEnumerable stream)
+        {
+            var enumerator = stream.GetEnumerator();
+            try
             {
-                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
-                if (success)
-                {
-                    list.Add(item);
-                }
+                return enumerator.MoveNext() ? enumerator.Current : default;
             }
-
-            return list;
-        }
-        
-        async Task<IList> ReadList(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
-        {
-            var list = CreateList(elementType);
-            var readerStrategy = GetReaderStrategy(elementType, command);
-            using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
+            finally
             {
-                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
-                if (success)
-                {
-                    list.Add(item);
-                }
+                (enumerator as IDisposable)?.Dispose();
             }
-
-            return list;
-        }
-
-        object ReadSingle(PreparedCommand command, Type elementType)
-        {
-            var readerStrategy = GetReaderStrategy(elementType, command);
-            using var reader = queryExecutor.ExecuteReader(command);
-            if (reader.Read())
-            {
-                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
-                if (success)
-                {
-                    return item;
-                }
-            }
-
-            return elementType.GetDefaultValue();
-        }
-
-        async Task<object> ReadSingle(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
-        {
-            var readerStrategy = GetReaderStrategy(elementType, command);
-            await using var reader = await queryExecutor.ExecuteReaderAsync(command, cancellationToken);
-            if (await reader.ReadAsync(cancellationToken))
-            {
-                var success = TryProcessRow(readerStrategy, elementType, reader, out var item);
-                if (success)
-                {
-                    return item;
-                }
-            }
-
-            return elementType.GetDefaultValue();
-        }
-
-        static bool TryProcessRow(Delegate readerStrategy, Type elementType, DbDataReader reader, out object item)
-        {
-            var readResult = readerStrategy.DynamicInvoke(reader);
-            var tupleType = typeof(ValueTuple<,>).MakeGenericType(elementType, typeof(bool));
-            // ReSharper disable once PossibleNullReferenceException
-            var success = (bool)tupleType.GetField("Item2").GetValue(readResult);
-            // ReSharper disable once PossibleNullReferenceException
-            item = success
-                ? tupleType.GetField("Item1").GetValue(readResult)
-                : null;
-
-            return success;
-        }
-
-        Delegate GetReaderStrategy(Type elementType, PreparedCommand command)
-        {
-            // ReSharper disable once PossibleNullReferenceException
-            return (Delegate)typeof(IReaderStrategyRegistry)
-                .GetMethod(nameof(IReaderStrategyRegistry.Resolve), 1, new[] { typeof(PreparedCommand) })
-                .MakeGenericMethod(elementType)
-                .Invoke(configuration.ReaderStrategies, new object[] { command });
-        }
-
-        static IList CreateList(Type elementType)
-        {
-            var listType = typeof(List<>).MakeGenericType(elementType);
-            var list = (IList)Activator.CreateInstance(listType);
-            return list;
         }
     }
 }
