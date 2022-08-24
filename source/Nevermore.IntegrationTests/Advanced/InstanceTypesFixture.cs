@@ -1,10 +1,8 @@
 using System;
-using BenchmarkDotNet.Disassemblers;
 using FluentAssertions;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.IntegrationTests.SetUp;
 using Nevermore.Mapping;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.Advanced
@@ -140,7 +138,7 @@ namespace Nevermore.IntegrationTests.Advanced
         }
 
         [Test, Order(5)]
-        public void ThrowsWhenUnexpectedTypeIsEncountedByDefault()
+        public void ThrowsWhenUnexpectedTypeIsEncounteredByDefault()
         {
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("update TestSchema.Account set [Type] = 'dunno' where Id = 'Accounts-1'");
