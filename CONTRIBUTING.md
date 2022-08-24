@@ -15,5 +15,3 @@ Create a PR and someone from Octopus Deploy will review it.
 ### New features / architectural changes
 
 Create a new issue first and describe all relevant details there. Someone from Octopus Deploy will review it and provide feedback.
-
-Applies to Octopus Deploy employees only. Post all issues under review to #topic-nevermore and ping [Paul Stovell](https://github.com/PaulStovell) who is overseeing the overall architectural direction of this project.
