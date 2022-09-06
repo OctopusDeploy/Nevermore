@@ -16,6 +16,9 @@ namespace Nevermore.Advanced
     [DebuggerDisplay("{ToString()}")]
     public class WriteTransaction : ReadTransaction, IRelationalTransaction
     {
+        // SQL throws exception when parameters exceeded this number.
+        const int AllowedSqlParametersCount = 2100;
+        
         readonly IRelationalStoreConfiguration configuration;
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
@@ -69,16 +72,23 @@ namespace Nevermore.Advanced
         {
             IReadOnlyList<object> documentList = documents.ToArray();
             if (!documentList.Any()) return;
+            
+            var batchBlockSize = BatchBlockSize(documentList, options);
+            if (batchBlockSize == 0) throw new InvalidOperationException("Document has exceeded the supported value of 2100 parameters for a single row");
 
-            var command = builder.PrepareInsert(documentList, options);
-            foreach (var document in documents) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
+            foreach (var documentsBatch in documentList.BatchWithBlockSize(batchBlockSize))
+            {
+                var documentsToInsert = documentsBatch.ToArray();
+                var command = builder.PrepareInsert(documentsToInsert, options);
+                foreach (var document in documentsToInsert) configuration.Hooks.BeforeInsert(document, command.Mapping, this);
 
-            var outputs = ExecuteDataModification(command);
-            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, outputs);
-            ApplyIdentityIdsIfRequired(documentList, command.Mapping, outputs);
+                var outputs = ExecuteDataModification(command);
+                ApplyNewRowVersionsIfRequired(documentsToInsert, command.Mapping, outputs);
+                ApplyIdentityIdsIfRequired(documentsToInsert, command.Mapping, outputs);
 
-            foreach (var document in documentList) configuration.Hooks.AfterInsert(document, command.Mapping, this);
-            configuration.RelatedDocumentStore.PopulateManyRelatedDocuments(this, documentList);
+                foreach (var document in documentsToInsert) configuration.Hooks.AfterInsert(document, command.Mapping, this);
+                configuration.RelatedDocumentStore.PopulateManyRelatedDocuments(this, documentsToInsert);
+            }
         }
 
         public Task InsertManyAsync<TDocument>(IReadOnlyCollection<TDocument> documents, CancellationToken cancellationToken = default) where TDocument : class
@@ -91,19 +101,26 @@ namespace Nevermore.Advanced
             IReadOnlyList<object> documentList = documents.ToArray();
             if (!documentList.Any()) return;
 
-            var command = builder.PrepareInsert(documentList, options);
+            var batchBlockSize = BatchBlockSize(documentList, options);
+            if (batchBlockSize == 0) throw new InvalidOperationException("Document has exceeded the supported value of 2100 parameters for a single row");
 
-            foreach (var document in documentList)
-                await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+            foreach (var documentsBatch in documentList.BatchWithBlockSize(batchBlockSize))
+            {
+                var documentsToInsert = documentsBatch.ToArray();
+                var command = builder.PrepareInsert(documentsToInsert, options);
+                
+                foreach (var document in documentsToInsert)
+                    await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
 
-            var outputs = await ExecuteDataModificationAsync(command, cancellationToken);
-            ApplyNewRowVersionsIfRequired(documentList, command.Mapping, outputs);
-            ApplyIdentityIdsIfRequired(documentList, command.Mapping, outputs);
+                var outputs = await ExecuteDataModificationAsync(command, cancellationToken);
+                ApplyNewRowVersionsIfRequired(documentsToInsert, command.Mapping, outputs);
+                ApplyIdentityIdsIfRequired(documentsToInsert, command.Mapping, outputs);
 
-            foreach (var document in documentList)
-                await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+                foreach (var document in documentsToInsert)
+                    await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
 
-            await configuration.RelatedDocumentStore.PopulateManyRelatedDocumentsAsync(this, documentList, cancellationToken);
+                await configuration.RelatedDocumentStore.PopulateManyRelatedDocumentsAsync(this, documentsToInsert, cancellationToken);
+            }
         }
 
         public void Update<TDocument>(TDocument document, UpdateOptions options = null) where TDocument : class
@@ -359,6 +376,17 @@ namespace Nevermore.Advanced
                     $"Modification failed for '{typeof(TDocument).Name}' document with '{mapping.GetId(document)}' Id because the server failed to return a new Identity id.");
 
             mapping.IdColumn!.PropertyHandler.Write(document, output.Id);
+        }
+        
+        /// <summary>
+        /// Calculating batching block size for a given collection of documents.
+        /// </summary>
+        int BatchBlockSize(IReadOnlyList<object> documentList, InsertOptions options)
+        {
+            int totalParametersCount = builder.GetParametersForDocuments(documentList, options).Count;
+            int parametersCountPerDocument = totalParametersCount / documentList.Count;
+            int batchBlockSize = (AllowedSqlParametersCount - 1) / parametersCountPerDocument;
+            return batchBlockSize;
         }
 
         class DataModificationOutput

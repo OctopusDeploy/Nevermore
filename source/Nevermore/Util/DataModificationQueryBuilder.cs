@@ -36,13 +36,20 @@ namespace Nevermore.Util
             this.keyAllocator = keyAllocator;
         }
 
+        public CommandParameterValues GetParametersForDocuments(IReadOnlyList<object> documents, InsertOptions options = null)
+        {
+            options ??= InsertOptions.Default;
+            var mapping = GetMapping(documents);
+            ValidateMapping(mapping, options);
+            
+            return GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
+        }
+
         public PreparedCommand PrepareInsert(IReadOnlyList<object> documents, InsertOptions options = null)
         {
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
-
-            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase && options.CustomAssignedId != null)
-                throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
+            ValidateMapping(mapping, options);
 
             var sb = new StringBuilder();
             AppendInsertStatement(sb, mapping, options.TableName, options.SchemaName, options.Hint, documents.Count, options.IncludeDefaultModelColumns);
@@ -184,6 +191,12 @@ namespace Nevermore.Util
             if (allMappings.Length != 1)
                 throw new Exception("InsertMany cannot be used with documents that have different mappings");
             return allMappings[0];
+        }
+
+        static void ValidateMapping(DocumentMap mapping, InsertOptions options)
+        {
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase && options.CustomAssignedId != null)
+                throw new InvalidOperationException($"{nameof(InsertOptions)}.{nameof(InsertOptions.CustomAssignedId)} is not supported for identity Id columns.");
         }
 
         // TODO: includeDefaultModelColumns seems dumb. Use a NonQuery instead?
