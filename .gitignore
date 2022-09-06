@@ -67,4 +67,4 @@ TestResult.xml
 *.received.*
 *.trx
 .idea
-.nuke
+.nuke/temp
