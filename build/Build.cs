@@ -1,10 +1,8 @@
 using Nuke.Common;
-using Nuke.Common.Git;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Utilities.Collections;
 using Nuke.Common.Tools.OctoVersion;
+using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 
@@ -15,14 +13,10 @@ class BuildNevermore : NukeBuild
     [Parameter("Branch name for OctoVersion to use to calculate the version number. Can be set via the environment variable " + CiBranchNameEnvVariable + ".", Name = CiBranchNameEnvVariable)]
     string BranchName { get; set; }
 
-    [Parameter(
-        "Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
+    [Parameter("Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
     readonly bool AutoDetectBranch = IsLocalBuild;
 
     [Parameter] readonly string Configuration = "Release";
-
-    [GitRepository] readonly GitRepository GitRepository;
-    [Solution] readonly Solution Solution;
 
     AbsolutePath LocalPackagesDir => RootDirectory / ".." / "LocalPackages";
 
