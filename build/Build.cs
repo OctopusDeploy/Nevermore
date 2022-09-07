@@ -74,7 +74,9 @@ class BuildNevermore : NukeBuild
             DotNetTest(_ => _
             .SetProjectFile(project)
             .SetConfiguration(Configuration)
-            .SetNoBuild(true));
+            .SetNoBuild(true)
+            .SetLoggers("trx")
+            );
     });
 
     Target CopyToArtifacts => _ => _
