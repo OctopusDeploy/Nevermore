@@ -69,6 +69,9 @@ namespace Nevermore.Transient
             // Resource ID: %d. The %s limit for the database is %d and has been reached. For more information,
             // see http://go.microsoft.com/fwlink/?LinkId=267637.
             10928,
+            // SQL Error Code: 10936
+            // Resource ID: %d. The request limit for the elastic pool is %d and has been reached. See 'http://go.microsoft.com/fwlink/?LinkId=267637' for assistance.
+            10936,
             // SQL Error Code: 10060
             // A network-related or instance-specific error occurred while establishing a connection to SQL Server.
             // The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server
