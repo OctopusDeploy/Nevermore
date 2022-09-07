@@ -13,7 +13,6 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">True</ContinuousIntegrationBuild>
   </PropertyGroup>
 

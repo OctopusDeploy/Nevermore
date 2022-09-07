@@ -80,10 +80,15 @@
               "CopyToArtifacts",
               "CopyToLocalPackages",
               "Default",
+              "Pack",
               "Restore",
               "Test"
             ]
           }
+        },
+        "Solution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded"
         },
         "Target": {
           "type": "array",
@@ -96,6 +101,7 @@
               "CopyToArtifacts",
               "CopyToLocalPackages",
               "Default",
+              "Pack",
               "Restore",
               "Test"
             ]

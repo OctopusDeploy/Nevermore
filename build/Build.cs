@@ -1,5 +1,7 @@
 using Nuke.Common;
+using Nuke.Common.Git;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Common.Tools.OctoVersion;
@@ -18,6 +20,9 @@ class BuildNevermore : NukeBuild
     readonly bool AutoDetectBranch = IsLocalBuild;
 
     [Parameter] readonly string Configuration = "Release";
+
+    [GitRepository] readonly GitRepository GitRepository;
+    [Solution] readonly Solution Solution;
 
     AbsolutePath LocalPackagesDir => RootDirectory / ".." / "LocalPackages";
 
@@ -74,6 +79,7 @@ class BuildNevermore : NukeBuild
 
     Target CopyToArtifacts => _ => _
         .DependsOn(Test)
+        .DependsOn(Pack)
         .Executes(() =>
     {
         EnsureExistingDirectory(ArtifactsDirectory);
@@ -85,6 +91,7 @@ class BuildNevermore : NukeBuild
 
     Target CopyToLocalPackages => _ => _
         .DependsOn(CopyToArtifacts)
+        .DependsOn(Pack)
         .OnlyWhenStatic(() => IsLocalBuild)
         .Executes(() =>
     {
@@ -94,6 +101,20 @@ class BuildNevermore : NukeBuild
         ArtifactsDirectory.GlobFiles("*.snupkg")
             .ForEach(f => CopyFileToDirectory(f, LocalPackagesDir, FileExistsPolicy.Overwrite));
     });
+
+    Target Pack => _ => _
+        .DependsOn(Test)
+        .Executes(() =>
+        {
+            DotNetPack(_ => _
+                .SetProject(SourceDirectory)
+                .SetConfiguration(Configuration)
+                .SetOutputDirectory(ArtifactsDirectory)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .EnableIncludeSymbols()
+                .AddProperty("Version", OctoVersionInfo.FullSemVer));
+        });
 
     Target Default => _ => _
         .DependsOn(CopyToLocalPackages);
