@@ -17,5 +17,17 @@ The Wiki is the best place to get familiar with Nevermore.
 <img alt="Nuget" src="https://img.shields.io/nuget/v/Nevermore?label=NuGet&logo=nuget&style=flat-square">
 <img alt="TeamCity" src="https://build.octopushq.com/app/rest/builds/buildType:(id:OctopusDeploy_LIbraries_Nevermore)/statusIcon">
 
+## Integration Tests
+
+Running integration tests requires an MSSQL instance. 
+
+To run integration tests locally using Docker Compose:
+
+```bash
+docker compose build --no-cache
+docker compose run test
+docker compose down
+```
+
 We accept [contributions](Contributing.md)!
 
