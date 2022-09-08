@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <PackageId>Nevermore.Extensions.DependencyInjection</PackageId>
+    <PackageId>Octopus.Nevermore.Extensions.DependencyInjection</PackageId>
     <Version>1.0.0.0</Version>
     <Authors>Octopus Deploy and contributors</Authors>
     <PackageProjectUrl>https://github.com/OctopusDeploy/Nevermore</PackageProjectUrl>

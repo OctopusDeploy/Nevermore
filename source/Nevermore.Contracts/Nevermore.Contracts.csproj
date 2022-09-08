@@ -4,7 +4,7 @@
     <Description>A JSON Document Store library for SQL Server</Description>
     <Authors>Octopus Deploy</Authors>
     <AssemblyName>Nevermore.Contracts</AssemblyName>
-    <PackageId>Nevermore.Contracts</PackageId>
+    <PackageId>Octopus.Nevermore.Contracts</PackageId>
     <PackageIconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/OctopusDeploy/Nevermore</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/OctopusDeploy/Nevermore/blob/master/LICENSE.txt</PackageLicenseUrl>
