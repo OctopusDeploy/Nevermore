@@ -3,7 +3,7 @@
   <PropertyGroup>
     <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
     <AssemblyName>Nevermore</AssemblyName>
-    <PackageId>Nevermore</PackageId>
+    <PackageId>Octopus.Nevermore</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>

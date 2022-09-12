@@ -4,7 +4,7 @@
         <!-- At the time of writing anything later than netstandard 2.0 doesn't work in Visual Studio -->
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Nevermore.Analyzers</AssemblyName>
-        <PackageId>Nevermore.Analyzers</PackageId>
+        <PackageId>Octopus.Nevermore.Analyzers</PackageId>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
