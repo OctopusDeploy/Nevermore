@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
         class AwsAccountTypeResolver : IInstanceTypeResolver
         {
-            public Type Resolve(Type baseType, object typeColumnValue)
+            public Type ResolveTypeFromValue(Type baseType, object typeColumnValue)
             {
                 if (!typeof(Account).IsAssignableFrom(baseType))
                     return null;
@@ -56,11 +56,20 @@ namespace Nevermore.IntegrationTests.Advanced
 
                 return null;
             }
+
+            public object ResolveValueFromType(Type type)
+            {
+                if (!typeof(Account).IsAssignableFrom(type))
+                    return null;
+
+                if (type == typeof(AwsAccount)) return "AWS";
+                return null;
+            }
         }
 
         class AzureAccountTypeResolver : IInstanceTypeResolver
         {
-            public Type Resolve(Type baseType, object typeColumnValue)
+            public Type ResolveTypeFromValue(Type baseType, object typeColumnValue)
             {
                 if (!typeof(Account).IsAssignableFrom(baseType))
                     return null;
@@ -68,6 +77,15 @@ namespace Nevermore.IntegrationTests.Advanced
                 if ((string) typeColumnValue == "Azure")
                     return typeof(AzureAccount);
                 
+                return null;
+            }
+
+            public object ResolveValueFromType(Type type)
+            {
+                if (!typeof(Account).IsAssignableFrom(type))
+                    return null;
+
+                if (type == typeof(AzureAccount)) return "Azure";
                 return null;
             }
         }
@@ -166,12 +184,18 @@ namespace Nevermore.IntegrationTests.Advanced
             // Runs after all other type handlers
             public int Order => int.MaxValue;
             
-            public Type Resolve(Type baseType, object typeColumnValue)
+            public Type ResolveTypeFromValue(Type baseType, object typeColumnValue)
             {
                 if (!typeof(Account).IsAssignableFrom(baseType))
                     return null;
 
                 return typeof(UnknownAccount);
+            }
+
+            public object ResolveValueFromType(Type type)
+            {
+                if (type == typeof(UnknownAccount)) return "?";
+                return null;
             }
         }
         

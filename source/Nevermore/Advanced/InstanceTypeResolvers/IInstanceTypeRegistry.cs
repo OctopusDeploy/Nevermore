@@ -12,6 +12,7 @@ namespace Nevermore.Advanced.InstanceTypeResolvers
         /// </summary>
         /// <param name="resolver"></param>
         void Register(IInstanceTypeResolver resolver);
-        Type Resolve(Type baseType, object typeColumnValue);
+        Type ResolveTypeFromValue(Type baseType, object typeColumnValue);
+        object ResolveValueFromType(Type type);
     }
 }

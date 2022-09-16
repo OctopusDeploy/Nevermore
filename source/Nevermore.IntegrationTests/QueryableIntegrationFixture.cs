@@ -948,6 +948,30 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public async Task CountAsyncPolymorphic()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testBrands = new Brand[]
+            {
+                new BrandA { Name = "Brand 1" },
+                new BrandB { Name = "Brand 2" },
+                new BrandA { Name = "Brand 3" }
+            };
+
+            foreach (var b in testBrands)
+            {
+                t.Insert(b);
+            }
+
+            await t.CommitAsync();
+
+            var count = await t.Queryable<BrandB>().CountAsync();
+
+            count.Should().Be(1);
+        }
+
+        [Test]
         public void Hint()
         {
             using var t = Store.BeginTransaction();
@@ -1016,6 +1040,30 @@ namespace Nevermore.IntegrationTests
             await t.CommitAsync();
 
             var count = await t.Queryable<Customer>().CountAsync(c => c.Nickname.StartsWith("C"));
+
+            count.Should().Be(2);
+        }
+
+        [Test]
+        public async Task CountWithPredicateAsyncPolymorphic()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testBrands = new Brand[]
+            {
+                new BrandA { Name = "Brand 1" },
+                new BrandB { Name = "Brand 2" },
+                new BrandA { Name = "Brand 3" }
+            };
+
+            foreach (var b in testBrands)
+            {
+                t.Insert(b);
+            }
+
+            await t.CommitAsync();
+
+            var count = await t.Queryable<BrandA>().CountAsync(b => b.Name.StartsWith("Brand"));
 
             count.Should().Be(2);
         }

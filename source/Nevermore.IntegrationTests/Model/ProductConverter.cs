@@ -5,7 +5,7 @@ namespace Nevermore.IntegrationTests.Model
 {
     public class ProductTypeResolver : IInstanceTypeResolver
     {
-        public Type Resolve(Type baseType, object typeColumnValue)
+        public Type ResolveTypeFromValue(Type baseType, object typeColumnValue)
         {
             if (typeof(Product).IsAssignableFrom(baseType) && typeColumnValue is ProductType productType)
             {
@@ -13,6 +13,17 @@ namespace Nevermore.IntegrationTests.Model
                 if (productType == ProductType.Dodgy) return typeof(DodgyProduct);
                 if (productType == ProductType.Special) return typeof(SpecialProduct);
                 if (productType == ProductType.Normal) return typeof(Product);
+            }
+
+            return null;
+        }
+
+        public object ResolveValueFromType(Type type)
+        {
+            if (typeof(Product).IsAssignableFrom(type))
+            {
+                if (type == typeof(DodgyProduct)) return ProductType.Dodgy;
+                if (type == typeof(SpecialProduct)) return ProductType.Special;
             }
 
             return null;

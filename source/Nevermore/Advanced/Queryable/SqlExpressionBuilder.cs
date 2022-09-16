@@ -95,6 +95,16 @@ namespace Nevermore.Advanced.Queryable
             DocumentMap = configuration.DocumentMaps.Resolve(documentType);
             var schema = DocumentMap.SchemaName ?? configuration.DefaultSchema;
             from = new SimpleTableSource(DocumentMap.TableName, schema, GetDocumentColumns().ToArray());
+
+            if (DocumentMap.TypeResolutionColumn is not null)
+            {
+                var discriminator = configuration.InstanceTypeResolvers.ResolveValueFromType(documentType);
+                if (discriminator is not null)
+                {
+                    var discriminatorClause = CreateWhere(new WhereFieldReference(DocumentMap.TypeResolutionColumn.ColumnName), UnarySqlOperand.Equal, discriminator);
+                    Where(discriminatorClause);
+                }
+            }
         }
 
         public (IExpression, CommandParameterValues, QueryType) Build()
