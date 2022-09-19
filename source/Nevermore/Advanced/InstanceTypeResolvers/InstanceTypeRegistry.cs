@@ -36,26 +36,18 @@ namespace Nevermore.Advanced.InstanceTypeResolvers
 
         Type FindTypeByValue(Type baseType, object typeColumnValue)
         {
-            foreach (var resolver in resolvers.OrderBy(r => r.Order))
-            {
-                var result = resolver.ResolveTypeFromValue(baseType, typeColumnValue);
-                if (result != null)
-                    return result;
-            }
-
-            return null;
+            return resolvers
+                .OrderBy(r => r.Order)
+                .Select(resolver => resolver.ResolveTypeFromValue(baseType, typeColumnValue))
+                .FirstOrDefault(result => result != null);
         }
 
         object FindValueByType(Type type)
         {
-            foreach (var resolver in resolvers.OrderBy(r => r.Order))
-            {
-                var result = resolver.ResolveValueFromType(type);
-                if (result != null)
-                    return result;
-            }
-
-            return null;
+            return resolvers
+                .OrderBy(r => r.Order)
+                .Select(resolver => resolver.ResolveValueFromType(type))
+                .FirstOrDefault(result => result != null);
         }
     }
 }
