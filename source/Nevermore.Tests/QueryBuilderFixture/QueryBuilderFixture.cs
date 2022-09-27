@@ -30,7 +30,12 @@ namespace Nevermore.Tests.QueryBuilderFixture
             transaction.ClearReceivedCalls();
         }
         
-        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(string tableName, string schemaName = "dbo", string idColumnName = "Id") where TDocument : class
+        ITableSourceQueryBuilder<TDocument> CreateQueryBuilder<TDocument>(
+            string tableName,
+            string schemaName = "dbo",
+            string idColumnName = "Id",
+            string typeColumnName = null,
+            object typeColumnValue = null) where TDocument : class
         {
             var columns = new[] {"*"};
             if (typeof(TDocument) != typeof(object))
@@ -41,7 +46,18 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
             
-            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(
+            tableName,
+            schemaName,
+            idColumnName,
+            typeColumnName,
+            typeColumnValue,
+            transaction,
+            tableAliasGenerator,
+            uniqueParameterNameGenerator,
+            new CommandParameterValues(),
+            new Parameters(),
+            new ParameterDefaults());
         }
         
         [Test]
@@ -1932,6 +1948,21 @@ ORDER BY [Id]";
                 .GenerateSql();
 
             this.Assent(subquerySql);
+        }
+
+        [Test]
+        public void ShouldGenerateSelectWithTypeFilter()
+        {
+            var sql = CreateQueryBuilder<object>("Account", typeColumnName: "Type", typeColumnValue: "VipAccount")
+                .GetSelectBuilder()
+                .GenerateSelectWithoutDefaultOrderBy()
+                .GenerateSql();
+
+            const string expected = @"SELECT *
+FROM [dbo].[Account]
+WHERE ([Type] = @__type)";
+
+            sql.Should().Be(expected);
         }
     }
 
