@@ -227,6 +227,15 @@ namespace Nevermore
         {
             foreach (var item in other)
             {
+                if (ContainsKey(item.Key))
+                {
+                    var existing = this[item.Key];
+                    if (!item.Value.Equals(existing))
+                    {
+                        throw new Exception($"The parameter {item.Key} already exists and has a different value");
+                    }
+                }
+                    
                 this[item.Key] = item.Value;
             }
         }
