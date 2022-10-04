@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Data.SqlClient;
 using Nevermore.Diagnositcs;
+
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
@@ -17,7 +17,7 @@ namespace Nevermore.Advanced
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
-        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
+        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new();
         bool highNumberAlreadyLoggedAtError;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
@@ -31,13 +31,13 @@ namespace Nevermore.Advanced
 
         public void Add(ReadTransaction trn)
         {
-                transactions.TryAdd(trn, trn);
-                var numberOfTransactions = transactions.Count;
-                if (numberOfTransactions > MaxPoolSize * 0.8)
-                    Log.Info($"{numberOfTransactions} transactions active");
+            transactions.TryAdd(trn, trn);
+            var numberOfTransactions = transactions.Count;
+            if (numberOfTransactions > MaxPoolSize * 0.8)
+                Log.Info($"{numberOfTransactions} transactions active");
 
-                if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
-                    LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
+            if (numberOfTransactions >= MaxPoolSize * 0.9)
+                LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
         }
 
         public void Remove(ReadTransaction trn)
@@ -69,9 +69,7 @@ namespace Nevermore.Advanced
 
         public void WriteCurrentTransactions(StringBuilder sb)
         {
-            ReadTransaction[] copy;
-            lock (transactions)
-                copy = transactions.Keys.ToArray();
+            var copy = transactions.Keys.ToArray();
 
             foreach (var trn in copy.OrderBy(t => t.CreatedTime))
             {
@@ -79,6 +77,5 @@ namespace Nevermore.Advanced
                 trn.WriteDebugInfoTo(sb);
             }
         }
-
     }
 }
