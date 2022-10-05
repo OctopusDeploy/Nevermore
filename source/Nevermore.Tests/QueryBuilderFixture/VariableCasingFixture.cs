@@ -33,18 +33,7 @@ namespace Nevermore.Tests.QueryBuilderFixture
             var memberInfos = Activator.CreateInstance<object>().GetType().GetProperties();
             var columnNames = memberInfos.Select(x => x.Name).ToList();
             
-            return new TableSourceQueryBuilder<object>(
-            "Order",
-            "dbo",
-            "Id",
-            null,
-            null,
-            transaction,
-            new TableAliasGenerator(),
-            new UniqueParameterNameGenerator(),
-            new CommandParameterValues(),
-            new Parameters(),
-            new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>("Order", "dbo", "Id", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
         }
 
         [Test]
