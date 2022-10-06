@@ -38,9 +38,9 @@ namespace Nevermore
             ReaderStrategies = new ReaderStrategyRegistry();
             ReaderStrategies.Register(new DocumentReaderStrategy(this));
             ReaderStrategies.Register(new ValueTupleReaderStrategy(this));
-            ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
-            ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
             ReaderStrategies.Register(new AnonymousTypeReaderStrategy(this));
+            ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
+            ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
 
             Hooks = new HookRegistry();
 
