@@ -1440,5 +1440,42 @@ namespace Nevermore.IntegrationTests
 
             customers.Should().BeEquivalentTo(new[] { true, false, true });
         }
+
+        [Test]
+        public async Task ProjectTypeWithParameterizedConstructor()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => new CustomerProjection(c.FirstName, c.IsEmployee)).ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new CustomerProjection("Alice", true),
+                new CustomerProjection("Bob", false),
+                new CustomerProjection("Charlie", true)
+            });
+        }
+
+        class CustomerProjection
+        {
+            public CustomerProjection(string firstName, bool isEmployee)
+            {
+                FirstName = firstName;
+                IsEmployee = isEmployee;
+            }
+
+            public string FirstName { get; }
+            public bool IsEmployee { get; }
+        }
     }
 }
