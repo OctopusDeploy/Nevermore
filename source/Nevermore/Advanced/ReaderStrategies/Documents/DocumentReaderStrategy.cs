@@ -84,7 +84,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 fieldNames[i] = dbDataReader.GetName(i);
             }
 
-            fieldNames[fieldCount] = mapping.Type.Name;
+            fieldNames[fieldCount] = mapping.Type.FullName;
             var cacheKey = string.Join("|", fieldNames);
             return cache.GetOrAdd(cacheKey, _ => Compile(mapping, dbDataReader));
         }
