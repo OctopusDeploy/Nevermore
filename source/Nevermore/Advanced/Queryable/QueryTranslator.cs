@@ -45,131 +45,146 @@ namespace Nevermore.Advanced.Queryable
                 throw new NotSupportedException();
             }
 
-            if (methodInfo.Name == nameof(NevermoreQueryableExtensions.WhereCustom))
+            switch (methodInfo.Name)
             {
-                Visit(node.Arguments[0]);
-                if (node.Arguments[1] is ConstantExpression { Value: string } constantExpression)
+                case nameof(NevermoreQueryableExtensions.WhereCustom):
                 {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments[1] is not ConstantExpression { Value: string } constantExpression)
+                    {
+                        throw new NotSupportedException();
+                    }
+
                     sqlBuilder.Where(new CustomWhereClause((string)constantExpression.Value));
                     return node;
                 }
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.Where))
-            {
-                Visit(node.Arguments[0]);
-                var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                sqlBuilder.Where(CreateWhereClause(expression.Body));
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.OrderBy))
-            {
-                if (node.Arguments.Count > 2)
+                case nameof(System.Linq.Queryable.Where):
                 {
-                    throw new NotSupportedException("OrderBy does not support custom comparers");
-                }
-
-                Visit(node.Arguments[0]);
-                var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.OrderByDescending))
-            {
-                if (node.Arguments.Count > 2)
-                {
-                    throw new NotSupportedException("OrderBy does not support custom comparers");
-                }
-
-                Visit(node.Arguments[0]);
-                var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.First))
-            {
-                Visit(node.Arguments[0]);
-
-                if (node.Arguments.Count > 1)
-                {
+                    Visit(node.Arguments[0]);
                     var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
                     sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    return node;
                 }
-
-                sqlBuilder.Single();
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.FirstOrDefault))
-            {
-                Visit(node.Arguments[0]);
-
-                if (node.Arguments.Count > 1)
+                case nameof(System.Linq.Queryable.OrderBy):
                 {
-                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("OrderBy does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
+                    return node;
                 }
-
-                sqlBuilder.Single();
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.Any))
-            {
-                Visit(node.Arguments[0]);
-
-                if (node.Arguments.Count > 1)
+                case nameof(System.Linq.Queryable.OrderByDescending):
                 {
-                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("OrderBy does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                    return node;
                 }
-
-                sqlBuilder.Exists();
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.Count))
-            {
-                Visit(node.Arguments[0]);
-
-                if (node.Arguments.Count > 1)
+                case nameof(System.Linq.Queryable.ThenBy):
                 {
-                    var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
-                    sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("ThenBy does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
+                    return node;
                 }
+                case nameof(System.Linq.Queryable.ThenByDescending):
+                {
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("ThenByDescending does not support custom comparers");
+                    }
 
-                sqlBuilder.Count();
-                return node;
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.First):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.Single();
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.FirstOrDefault):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.Single();
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.Any):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.Exists();
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.Count):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.Count();
+                    return node;
+                }
+                case nameof(NevermoreQueryableExtensions.Hint):
+                {
+                    Visit(node.Arguments[0]);
+                    var hint = (string)GetValueFromExpression(node.Arguments[1], typeof(string));
+                    sqlBuilder.Hint(hint);
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.Take):
+                {
+                    Visit(node.Arguments[0]);
+                    var take = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                    sqlBuilder.Take(take);
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.Skip):
+                {
+                    Visit(node.Arguments[0]);
+                    var skip = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
+                    sqlBuilder.Skip(skip);
+                    return node;
+                }
+                default:
+                    throw new NotSupportedException();
             }
-
-            if (methodInfo.Name == nameof(NevermoreQueryableExtensions.Hint))
-            {
-                Visit(node.Arguments[0]);
-                var hint = (string)GetValueFromExpression(node.Arguments[1], typeof(string));
-                sqlBuilder.Hint(hint);
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.Take))
-            {
-                Visit(node.Arguments[0]);
-                var take = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
-                sqlBuilder.Take(take);
-                return node;
-            }
-
-            if (methodInfo.Name == nameof(System.Linq.Queryable.Skip))
-            {
-                Visit(node.Arguments[0]);
-                var skip = (int)GetValueFromExpression(node.Arguments[1], typeof(int));
-                sqlBuilder.Skip(skip);
-                return node;
-            }
-
-            throw new NotSupportedException();
         }
 
         static string GetMemberNameFromKeySelectorExpression(Expression expression)
@@ -190,6 +205,7 @@ namespace Nevermore.Advanced.Queryable
             {
                 return CreateBinaryWhere(binaryExpression);
             }
+
             if (expression is MethodCallExpression methodCallExpression)
             {
                 return CreateMethodCallWhere(methodCallExpression, invert);
@@ -258,10 +274,12 @@ namespace Nevermore.Advanced.Queryable
             {
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}%");
             }
+
             if (expression.Method.Name == nameof(string.StartsWith))
             {
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"{value}%");
             }
+
             if (expression.Method.Name == nameof(string.EndsWith))
             {
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
@@ -375,6 +393,7 @@ namespace Nevermore.Advanced.Queryable
                 segments.Add(memberExpression.Member.Name);
                 memberExpression = memberExpression.Expression as MemberExpression;
             } while (memberExpression is not null);
+
             segments.Reverse();
             return "$." + string.Join(".", segments);
         }

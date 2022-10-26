@@ -1091,6 +1091,60 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Apple", "Banana");
         }
+        
+        [Test]
+        public void OrderByThenBy()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Beta" },
+                new Customer { FirstName = "Amanda", LastName = "Apple", Nickname = "Alpha" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Omega" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .OrderBy(c => c.LastName)
+                .ThenBy(c => c.Nickname)
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Amanda", "Alice", "Charlie");
+        }
+        
+        [Test]
+        public void OrderByThenByDescending()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Beta" },
+                new Customer { FirstName = "Amanda", LastName = "Apple", Nickname = "Alpha" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Omega" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .OrderBy(c => c.LastName)
+                .ThenByDescending(c => c.Nickname)
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Amanda", "Charlie");
+        }
 
         [Test]
         public void Any()
