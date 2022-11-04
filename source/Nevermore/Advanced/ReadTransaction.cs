@@ -465,25 +465,46 @@ namespace Nevermore.Advanced
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
+            var correlationId = Guid.NewGuid().ToString();
+            Log.DebugFormat("[{0}] Txn {1} Cmd {2}", correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
+            var rowCounter = 0;
+
             while (reader.Read())
             {
+                rowCounter++;
                 var (instance, success) = strategy(reader);
                 if (success)
+                {
                     yield return instance;
+                }
+                else
+                {
+                    Log.DebugFormat("[{0}] Row {1} failed to be read and will be discarded", correlationId, rowCounter);
+                }
             }
         }
 
         async IAsyncEnumerable<TRecord> ProcessReaderAsync<TRecord>(DbDataReader reader, PreparedCommand command, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
+            var correlationId = Guid.NewGuid().ToString();
+            Log.DebugFormat("[{0}] Txn {1} Cmd {2}", correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
+            var rowCounter = 0;
 
             while (await reader.ReadAsync(cancellationToken))
             {
+                rowCounter++;
                 var (instance, success) = strategy(reader);
                 if (success)
+                {
                     yield return instance;
+                }
+                else
+                {
+                    Log.DebugFormat("[{0}] Row {1} failed to be read and will be discarded", correlationId, rowCounter);
+                }
             }
         }
 
