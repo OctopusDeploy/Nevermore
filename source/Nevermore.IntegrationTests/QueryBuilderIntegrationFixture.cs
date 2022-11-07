@@ -98,6 +98,26 @@ namespace Nevermore.IntegrationTests
             }
         }
 
+        [Test]
+        public async Task CountAsyncPolymorphic()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testBrands = new Brand[]
+            {
+                new BrandA { Name = "Best Brand" },
+                new BrandB { Name = "Worst Brand" },
+                new BrandA { Name = "Somebody Else" }
+            };
+
+            await t.InsertManyAsync(testBrands);
+            await t.CommitAsync();
+
+            var count = await t.Query<BrandB>().Where(b => b.Name.Contains("Brand")).CountAsync();
+
+            count.Should().Be(1);
+        }
+
         class CustomerProductCross
         {
             public string CustomerName { get; set; }

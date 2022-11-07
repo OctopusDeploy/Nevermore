@@ -9,10 +9,13 @@ namespace Nevermore.Advanced.QueryBuilders
         string alias;
         string schemaName;
         string idColumnName;
+        UnaryWhereParameter typeFilter;
 
         public TableSourceQueryBuilder(string tableOrViewName,
             string schemaName,
             string idColumnName,
+            string typeColumnName,
+            object typeColumnValue,
             IReadTransaction readQueryExecutor,
             ITableAliasGenerator tableAliasGenerator,
             IUniqueParameterNameGenerator uniqueParameterNameGenerator,
@@ -24,11 +27,23 @@ namespace Nevermore.Advanced.QueryBuilders
             this.schemaName = schemaName;
             this.tableOrViewName = tableOrViewName;
             this.idColumnName = idColumnName;
+
+            if (!string.IsNullOrEmpty(typeColumnName) && typeColumnValue is not null)
+            {
+                var parameter = new UniqueParameter(UniqueParameterNameGenerator, new Parameter("__type"));
+                ParamValues[parameter.ParameterName] = typeColumnValue;
+                typeFilter = new UnaryWhereParameter(typeColumnName, UnarySqlOperand.Equal, parameter);
+            }
         }
 
         protected override ISelectBuilder CreateSelectBuilder()
         {
-            return new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName));
+            var builder = new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName));
+            if (typeFilter is not null)
+            {
+                builder.AddWhere(typeFilter);
+            }
+            return builder;
         }
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)

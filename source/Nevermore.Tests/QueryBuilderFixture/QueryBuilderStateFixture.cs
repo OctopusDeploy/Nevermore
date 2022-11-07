@@ -320,7 +320,18 @@ ORDER BY [Id]");
 
         ITableSourceQueryBuilder<object> TableQueryBuilder(string tableName)
         {
-            return new TableSourceQueryBuilder<object>(tableName, "dbo", "Id", transaction, new TableAliasGenerator(), new UniqueParameterNameGenerator(), new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<object>(
+                tableName,
+                "dbo",
+                "Id",
+                null,
+                null,
+                transaction,
+                new TableAliasGenerator(),
+                new UniqueParameterNameGenerator(),
+                new CommandParameterValues(),
+                new Parameters(),
+                new ParameterDefaults());
         }
     }
 }

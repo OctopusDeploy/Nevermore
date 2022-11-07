@@ -414,8 +414,21 @@ namespace Nevermore.Advanced
         {
             var map = configuration.DocumentMaps.Resolve(typeof(TRecord));
             var schemaName = configuration.GetSchemaNameOrDefault(map);
+            var typeColumnName = map.TypeResolutionColumn?.ColumnName;
+            var typeColumnValue = configuration.InstanceTypeResolvers.ResolveValueFromType(typeof(TRecord));
 
-            return new TableSourceQueryBuilder<TRecord>(map.TableName, schemaName, map.IdColumn?.ColumnName, this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TRecord>(
+                map.TableName,
+                schemaName,
+                map.IdColumn?.ColumnName,
+                typeColumnName,
+                typeColumnValue,
+                this,
+                tableAliasGenerator,
+                ParameterNameGenerator,
+                new CommandParameterValues(),
+                new Parameters(),
+                new ParameterDefaults());
         }
 
         public IQueryable<TDocument> Queryable<TDocument>()
