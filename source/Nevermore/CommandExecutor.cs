@@ -124,7 +124,7 @@ namespace Nevermore
             {
                 var data = new List<T>();
                 using var reader = command.ExecuteReaderWithRetry(retryPolicy, prepared.CommandBehavior);
-                while (reader.Read())
+                while (reader.ReadWithRetries(retryPolicy))
                 {
                     data.Add(mapper(reader));
                 }
@@ -187,7 +187,7 @@ namespace Nevermore
                 var data = new List<T>();
                 using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken))
                 {
-                    while (await reader.ReadAsync(cancellationToken))
+                    while (await reader.ReadAsyncWithRetries(retryPolicy, cancellationToken))
                     {
                         data.Add(await mapper(reader));
                     }

@@ -466,7 +466,8 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
-            while (reader.Read())
+            var retryPolicy = GetRetryPolicy(RetriableOperation.Select);
+            while (reader.ReadWithRetries(retryPolicy))
             {
                 var (instance, success) = strategy(reader);
                 if (success)
@@ -478,8 +479,8 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
-
-            while (await reader.ReadAsync(cancellationToken))
+            var retryPolicy = GetRetryPolicy(RetriableOperation.Select);
+            while (await reader.ReadAsyncWithRetries(retryPolicy, cancellationToken))
             {
                 var (instance, success) = strategy(reader);
                 if (success)
@@ -492,7 +493,8 @@ namespace Nevermore.Advanced
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
             using var reader = ExecuteReader(command);
             var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
-            while (reader.Read())
+            var retryPolicy = GetRetryPolicy(RetriableOperation.Select);
+            while (reader.ReadWithRetries(retryPolicy))
             {
                 yield return projectionMapper(mapper);
             }
@@ -505,7 +507,8 @@ namespace Nevermore.Advanced
                 var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
                 await using var reader = await ExecuteReaderAsync(command, cancellationToken);
                 var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
-                while (await reader.ReadAsync(cancellationToken))
+                var retryPolicy = GetRetryPolicy(RetriableOperation.Select);
+                while (await reader.ReadAsyncWithRetries(retryPolicy, cancellationToken))
                 {
                     yield return projectionMapper(mapper);
                 }
