@@ -48,7 +48,7 @@ namespace Nevermore.Advanced.QueryBuilders
 
         public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
         {
-            return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(),
+            return new JoinSourceQueryBuilder<TRecord>(AsAliasedSource(),
                 joinType,
                 source,
                 ReadQueryExecutor,
@@ -79,7 +79,7 @@ namespace Nevermore.Advanced.QueryBuilders
 
         public IAliasedSelectSource AsAliasedSource()
         {
-            return CreateAliasedTableSource();
+            return typeFilter is null ? CreateAliasedTableSource() : CreateSubquerySource();
         }
 
         public IQueryBuilder<TRecord> Hint(string tableHint)
@@ -101,6 +101,16 @@ namespace Nevermore.Advanced.QueryBuilders
         {
             var columnNames = ReadQueryExecutor.GetColumnNames(schemaName, tableOrViewName);
             return new AliasedTableSource(new SimpleTableSource(tableOrViewName, schemaName, columnNames), alias ?? TableAliasGenerator.GenerateTableAlias(tableOrViewName));
+        }
+
+        SubquerySource CreateSubquerySource()
+        {
+            if (string.IsNullOrEmpty(alias))
+            {
+                Alias(TableAliasGenerator.GenerateTableAlias());
+            }
+            var select = CreateSelectBuilder().GenerateSelectWithoutDefaultOrderBy();
+            return new SubquerySource(select, alias);
         }
     }
 }

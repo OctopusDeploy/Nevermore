@@ -84,8 +84,8 @@ namespace Nevermore.IntegrationTests
         [Test]
         public void ShouldBuildJoinSelectsWithJsonColumnLast()
         {
-            var product1 = new DodgyProduct {Name = "iphane", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
-            var product2 = new SpecialProduct {Name = "octophone", Type = ProductType.Special, Price = 350.0M};
+            var product1 = new DodgyProduct {Name = "samename", Price = 350.0M, Tax = 35.0M, Type = ProductType.Dodgy};
+            var product2 = new SpecialProduct {Name = "samename", Type = ProductType.Special, Price = 350.0M};
             using (var transaction = Store.BeginTransaction())
             {
                 transaction.Insert(product1);
@@ -97,11 +97,11 @@ namespace Nevermore.IntegrationTests
             {
                 var products = transaction.Query<DodgyProduct>().Alias("dodgyProductTable")
                     .InnerJoin(transaction.Query<SpecialProduct>().Alias("specialProductTable"))
-                    .On(nameof(DodgyProduct.Type), JoinOperand.Equal, nameof(SpecialProduct.Type))
+                    .On(nameof(DodgyProduct.Name), JoinOperand.Equal, nameof(SpecialProduct.Name))
                     .AsType<Product>()
                     .ToList();
 
-                products.Should().BeEquivalentTo(new List<Product> {product1, product2});
+                products.Should().BeEquivalentTo(new List<Product> {product1});
             }
         }
 
