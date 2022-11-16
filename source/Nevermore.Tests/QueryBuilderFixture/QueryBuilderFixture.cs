@@ -41,7 +41,18 @@ namespace Nevermore.Tests.QueryBuilderFixture
 
             transaction.GetColumnNames(Arg.Any<string>(), Arg.Any<string>()).Returns(columns);
             
-            return new TableSourceQueryBuilder<TDocument>(tableName, schemaName, idColumnName, transaction, tableAliasGenerator, uniqueParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new TableSourceQueryBuilder<TDocument>(
+                tableName,
+                schemaName,
+                idColumnName,
+                null,
+                null,
+                transaction,
+                 tableAliasGenerator,
+                uniqueParameterNameGenerator,
+                new CommandParameterValues(),
+                new Parameters(),
+                new ParameterDefaults());
         }
         
         [Test]

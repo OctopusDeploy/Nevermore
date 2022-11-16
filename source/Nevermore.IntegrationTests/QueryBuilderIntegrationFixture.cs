@@ -1,10 +1,9 @@
 ﻿using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Nevermore.Advanced;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
+using Nevermore.Querying.AST;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests
@@ -96,6 +95,52 @@ namespace Nevermore.IntegrationTests
                 customersNotNull.Select(cpc => $"{cpc.CustomerName}-{cpc.ProductName}")
                     .Should().BeEquivalentTo(new[] {"Bazza-Shoe Horn", "Bazza-Widget", "Chazza-Shoe Horn", "Chazza-Widget"});
             }
+        }
+
+        [Test]
+        public async Task CountAsyncPolymorphic()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testBrands = new Brand[]
+            {
+                new BrandA { Name = "Best Brand" },
+                new BrandB { Name = "Worst Brand" },
+                new BrandA { Name = "Somebody Else" }
+            };
+
+            await t.InsertManyAsync(testBrands);
+            await t.CommitAsync();
+
+            var count = await t.Query<BrandB>().Where(b => b.Name.Contains("Brand")).CountAsync();
+
+            count.Should().Be(1);
+        }
+
+        [Test]
+        public async Task JoinWithPolymorphicDocument()
+        {
+            using var t = Store.BeginTransaction();
+
+            t.InsertMany(new Product[] {
+                new SpecialProduct { Name = "Alice" },
+                new DodgyProduct { Name = "Widget" }}
+            );
+            t.InsertMany(new []
+            {
+                new Customer {FirstName = "Alice", LastName = "Apple", Nickname = null},
+                new Customer {FirstName = "Bob", LastName = "Barker", Nickname = "Bazza"},
+                new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
+            });
+
+            await t.CommitAsync();
+
+            var productQuery = t.Query<Customer>()
+                .InnerJoin(t.Query<DodgyProduct>())
+                .On("FirstName", JoinOperand.Equal, "Name");
+
+            var result = await productQuery.ToListAsync();
+            result.Should().BeEmpty();
         }
 
         class CustomerProductCross

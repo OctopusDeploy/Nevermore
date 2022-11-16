@@ -27,7 +27,7 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
                 return map.Type;
 
             // But if there IS a value in the Type column, then we expect a type resolver to know how to deal with it. 
-            var resolved = configuration.InstanceTypeResolvers.Resolve(map.Type, typeColumnValue);
+            var resolved = configuration.InstanceTypeResolvers.ResolveTypeFromValue(map.Type, typeColumnValue);
             if (resolved == null)
                 throw new InvalidOperationException($"The 'Type' column has a value of '{typeColumnValue}' ({typeColumnValue.GetType().Name}), but no type resolver was able to map it to a concrete type to deserialize. Either register an instance type resolver that knows how to interpret the value, or consider fixing the data.");
 
