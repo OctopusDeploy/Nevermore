@@ -39,7 +39,7 @@ namespace Nevermore
             try
 
             {
-                txn.Open();
+                txn.Open(NevermoreDefaults.IsolationLevel);
                 return txn;
             }
             catch
@@ -55,7 +55,7 @@ namespace Nevermore
 
             try
             {
-                await txn.OpenAsync();
+                await txn.OpenAsync(NevermoreDefaults.IsolationLevel);
                 return txn;
             }
             catch
