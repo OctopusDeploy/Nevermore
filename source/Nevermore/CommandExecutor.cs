@@ -258,7 +258,7 @@ namespace Nevermore
                 // Parameters can contain streams and other disposable objects.
                 if (parameter.Value is IDisposable disposable)
                 {
-                    disposable.Dispose();
+                    // disposable.Dispose(); // If we dispose the parameter we can't replay.
                 }
             }
         }

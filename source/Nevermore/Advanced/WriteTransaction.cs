@@ -298,6 +298,14 @@ namespace Nevermore.Advanced
             await configuration.Hooks.AfterCommitAsync(this);
         }
 
+        public void Replay()
+        {
+            foreach (var command in ExecutedCommands)
+            {
+                ReplayExecuteNonQuery(command);
+            }
+        }
+
         DataModificationOutput[] ExecuteDataModification(PreparedCommand command)
         {
             if (!command.Mapping.HasModificationOutputs)

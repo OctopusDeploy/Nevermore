@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -33,7 +34,7 @@ namespace Nevermore.Advanced
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
 
-        SqlConnection? connection;
+        SqlConnection? connection { get; set; }
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
         protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
@@ -45,6 +46,8 @@ namespace Nevermore.Advanced
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
 
         public IDictionary<string, object> State { get; }
+
+        protected readonly ICollection<PreparedCommand> ExecutedCommands = new List<PreparedCommand>();
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
@@ -72,6 +75,22 @@ namespace Nevermore.Advanced
                 throw new SynchronousOperationsDisabledException();
 
             connection = new SqlConnection(registry.ConnectionString);
+
+            // var options = new SqlRetryLogicOption
+            // {
+            //     // Tries 5 times before throwing an exception
+            //     NumberOfTries = 5,
+            //     // Preferred gap time to delay before retry
+            //     DeltaTime = TimeSpan.FromSeconds(1),
+            //     // Maximum gap time for each delay time before retry
+            //     MaxTimeInterval = TimeSpan.FromSeconds(20)
+            // };
+            // var provider = SqlConfigurableRetryFactory.CreateExponentialRetryProvider(options);
+
+            // var provider = new MyRetryLogicProvider();
+
+            // connection.RetryLogicProvider = provider;
+
             connection.OpenWithRetry();
         }
 
@@ -569,19 +588,30 @@ namespace Nevermore.Advanced
         {
             return ExecuteNonQueryAsync(new PreparedCommand(query, args, RetriableOperation.None, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout), cancellationToken);
         }
+        
+        protected void ReplayExecuteNonQuery(PreparedCommand preparedCommand)
+        {
+            using var mutex = DeadlockAwareLock.Lock();
+            using var command = CreateCommand(preparedCommand);
+            command.ExecuteNonQuery();
+        }
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
-            return command.ExecuteNonQuery();
+            var result = command.ExecuteNonQuery();
+            ExecutedCommands.Add(preparedCommand);
+            return result;
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
-            return await command.ExecuteNonQueryAsync(cancellationToken);
+            var result = await command.ExecuteNonQueryAsync(cancellationToken);
+            ExecutedCommands.Add(preparedCommand);
+            return result;
         }
 
         public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)

@@ -7,5 +7,6 @@ namespace Nevermore
     {
         void Commit();
         Task CommitAsync(CancellationToken cancellationToken = default);
+        void Replay();
     }
 }
