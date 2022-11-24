@@ -92,15 +92,6 @@ namespace Nevermore.Benchmarks
         }
         
         [Benchmark]
-        public List<Customer> SelectWithoutTransaction()
-        {
-            using var reader = store.BeginReadTransaction();
-            return EnsureResults(
-                reader.Query<Customer>().Where("FirstName = @name").Parameter("name", "Robert").Take(100).ToList()
-            );
-        }
-        
-        [Benchmark]
         public List<Customer> SelectWithTransaction()
         {
             using var reader = store.BeginReadTransaction(IsolationLevel.ReadCommitted);
