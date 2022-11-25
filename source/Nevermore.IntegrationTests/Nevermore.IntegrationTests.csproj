@@ -21,8 +21,8 @@
     <Analyzer Include="..\Nevermore.Analyzers\bin\**\Nevermore.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="dbup-core" Version="4.6.3" />
-    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
+    <PackageReference Include="dbup-core" Version="5.0.8" />
+    <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
