@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Reflection;
 using DbUp;
 using DbUp.Engine.Output;
+using Microsoft.Data.SqlClient;
 using Nevermore.Util;
 
 namespace Nevermore.IntegrationTests.SetUp
