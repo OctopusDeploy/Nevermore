@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -34,7 +33,7 @@ namespace Nevermore.Advanced
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
 
-        SqlConnection? connection { get; set; }
+        SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
         protected DeadlockAwareLock DeadlockAwareLock { get; } = new();

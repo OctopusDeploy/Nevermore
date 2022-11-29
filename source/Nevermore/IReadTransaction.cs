@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 
 namespace Nevermore
 {
@@ -11,7 +10,5 @@ namespace Nevermore
         /// Not designed for typical usage. 
         /// </summary>
         IDictionary<string, object> State { get; }
-
-        // SqlConnection connection { get; set; }
     }
 }
