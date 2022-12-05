@@ -24,10 +24,8 @@ namespace Nevermore.IntegrationTests.Advanced
 
             yield return CreateCase("BeginTransaction", (store, name) => store.BeginTransaction(name: name));
             yield return CreateCase("BeginReadTransaction IsolationLevel overload", (store, name) => store.BeginReadTransaction(IsolationLevel.ReadUncommitted, name: name));
-            yield return CreateCase("BeginReadTransaction RetriableOperation overload", (store, name) => store.BeginReadTransaction(RetriableOperation.None, name));
             yield return CreateCase("BeginWriteTransaction", (store, name) => store.BeginWriteTransaction(name: name));
             yield return CreateAsyncCase("BeginReadTransactionAsync IsolationLevel overload", async (store, name) => await store.BeginReadTransactionAsync(IsolationLevel.ReadUncommitted, name: name));
-            yield return CreateAsyncCase("BeginReadTransactionAsync RetriableOperation overload", async (store, name) => await store.BeginReadTransactionAsync(RetriableOperation.None, name));
             yield return CreateAsyncCase("BeginWriteTransaction", async (store, name) => await store.BeginWriteTransactionAsync(name: name));
 
         }
