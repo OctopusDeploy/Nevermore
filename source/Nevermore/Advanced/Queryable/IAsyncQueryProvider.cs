@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nevermore.Advanced.Queryable
 {
-    internal interface IAsyncQueryProvider : IQueryProvider
+    public interface IAsyncQueryProvider : IQueryProvider
     {
         public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken);
     }
