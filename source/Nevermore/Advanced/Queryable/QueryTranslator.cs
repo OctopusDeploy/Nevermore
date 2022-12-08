@@ -260,6 +260,11 @@ namespace Nevermore.Advanced.Queryable
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
                     return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
                 }
+                else if (left!.Type == typeof(string) &&  right.Type == typeof(StringComparison))
+                {
+                    return CreateStringMethodWhere(expression, invert);
+                }
+
             }
 
             throw new NotSupportedException();
