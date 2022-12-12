@@ -302,7 +302,7 @@ namespace Nevermore.Advanced
         {
             foreach (var command in ExecutedCommands)
             {
-                ReplayExecuteNonQuery(command);
+                Replay(command);
             }
         }
 
