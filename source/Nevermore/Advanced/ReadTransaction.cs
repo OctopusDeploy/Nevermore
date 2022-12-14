@@ -573,8 +573,8 @@ namespace Nevermore.Advanced
         {
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteNonQuery();
             ExecutedCommands.Add(preparedCommand);
+            var result = command.ExecuteNonQuery();
             return result;
         }
 
@@ -582,8 +582,8 @@ namespace Nevermore.Advanced
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteNonQueryAsync(cancellationToken);
             ExecutedCommands.Add(preparedCommand);
+            var result = await command.ExecuteNonQueryAsync(cancellationToken);
             return result;
         }
 
@@ -601,8 +601,8 @@ namespace Nevermore.Advanced
         {
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteScalar();
             ExecutedCommands.Add(preparedCommand);
+            var result = command.ExecuteScalar();
             if (result == DBNull.Value)
                 return default!;
             return (TResult)result;
@@ -612,8 +612,8 @@ namespace Nevermore.Advanced
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteScalarAsync(cancellationToken);
             ExecutedCommands.Add(preparedCommand);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
                 return default!;
             return (TResult)result;
@@ -632,16 +632,16 @@ namespace Nevermore.Advanced
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteReader();
             ExecutedCommands.Add(preparedCommand);
+            var result = command.ExecuteReader();
             return result;
         }
 
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteReaderAsync(cancellationToken);
             ExecutedCommands.Add(preparedCommand);
+            var result = await command.ExecuteReaderAsync(cancellationToken);
             return result;
         }
 
