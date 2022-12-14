@@ -29,11 +29,10 @@ namespace Nevermore.Advanced
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
+        readonly IsolationLevel isolationLevel;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
         readonly string name;
-
-        SqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
         protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
@@ -48,11 +47,12 @@ namespace Nevermore.Advanced
 
         protected readonly ICollection<PreparedCommand> ExecutedCommands = new List<PreparedCommand>();
 
-        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
+        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IsolationLevel isolationLevel, IRelationalStoreConfiguration configuration, string? name = null)
         {
             State = new Dictionary<string, object>();
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
+            this.isolationLevel = isolationLevel;
             this.configuration = configuration;
             commandTrace = new List<string>();
 
@@ -68,49 +68,22 @@ namespace Nevermore.Advanced
 
         protected DbTransaction? Transaction { get; private set; }
 
+        public async Task OpenAsync()
+        {
+            connection = new SqlConnection(registry.ConnectionString);
+            await connection.OpenWithRetryAsync();
+            // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
+            // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+        }
+
         public void Open()
         {
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
             connection = new SqlConnection(registry.ConnectionString);
-
-            // var options = new SqlRetryLogicOption
-            // {
-            //     // Tries 5 times before throwing an exception
-            //     NumberOfTries = 5,
-            //     // Preferred gap time to delay before retry
-            //     DeltaTime = TimeSpan.FromSeconds(1),
-            //     // Maximum gap time for each delay time before retry
-            //     MaxTimeInterval = TimeSpan.FromSeconds(20)
-            // };
-            // var provider = SqlConfigurableRetryFactory.CreateExponentialRetryProvider(options);
-
-            // var provider = new MyRetryLogicProvider();
-
-            // connection.RetryLogicProvider = provider;
-
             connection.OpenWithRetry();
-        }
-
-        public async Task OpenAsync()
-        {
-            connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
-        }
-
-        public void Open(IsolationLevel isolationLevel)
-        {
-            Open();
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
-        }
-
-        public async Task OpenAsync(IsolationLevel isolationLevel)
-        {
-            await OpenAsync();
-
-            // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
-            // the synchronous version anyway, and the async overload doesn't accept a name parameter.
             Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
 

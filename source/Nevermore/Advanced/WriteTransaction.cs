@@ -27,10 +27,11 @@ namespace Nevermore.Advanced
             IRelationalStore store,
             RelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
+            IsolationLevel isolationLevel,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
             string name = null
-        ) : base(store, registry, operationsToRetry, configuration, name)
+        ) : base(store, registry, operationsToRetry, isolationLevel, configuration, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;

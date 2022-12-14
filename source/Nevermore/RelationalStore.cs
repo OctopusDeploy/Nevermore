@@ -35,11 +35,11 @@ namespace Nevermore
 
         public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
-            var txn = CreateReadTransaction(retriableOperation, name);
+            var txn = CreateReadTransaction(retriableOperation, name, isolationLevel);
 
             try
             {
-                txn.Open(isolationLevel);
+                txn.Open();
                 return txn;
             }
             catch
@@ -51,10 +51,10 @@ namespace Nevermore
 
         public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
-            var txn = CreateReadTransaction(retriableOperation, name);
+            var txn = CreateReadTransaction(retriableOperation, name, isolationLevel);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync();
                 return txn;
             }
             catch
@@ -66,10 +66,10 @@ namespace Nevermore
 
         public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
-            var txn = CreateWriteTransaction(retriableOperation, name);
+            var txn = CreateWriteTransaction(retriableOperation, name, isolationLevel);
             try
             {
-                txn.Open(isolationLevel);
+                txn.Open();
                 return txn;
             }
             catch
@@ -81,10 +81,10 @@ namespace Nevermore
 
         public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
         {
-            var txn = CreateWriteTransaction(retriableOperation, name);
+            var txn = CreateWriteTransaction(retriableOperation, name, isolationLevel);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync();
                 return txn;
             }
             catch
@@ -99,14 +99,14 @@ namespace Nevermore
             return (IRelationalTransaction) BeginWriteTransaction(isolationLevel, retriableOperation, name);
         }
 
-        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
+        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name, IsolationLevel isolationLevel)
         {
-            return new ReadTransaction(this, registry.Value, retriableOperation, Configuration, name);
+            return new ReadTransaction(this, registry.Value, retriableOperation, isolationLevel, Configuration, name);
         }
 
-        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
+        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name, IsolationLevel isolationLevel)
         {
-            return new WriteTransaction(this, registry.Value, retriableOperation, Configuration, keyAllocator.Value, name);
+            return new WriteTransaction(this, registry.Value, retriableOperation, isolationLevel, Configuration, keyAllocator.Value, name);
         }
     }
 }
