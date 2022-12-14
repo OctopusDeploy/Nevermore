@@ -3,9 +3,7 @@
 using MyNevermoreTest;
 using Nevermore;
 
-Console.WriteLine("Hello, World!");
-
-var connStr = "Server=localhost;Database=MyNevermoreTest;Trusted_Connection=True;TrustServerCertificate=True";
+var connStr = args[0];
 
 // You just need a SQL Server connection string
 var config = new RelationalStoreConfiguration(connStr);
