@@ -301,6 +301,9 @@ namespace Nevermore.Advanced
 
         public void Replay()
         {
+            Transaction?.Dispose();
+            Connection?.Dispose();
+            Open();
             foreach (var command in ExecutedCommands)
             {
                 Replay(command);

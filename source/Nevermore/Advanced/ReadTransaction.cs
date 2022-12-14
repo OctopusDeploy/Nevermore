@@ -66,15 +66,16 @@ namespace Nevermore.Advanced
             columnNameResolver = configuration.TableColumnNameResolver(store);
         }
 
+        protected SqlConnection? Connection { get; private set; }
         protected DbTransaction? Transaction { get; private set; }
 
         public async Task OpenAsync()
         {
-            connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
+            Connection = new SqlConnection(registry.ConnectionString);
+            await Connection.OpenWithRetryAsync();
             // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+            Transaction = Connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
 
         public void Open()
@@ -82,9 +83,9 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
-            connection = new SqlConnection(registry.ConnectionString);
-            connection.OpenWithRetry();
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+            Connection = new SqlConnection(registry.ConnectionString);
+            Connection.OpenWithRetry();
+            Transaction = Connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
 
         [Pure]
@@ -701,7 +702,7 @@ namespace Nevermore.Advanced
         CommandExecutor CreateCommand(PreparedCommand command)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
-            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
+            var sqlCommand = configuration.CommandFactory.CreateCommand(Connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             if (command.ParameterValues != null)
             {
@@ -731,7 +732,7 @@ namespace Nevermore.Advanced
             lock (commandTrace)
                 copy = commandTrace.ToArray();
 
-            sb.AppendLine($"Transaction '{name}' {connection?.State} with {copy.Length} commands started at {CreatedTime:s} ({(DateTime.Now - CreatedTime).TotalSeconds:n2} seconds ago)");
+            sb.AppendLine($"Transaction '{name}' {Connection?.State} with {copy.Length} commands started at {CreatedTime:s} ({(DateTime.Now - CreatedTime).TotalSeconds:n2} seconds ago)");
             foreach (var command in copy)
                 sb.AppendLine(command);
         }
@@ -762,7 +763,7 @@ namespace Nevermore.Advanced
 
         public override string ToString()
         {
-            return $"{CreatedTime} - {connection?.State} - {name}";
+            return $"{CreatedTime} - {Connection?.State} - {name}";
         }
 
         string ITransactionDiagnostic.Name => name;
@@ -779,7 +780,7 @@ namespace Nevermore.Advanced
             // ReSharper disable ConstantConditionalAccessQualifier
             Transaction?.Dispose();
             DeadlockAwareLock?.Dispose();
-            connection?.Dispose();
+            Connection?.Dispose();
             // ReSharper restore ConstantConditionalAccessQualifier
             registry.Remove(this);
         }
