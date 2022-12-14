@@ -190,10 +190,10 @@ namespace Nevermore.Transient
             // DBNETLIB Error Code: 20
             // The instance of SQL Server you attempted to connect to does not support encryption.
             20,
-            // This exception can be thrown even if the operation completed successfully, so it's safer to let the application fail.
+            // This exception can be thrown even if the operation completed successfully, so it's safer to let the application fail. ENABLED FOR TESTING
             // DBNETLIB Error Code: -2
             // Timeout expired. The timeout period elapsed prior to completion of the operation or the server is not responding. The statement has been terminated.
-            //-2,
+            -2,
         };
 
         public bool IsTransient(Exception ex)
@@ -220,6 +220,7 @@ namespace Nevermore.Transient
             }
 
             // Otherwise it could be another simple transient error
+            var result = sqlErrors.Select(x => x.Number).Intersect(SimpleTransientErrorCodes).Any();
             return sqlErrors.Select(x => x.Number).Intersect(SimpleTransientErrorCodes).Any();
         }
 

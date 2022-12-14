@@ -284,11 +284,12 @@ namespace Nevermore.Advanced
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
+
             configuration.Hooks.BeforeCommit(this);
             Transaction.Commit();
             configuration.Hooks.AfterCommit(this);
         }
-
+        
         public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
             if (Transaction is null)
@@ -318,7 +319,7 @@ namespace Nevermore.Advanced
             return results.SingleOrDefault();
         }
 
-        async Task<DataModificationOutput[]> ExecuteDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
+        async Task<DataModificationOutput[]> ExecuteDataModificationAsync(PreparedCommand command,  CancellationToken cancellationToken)
         {
             if (!command.Mapping.HasModificationOutputs)
             {
@@ -331,7 +332,7 @@ namespace Nevermore.Advanced
                     command.Operation == RetriableOperation.Insert, cancellationToken), cancellationToken);
         }
 
-        async Task<DataModificationOutput> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
+        async Task<DataModificationOutput> ExecuteSingleDataModificationAsync(PreparedCommand command,  CancellationToken cancellationToken)
         {
             var results = await ExecuteDataModificationAsync(command, cancellationToken);
             return results.SingleOrDefault();
@@ -389,6 +390,7 @@ namespace Nevermore.Advanced
             return batchBlockSize;
         }
 
+
         class DataModificationOutput
         {
             public byte[] RowVersion { get; private set; }
@@ -421,6 +423,8 @@ namespace Nevermore.Advanced
 
                 return output;
             }
+
+
         }
     }
 }

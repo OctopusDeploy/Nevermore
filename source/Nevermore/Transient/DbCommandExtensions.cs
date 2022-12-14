@@ -1,6 +1,8 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.IO;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,15 +10,28 @@ namespace Nevermore.Transient
 {
     internal static class DbCommandExtensions
     {
-        public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery")
+        public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var performReplay = false;
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
                 try
                 {
+                    if (performReplay)
+                    {
+                        replayClosure();
+
+                        foreach (DbParameter commandParameter in command.Parameters)
+                        {
+                            if (commandParameter.Value is Stream stream)
+                                stream.Position = 0;
+                        }
+                    }
+                    
+                    performReplay = true;
                     return command.ExecuteNonQuery();
                 }
                 finally
@@ -27,15 +42,20 @@ namespace Nevermore.Transient
             });
         }
 
-        public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
+        public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var performReplay = false;
             return effectiveCommandRetryPolicy.ExecuteAction(async () =>
             {
                 var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try
                 {
+                    if (performReplay)
+                        replayClosure();
+                    performReplay = true;
+
                     return await command.ExecuteNonQueryAsync(cancellationToken);
                 }
                 finally
@@ -46,15 +66,20 @@ namespace Nevermore.Transient
             });
         }
 
-        public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
+        public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var performReplay = false;
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
                 try
                 {
+                    if (performReplay)
+                        replayClosure();
+                    performReplay = true;
+
                     return command.ExecuteReader(behavior);
                 }
                 catch (Exception)
@@ -67,16 +92,21 @@ namespace Nevermore.Transient
             });
         }
 
-        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, CancellationToken cancellationToken, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
+        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, CommandBehavior commandBehavior, CancellationToken cancellationToken, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy =
                 (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var performReplay = false;
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
                 var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try
                 {
+                    if (performReplay)
+                        replayClosure();
+                    performReplay = true;
+
                     return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
                 }
                 catch (Exception)
@@ -89,15 +119,20 @@ namespace Nevermore.Transient
             });
         }
 
-        public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar")
+        public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar")
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var performReplay = false;
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
                 try
                 {
+                    if (performReplay)
+                        replayClosure();
+                    performReplay = true;
+
                     return command.ExecuteScalar();
                 }
                 finally
@@ -108,15 +143,21 @@ namespace Nevermore.Transient
             });
         }
 
-        public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", CancellationToken cancellationToken = default)
+        public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy()).LoggingRetries(operationName);
+            var performReplay = false;
+
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
                 var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try
                 {
+                    if (performReplay)
+                        replayClosure();
+                    performReplay = true;
+
                     return await command.ExecuteScalarAsync(cancellationToken);
                 }
                 finally

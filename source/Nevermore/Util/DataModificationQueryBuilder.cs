@@ -342,7 +342,7 @@ namespace Nevermore.Util
             switch (mapping.JsonStorageFormat)
             {
                 case JsonStorageFormat.TextOnly:
-                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping).ReadToEnd();
                     break;
                 case JsonStorageFormat.CompressedOnly:
                     result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
@@ -352,7 +352,7 @@ namespace Nevermore.Util
                     result[$"{prefix}{JsonVariableName}"] = null;
                     break;
                 case JsonStorageFormat.MixedPreferText:
-                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping);
+                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping).ReadToEnd();
                     result[$"{prefix}{JsonBlobVariableName}"] = null;
                     break;
                 case JsonStorageFormat.NoJson:
