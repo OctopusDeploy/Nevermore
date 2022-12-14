@@ -14,15 +14,7 @@ config.DocumentMaps.Register(new StudentMap());
 // Create your store. You'll do this once when the application starts up.
 var store = new RelationalStore(config);
 
-// var student = new Student
-// {
-//     Age = 0,
-//     Email = "email1"
-// };
-
-// using var tx = store.BeginTransaction();
-// tx.Insert(student);
-// tx.Commit();
+//CreateStudent();
 
 using var trn = store.BeginTransaction();
 var student = trn.Query<Student>().Stream().Single();
@@ -37,3 +29,16 @@ trn.Update(student);
 trn.Replay();
 
 trn.Commit();
+
+void CreateStudent()
+{
+    using var tx = store.BeginTransaction();
+    var student = new Student
+    {
+        Age = 0,
+        Email = "email1"
+    };
+
+    tx.Insert(student);
+    tx.Commit();
+}
