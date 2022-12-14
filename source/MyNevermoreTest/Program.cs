@@ -22,11 +22,20 @@ student.Age += 3;
 trn.Update(student);
 
 // sleep and manually kill the connection
+Console.WriteLine("Having a little sleep");
+Thread.Sleep(20000);
 
 student.Age -= 1;
-trn.Update(student);
 
-trn.Replay();
+try
+{
+    trn.Update(student);
+}
+catch (Exception e)
+{
+    Console.WriteLine("Ruh roh, update failed");
+    trn.Replay();
+}
 
 trn.Commit();
 
