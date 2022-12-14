@@ -21,14 +21,8 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                    {
-                        replayClosure();
-
-                        foreach (DbParameter commandParameter in command.Parameters)
-                        {
-                            if (commandParameter.Value is Stream stream)
-                                stream.Position = 0;
-                        }
+                    {   
+                        Replay(command, replayClosure);
                     }
                     
                     performReplay = true;
@@ -42,6 +36,17 @@ namespace Nevermore.Transient
             });
         }
 
+        static void Replay(DbCommand command, Action replayClosure)
+        {
+            replayClosure();
+
+            foreach (DbParameter commandParameter in command.Parameters)
+            {
+                if (commandParameter.Value is Stream stream)
+                    stream.Seek(0, SeekOrigin.Begin);
+            }
+        }
+
         public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
@@ -53,7 +58,10 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                        replayClosure();
+                    {
+                        Replay(command, replayClosure);
+                    }
+
                     performReplay = true;
 
                     return await command.ExecuteNonQueryAsync(cancellationToken);
@@ -77,7 +85,10 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                        replayClosure();
+                    {
+                        Replay(command, replayClosure);
+                    }
+
                     performReplay = true;
 
                     return command.ExecuteReader(behavior);
@@ -104,7 +115,10 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                        replayClosure();
+                    {
+                        Replay(command, replayClosure);
+                    }
+
                     performReplay = true;
 
                     return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
@@ -130,7 +144,10 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                        replayClosure();
+                    {
+                        Replay(command, replayClosure);
+                    }
+
                     performReplay = true;
 
                     return command.ExecuteScalar();
@@ -155,7 +172,10 @@ namespace Nevermore.Transient
                 try
                 {
                     if (performReplay)
-                        replayClosure();
+                    {
+                        Replay(command, replayClosure);
+                    }
+
                     performReplay = true;
 
                     return await command.ExecuteScalarAsync(cancellationToken);
