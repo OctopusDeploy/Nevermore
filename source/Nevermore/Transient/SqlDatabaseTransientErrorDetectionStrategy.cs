@@ -220,7 +220,6 @@ namespace Nevermore.Transient
             }
 
             // Otherwise it could be another simple transient error
-            var result = sqlErrors.Select(x => x.Number).Intersect(SimpleTransientErrorCodes).Any();
             return sqlErrors.Select(x => x.Number).Intersect(SimpleTransientErrorCodes).Any();
         }
 

@@ -77,7 +77,8 @@ namespace Nevermore.Advanced
             {
                 transaction = value;
                 isolationLevel = value?.IsolationLevel;
-            } }
+            }
+        }
 
         public void Open()
         {
@@ -111,8 +112,7 @@ namespace Nevermore.Advanced
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
             Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
-
-
+        
         protected void ReplayTransaction()
         {
             if (isolationLevel is null)
