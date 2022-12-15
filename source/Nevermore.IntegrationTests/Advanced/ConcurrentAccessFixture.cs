@@ -62,7 +62,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 ThreadWaitAll(
                     Enumerable.Range(0, DegreeOfParallelism)
-                        .Select(i =>
+                        .Select(_ =>
                         {
                             // ReSharper disable AccessToDisposedClosure
                             // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -130,11 +130,11 @@ namespace Nevermore.IntegrationTests.Advanced
             // Create a bunch of documents so that we can query for them.
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
-                await Enumerable.Range(0, NumberOfDocuments)
-                    .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
-                    // ReSharper disable once AccessToDisposedClosure
-                    .Select(document => transaction.InsertAsync(document))
-                    .WhenAll();
+                var documents = Enumerable.Range(0, NumberOfDocuments)
+                    .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                    .ToArray();
+
+                await transaction.InsertManyAsync(documents);
                 await transaction.CommitAsync();
             }
 
@@ -142,10 +142,9 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
                 await Enumerable.Range(0, DegreeOfParallelism)
-                    .Select(async i =>
+                    .Select(_ => Task.Run(async () =>
                     {
                         // ReSharper disable AccessToDisposedClosure
-                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
                         var documents = await transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToListAsync();
@@ -175,7 +174,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
                         // ReSharper restore ReturnValueOfPureMethodIsNotUsed
                         // ReSharper restore AccessToDisposedClosure
-                    })
+                    }))
                     .WhenAll();
             }
         }
