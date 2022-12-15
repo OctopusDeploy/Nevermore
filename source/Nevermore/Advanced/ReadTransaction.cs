@@ -18,7 +18,6 @@ using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
-using Nito.AsyncEx;
 
 namespace Nevermore.Advanced
 {
@@ -572,16 +571,30 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
-            using var command = CreateCommand(preparedCommand);
-            return command.ExecuteNonQuery();
+            DeadlockAwareLock.Wait();
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                return command.ExecuteNonQuery();
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
-            using var command = CreateCommand(preparedCommand);
-            return await command.ExecuteNonQueryAsync(cancellationToken);
+            await DeadlockAwareLock.WaitAsync(cancellationToken);
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                return await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)
@@ -596,22 +609,36 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
-            using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteScalar();
-            if (result == DBNull.Value)
-                return default!;
-            return (TResult)result;
+            DeadlockAwareLock.Wait();
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                var result = command.ExecuteScalar();
+                if (result == DBNull.Value)
+                    return default!;
+                return (TResult)result;
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
-            using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteScalarAsync(cancellationToken);
-            if (result == DBNull.Value)
-                return default!;
-            return (TResult)result;
+            await DeadlockAwareLock.WaitAsync(cancellationToken);
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                var result = await command.ExecuteScalarAsync(cancellationToken);
+                if (result == DBNull.Value)
+                    return default!;
+                return (TResult)result;
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         public DbDataReader ExecuteReader(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -638,18 +665,30 @@ namespace Nevermore.Advanced
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
         {
-            using var mutex = DeadlockAwareLock.Lock();
-
-            using var command = CreateCommand(preparedCommand);
-            return command.ReadResults(mapper);
+            DeadlockAwareLock.Wait();
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                return command.ReadResults(mapper);
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
-
-            using var command = CreateCommand(preparedCommand);
-            return await command.ReadResultsAsync(mapper, cancellationToken);
+            await DeadlockAwareLock.WaitAsync(cancellationToken);
+            try
+            {
+                using var command = CreateCommand(preparedCommand);
+                return await command.ReadResultsAsync(mapper, cancellationToken);
+            }
+            finally
+            {
+                DeadlockAwareLock.Release();
+            }
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
