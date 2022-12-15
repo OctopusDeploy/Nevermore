@@ -826,6 +826,20 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
+            foreach (var command in ExecutedCommands)
+            {
+                if (command.ParameterValues is not null)
+                {
+                    foreach (var parameter in command.ParameterValues)
+                    {
+                        if (parameter.Value is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
+                    }
+                }
+            }
+
             // ReSharper disable ConstantConditionalAccessQualifier
             Transaction?.Dispose();
             DeadlockAwareLock?.Dispose();
