@@ -31,8 +31,9 @@ namespace Nevermore
         readonly TimedSection timedSection;
         readonly ITransactionDiagnostic transaction;
         readonly bool allowSynchronousOperations;
+        readonly Action replayClosure;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations, Action replayClosure)
         {
             this.command = command;
             this.prepared = prepared;
@@ -40,9 +41,10 @@ namespace Nevermore
             this.timedSection = timedSection;
             this.transaction = transaction;
             this.allowSynchronousOperations = allowSynchronousOperations;
+            this.replayClosure = replayClosure;
         }
 
-        public int ExecuteNonQuery(Action replayClosure)
+        public int ExecuteNonQuery()
         {
             AssertSynchronousOperation();
             try
@@ -62,7 +64,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<int> ExecuteNonQueryAsync(Action replayClosure, CancellationToken cancellationToken)
+        public async Task<int> ExecuteNonQueryAsync( CancellationToken cancellationToken)
         {
             try
             {
@@ -80,7 +82,7 @@ namespace Nevermore
             }
         }
 
-        public object ExecuteScalar(Action replayClosure)
+        public object ExecuteScalar()
         {
             AssertSynchronousOperation();
             try
@@ -99,7 +101,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<object> ExecuteScalarAsync(Action replayClosure, CancellationToken cancellationToken)
+        public async Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -117,7 +119,7 @@ namespace Nevermore
             }
         }
 
-        public T[] ReadResults<T>(Func<DbDataReader, T> mapper, Action replayClosure)
+        public T[] ReadResults<T>(Func<DbDataReader, T> mapper)
         {
             AssertSynchronousOperation();
             try
@@ -143,7 +145,7 @@ namespace Nevermore
             }
         }
 
-        public DbDataReader ExecuteReader(Action replayClosure)
+        public DbDataReader ExecuteReader()
         {
             AssertSynchronousOperation();
             try
@@ -162,7 +164,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<DbDataReader> ExecuteReaderAsync(Action replayClosure, CancellationToken cancellationToken)
+        public async Task<DbDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -180,7 +182,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, Task<T>> mapper, Action replayClosure, CancellationToken cancellationToken)
+        public async Task<T[]> ReadResultsAsync<T>(Func<DbDataReader, Task<T>> mapper, CancellationToken cancellationToken)
         {
             try
             {

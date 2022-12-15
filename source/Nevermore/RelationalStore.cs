@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
 using Nevermore.Mapping;
+using Nevermore.Transient;
 
 namespace Nevermore
 {
@@ -16,6 +17,17 @@ namespace Nevermore
     {
         readonly Lazy<RelationalTransactionRegistry> registry;
         readonly Lazy<KeyAllocator> keyAllocator;
+
+        public static void EnableChaos(int percentChanceOfChaos)
+        {
+            DbCommandExtensions.PercentChanceOfChaos = percentChanceOfChaos;
+            DbCommandExtensions.EnableChaos = true;
+        }
+
+        public static void DisableChaos()
+        {
+            DbCommandExtensions.EnableChaos = false;
+        }
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {

@@ -132,8 +132,8 @@ namespace Nevermore.Advanced
 
         protected void ReplayCommand(PreparedCommand preparedCommand, Action replayClosure)
         {
-            using var command = CreateCommand(preparedCommand);
-            command.ExecuteNonQuery(replayClosure);
+            using var command = CreateCommand(preparedCommand, replayClosure );
+            command.ExecuteNonQuery();
         }
 
         [Pure]
@@ -614,7 +614,7 @@ namespace Nevermore.Advanced
         {
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
-            var result =  command.ExecuteNonQuery(() => ReplayTransaction());
+            var result =  command.ExecuteNonQuery();
 
             ExecutedCommands.Add(preparedCommand);
 
@@ -625,7 +625,7 @@ namespace Nevermore.Advanced
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteNonQueryAsync(() => ReplayTransaction(), cancellationToken);
+            var result = await command.ExecuteNonQueryAsync( cancellationToken);
             ExecutedCommands.Add(preparedCommand);
             return result;
         }
@@ -644,7 +644,7 @@ namespace Nevermore.Advanced
         {
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteScalar(() => ReplayTransaction());
+            var result = command.ExecuteScalar();
             ExecutedCommands.Add(preparedCommand);
             if (result == DBNull.Value)
                 return default!;
@@ -655,7 +655,7 @@ namespace Nevermore.Advanced
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteScalarAsync(()=> ReplayTransaction(), cancellationToken);
+            var result = await command.ExecuteScalarAsync( cancellationToken);
             ExecutedCommands.Add(preparedCommand);
 
             if (result == DBNull.Value)
@@ -676,7 +676,7 @@ namespace Nevermore.Advanced
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
         {
             using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteReader(() => ReplayTransaction());
+            var result = command.ExecuteReader();
             ExecutedCommands.Add(preparedCommand);
             return result;
         }
@@ -684,7 +684,7 @@ namespace Nevermore.Advanced
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteReaderAsync(() => ReplayTransaction(), cancellationToken);
+            var result = await command.ExecuteReaderAsync( cancellationToken);
             ExecutedCommands.Add(preparedCommand);
             return result;
         }
@@ -694,7 +694,7 @@ namespace Nevermore.Advanced
             using var mutex = DeadlockAwareLock.Lock();
 
             using var command = CreateCommand(preparedCommand);
-            return command.ReadResults(mapper, () => ReplayTransaction());
+            return command.ReadResults(mapper);
         }
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
@@ -702,7 +702,7 @@ namespace Nevermore.Advanced
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
 
             using var command = CreateCommand(preparedCommand);
-            return await command.ReadResultsAsync(mapper, () => ReplayTransaction(), cancellationToken);
+            return await command.ReadResultsAsync(mapper,  cancellationToken);
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
@@ -744,6 +744,9 @@ namespace Nevermore.Advanced
         }
 
         CommandExecutor CreateCommand(PreparedCommand command)
+            => CreateCommand(command, () => ReplayTransaction());
+
+        CommandExecutor CreateCommand(PreparedCommand command, Action replayClosure)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
@@ -759,7 +762,7 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, replayClosure);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)

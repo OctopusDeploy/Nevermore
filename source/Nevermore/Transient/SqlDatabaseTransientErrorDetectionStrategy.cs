@@ -200,6 +200,9 @@ namespace Nevermore.Transient
         {
             if (ex is TimeoutException) return true;
 
+            if (ex is DbCommandExtensions.ChaosMonkeyException) 
+                return true;
+
             var sqlException = ex as SqlException;
             if (sqlException == null) return false;
 

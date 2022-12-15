@@ -5,11 +5,31 @@ using System.IO;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 
 namespace Nevermore.Transient
 {
     internal static class DbCommandExtensions
     {
+        //********************************************
+        //Testing/Exploration code only.
+        static readonly Random random = new Random();
+
+        public class ChaosMonkeyException : Exception
+        {
+
+        }
+
+        public static bool EnableChaos = false;
+        public static int PercentChanceOfChaos = 10;
+        //********************************************
+        
+        private static void ProvideChaos()
+        {
+            if (EnableChaos && random.Next(1, 100) > (100 - PercentChanceOfChaos))
+                throw new ChaosMonkeyException();
+        }
+
         public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, Action replayClosure, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery")
         {
             GuardConnectionIsNotNull(command);
@@ -26,6 +46,7 @@ namespace Nevermore.Transient
                     }
                     
                     performReplay = true;
+                    ProvideChaos();
                     return command.ExecuteNonQuery();
                 }
                 finally
@@ -63,7 +84,7 @@ namespace Nevermore.Transient
                     }
 
                     performReplay = true;
-
+                    ProvideChaos();
                     return await command.ExecuteNonQueryAsync(cancellationToken);
                 }
                 finally
@@ -90,7 +111,7 @@ namespace Nevermore.Transient
                     }
 
                     performReplay = true;
-
+                    ProvideChaos();
                     return command.ExecuteReader(behavior);
                 }
                 catch (Exception)
@@ -120,7 +141,7 @@ namespace Nevermore.Transient
                     }
 
                     performReplay = true;
-
+                    ProvideChaos();
                     return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
                 }
                 catch (Exception)
@@ -149,7 +170,7 @@ namespace Nevermore.Transient
                     }
 
                     performReplay = true;
-
+                    ProvideChaos();
                     return command.ExecuteScalar();
                 }
                 finally
@@ -177,7 +198,7 @@ namespace Nevermore.Transient
                     }
 
                     performReplay = true;
-
+                    ProvideChaos();
                     return await command.ExecuteScalarAsync(cancellationToken);
                 }
                 finally
