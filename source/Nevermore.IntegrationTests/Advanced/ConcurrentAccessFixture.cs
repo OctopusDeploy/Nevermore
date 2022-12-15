@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Nevermore.Advanced;
 using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -15,6 +16,22 @@ namespace Nevermore.IntegrationTests.Advanced
     {
         const int NumberOfDocuments = 256;
         const int DegreeOfParallelism = NumberOfDocuments;
+
+        [Test]
+        public async Task DeadlocksDoGoBoom()
+        {
+            NoMonkeyBusiness();
+
+            await FluentActions.Awaiting(async () =>
+            {
+                using var transaction = await Store.BeginWriteTransactionAsync();
+
+                var t1 = transaction.ExecuteNonQueryAsync("WAITFOR DELAY '00:00:02'");
+                var t2 = transaction.ExecuteNonQueryAsync("WAITFOR DELAY '00:00:02'");
+
+                await Task.WhenAll(t1, t2);
+            }).Should().ThrowAsync<DeadlockException>();
+        }
 
         [Test]
         public void ConcurrentAccessDoesNotGoBoom()
