@@ -10,6 +10,7 @@ using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
 using Nevermore.Querying.AST;
+
 #pragma warning disable 618
 
 namespace Nevermore.Util
@@ -41,7 +42,7 @@ namespace Nevermore.Util
             options ??= InsertOptions.Default;
             var mapping = GetMapping(documents);
             ValidateMapping(mapping, options);
-            
+
             return GetDocumentParameters(m => keyAllocator(m), options.CustomAssignedId, documents, mapping, DataModification.Insert);
         }
 
@@ -142,10 +143,10 @@ namespace Nevermore.Util
             statement.AppendLine($"DELETE FROM [{actualSchemaName}].[{actualTableName}] WITH (ROWLOCK) WHERE [{mapping.IdColumn.ColumnName}] = @{IdVariableName}");
 
             foreach (var relMap in mapping.RelatedDocumentsMappings.Select(m => (tableName: m.TableName,
-                schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
+                         schema: configuration.GetSchemaNameOrDefault(m), idColumnName: m.IdColumnName)).Distinct())
                 statement.AppendLine($"DELETE FROM [{relMap.schema}].[{relMap.tableName}] WITH (ROWLOCK) WHERE [{relMap.idColumnName}] = @{IdVariableName}");
 
-            var parameters = new CommandParameterValues {{IdVariableName, id}};
+            var parameters = new CommandParameterValues { { IdVariableName, id } };
             return new PreparedCommand(statement.ToString(), parameters, RetriableOperation.Delete, mapping,
                 options.CommandTimeout);
         }
@@ -342,7 +343,11 @@ namespace Nevermore.Util
             switch (mapping.JsonStorageFormat)
             {
                 case JsonStorageFormat.TextOnly:
-                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping).ReadToEnd();
+                    using (var reader = serializer.SerializeText(document, mapping))
+                    {
+                        result[$"{prefix}{JsonVariableName}"] = reader.ReadToEnd();
+                    }
+                    
                     break;
                 case JsonStorageFormat.CompressedOnly:
                     result[$"{prefix}{JsonBlobVariableName}"] = serializer.SerializeCompressed(document, mapping);
@@ -352,7 +357,11 @@ namespace Nevermore.Util
                     result[$"{prefix}{JsonVariableName}"] = null;
                     break;
                 case JsonStorageFormat.MixedPreferText:
-                    result[$"{prefix}{JsonVariableName}"] = serializer.SerializeText(document, mapping).ReadToEnd();
+                    using (var reader = serializer.SerializeText(document, mapping))
+                    {
+                        result[$"{prefix}{JsonVariableName}"] = reader.ReadToEnd();
+                    }
+                    
                     result[$"{prefix}{JsonBlobVariableName}"] = null;
                     break;
                 case JsonStorageFormat.NoJson:
@@ -367,7 +376,7 @@ namespace Nevermore.Util
                 var value = c.PropertyHandler.Read(document);
                 if (value != null && value != DBNull.Value && value is string && c.MaxLength != null && c.MaxLength.Value > 0)
                 {
-                    var attemptedLength = ((string) value).Length;
+                    var attemptedLength = ((string)value).Length;
                     if (attemptedLength > c.MaxLength)
                     {
                         throw new StringTooLongException($"An attempt was made to store {attemptedLength} characters in the {mapping.TableName}.{c.ColumnName} column, which only allows {c.MaxLength} characters.");
@@ -453,7 +462,7 @@ namespace Nevermore.Util
             DocumentMap mapping,
             object document)
         {
-            var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] {document});
+            var relatedDocumentData = GetRelatedDocumentTableData(mapping, new[] { document });
             if (relatedDocumentData.Count == 0)
                 return statement;
 
@@ -559,11 +568,11 @@ namespace Nevermore.Util
         IReadOnlyList<RelatedDocumentTableData> GetRelatedDocumentTableData(DocumentMap mapping, IReadOnlyList<object> documents)
         {
             var documentAndIds = documents.Count == 1
-                ? new[] {(parentIdVariable: IdVariableName, parentId: ReadIdAsPrimitiveType(mapping, documents[0]), document: documents[0])}
+                ? new[] { (parentIdVariable: IdVariableName, parentId: ReadIdAsPrimitiveType(mapping, documents[0]), document: documents[0]) }
                 : documents.Select((i, idx) => (idVariable: $"{idx}__{IdVariableName}", parentId: ReadIdAsPrimitiveType(mapping, i), document: i));
 
             var groupedByTable = from m in mapping.RelatedDocumentsMappings
-                group m by new {Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m)}
+                group m by new { Table = m.TableName, Schema = configuration.GetSchemaNameOrDefault(m) }
                 into g
                 let related = (
                     from m in g

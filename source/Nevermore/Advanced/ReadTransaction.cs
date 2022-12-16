@@ -46,7 +46,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        protected readonly ICollection<PreparedCommand> ExecutedCommands = new List<PreparedCommand>();
+        private readonly ICollection<PreparedCommand> ExecutedCommands = new List<PreparedCommand>();
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
@@ -67,6 +67,11 @@ namespace Nevermore.Advanced
         }
 
         private IsolationLevel? isolationLevel;
+        public IsolationLevel? IsolationLevel
+        {
+            get => isolationLevel;
+        }
+        
 
         private DbTransaction? transaction;
 
@@ -126,14 +131,37 @@ namespace Nevermore.Advanced
     
             foreach (var command in ExecutedCommands)
             {
-                ReplayCommand(command, () => { });
+                ReplayCommand(command, () => { }, (ct) => Task.CompletedTask);
             }
         }
 
-        protected void ReplayCommand(PreparedCommand preparedCommand, Action replayClosure)
+        protected void ReplayCommand(PreparedCommand preparedCommand, Action replayClosure, Func<CancellationToken , Task> replayClosureAsync)
         {
-            using var command = CreateCommand(preparedCommand, replayClosure );
+            using var command = CreateCommand(preparedCommand, replayClosure, replayClosureAsync);
             command.ExecuteNonQuery();
+        }
+
+        protected async Task ReplayTransaction(CancellationToken cancellationToken)
+        {
+            if (isolationLevel is null)
+            {
+                await OpenAsync();
+            }
+            else
+            {
+                await OpenAsync(isolationLevel.Value);
+            }
+
+            foreach (var command in ExecutedCommands)
+            {
+                await ReplayCommand(command, () => { }, (ct) => Task.CompletedTask, cancellationToken);
+            }
+        }
+
+        protected async Task ReplayCommand(PreparedCommand preparedCommand, Action replayClosure, Func<CancellationToken, Task> replayClosureAsync, CancellationToken cancellationToken)
+        {
+            using var command = CreateCommand(preparedCommand, replayClosure, replayClosureAsync);
+            await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
         [Pure]
@@ -744,9 +772,9 @@ namespace Nevermore.Advanced
         }
 
         CommandExecutor CreateCommand(PreparedCommand command)
-            => CreateCommand(command, () => ReplayTransaction());
+            => CreateCommand(command, () => ReplayTransaction(),  ( ct) =>  ReplayTransaction(ct));
 
-        CommandExecutor CreateCommand(PreparedCommand command, Action replayClosure)
+        CommandExecutor CreateCommand(PreparedCommand command, Action replayClosure, Func<CancellationToken, Task> replayClosureAsync)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
@@ -762,7 +790,7 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, replayClosure);
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, replayClosure, replayClosureAsync);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)

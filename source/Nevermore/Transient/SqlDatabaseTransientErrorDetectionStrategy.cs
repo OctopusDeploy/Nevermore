@@ -193,7 +193,7 @@ namespace Nevermore.Transient
             // This exception can be thrown even if the operation completed successfully, so it's safer to let the application fail. ENABLED FOR TESTING
             // DBNETLIB Error Code: -2
             // Timeout expired. The timeout period elapsed prior to completion of the operation or the server is not responding. The statement has been terminated.
-            -2,
+            //-2,
         };
 
         public bool IsTransient(Exception ex)

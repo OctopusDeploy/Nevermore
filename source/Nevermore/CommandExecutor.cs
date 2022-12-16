@@ -32,8 +32,11 @@ namespace Nevermore
         readonly ITransactionDiagnostic transaction;
         readonly bool allowSynchronousOperations;
         readonly Action replayClosure;
+        readonly Func<CancellationToken, Task> replayClosureAsync;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations, Action replayClosure)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations, 
+                Action replayClosure,
+                Func<CancellationToken, Task> replayClosureAsync)
         {
             this.command = command;
             this.prepared = prepared;
@@ -42,6 +45,7 @@ namespace Nevermore
             this.transaction = transaction;
             this.allowSynchronousOperations = allowSynchronousOperations;
             this.replayClosure = replayClosure;
+            this.replayClosureAsync = replayClosureAsync;
         }
 
         public int ExecuteNonQuery()
@@ -68,7 +72,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, replayClosure, cancellationToken: cancellationToken);
+                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, replayClosureAsync, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -105,7 +109,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteScalarWithRetryAsync(retryPolicy, replayClosure, cancellationToken: cancellationToken);
+                return await command.ExecuteScalarWithRetryAsync(retryPolicy, replayClosureAsync, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -168,7 +172,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosure, prepared.CommandBehavior, cancellationToken: cancellationToken);
+                return await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosureAsync, prepared.CommandBehavior, cancellationToken: cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -187,7 +191,7 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosure, prepared.CommandBehavior, cancellationToken))
+                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosureAsync, prepared.CommandBehavior, cancellationToken))
                 {
                     while (await reader.ReadAsync(cancellationToken))
                     {
@@ -247,22 +251,9 @@ namespace Nevermore
 
         public void Dispose()
         {
-            DisposeOfParameters();
-
             timedSection?.Dispose();
             command?.Dispose();
         }
 
-        void DisposeOfParameters()
-        {
-            foreach (DbParameter parameter in command.Parameters)
-            {
-                // Parameters can contain streams and other disposable objects.
-                if (parameter.Value is IDisposable disposable)
-                {
-                    //disposable.Dispose();
-                }
-            }
-        }
     }
 }
