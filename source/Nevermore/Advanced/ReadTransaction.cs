@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -46,7 +47,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        private readonly ICollection<PreparedCommand> ExecutedCommands = new List<PreparedCommand>();
+        private readonly ConcurrentQueue<PreparedCommand> ExecutedCommands = new ConcurrentQueue<PreparedCommand>();
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
@@ -72,7 +73,6 @@ namespace Nevermore.Advanced
             get => isolationLevel;
         }
         
-
         private DbTransaction? transaction;
 
         protected DbTransaction? Transaction
@@ -644,7 +644,7 @@ namespace Nevermore.Advanced
             using var command = CreateCommand(preparedCommand);
             var result =  command.ExecuteNonQuery();
 
-            ExecutedCommands.Add(preparedCommand);
+            ExecutedCommands.Enqueue(preparedCommand);
 
             return result;
         }
@@ -654,7 +654,9 @@ namespace Nevermore.Advanced
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteNonQueryAsync( cancellationToken);
-            ExecutedCommands.Add(preparedCommand);
+            
+            ExecutedCommands.Enqueue(preparedCommand);
+            
             return result;
         }
 
@@ -673,9 +675,11 @@ namespace Nevermore.Advanced
             using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
-            ExecutedCommands.Add(preparedCommand);
+            ExecutedCommands.Enqueue(preparedCommand);
+
             if (result == DBNull.Value)
                 return default!;
+
             return (TResult)result;
         }
 
@@ -684,10 +688,12 @@ namespace Nevermore.Advanced
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync( cancellationToken);
-            ExecutedCommands.Add(preparedCommand);
+
+            ExecutedCommands.Enqueue(preparedCommand);
 
             if (result == DBNull.Value)
                 return default!;
+
             return (TResult)result;
         }
 
@@ -705,7 +711,8 @@ namespace Nevermore.Advanced
         {
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteReader();
-            ExecutedCommands.Add(preparedCommand);
+            ExecutedCommands.Enqueue(preparedCommand);
+
             return result;
         }
 
@@ -713,7 +720,8 @@ namespace Nevermore.Advanced
         {
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteReaderAsync( cancellationToken);
-            ExecutedCommands.Add(preparedCommand);
+            ExecutedCommands.Enqueue(preparedCommand);
+
             return result;
         }
 
@@ -722,6 +730,7 @@ namespace Nevermore.Advanced
             using var mutex = DeadlockAwareLock.Lock();
 
             using var command = CreateCommand(preparedCommand);
+
             return command.ReadResults(mapper);
         }
 
