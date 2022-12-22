@@ -27,11 +27,11 @@ namespace Nevermore.Transient
             });
         }
 
-        public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
+        public static async Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
-            return effectiveCommandRetryPolicy.ExecuteAction(async () =>
+            return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
                 var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
                 try

@@ -33,10 +33,10 @@ namespace Nevermore.Transient
         {
             return OpenWithRetryAsync(connection, retryPolicy, CancellationToken.None);
         }
-        
-        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken)
+
+        public static async Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(() => connection.OpenAsync(cancellationToken));
+            await (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(async () => await connection.OpenAsync(cancellationToken));
         }
     }
 }

@@ -75,10 +75,10 @@ namespace Nevermore.Advanced
             connection.OpenWithRetry();
         }
 
-        public async Task OpenAsync()
+        public async Task OpenAsync(CancellationToken cancellationToken = default)
         {
             connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
+            await connection.OpenWithRetryAsync(cancellationToken);
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -87,13 +87,11 @@ namespace Nevermore.Advanced
             Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
 
-        public async Task OpenAsync(IsolationLevel isolationLevel)
+        public async Task OpenAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
         {
-            await OpenAsync();
+            await OpenAsync(cancellationToken);
 
-            // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
-            // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+            Transaction = await connection!.BeginTransactionWithRetryAsync(isolationLevel, SqlServerTransactionName, cancellationToken);
         }
 
         [Pure]
