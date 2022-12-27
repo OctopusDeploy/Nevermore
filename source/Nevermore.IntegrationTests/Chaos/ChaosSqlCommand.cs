@@ -9,7 +9,8 @@ namespace Nevermore.IntegrationTests.Chaos
     {
         readonly DbCommand wrappedCommand;
         readonly double chaosFactor;
-        static readonly Random ChaosGenerator = new Random();
+        readonly double closeConnectionChaosFactor = 0.5;
+        static readonly Random ChaosGenerator = new();
 
         public ChaosSqlCommand(DbCommand wrappedCommand, double chaosFactor)
         {
@@ -20,7 +21,12 @@ namespace Nevermore.IntegrationTests.Chaos
         void MakeSomeChaos()
         {
             if (Debugger.IsAttached) return; // No chaos when debugging thanks!
-            if (ChaosGenerator.NextDouble() < chaosFactor) throw new TimeoutException("You made the chaos monkey angry...");
+            if (ChaosGenerator.NextDouble() < chaosFactor)
+            {
+                if (ChaosGenerator.NextDouble() < closeConnectionChaosFactor)
+                    wrappedCommand.Connection?.Close();
+                throw new TimeoutException("You made the chaos monkey angry...");
+            }
         }
 
         public override void Cancel()

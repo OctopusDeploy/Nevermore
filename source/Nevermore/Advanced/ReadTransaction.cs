@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -47,7 +48,7 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        private readonly ConcurrentQueue<PreparedCommand> ExecutedCommands = new ConcurrentQueue<PreparedCommand>();
+        protected readonly ConcurrentQueue<PreparedCommand> ExecutedCommands = new();
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
@@ -72,7 +73,7 @@ namespace Nevermore.Advanced
         {
             get => isolationLevel;
         }
-        
+
         private DbTransaction? transaction;
 
         protected DbTransaction? Transaction
@@ -127,8 +128,8 @@ namespace Nevermore.Advanced
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
             Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
         }
-        
-        protected void ReplayTransaction()
+
+        protected void Replay()
         {
             if (isolationLevel is null)
             {
@@ -141,17 +142,17 @@ namespace Nevermore.Advanced
     
             foreach (var command in ExecutedCommands)
             {
-                ReplayCommand(command, () => { }, (ct) => Task.CompletedTask);
+                ReplayCommand(command);
             }
         }
 
-        protected void ReplayCommand(PreparedCommand preparedCommand, Action replayClosure, Func<CancellationToken , Task> replayClosureAsync)
+        protected void ReplayCommand(PreparedCommand preparedCommand)
         {
-            using var command = CreateCommand(preparedCommand, replayClosure, replayClosureAsync);
+            using var command = CreateCommand(preparedCommand);
             command.ExecuteNonQuery();
         }
 
-        protected async Task ReplayTransaction(CancellationToken cancellationToken)
+        protected async Task Replay(CancellationToken cancellationToken)
         {
             if (isolationLevel is null)
             {
@@ -164,13 +165,13 @@ namespace Nevermore.Advanced
 
             foreach (var command in ExecutedCommands)
             {
-                await ReplayCommand(command, () => { }, (ct) => Task.CompletedTask, cancellationToken);
+                await ReplayCommand(command, cancellationToken);
             }
         }
 
-        protected async Task ReplayCommand(PreparedCommand preparedCommand, Action replayClosure, Func<CancellationToken, Task> replayClosureAsync, CancellationToken cancellationToken)
+        protected async Task ReplayCommand(PreparedCommand preparedCommand, CancellationToken cancellationToken)
         {
-            using var command = CreateCommand(preparedCommand, replayClosure, replayClosureAsync);
+            using var command = CreateCommand(preparedCommand);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -651,9 +652,17 @@ namespace Nevermore.Advanced
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
             using var mutex = DeadlockAwareLock.Lock();
-            using var command = CreateCommand(preparedCommand);
-            var result =  command.ExecuteNonQuery();
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteNonQuery));
+            var result = retryPolicy.ExecuteAction(() =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    Replay();
+                }
 
+                using var command = CreateCommand(preparedCommand);
+                return command.ExecuteNonQuery();
+            });
             ExecutedCommands.Enqueue(preparedCommand);
 
             return result;
@@ -662,9 +671,17 @@ namespace Nevermore.Advanced
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
-            using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteNonQueryAsync( cancellationToken);
-            
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteNonQueryAsync));
+            var result = await retryPolicy.ExecuteActionAsync(async () =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    await Replay(cancellationToken);
+                }
+
+                using var command = CreateCommand(preparedCommand);
+                return await command.ExecuteNonQueryAsync(cancellationToken);
+            });
             ExecutedCommands.Enqueue(preparedCommand);
             
             return result;
@@ -683,8 +700,17 @@ namespace Nevermore.Advanced
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
             using var mutex = DeadlockAwareLock.Lock();
-            using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteScalar();
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteScalar));
+            var result = retryPolicy.ExecuteAction(() =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    Replay();
+                }
+
+                using var command = CreateCommand(preparedCommand);
+                return command.ExecuteScalar();
+            });
             ExecutedCommands.Enqueue(preparedCommand);
 
             if (result == DBNull.Value)
@@ -696,9 +722,17 @@ namespace Nevermore.Advanced
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
-            using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteScalarAsync( cancellationToken);
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteScalarAsync));
+            var result = await retryPolicy.ExecuteActionAsync(async () =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    await Replay(cancellationToken);
+                }
 
+                using var command = CreateCommand(preparedCommand);
+                return await command.ExecuteScalarAsync(cancellationToken);
+            });
             ExecutedCommands.Enqueue(preparedCommand);
 
             if (result == DBNull.Value)
@@ -719,8 +753,17 @@ namespace Nevermore.Advanced
 
         public DbDataReader ExecuteReader(PreparedCommand preparedCommand)
         {
-            using var command = CreateCommand(preparedCommand);
-            var result = command.ExecuteReader();
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteReader));
+            var result = retryPolicy.ExecuteAction(() =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    Replay();
+                }
+
+                using var command = CreateCommand(preparedCommand);
+                return command.ExecuteReader();
+            });
             ExecutedCommands.Enqueue(preparedCommand);
 
             return result;
@@ -728,8 +771,17 @@ namespace Nevermore.Advanced
 
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteReaderAsync( cancellationToken);
+            var retryPolicy = GetRetryPolicy(preparedCommand.Operation).LoggingRetries(nameof(ExecuteReaderAsync));
+            var result = await retryPolicy.ExecuteActionAsync(async () =>
+            {
+                if (connection?.State is ConnectionState.Closed)
+                {
+                    await Replay(cancellationToken);
+                }
+
+                using var command = CreateCommand(preparedCommand);
+                return await command.ExecuteReaderAsync(cancellationToken);
+            });
             ExecutedCommands.Enqueue(preparedCommand);
 
             return result;
@@ -740,7 +792,6 @@ namespace Nevermore.Advanced
             using var mutex = DeadlockAwareLock.Lock();
 
             using var command = CreateCommand(preparedCommand);
-
             return command.ReadResults(mapper);
         }
 
@@ -749,7 +800,7 @@ namespace Nevermore.Advanced
             using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
 
             using var command = CreateCommand(preparedCommand);
-            return await command.ReadResultsAsync(mapper,  cancellationToken);
+            return await command.ReadResultsAsync(mapper, cancellationToken);
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
@@ -791,9 +842,6 @@ namespace Nevermore.Advanced
         }
 
         CommandExecutor CreateCommand(PreparedCommand command)
-            => CreateCommand(command, () => ReplayTransaction(),  ( ct) =>  ReplayTransaction(ct));
-
-        CommandExecutor CreateCommand(PreparedCommand command, Action replayClosure, Func<CancellationToken, Task> replayClosureAsync)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
             var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
@@ -802,6 +850,11 @@ namespace Nevermore.Advanced
             {
                 var keys = command.ParameterValues.Keys.ToArray();
                 ParameterNameGenerator.Return(keys);
+                foreach (var parameterValue in command.ParameterValues)
+                {
+                    if (parameterValue.Value is Stream stream)
+                        stream.Seek(0, SeekOrigin.Begin);
+                }
             }
 
             if (configuration.DetectQueryPlanThrashing)
@@ -809,7 +862,7 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, replayClosure, replayClosureAsync);
+            return new CommandExecutor(sqlCommand, command, timedSection, this, configuration.AllowSynchronousOperations);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)
@@ -871,16 +924,13 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            foreach (var command in ExecutedCommands)
+            foreach (var command in ExecutedCommands.Where(c => c.ParameterValues is not null))
             {
-                if (command.ParameterValues is not null)
+                foreach (var parameter in command.ParameterValues)
                 {
-                    foreach (var parameter in command.ParameterValues)
+                    if (parameter.Value is IDisposable disposable)
                     {
-                        if (parameter.Value is IDisposable disposable)
-                        {
-                            disposable.Dispose();
-                        }
+                        disposable.Dispose();
                     }
                 }
             }
