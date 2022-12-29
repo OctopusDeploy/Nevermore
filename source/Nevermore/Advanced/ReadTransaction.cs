@@ -90,12 +90,22 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
+            if (connection is not null)
+            {
+                connection.Close();
+                connection.Dispose();
+            }
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
         }
 
         public async Task OpenAsync()
         {
+            if (connection is not null)
+            {
+                await connection.CloseAsync();
+                await connection.DisposeAsync();
+            }
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync();
         }
