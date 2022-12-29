@@ -817,9 +817,7 @@ namespace Nevermore.Advanced
             if (operationsToRetry == RetriableOperation.None)
                 return RetryPolicy.NoRetry;
 
-            //return (operationsToRetry & operation) != 0 ? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() : RetryPolicy.NoRetry;
-
-            return RetryManager.Instance.GetDefaultSqlCommandRetryPolicy();
+            return (operationsToRetry & operation) != 0 ? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() : RetryPolicy.NoRetry;
         }
 
         internal void WriteDebugInfoTo(StringBuilder sb)
