@@ -10,7 +10,6 @@ using Nevermore.Advanced;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
-using Nevermore.Transient;
 
 namespace Nevermore
 {
@@ -27,25 +26,17 @@ namespace Nevermore
 
         readonly DbCommand command;
         readonly PreparedCommand prepared;
-        readonly RetryPolicy retryPolicy;
         readonly TimedSection timedSection;
-        readonly ITransactionDiagnostic transaction;
+        readonly ITransactionDiagnostic transactionDiagnostic;
         readonly bool allowSynchronousOperations;
-        readonly Action replayClosure;
-        readonly Func<CancellationToken, Task> replayClosureAsync;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations, 
-                Action replayClosure,
-                Func<CancellationToken, Task> replayClosureAsync)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, TimedSection timedSection, ITransactionDiagnostic transactionDiagnostic, bool allowSynchronousOperations)
         {
             this.command = command;
             this.prepared = prepared;
-            this.retryPolicy = retryPolicy;
             this.timedSection = timedSection;
-            this.transaction = transaction;
+            this.transactionDiagnostic = transactionDiagnostic;
             this.allowSynchronousOperations = allowSynchronousOperations;
-            this.replayClosure = replayClosure;
-            this.replayClosureAsync = replayClosureAsync;
         }
 
         public int ExecuteNonQuery()
@@ -54,7 +45,7 @@ namespace Nevermore
             try
             {
                 AssertSynchronousOperation();
-                return command.ExecuteNonQueryWithRetry(retryPolicy, replayClosure);
+                return command.ExecuteNonQuery();
             }
             catch (SqlException ex)
             {
@@ -63,7 +54,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -72,7 +63,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, replayClosureAsync, cancellationToken: cancellationToken);
+                return await command.ExecuteNonQueryAsync(cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -81,7 +72,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -91,7 +82,7 @@ namespace Nevermore
             AssertSynchronousOperation();
             try
             {
-                return command.ExecuteScalarWithRetry(retryPolicy, replayClosure);
+                return command.ExecuteScalar();
             }
             catch (SqlException ex)
             {
@@ -100,7 +91,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -109,7 +100,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteScalarWithRetryAsync(retryPolicy, replayClosureAsync, cancellationToken: cancellationToken);
+                return await command.ExecuteScalarAsync(cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -118,7 +109,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -129,7 +120,7 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using var reader = command.ExecuteReaderWithRetry(retryPolicy, replayClosure, prepared.CommandBehavior);
+                using var reader = command.ExecuteReader(prepared.CommandBehavior);
                 while (reader.Read())
                 {
                     data.Add(mapper(reader));
@@ -144,7 +135,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -154,7 +145,7 @@ namespace Nevermore
             AssertSynchronousOperation();
             try
             {
-                return command.ExecuteReaderWithRetry(retryPolicy, replayClosure, prepared.CommandBehavior);
+                return command.ExecuteReader(prepared.CommandBehavior);
             }
             catch (SqlException ex)
             {
@@ -163,7 +154,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -172,7 +163,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosureAsync, prepared.CommandBehavior, cancellationToken: cancellationToken);
+                return await command.ExecuteReaderAsync(prepared.CommandBehavior, cancellationToken);
             }
             catch (SqlException ex)
             {
@@ -181,7 +172,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -191,7 +182,7 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, replayClosureAsync, prepared.CommandBehavior, cancellationToken))
+                await using (var reader = await command.ExecuteReaderAsync(prepared.CommandBehavior, cancellationToken))
                 {
                     while (await reader.ReadAsync(cancellationToken))
                     {
@@ -208,7 +199,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                Log.DebugException($"Exception in relational transaction '{transactionDiagnostic.Name}'", ex);
                 throw;
             }
         }
@@ -220,13 +211,13 @@ namespace Nevermore
                 var builder = new StringBuilder();
                 builder.AppendLine(ex.Message);
                 builder.AppendLine("Current transactions: ");
-                transaction.WriteCurrentTransactions(builder);
+                transactionDiagnostic.WriteCurrentTransactions(builder);
                 throw new Exception(builder.ToString(), ex);
             }
 
-            Log.DebugException($"Error while executing SQL command in transaction '{transaction.Name}'", ex);
+            Log.DebugException($"Error while executing SQL command in transaction '{transactionDiagnostic.Name}'", ex);
 
-            return new Exception($"Error while executing SQL command in transaction '{transaction.Name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
+            return new Exception($"Error while executing SQL command in transaction '{transactionDiagnostic.Name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
         }
 
         static void DetectAndThrowIfKnownException(SqlException ex, DocumentMap mapping)
@@ -254,6 +245,5 @@ namespace Nevermore
             timedSection?.Dispose();
             command?.Dispose();
         }
-
     }
 }

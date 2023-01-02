@@ -196,15 +196,22 @@ namespace Nevermore.Transient
             //-2,
         };
 
+        SqlException GetSqlException(Exception ex)
+        {
+            if (ex is SqlException sqlException)
+                return sqlException;
+            if (ex.InnerException is SqlException innerException)
+                return innerException;
+            return null;
+        }
+
         public bool IsTransient(Exception ex)
         {
             if (ex is TimeoutException) return true;
 
-            if (ex is DbCommandExtensions.ChaosMonkeyException) 
-                return true;
-
-            var sqlException = ex as SqlException;
-            if (sqlException == null) return false;
+            var sqlException = GetSqlException(ex);
+            if (sqlException is null)
+                return false;
 
             // If this error was caused by throttling on the server we can augment the exception with more detail
             // I don't feel awesome about mutating the exception directly but it seems the most pragmatic way to add value

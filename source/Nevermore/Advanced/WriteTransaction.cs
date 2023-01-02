@@ -282,11 +282,13 @@ namespace Nevermore.Advanced
         {
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
             configuration.Hooks.BeforeCommit(this);
             Transaction.Commit();
+            ExecutedCommands.Clear();
             configuration.Hooks.AfterCommit(this);
         }
 
@@ -294,8 +296,10 @@ namespace Nevermore.Advanced
         {
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+
             await configuration.Hooks.BeforeCommitAsync(this);
             await Transaction.CommitAsync(cancellationToken);
+            ExecutedCommands.Clear();
             await configuration.Hooks.AfterCommitAsync(this);
         }
 
