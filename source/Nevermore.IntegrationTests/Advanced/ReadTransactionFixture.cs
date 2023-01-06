@@ -36,15 +36,15 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             await AssertSchemaIsCorrectAfterMethodCall(async relationalTransaction =>
             {
-                await Task.CompletedTask;
+                await Task.CompletedTask.ConfigureAwait(false);
                 return relationalTransaction.LoadRequired<TableDocument, string>("MyId");
-            });
+            }).ConfigureAwait(false);
         }
 
         [Test]
         public async Task LoadRequiredAsync_WhenNoSchemaSpecifiedThenResolveTableColumnsFromDefaultSchema()
         {
-            await AssertSchemaIsCorrectAfterMethodCall(async relationalTransaction => await relationalTransaction.LoadRequiredAsync<TableDocument, string>("MyId"));
+            await AssertSchemaIsCorrectAfterMethodCall(async relationalTransaction => await relationalTransaction.LoadRequiredAsync<TableDocument, string>("MyId").ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         [Test]
@@ -52,16 +52,16 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             await AssertSchemaIsCorrectAfterMethodCall(async relationalTransaction =>
             {
-                await Task.CompletedTask;
+                await Task.CompletedTask.ConfigureAwait(false);
                 return relationalTransaction.LoadStream<TableDocument, string>("MyId", "TheirId").GetEnumerator().MoveNext();
-            });
+            }).ConfigureAwait(false);
         }
 
         [Test]
         public async Task LoadStreamAsync_WhenNoSchemaSpecifiedThenResolveTableColumnsFromDefaultSchema()
         {
             await AssertSchemaIsCorrectAfterMethodCall(async relationalTransaction =>
-                await relationalTransaction.LoadStreamAsync<TableDocument, string>(new[] { "MyId", "TheirId" }).GetAsyncEnumerator().MoveNextAsync());
+                await relationalTransaction.LoadStreamAsync<TableDocument, string>(new[] { "MyId", "TheirId" }).GetAsyncEnumerator().MoveNextAsync().ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         async Task AssertSchemaIsCorrectAfterMethodCall<T>(Func<IRelationalTransaction, Task<T>> relationalTransactionMethod)
@@ -73,7 +73,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = store.BeginTransaction();
             
             try {
-                await relationalTransactionMethod(transaction);
+                await relationalTransactionMethod(transaction).ConfigureAwait(false);
             }
             catch{} //We don't care about any exceptions here (but we're going to have some for resources not found)
 

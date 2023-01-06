@@ -25,7 +25,7 @@ namespace Nevermore.Advanced
         {
             // using var mutex = await deadlockAwareLock.LockAsync(cancellationToken);
             var inner = innerFunc();
-            await foreach (var item in inner.WithCancellation(cancellationToken)) yield return item;
+            await foreach (var item in inner.WithCancellation(cancellationToken).ConfigureAwait(false)) yield return item;
         }
     }
 }

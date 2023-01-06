@@ -231,7 +231,7 @@ namespace Nevermore.Transient
         {
             return ExecuteActionAsync<object>(async () =>
             {
-                await func();
+                await func().ConfigureAwait(false);
                 return null;
             });
         }
@@ -254,7 +254,7 @@ namespace Nevermore.Transient
                 Exception ex = null;
                 try
                 {
-                    result = await func();
+                    result = await func().ConfigureAwait(false);
                     break;
                 }
 #pragma warning disable 618

@@ -60,7 +60,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
             document1.Id.Should().Be(0);
 
-            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentIdAndRowVersion)}");
+            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1).ConfigureAwait(false), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentIdAndRowVersion)}").ConfigureAwait(false);
 
             document1.Id.Should().NotBe(0);
         }
@@ -77,7 +77,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
             document1.Id.Should().Be(0);
 
-            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentId)}1");
+            await RunInTransactionAsync(async transaction => await transaction.InsertAsync(document1).ConfigureAwait(false), $"{nameof(IdentityIdFixture)}.{nameof(InsertAsyncUpdatesDocumentId)}1").ConfigureAwait(false);
 
             document1.Id.Should().NotBe(0);
 
@@ -112,17 +112,17 @@ namespace Nevermore.IntegrationTests.Advanced
         async Task RunInTransactionAsync<TResult>(Func<IRelationalTransaction, Task<TResult>> func, string name)
         {
             using var transaction = Store.BeginTransaction(name: name);
-            var result = await func(transaction);
-            await transaction.CommitAsync();
+            var result = await func(transaction).ConfigureAwait(false);
+            await transaction.CommitAsync().ConfigureAwait(false);
         }
 
         async Task RunInTransactionAsync(Func<IRelationalTransaction, Task> action, string name)
         {
             await RunInTransactionAsync(async transaction =>
             {
-                await action(transaction);
+                await action(transaction).ConfigureAwait(false);
                 return true;
-            }, name);
+            }, name).ConfigureAwait(false);
         }
     }
 }

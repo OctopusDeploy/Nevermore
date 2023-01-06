@@ -86,10 +86,10 @@ namespace Nevermore.Tests
         {
             using var deadlockAwareLock = new DeadlockAwareLock();
 
-            await deadlockAwareLock.WaitAsync(cancellationToken);
+            await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             // The second call should immediately throw rather than waiting forever.
-            Assert.ThrowsAsync<DeadlockException>(async () => await deadlockAwareLock.WaitAsync(cancellationToken));
+            Assert.ThrowsAsync<DeadlockException>(async () => await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false));
         }
 
         [Test]
@@ -97,9 +97,9 @@ namespace Nevermore.Tests
         {
             using var deadlockAwareLock = new DeadlockAwareLock();
 
-            await deadlockAwareLock.WaitAsync(cancellationToken);
+            await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             deadlockAwareLock.Release();
-            await deadlockAwareLock.WaitAsync(cancellationToken);
+            await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
 
         [Test]
@@ -115,19 +115,19 @@ namespace Nevermore.Tests
             {
                 var task0 = Task.Run(async () =>
                 {
-                    await deadlockAwareLock.WaitAsync(cancellationToken);
+                    await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                     await Task.Yield();
                     deadlockAwareLock.Release();
                 }, cancellationToken);
 
                 var task1 = Task.Run(async () =>
                 {
-                    await deadlockAwareLock.WaitAsync(cancellationToken);
+                    await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                     await Task.Yield();
                     deadlockAwareLock.Release();
                 }, cancellationToken);
 
-                await Task.WhenAll(task0, task1);
+                await Task.WhenAll(task0, task1).ConfigureAwait(false);
             }
 
             // ReSharper restore AccessToDisposedClosure

@@ -276,7 +276,7 @@ namespace Nevermore.Advanced
             var clonedSelectBuilder = selectBuilder.Clone();
             clonedSelectBuilder.AddColumnSelection(new SelectCountSource());
             clonedSelectBuilder.AddOptions(optionClauses);
-            var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken);
+            var count = await readQueryExecutor.ExecuteScalarAsync<int>(clonedSelectBuilder.GenerateSelect().GenerateSql(), paramValues, RetriableOperation.Select, commandTimeout, cancellationToken).ConfigureAwait(false);
             return count;
         }
 
@@ -317,7 +317,7 @@ namespace Nevermore.Advanced
             var trueParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("true"));
             var falseParameter = new UniqueParameter(uniqueParameterNameGenerator, new Parameter("false"));
 
-            var result = await readQueryExecutor.ExecuteScalarAsync<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout, cancellationToken);
+            var result = await readQueryExecutor.ExecuteScalarAsync<int>(CreateQuery().GenerateSql(), CreateParameterValues(), RetriableOperation.Select, commandTimeout, cancellationToken).ConfigureAwait(false);
 
             return result != falseValue;
 
@@ -352,7 +352,7 @@ namespace Nevermore.Advanced
 
         public async Task<TRecord> FirstOrDefaultAsync(CancellationToken cancellationToken = default)
         {
-            await foreach (var item in TakeAsync(1, cancellationToken))
+            await foreach (var item in TakeAsync(1, cancellationToken).ConfigureAwait(false))
             {
                 return item;
             }
@@ -409,7 +409,7 @@ namespace Nevermore.Advanced
 
             var results = new List<TRecord>();
             var enumerator = readQueryExecutor.StreamAsync<TRecord>(subqueryBuilder.GenerateSelect().GenerateSql(), parmeterValues, commandTimeout, cancellationToken);
-            await foreach (var item in enumerator.WithCancellation(cancellationToken))
+            await foreach (var item in enumerator.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 results.Add(item);
             }
@@ -535,8 +535,8 @@ namespace Nevermore.Advanced
         /// </summary>
         async Task<(List<TRecord>, int)> ToListWithCountAsyncLegacy(int skip, int take, CancellationToken cancellationToken = default)
         {
-            var count = await CountAsync(cancellationToken);
-            var list = await ToListAsync(skip, take, cancellationToken);
+            var count = await CountAsync(cancellationToken).ConfigureAwait(false);
+            var list = await ToListAsync(skip, take, cancellationToken).ConfigureAwait(false);
             return (list, count);            
         }
         
@@ -545,7 +545,7 @@ namespace Nevermore.Advanced
             // Short circuit query if no results will be retrieved
             if (take == 0)
             {
-                return await ReturnJustCount();
+                return await ReturnJustCount().ConfigureAwait(false);
             }
 
             var selectSource = BuildToListCount(skip, take, out var parmeterValues, out var countColumnName);
@@ -560,19 +560,19 @@ namespace Nevermore.Advanced
             }, commandTimeout, cancellationToken);
             
             var results = new List<TRecord>();
-            await foreach (var item in stream)
+            await foreach (var item in stream.ConfigureAwait(false))
                 results.Add(item);
 
             // If no result came back its possible that the page is greater than whats available
             // Fall back to using just the count
             if (!results.Any())
             {
-                return await ReturnJustCount();
+                return await ReturnJustCount().ConfigureAwait(false);
             }
 
             async Task<(List<TRecord>, int)> ReturnJustCount()
             {
-                var count = await CountAsync(cancellationToken);
+                var count = await CountAsync(cancellationToken).ConfigureAwait(false);
                 return (new List<TRecord>(), count); 
             }
 
@@ -582,7 +582,7 @@ namespace Nevermore.Advanced
         [Pure]
         public async Task<(List<TRecord>, int)> ToListWithCountAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
-            return FeatureFlags.UseCteBasedListWithCount ? await ToListWithCountAsyncCte(skip, take, cancellationToken) : await ToListWithCountAsyncLegacy(skip, take, cancellationToken);
+            return FeatureFlags.UseCteBasedListWithCount ? await ToListWithCountAsyncCte(skip, take, cancellationToken).ConfigureAwait(false) : await ToListWithCountAsyncLegacy(skip, take, cancellationToken).ConfigureAwait(false);
         }
 
         [Pure]
@@ -595,7 +595,7 @@ namespace Nevermore.Advanced
         {
             var results = new List<TRecord>();
 
-            await foreach (var item in StreamAsync(cancellationToken))
+            await foreach (var item in StreamAsync(cancellationToken).ConfigureAwait(false))
                 results.Add(item);
 
             return results;
@@ -632,7 +632,7 @@ namespace Nevermore.Advanced
 
         public async Task<IDictionary<string, TRecord>> ToDictionaryAsync(Func<TRecord, string> keySelector, CancellationToken cancellationToken = default)
         {
-            return (await ToListAsync(cancellationToken)).ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+            return (await ToListAsync(cancellationToken).ConfigureAwait(false)).ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
         }
 
         public Parameters Parameters => new Parameters(@params);

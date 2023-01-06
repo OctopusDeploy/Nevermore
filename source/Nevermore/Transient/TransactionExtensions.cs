@@ -34,7 +34,7 @@ namespace Nevermore.Transient
                 // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
                 // the synchronous version anyway, and the async overload doesn't accept a name parameter.
                 return connection.BeginTransaction(isolationLevel, sqlServerTransactionName);
-            });
+            }).ConfigureAwait(false);
         }
     }
 }

@@ -55,42 +55,42 @@ namespace Nevermore.Advanced.Hooks
 
         public async Task BeforeInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeInsertAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeInsertAsync(document, map, transaction).ConfigureAwait(false);
         }
 
         public async Task AfterInsertAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterInsertAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.AfterInsertAsync(document, map, transaction).ConfigureAwait(false);
         }
 
         public async Task BeforeUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeUpdateAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeUpdateAsync(document, map, transaction).ConfigureAwait(false);
         }
 
         public async Task AfterUpdateAsync<TDocument>(TDocument document, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterUpdateAsync(document, map, transaction);
+            foreach (var hook in hooks) await hook.AfterUpdateAsync(document, map, transaction).ConfigureAwait(false);
         }
 
         public async Task BeforeDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.BeforeDeleteAsync<TDocument>(id, map, transaction);
+            foreach (var hook in hooks) await hook.BeforeDeleteAsync<TDocument>(id, map, transaction).ConfigureAwait(false);
         }
 
         public async Task AfterDeleteAsync<TDocument>(object id, DocumentMap map, IWriteTransaction transaction) where TDocument : class
         {
-            foreach (var hook in hooks) await hook.AfterDeleteAsync<TDocument>(id, map, transaction);
+            foreach (var hook in hooks) await hook.AfterDeleteAsync<TDocument>(id, map, transaction).ConfigureAwait(false);
         }
 
         public async Task BeforeCommitAsync(IWriteTransaction transaction)
         {
-            foreach (var hook in hooks) await hook.BeforeCommitAsync(transaction);
+            foreach (var hook in hooks) await hook.BeforeCommitAsync(transaction).ConfigureAwait(false);
         }
 
         public async Task AfterCommitAsync(IWriteTransaction transaction)
         {
-            foreach (var hook in hooks) await hook.AfterCommitAsync(transaction);
+            foreach (var hook in hooks) await hook.AfterCommitAsync(transaction).ConfigureAwait(false);
         }
     }
 }

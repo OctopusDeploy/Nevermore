@@ -109,10 +109,10 @@ namespace Nevermore.IntegrationTests
                 new BrandA { Name = "Somebody Else" }
             };
 
-            await t.InsertManyAsync(testBrands);
-            await t.CommitAsync();
+            await t.InsertManyAsync(testBrands).ConfigureAwait(false);
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var count = await t.Query<BrandB>().Where(b => b.Name.Contains("Brand")).CountAsync();
+            var count = await t.Query<BrandB>().Where(b => b.Name.Contains("Brand")).CountAsync().ConfigureAwait(false);
 
             count.Should().Be(1);
         }
@@ -133,13 +133,13 @@ namespace Nevermore.IntegrationTests
                 new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
             });
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
             var productQuery = t.Query<Customer>()
                 .InnerJoin(t.Query<DodgyProduct>())
                 .On("FirstName", JoinOperand.Equal, "Name");
 
-            var result = await productQuery.ToListAsync();
+            var result = await productQuery.ToListAsync().ConfigureAwait(false);
             result.Should().BeEmpty();
         }
 

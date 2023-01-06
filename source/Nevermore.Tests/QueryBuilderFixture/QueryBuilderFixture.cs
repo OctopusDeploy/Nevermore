@@ -1783,7 +1783,7 @@ ORDER BY [RowNum]");
             await CreateQueryBuilder<object>("Orders")
                 .OrderByDescending("LastModified")
                 .Where("Id", UnarySqlOperand.Equal, "1")
-                .ToListWithCountAsync(10, 20);
+                .ToListWithCountAsync(10, 20).ConfigureAwait(false);
 
                 query.Should().BeEquivalentTo(@"With ALIAS_GENERATED_1 as (
     SELECT *

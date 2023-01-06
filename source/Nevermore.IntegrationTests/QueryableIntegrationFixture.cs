@@ -140,7 +140,7 @@ namespace Nevermore.IntegrationTests
             // query by derived type
             var specialProduct = await t
                 .Queryable<SpecialProduct>()
-                .FirstOrDefaultAsync(p => p.Name == "OctoPhone", CancellationToken.None);
+                .FirstOrDefaultAsync(p => p.Name == "OctoPhone", CancellationToken.None).ConfigureAwait(false);
 
             specialProduct.Price.Should().Be(300);
         }
@@ -760,10 +760,10 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
             var customer = await t.Queryable<Customer>()
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync().ConfigureAwait(false);
 
             customer.LastName.Should().BeEquivalentTo("Apple");
         }
@@ -810,10 +810,10 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
             var customer = await t.Queryable<Customer>()
-                .FirstOrDefaultAsync(c => c.FirstName.EndsWith("y"));
+                .FirstOrDefaultAsync(c => c.FirstName.EndsWith("y")).ConfigureAwait(false);
 
             customer.Should().BeNull();
         }
@@ -940,9 +940,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var count = await t.Queryable<Customer>().CountAsync();
+            var count = await t.Queryable<Customer>().CountAsync().ConfigureAwait(false);
 
             count.Should().Be(3);
         }
@@ -964,9 +964,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(b);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var count = await t.Queryable<BrandB>().CountAsync();
+            var count = await t.Queryable<BrandB>().CountAsync().ConfigureAwait(false);
 
             count.Should().Be(1);
         }
@@ -1037,9 +1037,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var count = await t.Queryable<Customer>().CountAsync(c => c.Nickname.StartsWith("C"));
+            var count = await t.Queryable<Customer>().CountAsync(c => c.Nickname.StartsWith("C")).ConfigureAwait(false);
 
             count.Should().Be(2);
         }
@@ -1061,9 +1061,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(b);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var count = await t.Queryable<BrandA>().CountAsync(b => b.Name.StartsWith("Brand"));
+            var count = await t.Queryable<BrandA>().CountAsync(b => b.Name.StartsWith("Brand")).ConfigureAwait(false);
 
             count.Should().Be(2);
         }
@@ -1235,9 +1235,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var anyCustomers = await t.Queryable<Customer>().AnyAsync();
+            var anyCustomers = await t.Queryable<Customer>().AnyAsync().ConfigureAwait(false);
 
             anyCustomers.Should().BeTrue();
         }
@@ -1283,9 +1283,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var anyCustomers = await t.Queryable<Customer>().AnyAsync(c => c.Nickname == "Warlock");
+            var anyCustomers = await t.Queryable<Customer>().AnyAsync(c => c.Nickname == "Warlock").ConfigureAwait(false);
 
             anyCustomers.Should().BeFalse();
         }
@@ -1331,9 +1331,9 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.CommitAsync().ConfigureAwait(false);
 
-            var customers = await t.Queryable<Customer>().Where(c => c.FirstName == "Alice").ToListAsync();
+            var customers = await t.Queryable<Customer>().Where(c => c.FirstName == "Alice").ToListAsync().ConfigureAwait(false);
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
         }

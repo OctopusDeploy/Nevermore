@@ -33,17 +33,17 @@ namespace Nevermore.Transient
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
-                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    return await command.ExecuteNonQueryAsync(cancellationToken);
+                    return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
-                        await command.Connection.CloseAsync();
+                        await command.Connection.CloseAsync().ConfigureAwait(false);
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
@@ -74,19 +74,19 @@ namespace Nevermore.Transient
                 (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
-                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    return await command.ExecuteReaderAsync(commandBehavior, cancellationToken);
+                    return await command.ExecuteReaderAsync(commandBehavior, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
                     if (weOwnTheConnectionLifetime && command.Connection != null &&
                         command.Connection.State == ConnectionState.Open)
-                        await command.Connection.CloseAsync();
+                        await command.Connection.CloseAsync().ConfigureAwait(false);
                     throw;
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar")
@@ -114,17 +114,17 @@ namespace Nevermore.Transient
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy()).LoggingRetries(operationName);
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
-                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken);
+                var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    return await command.ExecuteScalarAsync(cancellationToken);
+                    return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
-                        await command.Connection.CloseAsync();
+                        await command.Connection.CloseAsync().ConfigureAwait(false);
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         static void GuardConnectionIsNotNull(DbCommand command)
@@ -157,7 +157,7 @@ namespace Nevermore.Transient
 
             if (command.Connection.State == ConnectionState.Open) return false;
 
-            await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken);
+            await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken).ConfigureAwait(false);
             return true;
         }
     }

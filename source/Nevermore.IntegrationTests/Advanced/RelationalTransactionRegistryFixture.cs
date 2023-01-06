@@ -25,8 +25,8 @@ namespace Nevermore.IntegrationTests.Advanced
             yield return CreateCase("BeginTransaction", (store, name) => store.BeginTransaction(name: name));
             yield return CreateCase("BeginReadTransaction IsolationLevel overload", (store, name) => store.BeginReadTransaction(IsolationLevel.ReadUncommitted, name: name));
             yield return CreateCase("BeginWriteTransaction", (store, name) => store.BeginWriteTransaction(name: name));
-            yield return CreateAsyncCase("BeginReadTransactionAsync IsolationLevel overload", async (store, name) => await store.BeginReadTransactionAsync(IsolationLevel.ReadUncommitted, name: name));
-            yield return CreateAsyncCase("BeginWriteTransaction", async (store, name) => await store.BeginWriteTransactionAsync(name: name));
+            yield return CreateAsyncCase("BeginReadTransactionAsync IsolationLevel overload", async (store, name) => await store.BeginReadTransactionAsync(IsolationLevel.ReadUncommitted, name: name).ConfigureAwait(false));
+            yield return CreateAsyncCase("BeginWriteTransaction", async (store, name) => await store.BeginWriteTransactionAsync(name: name).ConfigureAwait(false));
 
         }
 
@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 try
                 {
-                    var trn = await beingTransaction(store, "Transaction " + seq);
+                    var trn = await beingTransaction(store, "Transaction " + seq).ConfigureAwait(false);
                     Console.WriteLine($"Transaction {seq}: Opened");
                     return trn;
                 }
@@ -60,7 +60,7 @@ namespace Nevermore.IntegrationTests.Advanced
             var transactions = await Task.WhenAll(
                 Enumerable.Range(0, 4)
                     .Select(TryOpenConnection)
-            );
+            ).ConfigureAwait(false);
 
             foreach (var trn in transactions)
                 trn?.Dispose();
