@@ -570,14 +570,14 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            // using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteNonQuery();
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            // using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -594,7 +594,7 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            // using var mutex = DeadlockAwareLock.Lock();
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
@@ -604,7 +604,7 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            // using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken);
             if (result == DBNull.Value)
@@ -636,7 +636,7 @@ namespace Nevermore.Advanced
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            // using var mutex = DeadlockAwareLock.Lock();
 
             using var command = CreateCommand(preparedCommand);
             return command.ReadResults(mapper);
@@ -644,7 +644,7 @@ namespace Nevermore.Advanced
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            // using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
 
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken);

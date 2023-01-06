@@ -23,7 +23,7 @@ namespace Nevermore.Advanced
 
         public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
         {
-            using var mutex = await deadlockAwareLock.LockAsync(cancellationToken);
+            // using var mutex = await deadlockAwareLock.LockAsync(cancellationToken);
             var inner = innerFunc();
             await foreach (var item in inner.WithCancellation(cancellationToken)) yield return item;
         }
