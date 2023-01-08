@@ -43,9 +43,20 @@ namespace Nevermore.Advanced.Queryable
         public IWhereClause CreateWhere(IWhereFieldReference fieldReference, ArraySqlOperand operand, IEnumerable values)
         {
             var parameters = (from object x in values select AddParameter(x)).ToList();
-            return parameters.Count == 0
-                ? new CustomWhereClause("1 = 0")
-                : new ArrayWhereClause(fieldReference, operand, parameters.Select(p => p.ParameterName));
+
+            // if we have no parameters, then we generate a custom where clause with a fixed SQL
+            // this sql changes based on which array operation you are doing
+            if (parameters.Count == 0)
+            {
+                return operand switch
+                {
+                    ArraySqlOperand.In => new CustomWhereClause("1 = 0"),
+                    ArraySqlOperand.NotIn => new CustomWhereClause("1 = 1"),
+                    _ => throw new ArgumentOutOfRangeException(nameof(operand), operand, null)
+                };
+            }
+
+            return new ArrayWhereClause(fieldReference, operand, parameters.Select(p => p.ParameterName));
         }
 
         public IWhereClause CreateWhere(object value, ArraySqlOperand operand, string jsonPath, Type elementType)
@@ -113,7 +124,7 @@ namespace Nevermore.Advanced.Queryable
             {
                 from = new TableSourceWithHint(simpleTableSource, hint);
             }
-            
+
             var sqlExpression = queryType switch
             {
                 QueryType.Exists => CreateExistsQuery(),
@@ -168,7 +179,7 @@ namespace Nevermore.Advanced.Queryable
         {
             IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
 
-            
+
             var select = new Select(
                 rowSelection ?? new AllRows(),
                 new SelectAllSource(),
