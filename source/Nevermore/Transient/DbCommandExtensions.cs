@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Diagnostics.Events;
 
 namespace Nevermore.Transient
 {
@@ -22,7 +23,10 @@ namespace Nevermore.Transient
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
                 }
             });
         }
@@ -41,7 +45,10 @@ namespace Nevermore.Transient
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
                 }
             });
         }
@@ -59,9 +66,12 @@ namespace Nevermore.Transient
                 }
                 catch (Exception)
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null &&
-                        command.Connection.State == ConnectionState.Open)
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
+
                     throw;
                 }
             });
@@ -81,9 +91,12 @@ namespace Nevermore.Transient
                 }
                 catch (Exception)
                 {
-                    if (weOwnTheConnectionLifetime && command.Connection != null &&
-                        command.Connection.State == ConnectionState.Open)
+                    if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
+
                     throw;
                 }
             });
@@ -103,7 +116,10 @@ namespace Nevermore.Transient
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         command.Connection.Close();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
                 }
             });
         }
@@ -122,7 +138,10 @@ namespace Nevermore.Transient
                 finally
                 {
                     if (weOwnTheConnectionLifetime && command.Connection?.State == ConnectionState.Open)
+                    {
                         await command.Connection.CloseAsync();
+                        DiagnosticSources.Retry.OwnedConnectionClosed(command, commandRetryPolicy, operationName);
+                    }
                 }
             });
         }
@@ -145,7 +164,9 @@ namespace Nevermore.Transient
 
             if (command.Connection.State == ConnectionState.Open) return false;
 
+            DiagnosticSources.Retry.ConnectionReopening(command, retryPolicy);
             command.Connection.OpenWithRetry(retryPolicy);
+            DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
         }
 
@@ -157,7 +178,9 @@ namespace Nevermore.Transient
 
             if (command.Connection.State == ConnectionState.Open) return false;
 
+            DiagnosticSources.Retry.ConnectionReopening(command, retryPolicy);
             await command.Connection.OpenWithRetryAsync(retryPolicy, cancellationToken);
+            DiagnosticSources.Retry.ConnectionReopened(command, retryPolicy);
             return true;
         }
     }
