@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
 
 namespace Nevermore.Advanced
 {
@@ -23,9 +22,16 @@ namespace Nevermore.Advanced
 
         public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
         {
-            using var mutex = await deadlockAwareLock.LockAsync(cancellationToken);
-            var inner = innerFunc();
-            await foreach (var item in inner.WithCancellation(cancellationToken)) yield return item;
+            await deadlockAwareLock.WaitAsync(cancellationToken);
+            try
+            {
+                var inner = innerFunc();
+                await foreach (var item in inner.WithCancellation(cancellationToken)) yield return item;
+            }
+            finally
+            {
+                deadlockAwareLock.Release();
+            }
         }
     }
 }

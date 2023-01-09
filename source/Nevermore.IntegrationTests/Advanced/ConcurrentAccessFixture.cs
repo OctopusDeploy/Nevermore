@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Nevermore.Advanced;
 using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -15,6 +16,22 @@ namespace Nevermore.IntegrationTests.Advanced
     {
         const int NumberOfDocuments = 256;
         const int DegreeOfParallelism = NumberOfDocuments;
+
+        [Test]
+        public async Task DeadlocksDoGoBoom()
+        {
+            NoMonkeyBusiness();
+
+            await FluentActions.Awaiting(async () =>
+            {
+                using var transaction = await Store.BeginWriteTransactionAsync();
+
+                var t1 = transaction.ExecuteNonQueryAsync("WAITFOR DELAY '00:00:02'");
+                var t2 = transaction.ExecuteNonQueryAsync("WAITFOR DELAY '00:00:02'");
+
+                await Task.WhenAll(t1, t2);
+            }).Should().ThrowAsync<DeadlockException>();
+        }
 
         [Test]
         public void ConcurrentAccessDoesNotGoBoom()
@@ -45,7 +62,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 ThreadWaitAll(
                     Enumerable.Range(0, DegreeOfParallelism)
-                        .Select(i =>
+                        .Select(_ =>
                         {
                             // ReSharper disable AccessToDisposedClosure
                             // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -113,11 +130,11 @@ namespace Nevermore.IntegrationTests.Advanced
             // Create a bunch of documents so that we can query for them.
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
-                await Enumerable.Range(0, NumberOfDocuments)
-                    .Select(i => new DocumentWithIdentityId {Name = $"{namePrefix}{i}"})
-                    // ReSharper disable once AccessToDisposedClosure
-                    .Select(document => transaction.InsertAsync(document))
-                    .WhenAll();
+                var documents = Enumerable.Range(0, NumberOfDocuments)
+                    .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                    .ToArray();
+
+                await transaction.InsertManyAsync(documents);
                 await transaction.CommitAsync();
             }
 
@@ -125,10 +142,9 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = await Store.BeginWriteTransactionAsync())
             {
                 await Enumerable.Range(0, DegreeOfParallelism)
-                    .Select(async i =>
+                    .Select(_ => Task.Run(async () =>
                     {
                         // ReSharper disable AccessToDisposedClosure
-                        // ReSharper disable ReturnValueOfPureMethodIsNotUsed
                         var documents = await transaction.Query<DocumentWithIdentityId>()
                             .Where(x => x.Name.StartsWith(namePrefix))
                             .ToListAsync();
@@ -158,7 +174,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
                         // ReSharper restore ReturnValueOfPureMethodIsNotUsed
                         // ReSharper restore AccessToDisposedClosure
-                    })
+                    }))
                     .WhenAll();
             }
         }
