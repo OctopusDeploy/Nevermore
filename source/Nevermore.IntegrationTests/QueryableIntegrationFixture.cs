@@ -570,9 +570,9 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "RoleA", "RoleB" }},
-                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "RoleA", "RoleC" }},
-                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "RoleB", "RoleC" }}
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "RoleA", "RoleB" } },
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "RoleA", "RoleC" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "RoleB", "RoleC" } }
             };
 
             foreach (var c in testCustomers)
@@ -596,9 +596,9 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 78, 321 }},
-                new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 662, 91 }},
-                new Customer { FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] { 4, 18 }}
+                new Customer { FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] { 78, 321 } },
+                new Customer { FirstName = "Bob", LastName = "Banana", LuckyNumbers = new[] { 662, 91 } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", LuckyNumbers = new[] { 4, 18 } }
             };
 
             foreach (var c in testCustomers)
@@ -640,6 +640,33 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Bob", "Charlie");
+        }
+
+        [Test]
+        public void WhereNotContainsEmpty()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var names = Array.Empty<string>();
+            var customers = t.Queryable<Customer>()
+                .Where(c => !names.Contains(c.LastName))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob", "Charlie");
         }
 
         [Test]
@@ -992,8 +1019,8 @@ namespace Nevermore.IntegrationTests
 
             var a = t.Queryable<Customer>().Where(x => x.FirstName == "Alice").Hint("WITH (ROWLOCK, UPDLOCK, NOWAIT)").RawDebugView();
             a.Should().Be($"SELECT Id,FirstName,LastName,Nickname,Roles,Balance,IsVip,JSON{Environment.NewLine}" +
-            $"FROM [TestSchema].[Customer] WITH (ROWLOCK, UPDLOCK, NOWAIT){Environment.NewLine}" +
-            "WHERE ([FirstName] = @p1)");
+                          $"FROM [TestSchema].[Customer] WITH (ROWLOCK, UPDLOCK, NOWAIT){Environment.NewLine}" +
+                          "WHERE ([FirstName] = @p1)");
         }
 
         [Test]
@@ -1139,7 +1166,7 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Apple", "Banana");
         }
-        
+
         [Test]
         public void OrderByThenBy()
         {
@@ -1166,7 +1193,7 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Amanda", "Alice", "Charlie");
         }
-        
+
         [Test]
         public void OrderByThenByDescending()
         {
@@ -1297,7 +1324,7 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" } },
                 new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
                 new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
             };
@@ -1321,7 +1348,7 @@ namespace Nevermore.IntegrationTests
 
             var testCustomers = new[]
             {
-                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" } },
                 new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
                 new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
             };
