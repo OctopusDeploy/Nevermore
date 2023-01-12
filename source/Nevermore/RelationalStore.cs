@@ -54,7 +54,7 @@ namespace Nevermore
             var txn = CreateReadTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel).ConfigureAwait(false);
                 return txn;
             }
             catch
@@ -84,7 +84,7 @@ namespace Nevermore
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel);
+                await txn.OpenAsync(isolationLevel).ConfigureAwait(false);
                 return txn;
             }
             catch

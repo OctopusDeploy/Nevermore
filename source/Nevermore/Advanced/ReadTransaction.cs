@@ -78,7 +78,7 @@ namespace Nevermore.Advanced
         public async Task OpenAsync()
         {
             connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync();
+            await connection.OpenWithRetryAsync().ConfigureAwait(false);
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -89,7 +89,7 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
-            await OpenAsync();
+            await OpenAsync().ConfigureAwait(false);
 
             // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
             // the synchronous version anyway, and the async overload doesn't accept a name parameter.
@@ -118,7 +118,7 @@ namespace Nevermore.Advanced
         public async Task<TDocument?> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = StreamAsync<TDocument>(PrepareLoad<TDocument, TKey>(id), cancellationToken);
-            await foreach (var row in results.WithCancellation(cancellationToken))
+            await foreach (var row in results.WithCancellation(cancellationToken).ConfigureAwait(false))
                 return row;
             return null;
         }
@@ -183,7 +183,7 @@ namespace Nevermore.Advanced
         public async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var results = new List<TDocument>();
-            await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken))
+            await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken).ConfigureAwait(false))
             {
                 results.Add(item);
             }
@@ -235,7 +235,7 @@ namespace Nevermore.Advanced
         [Pure]
         public async Task<TDocument> LoadRequiredAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var result = await LoadAsync<TDocument, TKey>(id, cancellationToken);
+            var result = await LoadAsync<TDocument, TKey>(id, cancellationToken).ConfigureAwait(false);
             if (result == null)
                 throw new ResourceNotFoundException(id);
             return result;
@@ -311,7 +311,7 @@ namespace Nevermore.Advanced
         public async Task<List<TDocument>> LoadManyRequiredAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
             var idList = ids.Distinct().ToArray();
-            var results = await LoadManyAsync<TDocument, TKey>(idList, cancellationToken);
+            var results = await LoadManyAsync<TDocument, TKey>(idList, cancellationToken).ConfigureAwait(false);
             if (results.Count != idList.Length)
             {
                 var firstMissing = idList.FirstOrDefault(id => results.All(record => !((TKey)configuration.DocumentMaps.GetId(record)).Equals(id)));
@@ -388,7 +388,7 @@ namespace Nevermore.Advanced
             if (idList.Count == 0)
                 yield break;
 
-            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument, TKey>(idList), cancellationToken))
+            await foreach (var item in StreamAsync<TDocument>(PrepareLoadMany<TDocument, TKey>(idList), cancellationToken).ConfigureAwait(false))
             {
                 yield return item;
             }
@@ -467,9 +467,12 @@ namespace Nevermore.Advanced
         {
             async IAsyncEnumerable<TRecord> Execute()
             {
-                await using var reader = await ExecuteReaderAsync(command, cancellationToken);
-                await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken))
-                    yield return result;
+                var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
+                await using (reader.ConfigureAwait(false))
+                {
+                    await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken).ConfigureAwait(false))
+                        yield return result;
+                }
             }
 
             return new ThreadSafeAsyncEnumerable<TRecord>(Execute, DeadlockAwareLock);
@@ -506,7 +509,7 @@ namespace Nevermore.Advanced
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             var rowCounter = 0;
 
-            while (await reader.ReadAsync(cancellationToken))
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 rowCounter++;
                 var (instance, success) = strategy(reader);
@@ -537,11 +540,14 @@ namespace Nevermore.Advanced
             async IAsyncEnumerable<TResult> Execute()
             {
                 var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
-                await using var reader = await ExecuteReaderAsync(command, cancellationToken);
-                var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
-                while (await reader.ReadAsync(cancellationToken))
+                var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
+                await using (reader.ConfigureAwait(false))
                 {
-                    yield return projectionMapper(mapper);
+                    var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
+                    while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        yield return projectionMapper(mapper);
+                    }
                 }
             }
 
@@ -579,9 +585,9 @@ namespace Nevermore.Advanced
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
             using var command = CreateCommand(preparedCommand);
-            return await command.ExecuteNonQueryAsync(cancellationToken);
+            return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)
@@ -606,9 +612,9 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
             using var command = CreateCommand(preparedCommand);
-            var result = await command.ExecuteScalarAsync(cancellationToken);
+            var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
             if (result == DBNull.Value)
                 return default!;
             return (TResult)result;
@@ -633,7 +639,7 @@ namespace Nevermore.Advanced
         public async Task<DbDataReader> ExecuteReaderAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
             using var command = CreateCommand(preparedCommand);
-            return await command.ExecuteReaderAsync(cancellationToken);
+            return await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         }
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
@@ -646,10 +652,10 @@ namespace Nevermore.Advanced
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken);
+            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
 
             using var command = CreateCommand(preparedCommand);
-            return await command.ReadResultsAsync(mapper, cancellationToken);
+            return await command.ReadResultsAsync(mapper, cancellationToken).ConfigureAwait(false);
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)

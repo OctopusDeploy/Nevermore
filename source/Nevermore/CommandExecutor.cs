@@ -66,7 +66,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, cancellationToken: cancellationToken);
+                return await command.ExecuteNonQueryWithRetryAsync(retryPolicy, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (SqlException ex)
             {
@@ -103,7 +103,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteScalarWithRetryAsync(retryPolicy, cancellationToken: cancellationToken);
+                return await command.ExecuteScalarWithRetryAsync(retryPolicy, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (SqlException ex)
             {
@@ -166,7 +166,7 @@ namespace Nevermore
         {
             try
             {
-                return await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken: cancellationToken);
+                return await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (SqlException ex)
             {
@@ -185,11 +185,11 @@ namespace Nevermore
             try
             {
                 var data = new List<T>();
-                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken))
+                using (var reader = await command.ExecuteReaderWithRetryAsync(retryPolicy, prepared.CommandBehavior, cancellationToken).ConfigureAwait(false))
                 {
-                    while (await reader.ReadAsync(cancellationToken))
+                    while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
                     {
-                        data.Add(await mapper(reader));
+                        data.Add(await mapper(reader).ConfigureAwait(false));
                     }
                 }
 

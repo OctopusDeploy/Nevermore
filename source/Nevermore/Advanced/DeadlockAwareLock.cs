@@ -31,7 +31,7 @@ namespace Nevermore.Advanced
         public new async Task WaitAsync(CancellationToken cancellationToken)
         {
             AssertNoDeadlock();
-            await base.WaitAsync(cancellationToken);
+            await base.WaitAsync(cancellationToken).ConfigureAwait(false);
             RecordLockAcquisition();
         }
 

@@ -80,7 +80,7 @@ namespace Nevermore.Advanced.Queryable
                     null,
                     CountMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression);
-                return await asyncQueryProvider.ExecuteAsync<int>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<int>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -98,7 +98,7 @@ namespace Nevermore.Advanced.Queryable
                     CountWithPredicateMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression,
                     predicate);
-                return await asyncQueryProvider.ExecuteAsync<int>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<int>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -115,7 +115,7 @@ namespace Nevermore.Advanced.Queryable
                     null,
                     AnyMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression);
-                return await asyncQueryProvider.ExecuteAsync<bool>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<bool>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -133,7 +133,7 @@ namespace Nevermore.Advanced.Queryable
                     AnyWithPredicateMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression,
                     predicate);
-                return await asyncQueryProvider.ExecuteAsync<bool>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<bool>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -150,7 +150,7 @@ namespace Nevermore.Advanced.Queryable
                     null,
                     FirstOrDefaultMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression);
-                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -168,7 +168,7 @@ namespace Nevermore.Advanced.Queryable
                     FirstOrDefaultWithPredicateMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression,
                     predicate);
-                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken);
+                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken).ConfigureAwait(false);
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");
@@ -181,7 +181,7 @@ namespace Nevermore.Advanced.Queryable
 
             if (source.Provider is IAsyncQueryProvider asyncQueryProvider)
             {
-                return new List<TSource>(await asyncQueryProvider.ExecuteAsync<IEnumerable<TSource>>(source.Expression, cancellationToken));
+                return new List<TSource>(await asyncQueryProvider.ExecuteAsync<IEnumerable<TSource>>(source.Expression, cancellationToken).ConfigureAwait(false));
             }
 
             throw new InvalidOperationException("The query provider does not support async operations.");

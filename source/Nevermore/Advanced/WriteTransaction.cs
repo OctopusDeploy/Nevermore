@@ -58,14 +58,14 @@ namespace Nevermore.Advanced
         public async Task InsertAsync<TDocument>(TDocument document, InsertOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareInsert(new[] {document}, options);
-            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+            await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
 
-            var output = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+            var output = await ExecuteSingleDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
 
-            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
-            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken);
+            await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
+            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
         }
 
         public void InsertMany<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null) where TDocument : class
@@ -110,16 +110,16 @@ namespace Nevermore.Advanced
                 var command = builder.PrepareInsert(documentsToInsert, options);
                 
                 foreach (var document in documentsToInsert)
-                    await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this);
+                    await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
 
-                var outputs = await ExecuteDataModificationAsync(command, cancellationToken);
+                var outputs = await ExecuteDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
                 ApplyNewRowVersionsIfRequired(documentsToInsert, command.Mapping, outputs);
                 ApplyIdentityIdsIfRequired(documentsToInsert, command.Mapping, outputs);
 
                 foreach (var document in documentsToInsert)
-                    await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this);
+                    await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
 
-                await configuration.RelatedDocumentStore.PopulateManyRelatedDocumentsAsync(this, documentsToInsert, cancellationToken);
+                await configuration.RelatedDocumentStore.PopulateManyRelatedDocumentsAsync(this, documentsToInsert, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -143,13 +143,13 @@ namespace Nevermore.Advanced
         public async Task UpdateAsync<TDocument>(TDocument document, UpdateOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
             var command = builder.PrepareUpdate(document, options);
-            await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this);
+            await configuration.Hooks.BeforeUpdateAsync(document, command.Mapping, this).ConfigureAwait(false);
 
-            var output = await ExecuteSingleDataModificationAsync(command, cancellationToken);
+            var output = await ExecuteSingleDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
 
-            await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this);
-            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken);
+            await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this).ConfigureAwait(false);
+            await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
         }
 
         public void Delete<TDocument>(string id, DeleteOptions options = null) where TDocument : class
@@ -221,15 +221,15 @@ namespace Nevermore.Advanced
 
         public async Task DeleteAsync<TDocument, TKey>(TKey id, DeleteOptions options, CancellationToken cancellationToken = default) where TDocument : class
         {
-            await DeleteAsyncInternal<TDocument>(id, options, cancellationToken);
+            await DeleteAsyncInternal<TDocument>(id, options, cancellationToken).ConfigureAwait(false);
         }
 
         async Task DeleteAsyncInternal<TDocument>(object id, DeleteOptions options, CancellationToken cancellationToken) where TDocument : class
         {
             var command = builder.PrepareDelete<TDocument>(id, options);
-            await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this);
-            await ExecuteNonQueryAsync(command, cancellationToken);
-            await configuration.Hooks.AfterDeleteAsync<TDocument>(id, command.Mapping, this);
+            await configuration.Hooks.BeforeDeleteAsync<TDocument>(id, command.Mapping, this).ConfigureAwait(false);
+            await ExecuteNonQueryAsync(command, cancellationToken).ConfigureAwait(false);
+            await configuration.Hooks.AfterDeleteAsync<TDocument>(id, command.Mapping, this).ConfigureAwait(false);
         }
 
         public IDeleteQueryBuilder<TDocument> DeleteQuery<TDocument>() where TDocument : class
@@ -293,9 +293,9 @@ namespace Nevermore.Advanced
         {
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
-            await configuration.Hooks.BeforeCommitAsync(this);
-            await Transaction.CommitAsync(cancellationToken);
-            await configuration.Hooks.AfterCommitAsync(this);
+            await configuration.Hooks.BeforeCommitAsync(this).ConfigureAwait(false);
+            await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            await configuration.Hooks.AfterCommitAsync(this).ConfigureAwait(false);
         }
 
         DataModificationOutput[] ExecuteDataModification(PreparedCommand command)
@@ -322,18 +322,18 @@ namespace Nevermore.Advanced
         {
             if (!command.Mapping.HasModificationOutputs)
             {
-                await ExecuteNonQueryAsync(command, cancellationToken);
+                await ExecuteNonQueryAsync(command, cancellationToken).ConfigureAwait(false);
                 return Array.Empty<DataModificationOutput>();
             }
 
             return await ReadResultsAsync(command,
                 async reader => await DataModificationOutput.ReadAsync(reader, command.Mapping,
-                    command.Operation == RetriableOperation.Insert, cancellationToken), cancellationToken);
+                    command.Operation == RetriableOperation.Insert, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
         }
 
         async Task<DataModificationOutput> ExecuteSingleDataModificationAsync(PreparedCommand command, CancellationToken cancellationToken)
         {
-            var results = await ExecuteDataModificationAsync(command, cancellationToken);
+            var results = await ExecuteDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             return results.SingleOrDefault();
         }
 
@@ -414,10 +414,10 @@ namespace Nevermore.Advanced
 
                 if (map.IsRowVersioningEnabled)
                     output.RowVersion =
-                        await reader.GetFieldValueAsync<byte[]>(map.RowVersionColumn!.ColumnName, cancellationToken);
+                        await reader.GetFieldValueAsync<byte[]>(map.RowVersionColumn!.ColumnName, cancellationToken).ConfigureAwait(false);
 
                 if (map.IsIdentityId && isInsert)
-                    output.Id = await reader.GetFieldValueAsync<object>(map.IdColumn!.ColumnName, cancellationToken);
+                    output.Id = await reader.GetFieldValueAsync<object>(map.IdColumn!.ColumnName, cancellationToken).ConfigureAwait(false);
 
                 return output;
             }
