@@ -51,7 +51,7 @@ namespace Nevermore.Advanced.Queryable
         public TResult Execute<TResult>(Expression expression)
         {
             var (command, queryType) = Translate(expression);
-            
+
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
@@ -70,7 +70,7 @@ namespace Nevermore.Advanced.Queryable
                 .Invoke(queryExecutor, new object[] { command });
         }
 
-        
+
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var (command, queryType) = Translate(expression);
@@ -80,26 +80,27 @@ namespace Nevermore.Advanced.Queryable
                 var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(sequenceType)
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
 
-                return (TResult)await CreateList(asyncStream, sequenceType);
+                return (TResult)await CreateList(asyncStream, sequenceType).ConfigureAwait(false);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
                 var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken);
+                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken).ConfigureAwait(false);
 
                 if (firstOrDefaultAsync is not null) return (TResult) firstOrDefaultAsync;
 
                 // TODO: This NEEDS to go away when we turn nullable on in Nevermore
-                // This method needs to be able to return null for instances like `FirstOrDefaultAsync` 
+                // This method needs to be able to return null for instances like `FirstOrDefaultAsync`
                 object GetNull() => null;
                 return (TResult) GetNull();
 
             }
 
-            return await (Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
-                .Invoke(queryExecutor, new object[] { command, cancellationToken });
+            return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
+                    .Invoke(queryExecutor, new object[] { command, cancellationToken }))
+                .ConfigureAwait(false);
         }
 
         public (PreparedCommand, QueryType) Translate(Expression expression)
@@ -111,7 +112,7 @@ namespace Nevermore.Advanced.Queryable
         {
             var listType = typeof(List<>).MakeGenericType(elementType);
             IList list = (IList)Activator.CreateInstance(listType);
-            await foreach (var item in items)
+            await foreach (var item in items.ConfigureAwait(false))
             {
                 list.Add(item);
             }
@@ -121,7 +122,10 @@ namespace Nevermore.Advanced.Queryable
 
         static async ValueTask<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
         {
+#pragma warning disable CA2007
+            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
             await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+#pragma warning restore CA2007
 
             if (await enumerator.MoveNextAsync())
             {
