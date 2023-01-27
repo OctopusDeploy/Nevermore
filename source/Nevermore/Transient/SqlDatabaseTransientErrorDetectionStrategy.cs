@@ -201,11 +201,14 @@ namespace Nevermore.Transient
             return ex switch
             {
                 TimeoutException => true,
+                InvalidOperationException invalidOperationException => IsPooledConnectTimeout(invalidOperationException),
                 SqlException sqlException => IsTransientSqlException(sqlException),
                 _ => false
             };
         }
 
+        static bool IsPooledConnectTimeout(InvalidOperationException exception)
+             => exception.Message.Contains("The timeout period elapsed prior to obtaining a connection from the pool.");
 
         static bool IsTransientSqlException(SqlException exception)
         {
