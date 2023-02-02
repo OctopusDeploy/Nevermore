@@ -198,18 +198,27 @@ namespace Nevermore.Transient
 
         public bool IsTransient(Exception ex)
         {
-            if (ex is TimeoutException) return true;
+            return ex switch
+            {
+                TimeoutException => true,
+                InvalidOperationException invalidOperationException => IsPooledConnectTimeout(invalidOperationException),
+                SqlException sqlException => IsTransientSqlException(sqlException),
+                _ => false
+            };
+        }
 
-            var sqlException = ex as SqlException;
-            if (sqlException == null) return false;
+        static bool IsPooledConnectTimeout(InvalidOperationException exception)
+             => exception.Message.Contains("The timeout period elapsed prior to obtaining a connection from the pool.");
 
+        static bool IsTransientSqlException(SqlException exception)
+        {
             // If this error was caused by throttling on the server we can augment the exception with more detail
             // I don't feel awesome about mutating the exception directly but it seems the most pragmatic way to add value
-            var sqlErrors = sqlException.Errors.OfType<SqlError>().ToArray();
+            var sqlErrors = exception.Errors.OfType<SqlError>().ToArray();
             var firstThrottlingError = sqlErrors.FirstOrDefault(x => x.Number == ThrottlingCondition.ThrottlingErrorNumber);
             if (firstThrottlingError != null)
             {
-                AugmentSqlExceptionWithThrottlingDetails(firstThrottlingError, sqlException);
+                AugmentSqlExceptionWithThrottlingDetails(firstThrottlingError, exception);
                 return true;
             }
 
