@@ -21,7 +21,7 @@ namespace Nevermore.Advanced.Queryable
             var asyncEnumerator = getAsyncEnumeratorMethod.Invoke(asyncEnumerable, new object[] { cancellationToken });
 
             var list = CreateList(sequenceType);
-            while (await (ValueTask<bool>)moveNextAsyncMethod.Invoke(asyncEnumerator, Array.Empty<object>()))
+            while (await ((ValueTask<bool>)moveNextAsyncMethod.Invoke(asyncEnumerator, Array.Empty<object>())).ConfigureAwait(false))
             {
                 var item = currentProperty.GetValue(asyncEnumerator);
                 list.Add(item);

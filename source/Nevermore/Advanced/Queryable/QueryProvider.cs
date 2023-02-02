@@ -71,12 +71,12 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                return (TResult)await ExecuteStreamAsync(command, sequenceType, cancellationToken);
+                return (TResult)await ExecuteStreamAsync(command, sequenceType, cancellationToken).ConfigureAwait(false);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                return (TResult)FirstOrDefault(await ExecuteStreamAsync(command, expression.Type, cancellationToken));
+                return (TResult)FirstOrDefault(await ExecuteStreamAsync(command, expression.Type, cancellationToken).ConfigureAwait(false));
             }
 
             return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
@@ -100,7 +100,7 @@ namespace Nevermore.Advanced.Queryable
             var stream = GenericStreamAsyncMethod.MakeGenericMethod(elementType)
                 .Invoke(queryExecutor, new object[] { command, cancellationToken });
 
-            return await AsyncEnumerableAdapter.ConvertToEnumerable(stream, elementType, cancellationToken);
+            return await AsyncEnumerableAdapter.ConvertToEnumerable(stream, elementType, cancellationToken).ConfigureAwait(false);
         }
 
         object ExecuteScalar(PreparedCommand command, Type resultType)
