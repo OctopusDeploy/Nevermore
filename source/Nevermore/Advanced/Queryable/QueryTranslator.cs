@@ -210,6 +210,8 @@ namespace Nevermore.Advanced.Queryable
                     var selectColumn = GetSelectFieldReference(arg);
                     sqlBuilder.Select(selectColumn);
                 }
+
+                return;
             }
 
             throw new NotSupportedException();
