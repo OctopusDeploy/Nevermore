@@ -7,12 +7,29 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
 using Nevermore.IntegrationTests.SetUp;
+using Nevermore.Transient;
 using NUnit.Framework;
 
 namespace Nevermore.IntegrationTests.Advanced
 {
     public class RelationalTransactionRegistryFixture : FixtureWithDatabase
     {
+        static readonly RetryManager NoRetries = new(Enumerable.Empty<RetryStrategy>());
+        RetryManager previousRetryManager;
+
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            previousRetryManager = RetryManager.Instance;
+            RetryManager.SetDefault(NoRetries, false);
+        }
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            RetryManager.SetDefault(previousRetryManager, false);
+        }
+
         public static IEnumerable<TestCaseData> TransactionsAreRemovedFromTheRegistryWhenThePoolIsExhaustedSource()
         {
 
@@ -40,7 +57,6 @@ namespace Nevermore.IntegrationTests.Advanced
             };
 
             var store = new RelationalStore(new RelationalStoreConfiguration(csBuilder.ConnectionString));
-
 
             async Task<IDisposable> TryOpenConnection(int seq)
             {
