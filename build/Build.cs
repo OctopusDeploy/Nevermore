@@ -42,7 +42,7 @@ class BuildNevermore : NukeBuild
         .Executes(() =>
     {
         DotNetRestore(_ => _
-            .SetProjectFile("source"));
+            .SetProjectFile(SourceDirectory));
     });
 
     Target Build => _ => _
