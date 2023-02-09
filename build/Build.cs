@@ -1,5 +1,6 @@
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.OctoVersion;
 using Nuke.Common.Utilities.Collections;
@@ -23,9 +24,11 @@ class BuildNevermore : NukeBuild
     [OctoVersion(BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net6.0")]
     public OctoVersionInfo OctoVersionInfo;
 
-    AbsolutePath SourceDirectory => RootDirectory / "source";
+    [Solution(GenerateProjects = true)] public Solution Solution;
+
+    AbsolutePath SourceDirectory => Solution.Directory;
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-  
+
     public static int Main() => Execute<BuildNevermore>(x => x.Default);
 
     Target Clean => _ => _
@@ -42,7 +45,7 @@ class BuildNevermore : NukeBuild
         .Executes(() =>
     {
         DotNetRestore(_ => _
-            .SetProjectFile("source"));
+            .SetProjectFile(Solution));
     });
 
     Target Build => _ => _
@@ -51,7 +54,7 @@ class BuildNevermore : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(_ => _
-                .SetProjectFile(SourceDirectory)
+                .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetAssemblyVersion(OctoVersionInfo.MajorMinorPatch)
                 .SetFileVersion(OctoVersionInfo.MajorMinorPatch)
@@ -103,7 +106,7 @@ class BuildNevermore : NukeBuild
         .Executes(() =>
         {
             DotNetPack(_ => _
-                .SetProject(SourceDirectory)
+                .SetProject(Solution)
                 .SetConfiguration(Configuration)
                 .SetOutputDirectory(ArtifactsDirectory)
                 .EnableNoBuild()
