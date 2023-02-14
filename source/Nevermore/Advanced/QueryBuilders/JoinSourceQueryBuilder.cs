@@ -71,13 +71,7 @@ namespace Nevermore.Advanced.QueryBuilders
             clauses.Add(newClause);
             return this;
         }
-
-        public IJoinSourceQueryBuilder<TRecord> Alias(string alias)
-        {
-            this.alias = alias;
-            return this;
-        }
-
+        
         void ValidateJoinClausesForType()
         {
             if (type == JoinType.CrossJoin && clauses.Any())
