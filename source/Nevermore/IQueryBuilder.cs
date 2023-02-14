@@ -304,8 +304,9 @@ namespace Nevermore
         /// <param name="parameterValues">The parameter values from the source that is being joined to the current query</param>
         /// <param name="parameters">The parameters from the source that is being joined to the current query</param>
         /// <param name="parameterDefaults">The default parameter values from the source that is being joined to the current query</param>
+        /// <param name="queryAlias">The alias to use for the left hand side</param>
         /// <returns>The query builder that can be used to further modify the query, or execute the query</returns>
-        IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults);
+        IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias);
 
         /// <summary>
         /// Unions two queries together

@@ -38,7 +38,7 @@ namespace Nevermore.Advanced.QueryBuilders
             return new JoinSelectBuilder(joinedSource);
         }
 
-        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias = null)
         {
             ValidateJoinClausesForType();
             intermediateJoins.Add(new Join(clauses.ToList(), joinSource, type));
@@ -71,7 +71,13 @@ namespace Nevermore.Advanced.QueryBuilders
             clauses.Add(newClause);
             return this;
         }
-        
+
+        public IJoinSourceQueryBuilder<TRecord> Alias(string alias)
+        {
+            this.alias = alias;
+            return this;
+        }
+
         void ValidateJoinClausesForType()
         {
             if (type == JoinType.CrossJoin && clauses.Any())

@@ -25,7 +25,7 @@ namespace Nevermore.Advanced.QueryBuilders
             return new UnionSelectBuilder(select, alias, TableAliasGenerator);
         }
 
-        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias = null)
         {
             return new JoinSourceQueryBuilder<TRecord>(AsSource(),
                 joinType,

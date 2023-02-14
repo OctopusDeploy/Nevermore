@@ -156,9 +156,9 @@ namespace Nevermore.Advanced
             return this;
         }
 
-        public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        public IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias = null)
         {
-            var subquery = new SubquerySource(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), tableAliasGenerator.GenerateTableAlias());
+            var subquery = new SubquerySource(selectBuilder.GenerateSelectWithoutDefaultOrderBy(), queryAlias ?? tableAliasGenerator.GenerateTableAlias());
             return new JoinSourceQueryBuilder<TRecord>(subquery,
                 joinType,
                 source,
@@ -540,6 +540,7 @@ namespace Nevermore.Advanced
             return (list, count);
         }
 
+        async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
         async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
         {
             // Short circuit query if no results will be retrieved
