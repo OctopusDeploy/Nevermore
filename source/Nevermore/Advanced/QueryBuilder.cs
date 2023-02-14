@@ -541,7 +541,6 @@ namespace Nevermore.Advanced
         }
 
         async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
-        async Task<(List<TRecord>, int)> ToListWithCountAsyncCte(int skip, int take, CancellationToken cancellationToken = default)
         {
             // Short circuit query if no results will be retrieved
             if (take == 0)
