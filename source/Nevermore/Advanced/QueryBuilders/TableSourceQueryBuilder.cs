@@ -31,7 +31,7 @@ namespace Nevermore.Advanced.QueryBuilders
             return new TableSelectBuilder(CreateSimpleTableSource(), new Column(idColumnName));
         }
 
-        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias = null)
         {
             return new JoinSourceQueryBuilder<TRecord>(CreateAliasedTableSource(),
                 joinType,
