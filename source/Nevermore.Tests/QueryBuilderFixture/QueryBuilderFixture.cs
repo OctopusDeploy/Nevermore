@@ -1876,6 +1876,51 @@ ORDER BY ALIAS_GENERATED_2.[Id]";
 
             actual.Should().BeEquivalentTo(expected);
         }
+        
+        [Test]
+        public void ShouldGenerateStaticJoinAliasNamesInJoin()
+        {
+            string actual = null;
+            CommandParameterValues parameters = null;
+            transaction.Stream<TodoItem>(Arg.Do<string>(s => actual = s),
+                Arg.Do<CommandParameterValues>(p => parameters = p));
+
+            var createdDate = DateTime.Now;
+            var joinDate = createdDate - TimeSpan.FromDays(1);
+            var sharedFieldName = "Date";
+
+            var orders = CreateQueryBuilder<object>("Orders")
+                .Where(sharedFieldName, UnarySqlOperand.Equal, createdDate);
+
+
+            var query = CreateQueryBuilder<TodoItem>("Customer")
+                .Where(sharedFieldName, UnarySqlOperand.Equal, joinDate)
+                .InnerJoin(orders.Subquery().Alias("o"), "j")
+                .On("Id", JoinOperand.Equal, "CustomerId");
+
+            query.FirstOrDefault();
+
+            const string expected =
+                @"SELECT TOP 1 j.*
+FROM (
+    SELECT Id,Title,Completed
+    FROM [dbo].[Customer]
+    WHERE ([Date] = @date_1)
+) j
+INNER JOIN (
+    SELECT *
+    FROM [dbo].[Orders]
+    WHERE ([Date] = @date)
+) o
+ON j.[Id] = o.[CustomerId]
+ORDER BY j.[Id]";
+
+            parameters.Values.Should().HaveCount(2);
+            parameters["date"].Should().BeEquivalentTo(createdDate);
+            parameters["date_1"].Should().BeEquivalentTo(joinDate);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
 
         [Test]
         public void ShouldThrowIfDifferentNumberOfParameterValuesProvided()
