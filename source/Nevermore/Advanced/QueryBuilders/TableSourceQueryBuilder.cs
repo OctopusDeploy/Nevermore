@@ -46,7 +46,7 @@ namespace Nevermore.Advanced.QueryBuilders
             return builder;
         }
 
-        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults)
+        public override IJoinSourceQueryBuilder<TRecord> Join(IAliasedSelectSource source, JoinType joinType, CommandParameterValues parameterValues, Parameters parameters, ParameterDefaults parameterDefaults, string queryAlias = null)
         {
             return new JoinSourceQueryBuilder<TRecord>(AsAliasedSource(),
                 joinType,
