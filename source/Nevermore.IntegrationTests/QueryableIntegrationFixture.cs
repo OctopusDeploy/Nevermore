@@ -1364,5 +1364,27 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
         }
+
+        [Test]
+        public async Task UnsupportedMethod_ShouldThrowNotSupportedException()
+        {
+            using var t = Store.BeginTransaction();
+
+            var runQueryWithUnsupportedMethod =
+                async () => _ = await t.Queryable<Customer>().Prepend(new()).ToListAsync();
+
+            await runQueryWithUnsupportedMethod.Should().ThrowAsync<NotSupportedException>();
+        }
+
+        [Test]
+        public async Task UnsupportedWhereExpression_ShouldThrowNotSupportedException()
+        {
+            using var t = Store.BeginTransaction();
+
+            var runQueryWithUnsupportedWhereExpression =
+                async () => _ = await t.Queryable<Customer>().Where(_ => "".IsNormalized()).ToListAsync();
+
+            await runQueryWithUnsupportedWhereExpression.Should().ThrowAsync<NotSupportedException>();
+        }
     }
 }

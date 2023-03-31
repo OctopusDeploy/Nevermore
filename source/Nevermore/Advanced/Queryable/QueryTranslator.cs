@@ -183,7 +183,7 @@ namespace Nevermore.Advanced.Queryable
                     return node;
                 }
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException($"Specified method is not supported: {methodInfo}");
             }
         }
 
@@ -222,7 +222,7 @@ namespace Nevermore.Advanced.Queryable
                 return sqlBuilder.CreateWhere(fieldReference, UnarySqlOperand.Equal, !invert);
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Where expression not supported: {expression}");
         }
 
         IWhereClause CreateMethodCallWhere(MethodCallExpression expression, bool invert = false)
@@ -262,7 +262,7 @@ namespace Nevermore.Advanced.Queryable
                 }
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Where expression not supported: {expression}");
         }
 
         IWhereClause CreateStringMethodWhere(MethodCallExpression expression, bool invert = false)
@@ -285,7 +285,7 @@ namespace Nevermore.Advanced.Queryable
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Where expression not supported: {expression}");
         }
 
         IWhereClause CreateBinaryWhere(BinaryExpression expression, bool invert = false)
@@ -312,7 +312,7 @@ namespace Nevermore.Advanced.Queryable
                 ExpressionType.LessThanOrEqual => invert ? UnarySqlOperand.GreaterThan : UnarySqlOperand.LessThanOrEqual,
                 ExpressionType.GreaterThan => invert ? UnarySqlOperand.LessThanOrEqual : UnarySqlOperand.GreaterThan,
                 ExpressionType.GreaterThanOrEqual => invert ? UnarySqlOperand.LessThan : UnarySqlOperand.GreaterThanOrEqual,
-                _ => throw new NotSupportedException()
+                _ => throw new NotSupportedException($"Where expression not supported: {expression}")
             };
 
             var (fieldReference, propertyType) = GetFieldReferenceAndType(expression.Left);
