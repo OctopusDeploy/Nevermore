@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Nevermore.Advanced.Queryable
 {
@@ -25,6 +26,9 @@ namespace Nevermore.Advanced.Queryable
         public IEnumerator<T> GetEnumerator() => queryProvider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => queryProvider.Execute<IEnumerable>(Expression).GetEnumerator();
+
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
+            queryProvider.StreamAsync<T>(Expression, cancellationToken).GetAsyncEnumerator(cancellationToken);
 
         public Type ElementType => typeof(T);
         public Expression Expression { get; }

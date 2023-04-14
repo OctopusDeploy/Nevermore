@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1363,6 +1364,33 @@ namespace Nevermore.IntegrationTests
             var customers = await t.Queryable<Customer>().Where(c => c.FirstName == "Alice").ToListAsync();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public async Task AsyncForeach()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" } },
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            var customers = new List<Customer>();
+            var queryable = (INevermoreQueryable<Customer>)t.Queryable<Customer>().Where(c => c.FirstName.EndsWith("e"));
+            await foreach (var customer in queryable)
+            {
+                customers.Add(customer);
+            }
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
         }
     }
 }
