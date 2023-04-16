@@ -27,7 +27,7 @@ namespace Nevermore.Advanced.Queryable
 
         IEnumerator IEnumerable.GetEnumerator() => queryProvider.Execute<IEnumerable>(Expression).GetEnumerator();
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken) =>
             queryProvider.StreamAsync<T>(Expression, cancellationToken).GetAsyncEnumerator(cancellationToken);
 
         public Type ElementType => typeof(T);

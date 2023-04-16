@@ -1367,7 +1367,7 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public async Task AsyncForeach()
+        public async Task AsyncEnumeration()
         {
             using var t = Store.BeginTransaction();
 
@@ -1385,9 +1385,11 @@ namespace Nevermore.IntegrationTests
 
             var customers = new List<Customer>();
             var queryable = (INevermoreQueryable<Customer>)t.Queryable<Customer>().Where(c => c.FirstName.EndsWith("e"));
-            await foreach (var customer in queryable)
+
+            var enumerator = queryable.GetAsyncEnumerator(CancellationToken.None);
+            while (await enumerator.MoveNextAsync())
             {
-                customers.Add(customer);
+                customers.Add(enumerator.Current);
             }
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");

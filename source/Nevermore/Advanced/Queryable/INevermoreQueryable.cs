@@ -11,6 +11,6 @@ namespace Nevermore.Advanced.Queryable
     /// <typeparam name="T">The queryable element type</typeparam>
     public interface INevermoreQueryable<out T> : IOrderedQueryable<T>
     {
-        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default);
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken);
     }
 }
