@@ -103,6 +103,19 @@ namespace Nevermore.Advanced.Queryable
                 .ConfigureAwait(false);
         }
 
+        public IAsyncEnumerable<TResult> StreamAsync<TResult>(Expression expression, CancellationToken cancellationToken)
+        {
+            var (command, queryType) = Translate(expression);
+            if (queryType is not QueryType.SelectMany)
+            {
+                throw new InvalidOperationException("Cannot stream the results of a query that selects only a single result.");
+            }
+
+            var sequenceType = expression.Type.GetSequenceType();
+            return (IAsyncEnumerable<TResult>)GenericStreamAsyncMethod.MakeGenericMethod(sequenceType)
+                .Invoke(queryExecutor, new object[] { command, cancellationToken });
+        }
+
         public (PreparedCommand, QueryType) Translate(Expression expression)
         {
             return new QueryTranslator(configuration).Translate(expression);
