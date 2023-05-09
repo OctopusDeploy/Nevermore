@@ -530,6 +530,8 @@ namespace Nevermore.Advanced
 
         public IEnumerable<TResult> Stream<TResult>(string query, CommandParameterValues args, Func<IProjectionMapper, TResult> projectionMapper, TimeSpan? commandTimeout = null)
         {
+            // Todo: Use CommandBehavior.SequentialAccess here.
+            //  This would be a breaking change, since the projectionMapper func could read columns out of order.
             var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
             using var reader = ExecuteReader(command);
             var mapper = new ProjectionMapper(command, reader, configuration.ReaderStrategies);
@@ -543,6 +545,8 @@ namespace Nevermore.Advanced
         {
             async IAsyncEnumerable<TResult> Execute()
             {
+                // Todo: Use CommandBehavior.SequentialAccess here.
+                //  This would be a breaking change, since the projectionMapper func could read columns out of order.
                 var command = new PreparedCommand(query, args, RetriableOperation.Select, commandBehavior: CommandBehavior.Default, commandTimeout: commandTimeout);
                 var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
                 await using (reader.ConfigureAwait(false))
@@ -596,12 +600,12 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null)
         {
-            return ExecuteScalar<TResult>(new PreparedCommand(query, args, retriableOperation, commandTimeout: commandTimeout));
+            return ExecuteScalar<TResult>(new PreparedCommand(query, args, retriableOperation, commandTimeout: commandTimeout, commandBehavior: CommandBehavior.SingleRow));
         }
 
         public Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
-            return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout), cancellationToken);
+            return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout, commandBehavior: CommandBehavior.SingleRow), cancellationToken);
         }
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)

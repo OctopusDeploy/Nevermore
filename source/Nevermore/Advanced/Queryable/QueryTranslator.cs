@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -23,7 +24,7 @@ namespace Nevermore.Advanced.Queryable
             Visit(expression);
 
             var (sqlExpression, parameterValues, queryType) = sqlBuilder.Build();
-            return (new PreparedCommand(sqlExpression.GenerateSql(), parameterValues, RetriableOperation.Select), queryType);
+            return (new PreparedCommand(sqlExpression.GenerateSql(), parameterValues, RetriableOperation.Select, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess), queryType);
         }
 
         protected override Expression VisitConstant(ConstantExpression node)
