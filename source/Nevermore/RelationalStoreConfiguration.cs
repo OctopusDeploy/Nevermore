@@ -55,6 +55,7 @@ namespace Nevermore
             AllowSynchronousOperations = true;
 
             QueryLogger = new DefaultQueryLogger();
+            TransactionLogger = new DefaultTransactionLogger();
 
             connectionString = new Lazy<string>(() =>
             {
@@ -80,6 +81,8 @@ namespace Nevermore
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
 
         public IQueryLogger QueryLogger { get; set; }
+
+        public ITransactionLogger TransactionLogger { get; set; }
 
         public IHookRegistry Hooks { get; }
         public int KeyBlockSize { get; set; }
