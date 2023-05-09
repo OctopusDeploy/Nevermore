@@ -66,6 +66,8 @@ namespace Nevermore.Advanced
 
         protected DbTransaction? Transaction { get; private set; }
 
+        TimedSection? TransactionTimer { get; set; }
+
         public void Open()
         {
             if (!configuration.AllowSynchronousOperations)
@@ -73,12 +75,14 @@ namespace Nevermore.Advanced
 
             connection = new SqlConnection(registry.ConnectionString);
             connection.OpenWithRetry();
+            TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public async Task OpenAsync()
         {
             connection = new SqlConnection(registry.ConnectionString);
             await connection.OpenWithRetryAsync().ConfigureAwait(false);
+            TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public void Open(IsolationLevel isolationLevel)
@@ -776,6 +780,7 @@ namespace Nevermore.Advanced
         {
             // ReSharper disable ConstantConditionalAccessQualifier
             Transaction?.Dispose();
+            TransactionTimer?.Dispose();
             DeadlockAwareLock?.Dispose();
             connection?.Dispose();
             // ReSharper restore ConstantConditionalAccessQualifier

@@ -38,6 +38,7 @@ namespace Nevermore
         IPrimaryKeyHandlerRegistry PrimaryKeyHandlers { get; }
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         IQueryLogger QueryLogger { get; set; }
+        ITransactionLogger TransactionLogger { get; set; }
 
         /// <summary>
         /// Hooks can be used to apply general logic when documents are inserted, updated or deleted.
