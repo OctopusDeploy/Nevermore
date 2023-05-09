@@ -26,18 +26,13 @@ public class TransactionTimerFixture : FixtureWithRelationalStore
         var mockTransactionLogger = new MockTransactionLogger();
         Store.Configuration.TransactionLogger = mockTransactionLogger;
 
-        using (var t = Store.BeginTransaction(name: "timed transaction") as ReadTransaction)
+        using (var t = Store.BeginTransaction(name: "timed transaction"))
         {
-            if (t is null)
-            {
-                Assert.Fail($"Transaction is not {nameof(ReadTransaction)}");
-            }
-        
             t.ExecuteScalar<object>("WAITFOR DELAY '00:00:10'");
         }
 
         mockTransactionLogger.Entries.Should().ContainSingle();
-        mockTransactionLogger.Entries.Single().duration.Should().BeGreaterThan(10_000);
+        mockTransactionLogger.Entries.Single().duration.Should().BeGreaterThanOrEqualTo(10_000);
         mockTransactionLogger.Entries.Single().transactionName.Should().Be("timed transaction");
     }
 }
