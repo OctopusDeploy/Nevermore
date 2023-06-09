@@ -131,6 +131,17 @@ namespace Nevermore.Util
             return PrepareDelete(mapping, id, options);
         }
 
+        public PreparedCommand PrepareDelete<TDocument, TKey>(object id, DeleteOptions options = null) where TDocument : class
+        {
+            var mapping = mappings.Resolve(typeof(TDocument));
+
+            var idType = id.GetType();
+            if (mapping.IdColumn.Type != typeof(TKey))
+                throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
+
+            return PrepareDelete(mapping, id, options);
+        }
+
         private PreparedCommand PrepareDelete(DocumentMap mapping, object id, DeleteOptions options = null)
         {
             options ??= DeleteOptions.Default;
