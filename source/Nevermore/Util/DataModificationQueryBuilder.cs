@@ -125,7 +125,7 @@ namespace Nevermore.Util
             var mapping = mappings.Resolve(typeof(TDocument));
 
             var idType = id.GetType();
-            if (mapping.IdColumn.Type != idType)
+            if (!mapping.IdColumn.Type.IsAssignableFrom(idType))
                 throw new ArgumentException($"Provided Id of type '{idType.FullName}' does not match configured type of '{mapping.IdColumn.Type.FullName}'.");
 
             return PrepareDelete(mapping, id, options);
@@ -315,7 +315,7 @@ namespace Nevermore.Util
 
             var id = mapping.IdColumn.PropertyHandler.Read(document);
 
-            if (customAssignedId != null && customAssignedId.GetType() != mapping.IdColumn.Type)
+            if (customAssignedId != null && !mapping.IdColumn.Type.IsAssignableFrom(customAssignedId.GetType()))
                 throw new ArgumentException($"The given custom Id '{customAssignedId}' must be of type ({mapping.IdColumn.Type.Name}), to match the model's Id property");
 
             if (customIdAssignmentBehavior == CustomIdAssignmentBehavior.ThrowIfIdAlreadySetToDifferentValue &&
