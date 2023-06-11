@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Assent;
+using Microsoft.Data.SqlClient.Server;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Serialization;
 using Nevermore.Mapping;
@@ -24,6 +25,9 @@ namespace Nevermore.Tests.Util
         {
             configuration = new RelationalStoreConfiguration("");
             configuration.DocumentSerializer = new NewtonsoftDocumentSerializer(configuration);
+            configuration.PrimaryKeyHandlers.Register(
+                new TypedKeyHandler()
+            );
             configuration.DocumentMaps.Register(
                 new TestDocumentMap(),
                 new TestDocumentWithRelatedDocumentsMap(),
@@ -31,7 +35,8 @@ namespace Nevermore.Tests.Util
                 new OtherMap(),
                 new TestDocumentWithIdentityIdMap(),
                 new TestDocumentWithIdentityIdAndRowVersionMap(),
-                new TestDocumentWithColumnsFromBaseMap());
+                new TestDocumentWithColumnsFromBaseMap(),
+                new TestDocumentWithTypedKeyMap());
             builder = new DataModificationQueryBuilder(
                 configuration,
                 m => idAllocator()
@@ -590,6 +595,40 @@ namespace Nevermore.Tests.Util
                 Column(t => t.BaseColumn);
                 Column(t => t.DerivedColumn);
                 RowVersion(t => t.RowVersion);
+            }
+        }
+
+        class TestDocumentWithTypedKeyMap : DocumentMap<TestDocumentWithTypedKey>
+        {
+            public TestDocumentWithTypedKeyMap()
+            {
+                Id(t => t.Id);
+            }
+        }
+
+        class TestDocumentWithTypedKey
+        {
+            public TypedKey Id { get; set; }
+        }
+
+        class TypedKey
+        {
+        }
+        
+        class InheritedTypedKey : TypedKey
+        {
+        }
+
+        class TypedKeyHandler : PrimaryKeyHandler<TypedKey>
+        {
+            public override SqlMetaData GetSqlMetaData(string name)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
+            {
+                throw new NotImplementedException();
             }
         }
     }
