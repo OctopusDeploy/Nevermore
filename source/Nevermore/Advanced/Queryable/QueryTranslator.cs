@@ -195,6 +195,12 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Skip(skip);
                     return node;
                 }
+                case nameof(System.Linq.Queryable.Distinct):
+                {
+                    Visit(node.Arguments[0]);
+                    sqlBuilder.Distinct();
+                    return node;
+                }
                 default:
                     throw new NotSupportedException();
             }

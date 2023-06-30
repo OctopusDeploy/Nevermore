@@ -20,6 +20,7 @@ namespace Nevermore.Advanced.Queryable
         ITableSource from;
         int? skip;
         int? take;
+        bool distinct;
         QueryType queryType = QueryType.SelectMany;
         volatile int paramCounter;
 
@@ -107,6 +108,11 @@ namespace Nevermore.Advanced.Queryable
             this.hint = hint;
         }
 
+        public void Distinct()
+        {
+            distinct = true;
+        }
+
         public void From(Type documentType)
         {
             DocumentMap = configuration.DocumentMaps.Resolve(documentType);
@@ -144,11 +150,11 @@ namespace Nevermore.Advanced.Queryable
 
         IExpression CreateSelectQuery()
         {
-            IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
+            var rowSelection = CreateRowSelection();
             var orderBy = orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
             ISelectColumns columns = selectColumns.Any() ? new AggregateSelectColumns(selectColumns) : new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
             var select = new Select(
-                rowSelection ?? new AllRows(),
+                rowSelection,
                 skip.HasValue ? new AggregateSelectColumns(new [] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
                 from,
                 CreateWhereClause(),
@@ -169,7 +175,7 @@ namespace Nevermore.Advanced.Queryable
                 }
 
                 select = new Select(
-                    new AllRows(),
+                    distinct ? new Distinct() : new AllRows(),
                     new SelectAllColumnsWithTableAliasJsonLast("aliased", GetDocumentColumns().ToList()),
                     new SubquerySource(select, "aliased"),
                     new Where(new AndClause(pagingFilters)),
@@ -179,6 +185,26 @@ namespace Nevermore.Advanced.Queryable
             }
 
             return select;
+        }
+
+        IRowSelection CreateRowSelection()
+        {
+            var selections = new List<IRowSelection>();
+            if (take.HasValue && !skip.HasValue)
+            {
+                selections.Add(new Top(take.Value));
+            }
+            else
+            {
+                selections.Add(new AllRows());
+            }
+
+            if (distinct)
+            {
+                selections.Add(new Distinct());
+            }
+
+            return new CompositeRowSelection(selections);
         }
 
         IExpression CreateExistsQuery()

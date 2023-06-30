@@ -954,6 +954,35 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void Distinct()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Charlie", LastName = "Banana" },
+                new Customer { FirstName = "Dan", LastName = "Cherry" },
+                new Customer { FirstName = "Erin", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Select(c => c.LastName)
+                .Distinct()
+                .ToList();
+
+            customers.Should().BeEquivalentTo("Apple", "Banana", "Cherry");
+        }
+
+        [Test]
         public void Count()
         {
             using var t = Store.BeginTransaction();
