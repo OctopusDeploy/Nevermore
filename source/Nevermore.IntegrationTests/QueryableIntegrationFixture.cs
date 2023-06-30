@@ -40,6 +40,32 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void SelectWithJsonObject()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Select(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Should().BeEquivalentTo("Tentacle A", null, "Tentacle C");
+        }
+
+        [Test]
         public void WhereEqual()
         {
             using var t = Store.BeginTransaction();
@@ -1011,6 +1037,32 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void DistinctByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .DistinctBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle A", "Tentacle C");
+        }
+
+        [Test]
         public void Count()
         {
             using var t = Store.BeginTransaction();
@@ -1228,6 +1280,32 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void OrderByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle A", "Tentacle B", "Tentacle C");
+        }
+
+        [Test]
         public void OrderByDescending()
         {
             using var t = Store.BeginTransaction();
@@ -1249,6 +1327,32 @@ namespace Nevermore.IntegrationTests
             var customers = t.Queryable<Customer>().OrderByDescending(c => c.Nickname).ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Apple", "Banana");
+        }
+
+        [Test]
+        public void OrderByDescendingJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderByDescending(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle C", "Tentacle B", "Tentacle A");
         }
 
         [Test]
@@ -1279,6 +1383,36 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void OrderByThenByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle E" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine A", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle F" } },
+                new Machine { Name = "Machine B", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine C", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle D" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Type)
+                .ThenBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle B", "Tentacle D", "Tentacle F", "Tentacle A", "Tentacle C", "Tentacle E");
+        }
+
+        [Test]
         public void OrderByThenByDescending()
         {
             using var t = Store.BeginTransaction();
@@ -1303,6 +1437,36 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Amanda", "Charlie");
+        }
+
+        [Test]
+        public void OrderByThenByDescendingJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle E" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine A", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle F" } },
+                new Machine { Name = "Machine B", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine C", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle D" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Type)
+                .ThenByDescending(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle F", "Tentacle D", "Tentacle B", "Tentacle E", "Tentacle C", "Tentacle A");
         }
 
         [Test]

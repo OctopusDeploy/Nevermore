@@ -54,4 +54,32 @@
         public string GenerateSql() =>  "COUNT(*)";
         public override string ToString() => GenerateSql();
     }
+
+    public class JsonQueryColumn : IColumn
+    {
+        readonly string jsonPath;
+        public bool AggregatesRows => false;
+
+        public JsonQueryColumn(string jsonPath)
+        {
+            this.jsonPath = jsonPath;
+        }
+
+        public string GenerateSql() => $"JSON_QUERY([JSON], '{jsonPath}')";
+        public override string ToString() => GenerateSql();
+    }
+
+    public class JsonValueColumn : IColumn
+    {
+        readonly string jsonPath;
+        public bool AggregatesRows => false;
+
+        public JsonValueColumn(string jsonPath)
+        {
+            this.jsonPath = jsonPath;
+        }
+
+        public string GenerateSql() => $"JSON_VALUE([JSON], '{jsonPath}')";
+        public override string ToString() => GenerateSql();
+    }
 }
