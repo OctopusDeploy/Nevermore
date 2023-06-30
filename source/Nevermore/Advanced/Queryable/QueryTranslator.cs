@@ -201,6 +201,18 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Distinct();
                     return node;
                 }
+                case "DistinctBy":
+                {
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("DistinctBy does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.DistinctBy(new Column(fieldName));
+                    return node;
+                }
                 default:
                     throw new NotSupportedException();
             }
