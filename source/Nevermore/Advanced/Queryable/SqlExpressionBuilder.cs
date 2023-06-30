@@ -12,6 +12,7 @@ namespace Nevermore.Advanced.Queryable
     {
         readonly IRelationalStoreConfiguration configuration;
 
+        readonly List<ISelectColumns> selectColumns = new();
         readonly List<OrderByField> orderByFields = new();
         readonly List<IWhereClause> whereClauses = new();
         string hint;
@@ -28,6 +29,11 @@ namespace Nevermore.Advanced.Queryable
         }
 
         public DocumentMap DocumentMap { get; private set; }
+
+        public void Column(ISelectColumns selectColumns)
+        {
+            this.selectColumns.Add(selectColumns);
+        }
 
         public void Where(IWhereClause whereClause)
         {
@@ -140,10 +146,10 @@ namespace Nevermore.Advanced.Queryable
         {
             IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
             var orderBy = orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
-            var columns = new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
+            ISelectColumns columns = selectColumns.Any() ? new AggregateSelectColumns(selectColumns) : new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
             var select = new Select(
                 rowSelection ?? new AllRows(),
-                skip.HasValue ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
+                skip.HasValue ? new AggregateSelectColumns(new [] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
                 from,
                 CreateWhereClause(),
                 null,

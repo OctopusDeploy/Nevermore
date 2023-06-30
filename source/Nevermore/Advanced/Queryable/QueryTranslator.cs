@@ -59,6 +59,18 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Where(new CustomWhereClause((string)constantExpression.Value));
                     return node;
                 }
+                case nameof(Enumerable.Select):
+                {
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("Select does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
+                    sqlBuilder.Column(new SelectAllJsonColumnLast(new [] { fieldName }));
+                    return node;
+                }
                 case nameof(System.Linq.Queryable.Where):
                 {
                     Visit(node.Arguments[0]);

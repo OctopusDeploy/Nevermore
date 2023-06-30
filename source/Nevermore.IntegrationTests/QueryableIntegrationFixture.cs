@@ -14,6 +14,32 @@ namespace Nevermore.IntegrationTests
     public class QueryableIntegrationFixture : FixtureWithRelationalStore
     {
         [Test]
+        public void Select()
+        {
+            using var t = Store.BeginTransaction();
+            
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Select(c => c.FirstName)
+                .ToList();
+
+            customers.Should().BeEquivalentTo("Alice", "Bob", "Charlie");
+        }
+
+        [Test]
         public void WhereEqual()
         {
             using var t = Store.BeginTransaction();
