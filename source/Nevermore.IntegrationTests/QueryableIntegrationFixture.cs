@@ -511,6 +511,58 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereUnaryBoolNestedJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A", IsEnabled = true} },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B", IsEnabled = true } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C", IsEnabled = false } },
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(c => c.Endpoint.IsEnabled)
+                .ToList();
+
+            customers.Select(c => c.Name).Should().BeEquivalentTo("Machine A", "Machine B");
+        }
+
+        [Test]
+        public void WhereNotUnaryBoolNestedJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A", IsEnabled = true} },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B", IsEnabled = true } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C", IsEnabled = false } },
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(c => !c.Endpoint.IsEnabled)
+                .ToList();
+
+            customers.Select(c => c.Name).Should().BeEquivalentTo("Machine C");
+        }
+
+        [Test]
         public void WhereCompositeAnd()
         {
             using var t = Store.BeginTransaction();

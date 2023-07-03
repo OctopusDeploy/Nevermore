@@ -5,5 +5,7 @@ namespace Nevermore.IntegrationTests.Model
         public string Name { get; set; }
 
         public abstract string Type { get; }
+        
+        public bool IsEnabled { get; set; }
     }
 }
