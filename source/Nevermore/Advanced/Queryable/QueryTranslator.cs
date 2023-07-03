@@ -271,7 +271,7 @@ namespace Nevermore.Advanced.Queryable
 
         IWhereClause CreateMethodCallWhere(MethodCallExpression expression, bool invert = false)
         {
-            if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
+            if (expression.Method.DeclaringType == typeof(string))
             {
                 return CreateStringMethodWhere(expression, invert);
             }
@@ -335,7 +335,42 @@ namespace Nevermore.Advanced.Queryable
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
             }
 
+            if (expression.Method.Name == nameof(string.Equals))
+            {
+                // If one of the IgnoreCase options was specified, then compare in lowercase
+                if (TryGetFirstArgumentOfType(expression, out StringComparison stringComparison))
+                {
+                    switch (stringComparison)
+                    {
+                        case StringComparison.CurrentCultureIgnoreCase:
+                        case StringComparison.InvariantCultureIgnoreCase:
+                        case StringComparison.OrdinalIgnoreCase:
+                            fieldReference = new WhereFieldReferenceWithStringFunction(fieldReference, StringFunction.Lower);
+                            value = value.ToLower();
+                            break;
+                    }
+                }
+
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal, value);
+            }
+
             throw new NotSupportedException();
+        }
+
+        bool TryGetFirstArgumentOfType<T>(MethodCallExpression expression, out T arg)
+        {
+            arg = default;
+            foreach (var argument in expression.Arguments)
+            {
+                if (argument is not ConstantExpression constantExpression ||
+                    constantExpression.Type != typeof(T))
+                    continue;
+
+                arg = (T)constantExpression.Value;
+                return true;
+            }
+
+            return false;
         }
 
         IWhereClause CreateBinaryWhere(BinaryExpression expression, bool invert = false)

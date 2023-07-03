@@ -92,6 +92,58 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereEqualStringEquals()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Equals("Alice"))
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualIgnoreCase()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Equals("alice", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
         public void WhereEqualLower()
         {
             using var t = Store.BeginTransaction();
