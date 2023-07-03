@@ -801,6 +801,62 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereParens()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Alice", LastName = "Banana" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => (c.FirstName == "Alice" && c.LastName == "Apple") || (c.FirstName == "Bob" && c.LastName == "Banana"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Banana");
+        }
+
+        [Test]
+        public void WhereNotParens()
+        { 
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Alice", LastName = "Banana" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => !(c.FirstName == "Alice" && c.LastName == "Apple") || !(c.FirstName == "Bob" && c.LastName == "Banana"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana", "Apple");
+        }
+
+        [Test]
         public void First()
         {
             using var t = Store.BeginTransaction();
