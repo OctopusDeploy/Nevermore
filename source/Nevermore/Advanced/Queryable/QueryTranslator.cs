@@ -304,6 +304,12 @@ namespace Nevermore.Advanced.Queryable
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
                     return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
                 }
+                else if (right is MethodCallExpression methodCallExpression)
+                {
+                    var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
+                    var (fieldReference, _) = GetFieldReferenceAndType(methodCallExpression);
+                    return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
+                }
             }
 
             throw new NotSupportedException();
@@ -473,6 +479,35 @@ namespace Nevermore.Advanced.Queryable
                         ? new JsonValueFieldReference(jsonPath)
                         : new JsonQueryFieldReference(jsonPath);
                     return (fieldReference, propertyInfo.PropertyType);
+                }
+            }
+
+            if (expression is MethodCallExpression methodCallExpression)
+            {
+                var (reference, type) = GetFieldReferenceAndType(methodCallExpression.Object);
+                if (methodCallExpression.Method.Name == nameof(string.ToLower))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Lower), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.ToUpper))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Upper), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.Trim))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Trim), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.TrimStart))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.LeftTrim), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.TrimEnd))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.RightTrim), type);
                 }
             }
 

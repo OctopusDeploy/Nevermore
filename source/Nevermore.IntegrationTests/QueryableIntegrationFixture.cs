@@ -92,6 +92,84 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereEqualLower()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToLower() == "alice")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualUpper()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToUpper() == "ALICE")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualTrim()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "  Alice    ", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Trim() == "Alice")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
         public void WhereEqualIdColumn()
         {
             using var t = Store.BeginTransaction();
@@ -639,6 +717,111 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
+        public void WhereLowerContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var names = new[] { "apple", "orange", "peach" };
+            var customers = t.Queryable<Customer>()
+                .Where(c => names.Contains(c.LastName.ToLower()))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
+        public void WhereLowerStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToLower().Contains("a"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Charlie");
+        }
+
+        [Test]
+        public void WhereUpperStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToUpper().Contains("A"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Charlie");
+        }
+
+        [Test]
+        public void WhereTrimStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "  Alice  ", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "     Bob ", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie  ", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Trim().Contains("e"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("  Alice  ", "Charlie  ");
         }
 
         [Test]
