@@ -799,6 +799,31 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void FirstWithNoMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .First(c => c.FirstName == "Jim");
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains no elements");
+        }
+
+        [Test]
         public void FirstOrDefault()
         {
             using var t = Store.BeginTransaction();
@@ -896,6 +921,250 @@ namespace Nevermore.IntegrationTests
                 .FirstOrDefaultAsync(c => c.FirstName.EndsWith("y"));
 
             customer.Should().BeNull();
+        }
+
+        [Test]
+        public void Single()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .Single();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleWithPredicate()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .Single(c => c.FirstName == "Alice");
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleWithNoMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .First(c => c.FirstName == "Jim");
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains no elements");
+        }
+
+        [Test]
+        public void SingleWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .Single(c => c.LastName.Contains("e"));
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains more than one element");
+        }
+
+        [Test]
+        public void SingleOrDefault()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .SingleOrDefault();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public async Task SingleOrDefaultAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .SingleOrDefaultAsync();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleOrDefaultWithPredicate()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .SingleOrDefault(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
+        }
+
+        [Test]
+        public async Task SingleOrDefaultWithPredicateAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .SingleOrDefaultAsync(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
+        }
+
+        [Test]
+        public void SingleOrDefaultWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .SingleOrDefault(c => c.LastName.Contains("e"));
+
+            fn.Should().ThrowExactly<InvalidOperationException>().WithMessage("Sequence contains more than one element");
+        }
+
+        [Test]
+        public async Task SingleOrDefaultAsyncWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var fn = async () => await t.Queryable<Customer>()
+                .SingleOrDefaultAsync(c => c.LastName.Contains("e"));
+
+            await fn.Should().ThrowExactlyAsync<InvalidOperationException>().WithMessage("Sequence contains more than one element.");
         }
 
         [Test]

@@ -78,12 +78,32 @@ namespace Nevermore.Advanced.Queryable
             orderByFields.Add(field);
         }
 
-        public void Single()
+        public void First()
         {
             Take(1);
+            queryType = QueryType.SelectFirst;
+        }
+        
+        public void FirstOrDefault()
+        {
+            Take(1);
+            queryType = QueryType.SelectFirstOrDefault;
+        }
+
+        public void Single()
+        {
+            // Hack: This is yuck. We're taking two rows here so that we can throw if we get more than one row.
+            Take(2);
             queryType = QueryType.SelectSingle;
         }
 
+        public void SingleOrDefault()
+        {
+            // Hack: This is yuck. We're taking two rows here so that we can throw if we get more than one row.
+            Take(2);
+            queryType = QueryType.SelectSingleOrDefault;
+        }
+        
         public void Exists()
         {
             queryType = QueryType.Exists;

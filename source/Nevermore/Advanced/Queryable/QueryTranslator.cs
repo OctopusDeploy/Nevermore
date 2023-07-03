@@ -127,7 +127,7 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.OrderBy(new OrderByField(column, OrderByDirection.Descending));
                     return node;
                 }
-                case nameof(System.Linq.Queryable.First):
+                case nameof(System.Linq.Queryable.Single):
                 {
                     Visit(node.Arguments[0]);
                     if (node.Arguments.Count > 1)
@@ -139,6 +139,30 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Single();
                     return node;
                 }
+                case nameof(System.Linq.Queryable.SingleOrDefault):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.SingleOrDefault();
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.First):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.First();
+                    return node;
+                }
                 case nameof(System.Linq.Queryable.FirstOrDefault):
                 {
                     Visit(node.Arguments[0]);
@@ -148,7 +172,7 @@ namespace Nevermore.Advanced.Queryable
                         sqlBuilder.Where(CreateWhereClause(expression.Body));
                     }
 
-                    sqlBuilder.Single();
+                    sqlBuilder.FirstOrDefault();
                     return node;
                 }
                 case nameof(System.Linq.Queryable.Any):

@@ -59,21 +59,29 @@ namespace Nevermore.Advanced.Queryable
                     .Invoke(queryExecutor, new object[] { command });
             }
 
-            if (queryType == QueryType.SelectSingle)
+            if (queryType == QueryType.Count || queryType == QueryType.Exists)
             {
-                var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
+                return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
                     .Invoke(queryExecutor, new object[] { command });
-                return (TResult)stream.Cast<object>().FirstOrDefault();
             }
 
-            return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
+            var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
                 .Invoke(queryExecutor, new object[] { command });
-        }
 
+            return queryType switch
+            {
+                QueryType.SelectFirst => (TResult)stream.Cast<object>().First(),
+                QueryType.SelectFirstOrDefault => (TResult)stream.Cast<object>().FirstOrDefault(),
+                QueryType.SelectSingle => (TResult)stream.Cast<object>().Single(),
+                QueryType.SelectSingleOrDefault => (TResult)stream.Cast<object>().SingleOrDefault(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
 
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var (command, queryType) = Translate(expression);
+
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
@@ -83,24 +91,31 @@ namespace Nevermore.Advanced.Queryable
                 return (TResult)await CreateList(asyncStream, sequenceType).ConfigureAwait(false);
             }
 
-            if (queryType == QueryType.SelectSingle)
+            if (queryType == QueryType.Count || queryType == QueryType.Exists)
             {
-                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken).ConfigureAwait(false);
-
-                if (firstOrDefaultAsync is not null) return (TResult) firstOrDefaultAsync;
-
-                // TODO: This NEEDS to go away when we turn nullable on in Nevermore
-                // This method needs to be able to return null for instances like `FirstOrDefaultAsync`
-                object GetNull() => null;
-                return (TResult) GetNull();
-
+                return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
+                        .Invoke(queryExecutor, new object[] { command, cancellationToken }))
+                    .ConfigureAwait(false);
             }
 
-            return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken }))
-                .ConfigureAwait(false);
+            var stream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
+                .Invoke(queryExecutor, new object[] { command, cancellationToken });
+
+            object result = queryType switch
+            {
+                QueryType.SelectFirst => (TResult)await FirstAsync(stream, cancellationToken).ConfigureAwait(false),
+                QueryType.SelectFirstOrDefault => (TResult)await FirstOrDefaultAsync(stream, cancellationToken).ConfigureAwait(false),
+                QueryType.SelectSingle => (TResult)await SingleAsync(stream, cancellationToken).ConfigureAwait(false),
+                QueryType.SelectSingleOrDefault => (TResult)await SingleOrDefaultAsync(stream, cancellationToken).ConfigureAwait(false),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (result is not null) return (TResult) result;
+
+            // TODO: This NEEDS to go away when we turn nullable on in Nevermore
+            // This method needs to be able to return null for instances like `FirstOrDefaultAsync`
+            object GetNull() => null;
+            return (TResult) GetNull();
         }
 
         public IAsyncEnumerable<TResult> StreamAsync<TResult>(Expression expression, CancellationToken cancellationToken)
@@ -146,6 +161,65 @@ namespace Nevermore.Advanced.Queryable
             }
 
             return default;
+        }
+
+        static async ValueTask<T> FirstAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
+        {
+#pragma warning disable CA2007
+            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
+            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+#pragma warning restore CA2007
+
+            if (!await enumerator.MoveNextAsync())
+            {
+                throw new InvalidOperationException("Sequence contains no elements.");
+            }
+
+            return enumerator.Current;
+        }
+        
+        static async Task<T> SingleOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken = default)
+        {
+#pragma warning disable CA2007
+            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
+            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+#pragma warning restore CA2007
+
+            if (!await enumerator.MoveNextAsync())
+            {
+                return default;
+            }
+
+            var current = enumerator.Current;
+
+            if (await enumerator.MoveNextAsync())
+            {
+                throw new InvalidOperationException("Sequence contains more than one element.");
+            }
+
+            return current;
+        }
+
+        static async Task<T> SingleAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken = default)
+        {
+#pragma warning disable CA2007
+            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
+            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
+#pragma warning restore CA2007
+
+            if (!await enumerator.MoveNextAsync())
+            {
+                throw new InvalidOperationException("Sequence contains no elements.");
+            }
+
+            var current = enumerator.Current;
+
+            if (!await enumerator.MoveNextAsync())
+            {
+                return current;
+            }
+
+            throw new InvalidOperationException("Sequence contains more than one element.");
         }
     }
 }

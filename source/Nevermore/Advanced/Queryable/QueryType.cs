@@ -3,7 +3,10 @@
     internal enum QueryType
     {
         SelectMany,
+        SelectFirst,
+        SelectFirstOrDefault,
         SelectSingle,
+        SelectSingleOrDefault,
         Count,
         Exists
     }
