@@ -14,7 +14,7 @@ namespace Nevermore.IntegrationTests
     public class QueryableIntegrationFixture : FixtureWithRelationalStore
     {
         [Test]
-        public void Select()
+        public void SelectColumn()
         {
             using var t = Store.BeginTransaction();
             
@@ -40,7 +40,7 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
-        public void SelectWithJsonObject()
+        public async Task SelectJsonField()
         {
             using var t = Store.BeginTransaction();
 
@@ -56,13 +56,79 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            await t.CommitAsync();
 
-            var customers = t.Queryable<Machine>()
-                .Select(m => m.Endpoint.Name)
+            var machines = t.Queryable<Machine>()
+                .Select(c => c.Endpoint.Name)
                 .ToList();
 
-            customers.Should().BeEquivalentTo("Tentacle A", null, "Tentacle C");
+            machines.Should().BeEquivalentTo("Tentacle A", null, "Tentacle C");
+        }
+
+        [Test]
+        public async Task SelectWithParameterizedConstructor()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>()
+                .Select(c => new CustomerProjection(c.FirstName, c.IsEmployee))
+                .ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new CustomerProjection("Alice", true),
+                new CustomerProjection("Bob", false),
+                new CustomerProjection("Charlie", true)
+            });
+        }
+
+        class CustomerProjection
+        {
+            public CustomerProjection(string firstName, bool isEmployee)
+            {
+                FirstName = firstName;
+                IsEmployee = isEmployee;
+            }
+
+            public string FirstName { get; }
+            public bool IsEmployee { get; }
+        }
+
+        [Test]
+        public async Task SelectWithAnonymousType()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>()
+                .Select(c => new { Name = c.FirstName, c.IsEmployee })
+                .ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new {Name = "Alice", IsEmployee = true},
+                new {Name = "Bob", IsEmployee = false},
+                new {Name = "Charlie", IsEmployee = true},
+            });
         }
 
         [Test]

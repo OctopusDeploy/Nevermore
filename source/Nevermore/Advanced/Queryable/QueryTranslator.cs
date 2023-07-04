@@ -68,7 +68,31 @@ namespace Nevermore.Advanced.Queryable
                     }
 
                     Visit(node.Arguments[0]);
-                    var column = GetFieldReference(node.Arguments[1]);
+
+                    var expression = node.Arguments[1];
+                    if (expression is UnaryExpression { Operand: LambdaExpression { Body: NewExpression newExpression } })
+                    {
+                        AggregateSelectColumns aggregateColumns;
+                        if (newExpression.Members is not null)
+                        {
+                            var columns = newExpression.Arguments
+                                .Select(GetFieldReference)
+                                .Zip(newExpression.Members, (column, memberInfo) => new AliasedColumn(column, memberInfo.Name))
+                                .Cast<ISelectColumns>();
+                            aggregateColumns = new AggregateSelectColumns(columns.ToArray());
+                        }
+                        else
+                        {
+                            var columns = newExpression.Arguments
+                                .Select(GetFieldReference);
+                            aggregateColumns = new AggregateSelectColumns(columns.ToArray());
+                        }
+                        
+                        sqlBuilder.Column(aggregateColumns);
+                        return node;
+                    }
+                    
+                    var column = GetFieldReference(expression);
                     sqlBuilder.Column(column);
                     return node;
                 }
@@ -433,19 +457,32 @@ namespace Nevermore.Advanced.Queryable
             return result;
         }
 
-        IColumn GetFieldReference(Expression expression)
+        bool TryGetMemberExpression(Expression expression, out MemberExpression memberExpression, out PropertyInfo propertyInfo)
         {
-            if (expression is not UnaryExpression unaryExpression)
+            if (expression is MemberExpression { Member: PropertyInfo})
             {
-                throw new NotSupportedException();
+                memberExpression = (MemberExpression) expression;
+                propertyInfo = (PropertyInfo) memberExpression.Member;
+                return true;
             }
 
-            if (unaryExpression.Operand is not LambdaExpression lambdaExpression)
+            if (expression is UnaryExpression unaryExpression &&
+                unaryExpression.Operand is LambdaExpression lambdaExpression &&
+                lambdaExpression.Body is MemberExpression { Member: PropertyInfo })
             {
-                throw new NotSupportedException();
+                memberExpression = (MemberExpression) lambdaExpression.Body;
+                propertyInfo = (PropertyInfo) memberExpression.Member;
+                return true;
             }
-            
-            if (lambdaExpression.Body is  MemberExpression { Member: PropertyInfo propertyInfo } memberExpression)
+
+            memberExpression = null;
+            propertyInfo = null;
+            return false;
+        }
+
+        IColumn GetFieldReference(Expression expression)
+        {
+            if (TryGetMemberExpression(expression, out MemberExpression memberExpression, out PropertyInfo propertyInfo))
             {
                 var hasJsonIgnoreAttribute = propertyInfo.GetCustomAttribute<JsonIgnoreAttribute>() is not null;
                 if (hasJsonIgnoreAttribute)
@@ -474,8 +511,8 @@ namespace Nevermore.Advanced.Queryable
                 {
                     var jsonPath = GetJsonPath(memberExpression);
                     IColumn fieldReference = propertyInfo.IsScalar()
-                        ? new JsonValueColumn(jsonPath)
-                        : new JsonQueryColumn(jsonPath);
+                        ? new JsonValueColumn(jsonPath, propertyInfo.PropertyType)
+                        : new JsonQueryColumn(jsonPath, propertyInfo.PropertyType);
                     return fieldReference;
                 }
             }

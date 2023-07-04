@@ -1,4 +1,6 @@
-﻿namespace Nevermore.Querying.AST
+﻿using System;
+
+namespace Nevermore.Querying.AST
 {
     public interface IColumn : ISelectColumns
     {
@@ -59,13 +61,15 @@
     {
         readonly string jsonPath;
         public bool AggregatesRows => false;
+        readonly Type elementType;
 
-        public JsonQueryColumn(string jsonPath)
+        public JsonQueryColumn(string jsonPath, Type elementType)
         {
             this.jsonPath = jsonPath;
+            this.elementType = elementType;
         }
 
-        public string GenerateSql() => $"JSON_QUERY([JSON], '{jsonPath}')";
+        public string GenerateSql() => $"CAST(JSON_QUERY([JSON], '{jsonPath}') AS {elementType.ToDbType()})";
         public override string ToString() => GenerateSql();
     }
 
@@ -73,13 +77,15 @@
     {
         readonly string jsonPath;
         public bool AggregatesRows => false;
+        readonly Type elementType;
 
-        public JsonValueColumn(string jsonPath)
+        public JsonValueColumn(string jsonPath, Type elementType)
         {
             this.jsonPath = jsonPath;
+            this.elementType = elementType;
         }
 
-        public string GenerateSql() => $"JSON_VALUE([JSON], '{jsonPath}')";
+        public string GenerateSql() => $"CAST(JSON_VALUE([JSON], '{jsonPath}') AS {elementType.ToDbType()})";
         public override string ToString() => GenerateSql();
     }
 }
