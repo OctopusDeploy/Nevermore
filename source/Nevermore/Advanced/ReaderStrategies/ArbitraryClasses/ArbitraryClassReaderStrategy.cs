@@ -36,7 +36,7 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
 
         bool IsPrimitive(Type type)
         {
-            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
+            return type.IsPrimitive || type.IsArray || type == typeof(string) || type == typeof(decimal);
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
