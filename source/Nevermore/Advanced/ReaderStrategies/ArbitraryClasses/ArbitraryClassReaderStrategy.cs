@@ -96,7 +96,7 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
             // To make it fast - as fast as if we wrote it by hand - we generate and compile C# expression trees for
             // each property on the class, and one to call the constructor.
 
-            var constructors = typeof(TRecord).GetConstructors();
+            var constructors = typeof(TRecord).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             // Find the parameter-less constructor
             var defaultConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0);
             // Find a parameterized constructor that matches the data reader
