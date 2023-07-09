@@ -14,6 +14,15 @@ namespace Nevermore.Analyzers.Tests
 	        results.Count.Should().Be(1);
 	        results[0].GetMessage().Should().Contain(error);
         }
+	    
+	    protected static void AssertErrors(List<Diagnostic> results, params string[] errors)
+	    {
+		    results.Count.Should().Be(errors.Length);
+		    for (var i = 0; i < errors.Length; i++)
+		    {
+			    results[i].GetMessage().Should().Contain(errors[i]);
+		    }
+	    }
 
         protected static void AssertPassed(List<Diagnostic> results)
         {

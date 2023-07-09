@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Nevermore.Analyzers
 {
-    internal class Issue
+    public class Issue
     {
         public Issue(string message, Location location)
         {
