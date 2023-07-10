@@ -2,7 +2,6 @@
 using System.Data.Common;
 using Microsoft.Data.SqlClient;
 
-
 namespace Nevermore.Transient
 {
     public static class TransactionExtensions
@@ -14,7 +13,11 @@ namespace Nevermore.Transient
 
         public static DbTransaction BeginTransactionWithRetry(this SqlConnection connection, IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Beginning Database Transaction").ExecuteAction(() => connection.BeginTransaction(isolationLevel, sqlServerTransactionName));
+            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
+            {
+                RetryUtil.EnsureValidConnection(connection, retryPolicy);
+                return connection.BeginTransaction(isolationLevel, sqlServerTransactionName);
+            });
         }
     }
 }
