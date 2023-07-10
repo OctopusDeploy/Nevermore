@@ -27,16 +27,11 @@ public class NevermoreQueryableAnalyzer : DiagnosticAnalyzer
         {
             return;
         }
-        
-        var symbolInfo = ModelExtensions.GetSymbolInfo(context.SemanticModel, memberAccessExpressionSyntax);
-        if (symbolInfo.Symbol is null)
-            return;
 
-        if (symbolInfo.Symbol.ContainingType.AllInterfaces.Any(i => i.Name == nameof(IQueryable)))
-            return;
-
-        var parentSymbolInfo = ModelExtensions.GetSymbolInfo(context.SemanticModel, memberAccessExpressionSyntax.Expression);
-        if (parentSymbolInfo.Symbol is not IMethodSymbol methodSymbol || 
+        // Only target calls to methods on Nevermore types that return an IQueryable.
+        // E.g: IReadQueryExecutor.Queryable<T>()
+        var symbolInfo = ModelExtensions.GetSymbolInfo(context.SemanticModel, memberAccessExpressionSyntax.Expression);
+        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol || 
             !methodSymbol.ContainingType.ContainingNamespace.Name.StartsWith("Nevermore"))
             return;
 
