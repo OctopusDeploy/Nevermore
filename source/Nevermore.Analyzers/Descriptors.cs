@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 // ReSharper disable InconsistentNaming
 
 namespace Nevermore.Analyzers
 {
+    // https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md
+    [SuppressMessage("Roslyn", "RS2008:AnalyzerReleaseTracking", Justification = "We choose not to follow Microsoft's Analyzer Release tracking scheme")]
     internal static class Descriptors
     {
         internal static readonly DiagnosticDescriptor NV0001NevermoreWhereExpressionError = Create(
