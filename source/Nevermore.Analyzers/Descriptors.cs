@@ -14,6 +14,16 @@ namespace Nevermore.Analyzers
             isEnabledByDefault: true,
             description: "",
             helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
+        
+        internal static readonly DiagnosticDescriptor NV0002NevermoreQueryableError = Create(
+            "NV0002",
+            "Nevermore Queryable",
+            "Nevermore Queryable does not support {0}",
+            "Nevermore",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "",
+            helpLinkUri: "https://github.com/OctopusDeploy/Nevermore/wiki/Querying");
 
         internal static readonly DiagnosticDescriptor NV0005NevermoreEmbeddedSqlWarning = Create(
             "NV0005",

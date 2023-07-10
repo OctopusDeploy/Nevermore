@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Nevermore.Analyzers
 {
-    internal class NevermoreWhereExpressionVisitor : CSharpSyntaxVisitor<Issue>
+    public class NevermoreWhereExpressionVisitor : CSharpSyntaxVisitor<Issue>
     {
         readonly ParameterSyntax expressionArgumentParameter;
         readonly SemanticModel model;
