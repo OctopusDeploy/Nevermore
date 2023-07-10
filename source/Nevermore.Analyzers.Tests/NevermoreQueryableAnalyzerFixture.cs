@@ -90,7 +90,7 @@ public class NevermoreQueryableAnalyzerFixture : NevermoreFixture
     public void ShouldPassForSkip()
     {
         var code = @"
-			transaction.Queryable<Customer>().Take(1);
+			transaction.Queryable<Customer>().Skip(1);
 		";
 
         var results = CodeCompiler.Compile<NevermoreQueryableAnalyzer>(code);
