@@ -675,8 +675,8 @@ namespace Nevermore.Advanced
             {
                 // A connection can exist, but be in a broken state.
                 // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
-                // this creates and assigns a new value to `connection`, and OpenAsync has it's own retry behaviour.
-                if (connection.State != ConnectionState.Open) await OpenAsync().ConfigureAwait(false);
+                // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection` 
+                if (connection.State != ConnectionState.Open) await connection.OpenAsync().ConfigureAwait(false);
                     
                 // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
                 // the synchronous version anyway, and the async overload doesn't accept a name parameter.
@@ -690,10 +690,7 @@ namespace Nevermore.Advanced
             
             return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
             {
-                // A connection can exist, but be in a broken state.
-                // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
-                // this creates and assigns a new value to `connection`, and Open has it's own retry behaviour.
-                if (connection.State != ConnectionState.Open) Open();
+                if (connection.State != ConnectionState.Open) connection.Open();
                 
                 return connection.BeginTransaction(isolationLevel, sqlServerTransactionName);
             });
