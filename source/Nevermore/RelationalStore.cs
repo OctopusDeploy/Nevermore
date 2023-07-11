@@ -101,12 +101,12 @@ namespace Nevermore
 
         ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
         {
-            return new ReadTransaction(this, registry.Value, retriableOperation, Configuration, name);
+            return new ReadTransaction(this, s => new DefaultSqlConnection(new SqlConnection(s)), registry.Value, retriableOperation, Configuration, name);
         }
 
         WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
         {
-            return new WriteTransaction(this, registry.Value, retriableOperation, Configuration, keyAllocator.Value, name);
+            return new WriteTransaction(this, s => new DefaultSqlConnection(new SqlConnection(s)), registry.Value, retriableOperation, Configuration, keyAllocator.Value, name);
         }
     }
 }

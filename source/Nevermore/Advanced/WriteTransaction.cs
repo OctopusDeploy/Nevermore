@@ -25,12 +25,13 @@ namespace Nevermore.Advanced
 
         public WriteTransaction(
             IRelationalStore store,
+            Func<string, ISqlConnection> connectionFactory,
             RelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
             string name = null
-        ) : base(store, registry, operationsToRetry, configuration, name)
+        ) : base(store, connectionFactory, registry, operationsToRetry, configuration, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;

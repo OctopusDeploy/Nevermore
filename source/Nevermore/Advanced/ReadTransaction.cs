@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
@@ -31,9 +30,11 @@ namespace Nevermore.Advanced
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
+
+        readonly Func<string, ISqlConnection> connectionFactory;
         readonly string name;
 
-        SqlConnection? connection;
+        ISqlConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
         protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
@@ -45,10 +46,11 @@ namespace Nevermore.Advanced
         public DateTimeOffset CreatedTime { get; } = DateTimeOffset.Now;
 
         public IDictionary<string, object> State { get; }
-
-        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
+        
+        public ReadTransaction(IRelationalStore store, Func<string, ISqlConnection> connectionFactory, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
         {
             State = new Dictionary<string, object>();
+            this.connectionFactory = connectionFactory;
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
@@ -73,8 +75,8 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
-            connection = new SqlConnection(registry.ConnectionString);
-            connection.OpenWithRetry();
+            connection = connectionFactory(registry.ConnectionString);
+            connection.Connection.OpenWithRetry();
             
             // We can potentially re-open an SqlConnection in a single ReadTransaction. Don't restart the TransactionTimer in that case
             TransactionTimer ??= new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
@@ -82,8 +84,8 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync()
         {
-            connection = new SqlConnection(registry.ConnectionString);
-            await connection.OpenWithRetryAsync().ConfigureAwait(false);
+            connection = connectionFactory(registry.ConnectionString);
+            await connection.Connection.OpenWithRetryAsync().ConfigureAwait(false);
             
             // We can potentially re-open an SqlConnection in a single ReadTransaction. Don't restart the TransactionTimer in that case
             TransactionTimer ??= new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
@@ -677,7 +679,7 @@ namespace Nevermore.Advanced
                 // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
                 // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection` 
                 if (connection.State != ConnectionState.Open) await connection.OpenAsync().ConfigureAwait(false);
-                    
+                
                 // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
                 // the synchronous version anyway, and the async overload doesn't accept a name parameter.
                 return connection.BeginTransaction(isolationLevel, sqlServerTransactionName);
@@ -737,7 +739,7 @@ namespace Nevermore.Advanced
         CommandExecutor CreateCommand(PreparedCommand command)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
-            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
+            var sqlCommand = configuration.CommandFactory.CreateCommand(connection!.Connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             if (command.ParameterValues != null)
             {
