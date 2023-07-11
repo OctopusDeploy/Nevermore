@@ -78,8 +78,7 @@ namespace Nevermore.Advanced
             connection = connectionFactory(registry.ConnectionString);
             connection.Connection.OpenWithRetry();
             
-            // We can potentially re-open an SqlConnection in a single ReadTransaction. Don't restart the TransactionTimer in that case
-            TransactionTimer ??= new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
+            TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public async Task OpenAsync()
@@ -87,8 +86,7 @@ namespace Nevermore.Advanced
             connection = connectionFactory(registry.ConnectionString);
             await connection.Connection.OpenWithRetryAsync().ConfigureAwait(false);
             
-            // We can potentially re-open an SqlConnection in a single ReadTransaction. Don't restart the TransactionTimer in that case
-            TransactionTimer ??= new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
+            TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public void Open(IsolationLevel isolationLevel)
