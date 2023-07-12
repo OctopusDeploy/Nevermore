@@ -4,6 +4,18 @@ namespace Nevermore.Analyzers.Tests;
 
 public class NevermoreQueryableAnalyzerFixture : NevermoreFixture
 {
+	[Test]
+	public void ShouldPassOnNonQueryableMethods()
+	{
+		var code = @"
+			transaction.Queryable<Customer>().ToList();
+			transaction.Queryable<Customer>();
+		";
+
+		var results = CodeCompiler.Compile<NevermoreQueryableAnalyzer>(code);
+		AssertPassed(results);
+	}
+
     [Test]
     public void ShouldPassForWhere()
     {
