@@ -163,7 +163,7 @@ namespace Nevermore.Tests.RelationalStore
                 // it needs to be re-opened to recover
                 if (TransactionCount++ == 0)
                 {
-                    connectionState = ConnectionState.Broken;
+                    connectionState = ConnectionState.Closed;
                     throw new TimeoutException("transient exception in BeginDbTransaction");
                 }
                 return base.BeginDbTransaction(isolationLevel);
@@ -173,7 +173,7 @@ namespace Nevermore.Tests.RelationalStore
             {
                 if (TransactionCount++ == 0)
                 {
-                    connectionState = ConnectionState.Broken;
+                    connectionState = ConnectionState.Closed;
                     throw new TimeoutException("transient exception in BeginDbTransaction");
                 }
                 return base.BeginTransaction(iso, transactionName);
