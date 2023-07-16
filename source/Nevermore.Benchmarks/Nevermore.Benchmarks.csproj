@@ -4,6 +4,11 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
         <PackageId>Octopus.Nevermore.Benchmarks</PackageId>
+        <!-- 
+        @team-productive-engineering NV0002 is designed to catch unsupported Queryable calls in Octopus Server,
+        but isn't quite right at the moment when pointed at nevermore itself. Suppress for now 
+        -->
+        <NoWarn>NV0002</NoWarn>
     </PropertyGroup>
     
     <ItemGroup>
