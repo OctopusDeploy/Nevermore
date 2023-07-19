@@ -303,7 +303,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer2);
                 var ex = Assert.Throws<UniqueConstraintViolationException>(() => transaction.Insert(customer3));
 
-                ex.Message.Should().Be("Customers must have a unique name");
+                ex?.Message.Should().Be("Customers must have a unique name");
             }
         }
 

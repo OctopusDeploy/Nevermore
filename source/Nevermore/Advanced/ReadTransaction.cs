@@ -26,14 +26,17 @@ namespace Nevermore.Advanced
     public class ReadTransaction : IReadTransaction, ITransactionDiagnostic
     {
         static readonly ILog Log = LogProvider.For<ReadTransaction>();
+        static DbConnection DefaultConnectionFactory(string connectionString) => new SqlConnection(connectionString);
 
         readonly RelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
+
+        readonly Func<string, DbConnection> connectionFactory;
         readonly string name;
 
-        SqlConnection? connection;
+        DbConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
         protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
@@ -47,8 +50,20 @@ namespace Nevermore.Advanced
         public IDictionary<string, object> State { get; }
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
+            : this(store, registry,  operationsToRetry, configuration, DefaultConnectionFactory, name)
+        {
+        }
+
+        internal ReadTransaction(
+            IRelationalStore store,
+            RelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            Func<string, DbConnection> connectionFactory,
+            string? name = null)
         {
             State = new Dictionary<string, object>();
+            this.connectionFactory = connectionFactory;
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
@@ -73,33 +88,32 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
-            connection = new SqlConnection(registry.ConnectionString);
+            connection = connectionFactory(registry.ConnectionString);
             connection.OpenWithRetry();
+            
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public async Task OpenAsync()
         {
-            connection = new SqlConnection(registry.ConnectionString);
+            connection = connectionFactory(registry.ConnectionString);
             await connection.OpenWithRetryAsync().ConfigureAwait(false);
+            
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
         public void Open(IsolationLevel isolationLevel)
         {
             Open();
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+            Transaction = BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy());
         }
 
         public async Task OpenAsync(IsolationLevel isolationLevel)
         {
             await OpenAsync().ConfigureAwait(false);
-
-            // We use the synchronous overload here even though there is an async one, because the BeginTransactionAsync calls
-            // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-            Transaction = connection!.BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName);
+            Transaction = await BeginTransactionWithRetryAsync(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy()).ConfigureAwait(false);
         }
-
+        
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
@@ -665,6 +679,35 @@ namespace Nevermore.Advanced
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken).ConfigureAwait(false);
         }
+        
+        async Task<DbTransaction> BeginTransactionWithRetryAsync(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
+        {
+            if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
+            
+            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(async () =>
+            {
+                // A connection can exist, but be in a broken state.
+                // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
+                // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection` 
+                if (connection.State != ConnectionState.Open) await connection.OpenAsync().ConfigureAwait(false);
+                
+                // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
+                // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+                return BeginTransaction(isolationLevel, sqlServerTransactionName);
+            }).ConfigureAwait(false);
+        }
+
+        DbTransaction BeginTransactionWithRetry(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
+        {
+            if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
+            
+            return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
+            {
+                if (connection.State != ConnectionState.Open) connection.Open();
+                
+                return BeginTransaction(isolationLevel, sqlServerTransactionName);
+            });
+        }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
         {
@@ -728,7 +771,7 @@ namespace Nevermore.Advanced
             if (operationsToRetry == RetriableOperation.None)
                 return RetryPolicy.NoRetry;
 
-            return (operationsToRetry & operation) != 0 ? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() : RetryPolicy.NoRetry;
+            return operationsToRetry.HasFlag(operation) ? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy() : RetryPolicy.NoRetry;
         }
 
         internal void WriteDebugInfoTo(StringBuilder sb)
@@ -778,6 +821,16 @@ namespace Nevermore.Advanced
         void ITransactionDiagnostic.WriteCurrentTransactions(StringBuilder output)
         {
             registry.WriteCurrentTransactions(output);
+        }
+
+        DbTransaction BeginTransaction(IsolationLevel isolationLevel, string sqlServerTransactionName)
+        {
+            if (connection is SqlConnection sqlConnection)
+            {
+                return sqlConnection.BeginTransaction(isolationLevel, sqlServerTransactionName);
+            }
+
+            return connection!.BeginTransaction(isolationLevel);
         }
 
         public void Dispose()
