@@ -105,7 +105,7 @@ namespace Nevermore.Advanced.Queryable
         {
             DocumentMap = configuration.DocumentMaps.Resolve(documentType);
             var schema = DocumentMap.SchemaName ?? configuration.DefaultSchema;
-            from = new SimpleTableSource(DocumentMap.TableName, schema, GetDocumentColumns().ToArray());
+            from = new SimpleTableSource(DocumentMap.TableName, schema, DocumentMap.GetColumnNames().ToArray());
 
             if (DocumentMap.TypeResolutionColumn is not null)
             {
@@ -140,7 +140,7 @@ namespace Nevermore.Advanced.Queryable
         {
             IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
             var orderBy = orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
-            var columns = new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
+            var columns = new SelectAllJsonColumnLast(DocumentMap.GetColumnNames().ToList());
             var select = new Select(
                 rowSelection ?? new AllRows(),
                 skip.HasValue ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
@@ -164,7 +164,7 @@ namespace Nevermore.Advanced.Queryable
 
                 select = new Select(
                     new AllRows(),
-                    new SelectAllColumnsWithTableAliasJsonLast("aliased", GetDocumentColumns().ToList()),
+                    new SelectAllColumnsWithTableAliasJsonLast("aliased", DocumentMap.GetColumnNames().ToList()),
                     new SubquerySource(select, "aliased"),
                     new Where(new AndClause(pagingFilters)),
                     null,
@@ -217,26 +217,6 @@ namespace Nevermore.Advanced.Queryable
             var paramName = $"p{index}";
             parameterValues[paramName] = value;
             return new Parameter(paramName);
-        }
-
-        IEnumerable<string> GetDocumentColumns()
-        {
-            yield return DocumentMap.IdColumn!.ColumnName;
-
-            foreach (var column in DocumentMap.Columns)
-            {
-                yield return column.ColumnName;
-            }
-
-            if (DocumentMap.HasJsonColumn())
-            {
-                yield return "JSON";
-            }
-
-            if (DocumentMap.HasJsonBlobColumn())
-            {
-                yield return "JSONBlob";
-            }
         }
 
         OrderBy GetDefaultOrderBy()

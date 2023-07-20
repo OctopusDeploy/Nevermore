@@ -15,6 +15,7 @@ using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
+using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
@@ -720,7 +721,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var schema = configuration.GetSchemaNameOrDefault(mapping);
-            var columnNames = GetColumnNames(schema, mapping.TableName);
+            var columnNames = mapping.GetColumnNames();
             var tableName = mapping.TableName;
             var args = new CommandParameterValues { { "Id", mapping.IdColumn.PrimaryKeyHandler.ConvertToPrimitiveValue(id) } };
 
@@ -735,7 +736,7 @@ namespace Nevermore.Advanced
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var schema = configuration.GetSchemaNameOrDefault(mapping);
-            var columnNames = GetColumnNames(schema, mapping.TableName);
+            var columnNames = mapping.GetColumnNames();
             var param = new CommandParameterValues();
             param.AddTable("criteriaTable", idList.ToList(), configuration);
             var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{schema}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
