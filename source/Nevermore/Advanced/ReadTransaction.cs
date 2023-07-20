@@ -94,10 +94,10 @@ namespace Nevermore.Advanced
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
-        public async Task OpenAsync()
+        public async Task OpenAsync(CancellationToken cancellationToken = default)
         {
             connection = connectionFactory(registry.ConnectionString);
-            await connection.OpenWithRetryAsync().ConfigureAwait(false);
+            await connection.OpenWithRetryAsync(cancellationToken).ConfigureAwait(false);
             
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
@@ -108,9 +108,9 @@ namespace Nevermore.Advanced
             Transaction = BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy());
         }
 
-        public async Task OpenAsync(IsolationLevel isolationLevel)
+        public async Task OpenAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
         {
-            await OpenAsync().ConfigureAwait(false);
+            await OpenAsync(cancellationToken).ConfigureAwait(false);
             Transaction = await BeginTransactionWithRetryAsync(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy()).ConfigureAwait(false);
         }
         
