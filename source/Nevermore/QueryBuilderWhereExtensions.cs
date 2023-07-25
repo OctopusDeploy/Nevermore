@@ -286,8 +286,9 @@ namespace Nevermore
         [Pure] public static IQueryBuilder<TRecord> LikeParameter<TRecord>(this IQueryBuilder<TRecord> queryBuilder,
             string name, object value) where TRecord : class
         {
+            var likeValue = (value ?? string.Empty).ToString().EscapeForLikeComparison();
             return queryBuilder.Parameter(name,
-                "%" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "%");
+                "%" + likeValue + "%");
         }
 
         /// <summary>
@@ -303,7 +304,7 @@ namespace Nevermore
             string name, object value) where TRecord : class
         {
             return queryBuilder.Parameter(name,
-                "%|" + (value ?? string.Empty).ToString().Replace("[", "[[]").Replace("%", "[%]") + "|%");
+                "%|" + (value ?? string.Empty).ToString().EscapeForLikeComparison() + "|%");
         }
     }
 }

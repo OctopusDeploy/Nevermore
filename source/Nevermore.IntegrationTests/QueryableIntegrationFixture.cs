@@ -669,6 +669,32 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob", "Charlie");
         }
+        
+        [Test]
+        public void WhereStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "Bear" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "Beets" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "Chicken" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Nickname.Contains("hi"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Charlie");
+        }
 
         [Test]
         public void WhereNotStringContains()
@@ -694,6 +720,32 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
+        }
+
+        [Test]
+        public void WhereStringContainsSpecialCharacters()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "[Bear]" },
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "[100%]" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.Nickname.Contains("["))
+                .Where(c => !c.Nickname.Contains("%"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
         }
 
         [Test]

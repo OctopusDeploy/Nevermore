@@ -269,7 +269,7 @@ namespace Nevermore.Advanced.Queryable
         IWhereClause CreateStringMethodWhere(MethodCallExpression expression, bool invert = false)
         {
             var (fieldReference, _) = GetFieldReferenceAndType(expression.Object);
-            var value = (string)GetValueFromExpression(expression.Arguments[0], typeof(string));
+            var value = ((string)GetValueFromExpression(expression.Arguments[0], typeof(string))).EscapeForLikeComparison();
 
             if (expression.Method.Name == nameof(string.Contains))
             {
