@@ -730,7 +730,8 @@ namespace Nevermore.IntegrationTests
             var testCustomers = new[]
             {
                 new Customer { FirstName = "Alice", LastName = "Apple", Nickname = "[Bear]" },
-                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "[100%]" }
+                new Customer { FirstName = "Bob", LastName = "Banana", Nickname = "[100%]" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Nickname = "[Fried_Chicken]" }
             };
 
             foreach (var c in testCustomers)
@@ -743,6 +744,7 @@ namespace Nevermore.IntegrationTests
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Nickname.Contains("["))
                 .Where(c => !c.Nickname.Contains("%"))
+                .Where(c => !c.Nickname.Contains("_"))
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
