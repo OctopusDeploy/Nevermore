@@ -1,4 +1,6 @@
-﻿namespace Nevermore.IntegrationTests.Model
+﻿using System;
+
+namespace Nevermore.IntegrationTests.Model
 {
     public class Machine
     {
@@ -7,5 +9,6 @@
 
         public string Description { get; set; }
         public Endpoint Endpoint { get; set; }
+        public DateTimeOffset LastModified { get; set; }
     }
 }
