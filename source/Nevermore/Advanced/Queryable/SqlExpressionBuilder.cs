@@ -12,6 +12,7 @@ namespace Nevermore.Advanced.Queryable
     {
         readonly IRelationalStoreConfiguration configuration;
 
+        readonly List<ISelectColumns> selectColumns = new();
         readonly List<OrderByField> orderByFields = new();
         readonly List<IWhereClause> whereClauses = new();
         string hint;
@@ -19,6 +20,8 @@ namespace Nevermore.Advanced.Queryable
         ITableSource from;
         int? skip;
         int? take;
+        bool distinct;
+        readonly List<IColumn> distinctByColumns = new();
         QueryType queryType = QueryType.SelectMany;
         volatile int paramCounter;
 
@@ -28,6 +31,11 @@ namespace Nevermore.Advanced.Queryable
         }
 
         public DocumentMap DocumentMap { get; private set; }
+
+        public void Column(ISelectColumns selectColumns)
+        {
+            this.selectColumns.Add(selectColumns);
+        }
 
         public void Where(IWhereClause whereClause)
         {
@@ -70,12 +78,32 @@ namespace Nevermore.Advanced.Queryable
             orderByFields.Add(field);
         }
 
-        public void Single()
+        public void First()
         {
             Take(1);
+            queryType = QueryType.SelectFirst;
+        }
+        
+        public void FirstOrDefault()
+        {
+            Take(1);
+            queryType = QueryType.SelectFirstOrDefault;
+        }
+
+        public void Single()
+        {
+            // Hack: This is yuck. We're taking two rows here so that we can throw if we get more than one row.
+            Take(2);
             queryType = QueryType.SelectSingle;
         }
 
+        public void SingleOrDefault()
+        {
+            // Hack: This is yuck. We're taking two rows here so that we can throw if we get more than one row.
+            Take(2);
+            queryType = QueryType.SelectSingleOrDefault;
+        }
+        
         public void Exists()
         {
             queryType = QueryType.Exists;
@@ -99,6 +127,16 @@ namespace Nevermore.Advanced.Queryable
         public void Hint(string hint)
         {
             this.hint = hint;
+        }
+
+        public void Distinct()
+        {
+            distinct = true;
+        }
+
+        public void DistinctBy(IColumn column)
+        {
+            distinctByColumns.Add(column);
         }
 
         public void From(Type documentType)
@@ -125,25 +163,61 @@ namespace Nevermore.Advanced.Queryable
                 from = new TableSourceWithHint(simpleTableSource, hint);
             }
 
-            var sqlExpression = queryType switch
+            IExpression sqlExpression;
+            if (distinctByColumns.Any())
             {
-                QueryType.Exists => CreateExistsQuery(),
-                QueryType.Count => CreateCountQuery(),
-                _ => CreateSelectQuery()
-            };
+                sqlExpression = CreateSelectDistinctByQuery();
+            }
+            else
+            {
+                sqlExpression = queryType switch
+                {
+                    QueryType.Exists => CreateExistsQuery(),
+                    QueryType.Count => CreateCountQuery(),
+                    _ => CreateSelectQuery(from)
+                };    
+            }
 
             return (sqlExpression, parameterValues, queryType);
         }
 
-
-        IExpression CreateSelectQuery()
+        IExpression CreateSelectDistinctByQuery()
         {
-            IRowSelection rowSelection = take.HasValue && !skip.HasValue ? new Top(take.Value) : null;
-            var orderBy = orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
-            var columns = new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
+            const string distinctByRowNumberFieldName = "distinctby_rownumber";
+            const string distinctByRowNumberParameterName = "distinctby_rownumber";
+            const string distinctByCteName = "distinctby_cte";
+            
+            whereClauses.Add(new UnaryWhereClause(new WhereFieldReference(distinctByRowNumberFieldName), UnarySqlOperand.Equal, distinctByRowNumberParameterName));
+            parameterValues.Add(distinctByRowNumberParameterName, 1);
+            
+            var orderBy = GetOrderBy();
+            var cteSelect = new Select(
+                new AllRows(),
+                new AggregateSelectColumns(new ISelectColumns[] { 
+                    new SelectAllSource(),
+                    new SelectRowNumber(
+                        new Over(orderBy, new PartitionBy(distinctByColumns)),
+                        distinctByRowNumberFieldName
+                    )
+                }),
+                from,
+                new Where(),
+                null,
+                null,
+                new Option(Array.Empty<OptionClause>()));
+
+            var select = CreateSelectQuery(new SchemalessTableSource(distinctByCteName));
+            return new CteSelectSource(cteSelect, distinctByCteName, select);
+        }
+
+        ISelect CreateSelectQuery(ISelectSource from)
+        {
+            var rowSelection = CreateRowSelection();
+            var orderBy = GetOrderBy();
+            ISelectColumns columns = selectColumns.Any() ? new AggregateSelectColumns(selectColumns) : new SelectAllJsonColumnLast(GetDocumentColumns().ToList());
             var select = new Select(
-                rowSelection ?? new AllRows(),
-                skip.HasValue ? new AggregateSelectColumns(new ISelectColumns[] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
+                rowSelection,
+                skip.HasValue ? new AggregateSelectColumns(new [] { new SelectRowNumber(new Over(orderBy, null), "RowNum"), columns }) : columns,
                 from,
                 CreateWhereClause(),
                 null,
@@ -163,7 +237,7 @@ namespace Nevermore.Advanced.Queryable
                 }
 
                 select = new Select(
-                    new AllRows(),
+                    distinct ? new Distinct() : new AllRows(),
                     new SelectAllColumnsWithTableAliasJsonLast("aliased", GetDocumentColumns().ToList()),
                     new SubquerySource(select, "aliased"),
                     new Where(new AndClause(pagingFilters)),
@@ -173,6 +247,31 @@ namespace Nevermore.Advanced.Queryable
             }
 
             return select;
+        }
+
+        IRowSelection CreateRowSelection()
+        {
+            var selections = new List<IRowSelection>();
+            if (take.HasValue && !skip.HasValue)
+            {
+                selections.Add(new Top(take.Value));
+            }
+            else
+            {
+                selections.Add(new AllRows());
+            }
+
+            if (distinct)
+            {
+                selections.Add(new Distinct());
+            }
+
+            return new CompositeRowSelection(selections);
+        }
+
+        OrderBy GetOrderBy()
+        {
+            return orderByFields.Any() ? new OrderBy(orderByFields) : GetDefaultOrderBy();
         }
 
         IExpression CreateExistsQuery()

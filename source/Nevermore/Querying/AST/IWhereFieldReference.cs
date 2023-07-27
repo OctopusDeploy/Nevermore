@@ -1,8 +1,50 @@
-﻿namespace Nevermore.Querying.AST
+﻿using System;
+
+namespace Nevermore.Querying.AST
 {
     public interface IWhereFieldReference
     {
         string GenerateSql();
+    }
+
+    public enum StringFunction
+    {
+        Lower,
+        Upper,
+        Trim,
+        LeftTrim,
+        RightTrim,
+    }
+    
+    public class WhereFieldReferenceWithStringFunction : IWhereFieldReference
+    {
+        readonly IWhereFieldReference inner;
+        readonly StringFunction function;
+
+        public WhereFieldReferenceWithStringFunction(IWhereFieldReference inner, StringFunction function)
+        {
+            this.inner = inner;
+            this.function = function;
+        }
+
+        public string GenerateSql()
+        {
+            switch (function)
+            {
+                case StringFunction.Lower:
+                    return $"LOWER({inner.GenerateSql()})";
+                case StringFunction.Upper:
+                    return $"UPPER({inner.GenerateSql()})";
+                case StringFunction.Trim:
+                    return $"TRIM({inner.GenerateSql()})";
+                case StringFunction.LeftTrim:
+                    return $"LTRIM({inner.GenerateSql()})";
+                case StringFunction.RightTrim:
+                    return $"RTRIM({inner.GenerateSql()})";
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
     }
 
     public class WhereFieldReference : IWhereFieldReference

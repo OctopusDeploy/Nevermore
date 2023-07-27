@@ -14,6 +14,8 @@ namespace Nevermore.Advanced.Queryable
         static readonly MethodInfo HintMethodInfo = new Func<IQueryable<object>, string, IQueryable<object>>(Hint).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultMethodInfo = new Func<IQueryable<object>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo FirstOrDefaultWithPredicateMethodInfo = new Func<IQueryable<object>, Expression<Func<object, bool>>, object>(System.Linq.Queryable.FirstOrDefault).GetMethodInfo().GetGenericMethodDefinition();
+        static readonly MethodInfo SingleOrDefaultMethodInfo = new Func<IQueryable<object>, object>(System.Linq.Queryable.SingleOrDefault).GetMethodInfo().GetGenericMethodDefinition();
+        static readonly MethodInfo SingleOrDefaultWithPredicateMethodInfo = new Func<IQueryable<object>, Expression<Func<object, bool>>, object>(System.Linq.Queryable.SingleOrDefault).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo CountMethodInfo = new Func<IQueryable<object>, int>(System.Linq.Queryable.Count).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo CountWithPredicateMethodInfo = new Func<IQueryable<object>, Expression<Func<object, bool>>, int>(System.Linq.Queryable.Count).GetMethodInfo().GetGenericMethodDefinition();
         static readonly MethodInfo AnyMethodInfo = new Func<IQueryable<object>, bool>(System.Linq.Queryable.Any).GetMethodInfo().GetGenericMethodDefinition();
@@ -166,6 +168,41 @@ namespace Nevermore.Advanced.Queryable
                 var expression = Expression.Call(
                     null,
                     FirstOrDefaultWithPredicateMethodInfo.MakeGenericMethod(typeof(TSource)),
+                    source.Expression,
+                    predicate);
+                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken).ConfigureAwait(false);
+            }
+
+            throw new InvalidOperationException("The query provider does not support async operations.");
+        }
+
+        public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            if (source.Provider is IAsyncQueryProvider asyncQueryProvider)
+            {
+                var expression = Expression.Call(
+                    null,
+                    SingleOrDefaultMethodInfo.MakeGenericMethod(typeof(TSource)),
+                    source.Expression);
+                return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken).ConfigureAwait(false);
+            }
+
+            throw new InvalidOperationException("The query provider does not support async operations.");
+        }
+
+        public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            if (source.Provider is IAsyncQueryProvider asyncQueryProvider)
+            {
+                var expression = Expression.Call(
+                    null,
+                    SingleOrDefaultWithPredicateMethodInfo.MakeGenericMethod(typeof(TSource)),
                     source.Expression,
                     predicate);
                 return await asyncQueryProvider.ExecuteAsync<TSource>(expression, cancellationToken).ConfigureAwait(false);

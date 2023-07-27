@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Nevermore.Querying.AST;
 using Nevermore.Util;
+using Newtonsoft.Json;
 
 namespace Nevermore.Advanced.Queryable
 {
@@ -59,6 +60,42 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Where(new CustomWhereClause((string)constantExpression.Value));
                     return node;
                 }
+                case nameof(Enumerable.Select):
+                {
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("Select does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+
+                    var expression = node.Arguments[1];
+                    if (expression is UnaryExpression { Operand: LambdaExpression { Body: NewExpression newExpression } })
+                    {
+                        AggregateSelectColumns aggregateColumns;
+                        if (newExpression.Members is not null)
+                        {
+                            var columns = newExpression.Arguments
+                                .Select(GetFieldReference)
+                                .Zip(newExpression.Members, (column, memberInfo) => new AliasedColumn(column, memberInfo.Name))
+                                .Cast<ISelectColumns>();
+                            aggregateColumns = new AggregateSelectColumns(columns.ToArray());
+                        }
+                        else
+                        {
+                            var columns = newExpression.Arguments
+                                .Select(GetFieldReference);
+                            aggregateColumns = new AggregateSelectColumns(columns.ToArray());
+                        }
+                        
+                        sqlBuilder.Column(aggregateColumns);
+                        return node;
+                    }
+                    
+                    var column = GetFieldReference(expression);
+                    sqlBuilder.Column(column);
+                    return node;
+                }
                 case nameof(System.Linq.Queryable.Where):
                 {
                     Visit(node.Arguments[0]);
@@ -74,8 +111,8 @@ namespace Nevermore.Advanced.Queryable
                     }
 
                     Visit(node.Arguments[0]);
-                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
+                    var column = GetFieldReference(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(column));
                     return node;
                 }
                 case nameof(System.Linq.Queryable.OrderByDescending):
@@ -86,8 +123,8 @@ namespace Nevermore.Advanced.Queryable
                     }
 
                     Visit(node.Arguments[0]);
-                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                    var column = GetFieldReference(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(column, OrderByDirection.Descending));
                     return node;
                 }
                 case nameof(System.Linq.Queryable.ThenBy):
@@ -98,8 +135,8 @@ namespace Nevermore.Advanced.Queryable
                     }
 
                     Visit(node.Arguments[0]);
-                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName)));
+                    var column = GetFieldReference(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(column));
                     return node;
                 }
                 case nameof(System.Linq.Queryable.ThenByDescending):
@@ -110,8 +147,32 @@ namespace Nevermore.Advanced.Queryable
                     }
 
                     Visit(node.Arguments[0]);
-                    var fieldName = GetMemberNameFromKeySelectorExpression(node.Arguments[1]);
-                    sqlBuilder.OrderBy(new OrderByField(new Column(fieldName), OrderByDirection.Descending));
+                    var column = GetFieldReference(node.Arguments[1]);
+                    sqlBuilder.OrderBy(new OrderByField(column, OrderByDirection.Descending));
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.Single):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.Single();
+                    return node;
+                }
+                case nameof(System.Linq.Queryable.SingleOrDefault):
+                {
+                    Visit(node.Arguments[0]);
+                    if (node.Arguments.Count > 1)
+                    {
+                        var expression = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                        sqlBuilder.Where(CreateWhereClause(expression.Body));
+                    }
+
+                    sqlBuilder.SingleOrDefault();
                     return node;
                 }
                 case nameof(System.Linq.Queryable.First):
@@ -123,7 +184,7 @@ namespace Nevermore.Advanced.Queryable
                         sqlBuilder.Where(CreateWhereClause(expression.Body));
                     }
 
-                    sqlBuilder.Single();
+                    sqlBuilder.First();
                     return node;
                 }
                 case nameof(System.Linq.Queryable.FirstOrDefault):
@@ -135,7 +196,7 @@ namespace Nevermore.Advanced.Queryable
                         sqlBuilder.Where(CreateWhereClause(expression.Body));
                     }
 
-                    sqlBuilder.Single();
+                    sqlBuilder.FirstOrDefault();
                     return node;
                 }
                 case nameof(System.Linq.Queryable.Any):
@@ -183,21 +244,27 @@ namespace Nevermore.Advanced.Queryable
                     sqlBuilder.Skip(skip);
                     return node;
                 }
+                case nameof(System.Linq.Queryable.Distinct):
+                {
+                    Visit(node.Arguments[0]);
+                    sqlBuilder.Distinct();
+                    return node;
+                }
+                case "DistinctBy":
+                {
+                    if (node.Arguments.Count > 2)
+                    {
+                        throw new NotSupportedException("DistinctBy does not support custom comparers");
+                    }
+
+                    Visit(node.Arguments[0]);
+                    var column = GetFieldReference(node.Arguments[1]);
+                    sqlBuilder.DistinctBy(column);
+                    return node;
+                }
                 default:
                     throw new NotSupportedException();
             }
-        }
-
-        static string GetMemberNameFromKeySelectorExpression(Expression expression)
-        {
-            var expressionWithoutQuotes = StripQuotes(expression);
-
-            if (expressionWithoutQuotes is LambdaExpression { Body: MemberExpression { NodeType: ExpressionType.MemberAccess } memberExpression })
-            {
-                return memberExpression.Member.Name;
-            }
-
-            throw new NotSupportedException();
         }
 
         IWhereClause CreateWhereClause(Expression expression, bool invert = false)
@@ -228,7 +295,7 @@ namespace Nevermore.Advanced.Queryable
 
         IWhereClause CreateMethodCallWhere(MethodCallExpression expression, bool invert = false)
         {
-            if (expression.Arguments.Count == 1 && expression.Method.DeclaringType == typeof(string))
+            if (expression.Method.DeclaringType == typeof(string))
             {
                 return CreateStringMethodWhere(expression, invert);
             }
@@ -261,6 +328,12 @@ namespace Nevermore.Advanced.Queryable
                     var (fieldReference, _) = GetFieldReferenceAndType(right);
                     return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
                 }
+                else if (right is MethodCallExpression methodCallExpression)
+                {
+                    var values = (IEnumerable)GetValueFromExpression(left, typeof(IEnumerable));
+                    var (fieldReference, _) = GetFieldReferenceAndType(methodCallExpression);
+                    return sqlBuilder.CreateWhere(fieldReference, invert ? ArraySqlOperand.NotIn : ArraySqlOperand.In, values);
+                }
             }
 
             throw new NotSupportedException();
@@ -286,7 +359,42 @@ namespace Nevermore.Advanced.Queryable
                 return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotLike : UnarySqlOperand.Like, $"%{value}");
             }
 
+            if (expression.Method.Name == nameof(string.Equals))
+            {
+                // If one of the IgnoreCase options was specified, then compare in lowercase
+                if (TryGetFirstArgumentOfType(expression, out StringComparison stringComparison))
+                {
+                    switch (stringComparison)
+                    {
+                        case StringComparison.CurrentCultureIgnoreCase:
+                        case StringComparison.InvariantCultureIgnoreCase:
+                        case StringComparison.OrdinalIgnoreCase:
+                            fieldReference = new WhereFieldReferenceWithStringFunction(fieldReference, StringFunction.Lower);
+                            value = value.ToLower();
+                            break;
+                    }
+                }
+
+                return sqlBuilder.CreateWhere(fieldReference, invert ? UnarySqlOperand.NotEqual : UnarySqlOperand.Equal, value);
+            }
+
             throw new NotSupportedException();
+        }
+
+        bool TryGetFirstArgumentOfType<T>(MethodCallExpression expression, out T arg)
+        {
+            arg = default;
+            foreach (var argument in expression.Arguments)
+            {
+                if (argument is not ConstantExpression constantExpression ||
+                    constantExpression.Type != typeof(T))
+                    continue;
+
+                arg = (T)constantExpression.Value;
+                return true;
+            }
+
+            return false;
         }
 
         IWhereClause CreateBinaryWhere(BinaryExpression expression, bool invert = false)
@@ -349,6 +457,69 @@ namespace Nevermore.Advanced.Queryable
             return result;
         }
 
+        bool TryGetMemberExpression(Expression expression, out MemberExpression memberExpression, out PropertyInfo propertyInfo)
+        {
+            if (expression is MemberExpression { Member: PropertyInfo})
+            {
+                memberExpression = (MemberExpression) expression;
+                propertyInfo = (PropertyInfo) memberExpression.Member;
+                return true;
+            }
+
+            if (expression is UnaryExpression unaryExpression &&
+                unaryExpression.Operand is LambdaExpression lambdaExpression &&
+                lambdaExpression.Body is MemberExpression { Member: PropertyInfo })
+            {
+                memberExpression = (MemberExpression) lambdaExpression.Body;
+                propertyInfo = (PropertyInfo) memberExpression.Member;
+                return true;
+            }
+
+            memberExpression = null;
+            propertyInfo = null;
+            return false;
+        }
+
+        IColumn GetFieldReference(Expression expression)
+        {
+            if (TryGetMemberExpression(expression, out MemberExpression memberExpression, out PropertyInfo propertyInfo))
+            {
+                var hasJsonIgnoreAttribute = propertyInfo.GetCustomAttribute<JsonIgnoreAttribute>() is not null;
+                if (hasJsonIgnoreAttribute)
+                {
+                    throw new NotSupportedException($"Cannot select on a property with the {nameof(JsonIgnoreAttribute)}.");
+                }
+                
+                var documentMap = sqlBuilder.DocumentMap;
+                var parameterExpression = memberExpression.FindChildOfType<ParameterExpression>();
+                var childPropertyExpression = memberExpression.FindChildOfType<MemberExpression>();
+                if (childPropertyExpression == null && documentMap.Type.IsAssignableFrom(parameterExpression.Type))
+                {
+                    if (documentMap.IdColumn!.Property.Matches(propertyInfo))
+                    {
+                        return new Column(documentMap.IdColumn.ColumnName);
+                    }
+
+                    var column = documentMap.Columns.Where(c => c.Property is not null).FirstOrDefault(c => c.Property.Matches(propertyInfo));
+                    if (column is not null)
+                    {
+                        return new Column(column.ColumnName);
+                    }
+                }
+
+                if (documentMap.HasJsonColumn())
+                {
+                    var jsonPath = GetJsonPath(memberExpression);
+                    IColumn fieldReference = propertyInfo.IsScalar()
+                        ? new JsonValueColumn(jsonPath, propertyInfo.PropertyType)
+                        : new JsonQueryColumn(jsonPath, propertyInfo.PropertyType);
+                    return fieldReference;
+                }
+            }
+
+            throw new NotSupportedException();
+        }
+        
         (IWhereFieldReference, Type) GetFieldReferenceAndType(Expression expression)
         {
             if (expression is UnaryExpression unaryExpression)
@@ -380,6 +551,35 @@ namespace Nevermore.Advanced.Queryable
                         ? new JsonValueFieldReference(jsonPath)
                         : new JsonQueryFieldReference(jsonPath);
                     return (fieldReference, propertyInfo.PropertyType);
+                }
+            }
+
+            if (expression is MethodCallExpression methodCallExpression)
+            {
+                var (reference, type) = GetFieldReferenceAndType(methodCallExpression.Object);
+                if (methodCallExpression.Method.Name == nameof(string.ToLower))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Lower), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.ToUpper))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Upper), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.Trim))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.Trim), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.TrimStart))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.LeftTrim), type);
+                }
+
+                if (methodCallExpression.Method.Name == nameof(string.TrimEnd))
+                {
+                    return (new WhereFieldReferenceWithStringFunction(reference, StringFunction.RightTrim), type);
                 }
             }
 

@@ -14,6 +14,124 @@ namespace Nevermore.IntegrationTests
     public class QueryableIntegrationFixture : FixtureWithRelationalStore
     {
         [Test]
+        public void SelectColumn()
+        {
+            using var t = Store.BeginTransaction();
+            
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Select(c => c.FirstName)
+                .ToList();
+
+            customers.Should().BeEquivalentTo("Alice", "Bob", "Charlie");
+        }
+
+        [Test]
+        public async Task SelectJsonField()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var machines = t.Queryable<Machine>()
+                .Select(c => c.Endpoint.Name)
+                .ToList();
+
+            machines.Should().BeEquivalentTo("Tentacle A", null, "Tentacle C");
+        }
+
+        [Test]
+        public async Task SelectWithParameterizedConstructor()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>()
+                .Select(c => new CustomerProjection(c.FirstName, c.IsEmployee))
+                .ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new CustomerProjection("Alice", true),
+                new CustomerProjection("Bob", false),
+                new CustomerProjection("Charlie", true)
+            });
+        }
+
+        class CustomerProjection
+        {
+            public CustomerProjection(string firstName, bool isEmployee)
+            {
+                FirstName = firstName;
+                IsEmployee = isEmployee;
+            }
+
+            public string FirstName { get; }
+            public bool IsEmployee { get; }
+        }
+
+        [Test]
+        public async Task SelectWithAnonymousType()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>()
+                .Select(c => new { Name = c.FirstName, c.IsEmployee })
+                .ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new {Name = "Alice", IsEmployee = true},
+                new {Name = "Bob", IsEmployee = false},
+                new {Name = "Charlie", IsEmployee = true},
+            });
+        }
+
+        [Test]
         public void WhereEqual()
         {
             using var t = Store.BeginTransaction();
@@ -34,6 +152,136 @@ namespace Nevermore.IntegrationTests
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.FirstName == "Alice")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualStringEquals()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Equals("Alice"))
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualIgnoreCase()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Equals("alice", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualLower()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToLower() == "alice")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualUpper()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToUpper() == "ALICE")
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void WhereEqualTrim()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "  Alice    ", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Trim() == "Alice")
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple");
@@ -459,6 +707,58 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereUnaryBoolNestedJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A", IsEnabled = true} },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B", IsEnabled = true } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C", IsEnabled = false } },
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(c => c.Endpoint.IsEnabled)
+                .ToList();
+
+            customers.Select(c => c.Name).Should().BeEquivalentTo("Machine A", "Machine B");
+        }
+
+        [Test]
+        public void WhereNotUnaryBoolNestedJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A", IsEnabled = true} },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B", IsEnabled = true } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C", IsEnabled = false } },
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(c => !c.Endpoint.IsEnabled)
+                .ToList();
+
+            customers.Select(c => c.Name).Should().BeEquivalentTo("Machine C");
+        }
+
+        [Test]
         public void WhereCompositeAnd()
         {
             using var t = Store.BeginTransaction();
@@ -535,6 +835,111 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
+        public void WhereLowerContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var names = new[] { "apple", "orange", "peach" };
+            var customers = t.Queryable<Customer>()
+                .Where(c => names.Contains(c.LastName.ToLower()))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice");
+        }
+
+        [Test]
+        public void WhereLowerStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToLower().Contains("a"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Charlie");
+        }
+
+        [Test]
+        public void WhereUpperStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "Bob", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.ToUpper().Contains("A"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Charlie");
+        }
+
+        [Test]
+        public void WhereTrimStringContains()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "  Alice  ", LastName = "Apple", Balance = 987.4m },
+                new Customer { FirstName = "     Bob ", LastName = "Banana", Balance = 56.3m },
+                new Customer { FirstName = "Charlie  ", LastName = "Cherry", Balance = 301.4m }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => c.FirstName.Trim().Contains("e"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("  Alice  ", "Charlie  ");
         }
 
         [Test]
@@ -697,6 +1102,62 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereParens()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Alice", LastName = "Banana" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => (c.FirstName == "Alice" && c.LastName == "Apple") || (c.FirstName == "Bob" && c.LastName == "Banana"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Banana");
+        }
+
+        [Test]
+        public void WhereNotParens()
+        { 
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Alice", LastName = "Banana" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Where(c => !(c.FirstName == "Alice" && c.LastName == "Apple") || !(c.FirstName == "Bob" && c.LastName == "Banana"))
+                .ToList();
+
+            customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Bob");
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Banana", "Apple");
+        }
+
+        [Test]
         public void First()
         {
             using var t = Store.BeginTransaction();
@@ -744,6 +1205,31 @@ namespace Nevermore.IntegrationTests
                 .First(c => c.FirstName == "Alice");
 
             customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void FirstWithNoMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .First(c => c.FirstName == "Jim");
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains no elements");
         }
 
         [Test]
@@ -847,6 +1333,250 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void Single()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .Single();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleWithPredicate()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .Single(c => c.FirstName == "Alice");
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleWithNoMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .First(c => c.FirstName == "Jim");
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains no elements");
+        }
+
+        [Test]
+        public void SingleWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .Single(c => c.LastName.Contains("e"));
+
+            fn.Should().Throw<Exception>().WithMessage("Sequence contains more than one element");
+        }
+
+        [Test]
+        public void SingleOrDefault()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .SingleOrDefault();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public async Task SingleOrDefaultAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .SingleOrDefaultAsync();
+
+            customer.LastName.Should().BeEquivalentTo("Apple");
+        }
+
+        [Test]
+        public void SingleOrDefaultWithPredicate()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customer = t.Queryable<Customer>()
+                .SingleOrDefault(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
+        }
+
+        [Test]
+        public async Task SingleOrDefaultWithPredicateAsync()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customer = await t.Queryable<Customer>()
+                .SingleOrDefaultAsync(c => c.FirstName.EndsWith("y"));
+
+            customer.Should().BeNull();
+        }
+
+        [Test]
+        public void SingleOrDefaultWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var fn = () => t.Queryable<Customer>()
+                .SingleOrDefault(c => c.LastName.Contains("e"));
+
+            fn.Should().ThrowExactly<InvalidOperationException>().WithMessage("Sequence contains more than one element");
+        }
+
+        [Test]
+        public async Task SingleOrDefaultAsyncWithMultipleMatches()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Banana" },
+                new Customer { FirstName = "Charlie", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var fn = async () => await t.Queryable<Customer>()
+                .SingleOrDefaultAsync(c => c.LastName.Contains("e"));
+
+            await fn.Should().ThrowExactlyAsync<InvalidOperationException>().WithMessage("Sequence contains more than one element.");
+        }
+
+        [Test]
         public void Skip()
         {
             using var t = Store.BeginTransaction();
@@ -925,6 +1655,89 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Durian");
+        }
+
+        [Test]
+        public void Distinct()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Charlie", LastName = "Banana" },
+                new Customer { FirstName = "Dan", LastName = "Cherry" },
+                new Customer { FirstName = "Erin", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .Select(c => c.LastName)
+                .Distinct()
+                .ToList();
+
+            customers.Should().BeEquivalentTo("Apple", "Banana", "Cherry");
+        }
+
+        [Test]
+        public void DistinctBy()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple" },
+                new Customer { FirstName = "Bob", LastName = "Apple" },
+                new Customer { FirstName = "Charlie", LastName = "Banana" },
+                new Customer { FirstName = "Dan", LastName = "Cherry" },
+                new Customer { FirstName = "Erin", LastName = "Cherry" }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Customer>()
+                .DistinctBy(c => c.LastName)
+                .ToList();
+
+            customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Banana", "Cherry");
+        }
+
+        [Test]
+        public void DistinctByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .DistinctBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle A", "Tentacle C");
         }
 
         [Test]
@@ -1145,6 +1958,32 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void OrderByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle A", "Tentacle B", "Tentacle C");
+        }
+
+        [Test]
         public void OrderByDescending()
         {
             using var t = Store.BeginTransaction();
@@ -1166,6 +2005,32 @@ namespace Nevermore.IntegrationTests
             var customers = t.Queryable<Customer>().OrderByDescending(c => c.Nickname).ToList();
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Cherry", "Apple", "Banana");
+        }
+
+        [Test]
+        public void OrderByDescendingJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderByDescending(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle C", "Tentacle B", "Tentacle A");
         }
 
         [Test]
@@ -1196,6 +2061,36 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void OrderByThenByJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle E" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine A", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle F" } },
+                new Machine { Name = "Machine B", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine C", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle D" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Type)
+                .ThenBy(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle B", "Tentacle D", "Tentacle F", "Tentacle A", "Tentacle C", "Tentacle E");
+        }
+
+        [Test]
         public void OrderByThenByDescending()
         {
             using var t = Store.BeginTransaction();
@@ -1220,6 +2115,36 @@ namespace Nevermore.IntegrationTests
                 .ToList();
 
             customers.Select(c => c.FirstName).Should().BeEquivalentTo("Alice", "Amanda", "Charlie");
+        }
+
+        [Test]
+        public void OrderByThenByDescendingJson()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle C" } },
+                new Machine { Name = "Machine B", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle E" } },
+                new Machine { Name = "Machine C", Endpoint = new PassiveTentacleEndpoint { Name = "Tentacle A" } },
+                new Machine { Name = "Machine A", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle F" } },
+                new Machine { Name = "Machine B", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle B" } },
+                new Machine { Name = "Machine C", Endpoint = new ActiveTentacleEndpoint { Name = "Tentacle D" } },
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .OrderBy(m => m.Endpoint.Type)
+                .ThenByDescending(m => m.Endpoint.Name)
+                .ToList();
+
+            customers.Select(m => m.Endpoint.Name).Should().BeEquivalentTo("Tentacle F", "Tentacle D", "Tentacle B", "Tentacle E", "Tentacle C", "Tentacle A");
         }
 
         [Test]

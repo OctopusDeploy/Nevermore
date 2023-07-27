@@ -1,8 +1,26 @@
-﻿namespace Nevermore.Querying.AST
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Nevermore.Querying.AST
 {
     public interface IRowSelection
     {
         string GenerateSql();
+    }
+
+    public class CompositeRowSelection : IRowSelection
+    {
+        readonly IEnumerable<IRowSelection> rowSelections;
+
+        public CompositeRowSelection(IEnumerable<IRowSelection> rowSelections)
+        {
+            this.rowSelections = rowSelections;
+        }
+
+        public string GenerateSql()
+        {
+            return string.Join(" ", rowSelections.Select(r => r.GenerateSql()));
+        }
     }
 
     public class Top : IRowSelection
@@ -26,11 +44,6 @@
 
     public class Distinct : IRowSelection
     {
-        public Distinct()
-        {
-            
-        }
-
         public string GenerateSql() => $"DISTINCT ";
         public override string ToString() => GenerateSql();
     }
