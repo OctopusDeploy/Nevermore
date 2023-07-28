@@ -173,6 +173,33 @@ namespace Nevermore.IntegrationTests
         }
 
         [Test]
+        public void WhereEqualJsonDateTimeOffset()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testLastModified = new DateTimeOffset(2023, 07, 27, 16, 04, 00, TimeSpan.Zero);
+            var testMachines = new[]
+            {
+                new Machine { Name = "Machine A", LastModified = DateTimeOffset.Now },
+                new Machine { Name = "Machine B", LastModified = testLastModified},
+                new Machine { Name = "Machine C", LastModified = DateTimeOffset.Now},
+            };
+
+            foreach (var c in testMachines)
+            {
+                t.Insert(c);
+            }
+
+            t.Commit();
+
+            var customers = t.Queryable<Machine>()
+                .Where(m => m.LastModified == testLastModified)
+                .ToList();
+
+            customers.Select(m => m.Name).Should().BeEquivalentTo("Machine B");
+        }
+
+        [Test]
         public void WhereIsNullJsonValue()
         {
             using var t = Store.BeginTransaction();
