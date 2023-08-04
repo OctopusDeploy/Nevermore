@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 #endif
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
 using Nevermore.Mapping;
@@ -49,12 +50,12 @@ namespace Nevermore
             }
         }
 
-        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel).ConfigureAwait(false);
+                await txn.OpenAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
                 return txn;
             }
             catch
@@ -79,12 +80,12 @@ namespace Nevermore
             }
         }
 
-        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
             {
-                await txn.OpenAsync(isolationLevel).ConfigureAwait(false);
+                await txn.OpenAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
                 return txn;
             }
             catch

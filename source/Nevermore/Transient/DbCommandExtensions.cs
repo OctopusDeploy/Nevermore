@@ -31,7 +31,7 @@ namespace Nevermore.Transient
         {
             GuardConnectionIsNotNull(command);
             var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
-            return effectiveCommandRetryPolicy.ExecuteAction(async () =>
+            return effectiveCommandRetryPolicy.ExecuteActionAsync(async () =>
             {
                 var weOwnTheConnectionLifetime = await EnsureValidConnectionAsync(command, connectionRetryPolicy, cancellationToken).ConfigureAwait(false);
                 try

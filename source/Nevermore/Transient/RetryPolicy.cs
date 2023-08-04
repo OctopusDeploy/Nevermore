@@ -235,7 +235,7 @@ namespace Nevermore.Transient
                 return null;
             });
         }
-        
+
         /// <summary>
         /// Repetitively executes the specified action while it satisfies the current retry policy.
         /// </summary>
@@ -283,7 +283,7 @@ namespace Nevermore.Transient
                 OnRetrying(num, ex, zero);
                 if (num > 1 || !RetryStrategy.FastFirstRetry)
                 {
-                    Thread.Sleep(zero);
+                    await Task.Yield();
                 }
             }
             return result;
