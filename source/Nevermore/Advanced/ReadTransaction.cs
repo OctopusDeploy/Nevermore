@@ -684,17 +684,19 @@ namespace Nevermore.Advanced
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
-            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(async () =>
-            {
-                // A connection can exist, but be in a broken state.
-                // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
-                // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection`
-                if (connection.State != ConnectionState.Open) await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
+                async ct =>
+                {
+                    // A connection can exist, but be in a broken state.
+                    // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
+                    // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection`
+                    if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
-                // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-                return BeginTransaction(isolationLevel, sqlServerTransactionName);
-            }).ConfigureAwait(false);
+                    // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
+                    // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+                    return BeginTransaction(isolationLevel, sqlServerTransactionName);
+                },
+                cancellationToken).ConfigureAwait(false);
         }
 
         DbTransaction BeginTransactionWithRetry(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
