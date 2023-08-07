@@ -90,15 +90,15 @@ namespace Nevermore.Advanced
 
             connection = connectionFactory(registry.ConnectionString);
             connection.OpenWithRetry();
-            
+
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
-        public async Task OpenAsync()
+        public async Task OpenAsync(CancellationToken cancellationToken = default)
         {
             connection = connectionFactory(registry.ConnectionString);
-            await connection.OpenWithRetryAsync().ConfigureAwait(false);
-            
+            await connection.OpenWithRetryAsync(cancellationToken).ConfigureAwait(false);
+
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
 
@@ -108,12 +108,12 @@ namespace Nevermore.Advanced
             Transaction = BeginTransactionWithRetry(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy());
         }
 
-        public async Task OpenAsync(IsolationLevel isolationLevel)
+        public async Task OpenAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
         {
-            await OpenAsync().ConfigureAwait(false);
-            Transaction = await BeginTransactionWithRetryAsync(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy()).ConfigureAwait(false);
+            await OpenAsync(cancellationToken).ConfigureAwait(false);
+            Transaction = await BeginTransactionWithRetryAsync(isolationLevel, SqlServerTransactionName, RetryManager.Instance.GetDefaultSqlTransactionRetryPolicy(), cancellationToken).ConfigureAwait(false);
         }
-        
+
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
@@ -679,32 +679,34 @@ namespace Nevermore.Advanced
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken).ConfigureAwait(false);
         }
-        
-        async Task<DbTransaction> BeginTransactionWithRetryAsync(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
+
+        async Task<DbTransaction> BeginTransactionWithRetryAsync(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy, CancellationToken cancellationToken = default)
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
-            
-            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(async () =>
-            {
-                // A connection can exist, but be in a broken state.
-                // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
-                // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection` 
-                if (connection.State != ConnectionState.Open) await connection.OpenAsync().ConfigureAwait(false);
-                
-                // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
-                // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-                return BeginTransaction(isolationLevel, sqlServerTransactionName);
-            }).ConfigureAwait(false);
+
+            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
+                async ct =>
+                {
+                    // A connection can exist, but be in a broken state.
+                    // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
+                    // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection`
+                    if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct).ConfigureAwait(false);
+
+                    // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
+                    // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+                    return BeginTransaction(isolationLevel, sqlServerTransactionName);
+                },
+                cancellationToken).ConfigureAwait(false);
         }
 
         DbTransaction BeginTransactionWithRetry(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
-            
+
             return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
             {
                 if (connection.State != ConnectionState.Open) connection.Open();
-                
+
                 return BeginTransaction(isolationLevel, sqlServerTransactionName);
             });
         }

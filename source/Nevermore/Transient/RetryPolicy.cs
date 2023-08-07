@@ -227,6 +227,17 @@ namespace Nevermore.Transient
             return result;
         }
 
+        public virtual Task ExecuteActionAsync(Func<CancellationToken, Task> func, CancellationToken cancellationToken)
+        {
+            return ExecuteActionAsync<object>(
+                async ct =>
+                {
+                    await func(ct).ConfigureAwait(false);
+                    return null;
+                },
+                cancellationToken);
+        }
+
         public virtual Task ExecuteActionAsync(Func<Task> func)
         {
             return ExecuteActionAsync<object>(async () =>
@@ -235,14 +246,15 @@ namespace Nevermore.Transient
                 return null;
             });
         }
-        
+
         /// <summary>
-        /// Repetitively executes the specified action while it satisfies the current retry policy.
+        /// Repeatedly executes the specified action while it satisfies the current retry policy.
         /// </summary>
         /// <typeparam name="TResult">The type of result expected from the executable action.</typeparam>
         /// <param name="func">A delegate that represents the executable action that returns the result of type <typeparamref name="TResult" />.</param>
+        /// <param name="cancellationToken">A cancellation token that is forwarded to <paramref name="func"/>.</param>
         /// <returns>The result from the action.</returns>
-        public virtual async Task<TResult> ExecuteActionAsync<TResult>(Func<Task<TResult>> func)
+        public virtual async Task<TResult> ExecuteActionAsync<TResult>(Func<CancellationToken, Task<TResult>> func, CancellationToken cancellationToken)
         {
             Guard.ArgumentNotNull(func, "func");
             var num = 0;
@@ -251,10 +263,11 @@ namespace Nevermore.Transient
             TResult result;
             while (true)
             {
-                Exception ex = null;
+                cancellationToken.ThrowIfCancellationRequested();
+                Exception ex;
                 try
                 {
-                    result = await func().ConfigureAwait(false);
+                    result = await func(cancellationToken).ConfigureAwait(false);
                     break;
                 }
 #pragma warning disable 618
@@ -265,7 +278,7 @@ namespace Nevermore.Transient
                     {
                         throw ex2.InnerException;
                     }
-                    result = default(TResult);
+                    result = default;
                     break;
                 }
                 catch (Exception ex3)
@@ -283,10 +296,22 @@ namespace Nevermore.Transient
                 OnRetrying(num, ex, zero);
                 if (num > 1 || !RetryStrategy.FastFirstRetry)
                 {
-                    Thread.Sleep(zero);
+                    await Task.Yield();
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Repeatedly executes the specified action while it satisfies the current retry policy.
+        /// </summary>
+        /// <typeparam name="TResult">The type of result expected from the executable action.</typeparam>
+        /// <param name="func">A delegate that represents the executable action that returns the result of type <typeparamref name="TResult" />.</param>
+        /// <returns>The result from the action.</returns>
+        public virtual Task<TResult> ExecuteActionAsync<TResult>(Func<Task<TResult>> func)
+        {
+            Guard.ArgumentNotNull(func, "func");
+            return ExecuteActionAsync(_ => func(), default);
         }
 
         /// <summary>

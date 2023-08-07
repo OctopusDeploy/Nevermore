@@ -18,7 +18,7 @@ namespace Nevermore.Transient
         {
             (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteAction(connection.Open);
         }
-        
+
         public static Task OpenWithRetryAsync(this DbConnection connection)
         {
             return OpenWithRetryAsync(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy());
@@ -33,10 +33,10 @@ namespace Nevermore.Transient
         {
             return OpenWithRetryAsync(connection, retryPolicy, CancellationToken.None);
         }
-        
+
         public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(() => connection.OpenAsync(cancellationToken));
+            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(connection.OpenAsync, cancellationToken);
         }
     }
 }
