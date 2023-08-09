@@ -15,6 +15,7 @@ namespace Nevermore.Mapping
         ColumnMapping? rowVersionColumn;
         ColumnMapping? typeResolutionColumn;
         readonly List<ColumnMapping> columns = new List<ColumnMapping>();
+        readonly List<IChildTableMapping> childTables = new List<IChildTableMapping>();
         readonly List<RelatedDocumentsMapping> relatedDocumentsMappings = new List<RelatedDocumentsMapping>();
         readonly List<UniqueRule> uniqueConstraints = new List<UniqueRule>();
 
@@ -176,30 +177,35 @@ namespace Nevermore.Mapping
             return column;
         }
 
+        // If our Document has a collection, and that collection would be stored in a "child" table, express it with DependentCollection
+        protected IChildTableMappingBuilder<TDocument, TChildDocument, TElement, TCollection> DependentCollection<TChildDocument, TElement, TCollection>(
+            Expression<Func<TDocument, TCollection>> getter,
+            Action<IChildTableMappingBuilder<TDocument, TChildDocument, TElement, TCollection>> mappingBuilder,
+            Func<TDocument, TElement, TChildDocument> toChild,
+            Func<TChildDocument, TElement> fromChild)
+            where TCollection : IEnumerable<TElement> where TChildDocument : notnull where TElement : notnull
+        {
+            var property = GetPropertyInfo(getter) ?? throw new ArgumentException(nameof(getter));
+            // TODO OE: Support for setter
+            
+            var childMapping = new ChildTableMapping<TDocument, TChildDocument, TElement, TCollection>(
+                typeof(TChildDocument),
+                property.PropertyType, 
+                new PropertyHandler(property), 
+                property, 
+                toChild,
+                fromChild);
+            mappingBuilder(childMapping);
+            childTables.Add(childMapping);
+
+            return childMapping;
+        }
+
         protected RelatedDocumentsMapping RelatedDocuments(Expression<Func<TDocument, IEnumerable<(string, Type)>>> property, string tableName = DocumentMap.RelatedDocumentTableName, string? schemaName = null)
         {
             var mapping = new RelatedDocumentsMapping(GetPropertyInfo(property), tableName, schemaName);
             relatedDocumentsMappings.Add(mapping);
             return mapping;
-        }
-
-        PropertyInfo? GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
-        {
-            var member = propertyLambda.Body as MemberExpression;
-            if (member == null)
-                return null;
-
-            var propInfo = member.Member as PropertyInfo;
-            if (propInfo == null)
-                return null;
-
-            var type = typeof(TDocument);
-            if (propInfo.DeclaringType != null && (type == propInfo.DeclaringType || propInfo.DeclaringType.IsAssignableFrom(type)))
-            {
-                return propInfo;
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -229,6 +235,8 @@ namespace Nevermore.Mapping
             uniqueConstraints.Add(unique);
             return unique;
         }
+
+        static PropertyInfo? GetPropertyInfo<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda) => DocumentMapHelper.GetPropertyInfo<TDocument, TSource, TProperty>(propertyLambda);
 
         static IIdColumnMappingBuilder? GetDefaultIdColumn()
         {
@@ -265,8 +273,31 @@ namespace Nevermore.Mapping
             documentMap.Columns.AddRange(columns);
             documentMap.UniqueConstraints.AddRange(uniqueConstraints);
             documentMap.RelatedDocumentsMappings.AddRange(relatedDocumentsMappings);
+            documentMap.ChildTables.AddRange(childTables);
 
             return documentMap;
+        }
+    }
+
+    static class DocumentMapHelper
+    {
+        internal static PropertyInfo? GetPropertyInfo<TDocument, TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda)
+        {
+            var member = propertyLambda.Body as MemberExpression;
+            if (member == null)
+                return null;
+
+            var propInfo = member.Member as PropertyInfo;
+            if (propInfo == null)
+                return null;
+
+            var type = typeof(TDocument);
+            if (propInfo.DeclaringType != null && (type == propInfo.DeclaringType || propInfo.DeclaringType.IsAssignableFrom(type)))
+            {
+                return propInfo;
+            }
+
+            return null;
         }
     }
 
@@ -281,6 +312,7 @@ namespace Nevermore.Mapping
             Columns = new List<ColumnMapping>();
             UniqueConstraints = new List<UniqueRule>();
             RelatedDocumentsMappings = new List<RelatedDocumentsMapping>();
+            ChildTables = new List<IChildTableMapping>();
         }
 
         public Type Type { get; }
@@ -298,6 +330,7 @@ namespace Nevermore.Mapping
         public List<ColumnMapping> Columns { get; }
         public List<UniqueRule> UniqueConstraints { get; }
         public List<RelatedDocumentsMapping> RelatedDocumentsMappings { get; }
+        public List<IChildTableMapping> ChildTables { get; }
         public string? SchemaName { get; set; }
 
         public bool IsRowVersioningEnabled => RowVersionColumn != null;

@@ -43,7 +43,13 @@ namespace Nevermore.Mapping
         {
             foreach (var mapping in mappingsToAdd)
             {
-                Register(mapping.Build(primaryKeyHandlerRegistry));
+                var map = mapping.Build(primaryKeyHandlerRegistry);
+                Register(map);
+
+                foreach (var childMap in map.ChildTables)
+                {
+                    Register(childMap.Build(primaryKeyHandlerRegistry));
+                }
             }
         }
 

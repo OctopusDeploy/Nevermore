@@ -1,11 +1,13 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -117,7 +119,53 @@ namespace Nevermore.Advanced
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
-            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
+            // N+1 query problem here, but this is just a proof of concept. We would either
+            // - change PrepareLoad to issue JOIN's to load any ChildTables in the same query - beware cartesian explosion
+            // - batch things, so we'd load N documents, then select from ChildTables where ids in(...)
+            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).Select(doc =>
+            {
+                var parentMapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+                if (parentMapping.ChildTables is not { Count: > 0 }) return doc;
+                
+                var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
+                var parentId = parentIdColumn.PropertyHandler.Read(doc); // I Assume this works??
+                    
+                foreach (var decl in parentMapping.ChildTables)
+                {
+                    var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
+
+                    var foreignKeyColumn = childMap.IdColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
+                    
+                    var schema = configuration.GetSchemaNameOrDefault(childMap);
+                    var columnNames = GetColumnNames(schema, childMap.TableName);
+                    var tableName = childMap.TableName;
+                    
+                    var args = new CommandParameterValues { { "Id", parentId } };
+                    var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
+                    var childStream = GetType().GetMethod(nameof(Stream), BindingFlags.Instance | BindingFlags.Public)!.MakeGenericMethod(decl.ChildDocumentType);
+                    var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
+
+                    // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
+                    // then we can AddRange onto it. If it doesn't, then we have to build a new collection and overwrite it.
+                    // The decl should have PropertyInfo which tells us whether the Collection property is settable or not.
+                    //
+                    // For this POC, we know that it's always ReferenceCollection so we just shortcut all of that. 
+                    var targetCollectionType = decl.CollectionType;
+                    var resolvedCollectionType = typeof(ICollection<>).MakeGenericType(decl.ElementType);
+                    if (!resolvedCollectionType.IsAssignableFrom(targetCollectionType)) throw new InvalidOperationException("DependentCollection property type must be an ICollection");
+
+                    var collection = decl.PropertyHandler.Read(doc);
+                    var addMethod = resolvedCollectionType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public)!;
+                    
+                    foreach (var childItem in streamOutput)
+                    {
+                        var element = decl.FromChild(childItem);
+                        addMethod.Invoke(collection, new[] { element });
+                    }
+                }
+                
+                return doc;
+            }).FirstOrDefault();
         }
 
         [Pure]

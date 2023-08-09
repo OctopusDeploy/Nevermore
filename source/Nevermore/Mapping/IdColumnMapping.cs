@@ -15,6 +15,15 @@ namespace Nevermore.Mapping
             Direction = idColumn.Direction;
             MaxLength = idColumn.MaxLength;
         }
+        
+        internal IdColumnMapping(string columnName, Type type, IPropertyHandler handler, PropertyInfo property, bool isIdentity, IPrimaryKeyHandler primaryKeyHandler, ColumnDirection direction, int? maxLength)
+            : base(columnName, type, handler, property)
+        {
+            IsIdentity = isIdentity;
+            PrimaryKeyHandler = primaryKeyHandler;
+            Direction = direction;
+            MaxLength = maxLength;
+        }
 
         public bool IsIdentity { get; }
 
