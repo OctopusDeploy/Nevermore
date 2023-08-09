@@ -178,6 +178,7 @@ namespace Nevermore.Mapping
         }
 
         // If our Document has a collection, and that collection would be stored in a "child" table, express it with DependentCollection
+        // NOTE: ChildTables default to JsonStorageFormat.NoJson whereas standard toplevel documents default to JsonStorageFormat.TextOnly
         protected IChildTableMappingBuilder<TDocument, TChildDocument, TElement, TCollection> DependentCollection<TChildDocument, TElement, TCollection>(
             Expression<Func<TDocument, TCollection>> getter,
             Action<IChildTableMappingBuilder<TDocument, TChildDocument, TElement, TCollection>> mappingBuilder,

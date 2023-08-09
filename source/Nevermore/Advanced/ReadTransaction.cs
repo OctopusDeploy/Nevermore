@@ -17,6 +17,7 @@ using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
+using Nevermore.Mapping;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
@@ -52,7 +53,8 @@ namespace Nevermore.Advanced
         public IDictionary<string, object> State { get; }
 
         public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
-            : this(store, registry,  operationsToRetry, configuration, DefaultConnectionFactory, name)
+            : this(store, registry, operationsToRetry, configuration, DefaultConnectionFactory,
+                name)
         {
         }
 
@@ -119,53 +121,7 @@ namespace Nevermore.Advanced
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
-            // N+1 query problem here, but this is just a proof of concept. We would either
-            // - change PrepareLoad to issue JOIN's to load any ChildTables in the same query - beware cartesian explosion
-            // - batch things, so we'd load N documents, then select from ChildTables where ids in(...)
-            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).Select(doc =>
-            {
-                var parentMapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
-                if (parentMapping.ChildTables is not { Count: > 0 }) return doc;
-                
-                var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
-                var parentId = parentIdColumn.PropertyHandler.Read(doc); // I Assume this works??
-                    
-                foreach (var decl in parentMapping.ChildTables)
-                {
-                    var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
-
-                    var foreignKeyColumn = childMap.ForeignKeyColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
-                    
-                    var schema = configuration.GetSchemaNameOrDefault(childMap);
-                    var columnNames = GetColumnNames(schema, childMap.TableName);
-                    var tableName = childMap.TableName;
-                    
-                    var args = new CommandParameterValues { { "Id", parentId } };
-                    var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
-                    var childStream = GetType().GetMethod(nameof(Stream), BindingFlags.Instance | BindingFlags.Public)!.MakeGenericMethod(decl.ChildDocumentType);
-                    var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
-
-                    // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
-                    // then we can AddRange onto it. If it doesn't, then we have to build a new collection and overwrite it.
-                    // The decl should have PropertyInfo which tells us whether the Collection property is settable or not.
-                    //
-                    // For this POC, we know that it's always ReferenceCollection so we just shortcut all of that. 
-                    var targetCollectionType = decl.CollectionType;
-                    var resolvedCollectionType = typeof(ICollection<>).MakeGenericType(decl.ElementType);
-                    if (!resolvedCollectionType.IsAssignableFrom(targetCollectionType)) throw new InvalidOperationException("DependentCollection property type must be an ICollection");
-
-                    var collection = decl.PropertyHandler.Read(doc);
-                    var addMethod = resolvedCollectionType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public)!;
-                    
-                    foreach (var childItem in streamOutput)
-                    {
-                        var element = decl.FromChild(childItem);
-                        addMethod.Invoke(collection, new[] { element });
-                    }
-                }
-                
-                return doc;
-            }).FirstOrDefault();
+            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
         }
 
         [Pure]
@@ -504,7 +460,8 @@ namespace Nevermore.Advanced
 
         public ISubquerySourceBuilder<TRecord> RawSqlQuery<TRecord>(string query) where TRecord : class
         {
-            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(), new Parameters(), new ParameterDefaults());
+            return new SubquerySourceBuilder<TRecord>(new RawSql(query), this, tableAliasGenerator, ParameterNameGenerator, new CommandParameterValues(),
+                new Parameters(), new ParameterDefaults());
         }
 
         public IEnumerable<TRecord> Stream<TRecord>(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -519,25 +476,91 @@ namespace Nevermore.Advanced
 
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
         {
+            // Nevermore can Stream anything, e.g. String, so we can't just assume there's a DocumentMap for it
+            bool isDocumentType = configuration.DocumentMaps.ResolveOptional(typeof(TRecord), out var documentMap);
+            bool hasChildTables = isDocumentType && documentMap.ChildTables is { Count: > 0 };
+            
             IEnumerable<TRecord> Execute()
             {
                 using var reader = ExecuteReader(command);
                 foreach (var item in ProcessReader<TRecord>(reader, command))
+                {
+                    if(hasChildTables) LoadChildTables(documentMap, item);
                     yield return item;
+                }
             }
 
+            // TODO OE: Temp hack. DeadlockAwareLock is not re-entrant, so it deadlocks itself if we try to stream a child table 
+            // while we are enumerating a parent. Avoid it if we are a child table (using ForeignKeyColumn as a bad way to infer this)
+            if (isDocumentType && documentMap.ForeignKeyColumn is not null) return Execute();
+            
             return new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock);
+        }
+
+        TDocument LoadChildTables<TDocument>(DocumentMap parentMapping, TDocument doc)
+        {
+            var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
+            var parentId = parentIdColumn.PropertyHandler.Read(doc); // I Assume this works??
+
+            foreach (var decl in parentMapping.ChildTables)
+            {
+                var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
+
+                var foreignKeyColumn = childMap.ForeignKeyColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
+
+                var schema = configuration.GetSchemaNameOrDefault(childMap);
+                var columnNames = GetColumnNames(schema, childMap.TableName);
+                var tableName = childMap.TableName;
+
+                // Big N+1 query problem here, but this is just a proof of concept. We would either
+                // - change PrepareLoad to issue JOIN's to load any ChildTables in the same query - beware cartesian explosion and additional JOINs stapled on for permissio
+                // - batch things, so we'd load N documents, then select from ChildTables where ids in(...)
+                
+                var args = new CommandParameterValues { { "Id", parentId } };
+                var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
+                
+                // recursive call to Stream to load the child table. This should work as it also has its own DocumentMap
+                var childStream = GetType().GetMethod(nameof(Stream), new []{ typeof(PreparedCommand) })!.MakeGenericMethod(decl.ChildDocumentType);
+                var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
+
+                // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
+                // then we can AddRange onto it. If it doesn't, then we have to build a new collection and overwrite it.
+                // The decl should have PropertyInfo which tells us whether the Collection property is settable or not.
+                //
+                // For this POC, we know that it's always ReferenceCollection so we just shortcut all of that. 
+                var targetCollectionType = decl.CollectionType;
+                var resolvedCollectionType = typeof(ICollection<>).MakeGenericType(decl.ElementType);
+                if (!resolvedCollectionType.IsAssignableFrom(targetCollectionType)) throw new InvalidOperationException("DependentCollection property type must be an ICollection");
+
+                var collection = decl.PropertyHandler.Read(doc);
+                var addMethod = resolvedCollectionType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public)!;
+
+                foreach (var childItem in streamOutput)
+                {
+                    var element = decl.FromChild(childItem);
+                    addMethod.Invoke(collection, new[] { element });
+                }
+            }
+
+            return doc;
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
         {
+            // Nevermore can Stream anything, e.g. String, so we can't just assume there's a DocumentMap for it
+            bool isDocumentType = configuration.DocumentMaps.ResolveOptional(typeof(TRecord), out var parentMapping);
+            bool hasChildTables = isDocumentType && parentMapping.ChildTables is { Count: > 0 };
+            
             async IAsyncEnumerable<TRecord> Execute()
             {
                 var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
                 await using (reader.ConfigureAwait(false))
                 {
                     await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken).ConfigureAwait(false))
+                    {
+                        if(hasChildTables) LoadChildTables(parentMapping, result); // TODO OE: LoadChildTablesAsync variant
                         yield return result;
+                    }
                 }
             }
 
@@ -667,7 +690,8 @@ namespace Nevermore.Advanced
 
         public Task<TResult> ExecuteScalarAsync<TResult>(string query, CommandParameterValues? args = null, RetriableOperation retriableOperation = RetriableOperation.Select, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         {
-            return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout, commandBehavior: CommandBehavior.SingleRow), cancellationToken);
+            return ExecuteScalarAsync<TResult>(new PreparedCommand(query, args, retriableOperation, null, commandTimeout,
+                commandBehavior: CommandBehavior.SingleRow), cancellationToken);
         }
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
@@ -732,31 +756,34 @@ namespace Nevermore.Advanced
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
-            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
-                async ct =>
-                {
-                    // A connection can exist, but be in a broken state.
-                    // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
-                    // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection`
-                    if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct).ConfigureAwait(false);
+            return await retryPolicy.LoggingRetries("Beginning Database Transaction")
+                .ExecuteActionAsync(
+                    async ct =>
+                    {
+                        // A connection can exist, but be in a broken state.
+                        // E.g. a valid connection is returned to the pool, we then acquire it, but on the SQL server end it's been killed perhaps due to Azure SQL resource limits.
+                        // We re-open the same connection, following the logic in `DbCommandExtensions.EnsureValidConnection`
+                        if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                    // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
-                    // the synchronous version anyway, and the async overload doesn't accept a name parameter.
-                    return BeginTransaction(isolationLevel, sqlServerTransactionName);
-                },
-                cancellationToken).ConfigureAwait(false);
+                        // We use the synchronous overload here even though there is an async one, because BeginTransactionAsync calls
+                        // the synchronous version anyway, and the async overload doesn't accept a name parameter.
+                        return BeginTransaction(isolationLevel, sqlServerTransactionName);
+                    },
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
 
         DbTransaction BeginTransactionWithRetry(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
-            return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
-            {
-                if (connection.State != ConnectionState.Open) connection.Open();
+            return retryPolicy.LoggingRetries("Beginning Database Transaction")
+                .ExecuteAction(() =>
+                {
+                    if (connection.State != ConnectionState.Open) connection.Open();
 
-                return BeginTransaction(isolationLevel, sqlServerTransactionName);
-            });
+                    return BeginTransaction(isolationLevel, sqlServerTransactionName);
+                });
         }
 
         PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
@@ -800,7 +827,8 @@ namespace Nevermore.Advanced
         CommandExecutor CreateCommand(PreparedCommand command)
         {
             var timedSection = new TimedSection(ms => LogBasedOnCommand(ms, command));
-            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers, command.Mapping, command.CommandTimeout);
+            var sqlCommand = configuration.CommandFactory.CreateCommand(connection, Transaction, command.Statement, command.ParameterValues, configuration.TypeHandlers,
+                command.Mapping, command.CommandTimeout);
             AddCommandTrace(command.Statement);
             if (command.ParameterValues != null)
             {
@@ -813,7 +841,8 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this,
+                configuration.AllowSynchronousOperations);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)

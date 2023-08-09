@@ -72,6 +72,8 @@ namespace Nevermore.Mapping
             toChildObject = (parentDocObj, objInParent) => toChild((TParentDocument)parentDocObj, (TElement)objInParent);
             fromChildObject = (childDocObj) => fromChild((TChildDocument)childDocObj);
             TableName = typeof(TChildDocument).Name;
+            
+            JsonStorageFormat = JsonStorageFormat.NoJson;
         }
 
         public Type DocumentType => typeof(TParentDocument);
@@ -156,6 +158,8 @@ namespace Nevermore.Mapping
     {
         IColumnMappingBuilder Column<TProperty>(Expression<Func<TChildDocument, TProperty>> getter);
         IForeignKeyColumnMappingBuilder ForeignKeyColumn<TProperty>(Expression<Func<TChildDocument, TProperty>> getter);
+        
+        string TableName { get; set; }
         JsonStorageFormat JsonStorageFormat { get; set; }
     }
 }
