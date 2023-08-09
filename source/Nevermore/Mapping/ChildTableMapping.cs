@@ -25,7 +25,7 @@ namespace Nevermore.Mapping
         // Temp hack; The document map for a child table stores it's FK column in the `IdColumn` property.
         // If we were to do this properly we would create a proper `ForeignKeyColumn` property in `DocumentMap`,
         // and we may need to consider composite keys, not just a single column
-        IdColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry);
+        ColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry);
     }
 
     public class ForeignKeyColumnMappingBuilder : ColumnMapping, IForeignKeyColumnMappingBuilder
@@ -34,12 +34,12 @@ namespace Nevermore.Mapping
         {
         }
 
-        // Bit of a hack, we should make a ForeignKeyColumnMapping instead, but going with minimal effort for POC
-        public IdColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
+        public ColumnMapping Build(IPrimaryKeyHandlerRegistry primaryKeyHandlerRegistry)
         {
             var primaryKeyHandler = primaryKeyHandlerRegistry.Resolve(Type)!;
-            
-            return new(ColumnName, Type, PropertyHandler, Property, false,
+
+            // Bit of a hack, we should make a ForeignKeyColumnMapping instead, but going with minimal effort for POC
+            return new IdColumnMapping(ColumnName, Type, PropertyHandler, Property, false,
                 primaryKeyHandler, ColumnDirection.FromDatabase, null);
         }
     }
@@ -87,15 +87,18 @@ namespace Nevermore.Mapping
 
             if (foreignKeyColumn is null) throw new InvalidOperationException("Child tables must declare a ForeignKeyColumn which references back to the IdColumn on the parent table");
 
+            var fkColumn = foreignKeyColumn.Build(primaryKeyHandlerRegistry);
+            
             var documentMap = new DocumentMap(type, TableName)
             {
                 SchemaName = SchemaName,
-                IdColumn = foreignKeyColumn.Build(primaryKeyHandlerRegistry),
+                ForeignKeyColumn = fkColumn,
                 JsonStorageFormat = JsonStorageFormat,
                 ExpectLargeDocuments = false,
                 // RowVersionColumn not set; child documents should haven't DataVersion/RowVersion, that will be stored in the parent table
                 // TypeResolutionColumn = Not implemented for now, build TypeResolution if/when we need it
             };
+            documentMap.Columns.Add(fkColumn);
             documentMap.Columns.AddRange(columns);
             // documentMap.UniqueConstraints.AddRange(uniqueConstraints);
             // documentMap.RelatedDocumentsMappings.AddRange(relatedDocumentsMappings);

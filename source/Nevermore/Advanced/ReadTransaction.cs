@@ -134,7 +134,7 @@ namespace Nevermore.Advanced
                 {
                     var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
 
-                    var foreignKeyColumn = childMap.IdColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
+                    var foreignKeyColumn = childMap.ForeignKeyColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
                     
                     var schema = configuration.GetSchemaNameOrDefault(childMap);
                     var columnNames = GetColumnNames(schema, childMap.TableName);

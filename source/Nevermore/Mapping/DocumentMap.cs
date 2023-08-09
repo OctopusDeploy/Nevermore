@@ -317,6 +317,7 @@ namespace Nevermore.Mapping
 
         public Type Type { get; }
         public IdColumnMapping? IdColumn { get; set; }
+        public ColumnMapping? ForeignKeyColumn { get; set; }
         public ColumnMapping? RowVersionColumn { get; set; }
         public ColumnMapping? TypeResolutionColumn { get; set; }
         public JsonStorageFormat JsonStorageFormat { get; set; }
@@ -341,7 +342,7 @@ namespace Nevermore.Mapping
 
         public void Validate()
         {
-            if (IdColumn == null)
+            if (IdColumn == null && ForeignKeyColumn == null) // skip this requirement if a ForeignKeyColumn is defined
                 throw new InvalidOperationException($"There is no Id property on the document type {Type.FullName}");
 
             if (TypeResolutionColumn != null && JsonStorageFormat == JsonStorageFormat.NoJson)
