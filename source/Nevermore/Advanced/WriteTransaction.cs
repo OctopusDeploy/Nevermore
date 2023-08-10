@@ -46,6 +46,8 @@ namespace Nevermore.Advanced
             var output = ExecuteSingleDataModification(command);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
+            
+            if (command.Mapping.ChildTables is { Count: > 0 }) InsertChildTables(document, command.Mapping);
 
             configuration.Hooks.AfterInsert(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -71,6 +73,7 @@ namespace Nevermore.Advanced
             await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
         }
         
+        // TODO an InsertChildTablesAsync
         internal void InsertChildTables<TDocument>(TDocument document, DocumentMap parentMapping)
         {
             var iterateAndInsertDefinition = typeof(WriteTransaction)
@@ -105,6 +108,43 @@ namespace Nevermore.Advanced
                 }
                 
                 InsertMany(children);
+            }
+        }
+        
+        internal void UpdateChildTables<TDocument>(TDocument document, DocumentMap parentMapping)
+        {
+            // we don't have enough information to diff, so we simply wipe all the entries from the child table that reference the parent,
+            // then re-insert everything. We could add diffing later if we defined a "key" (probably a composite key across more than one column) for the child table.
+            // However that would be stepping dangerously into "Rewriting EF" territory.
+            
+            var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
+            var parentId = parentIdColumn.PropertyHandler.Read(document);
+            
+            var iterateAndInsertDefinition = typeof(WriteTransaction)
+                .GetMethod(nameof(IterateCollectionAndInsertMany), BindingFlags.Instance | BindingFlags.NonPublic)!;
+            
+            foreach (var decl in parentMapping.ChildTables)
+            {
+                var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
+                
+                var foreignKeyColumn = childMap.ForeignKeyColumn ?? throw new InvalidOperationException($"Cannot load {childMap.Type.Name} by as no Foreign Key column has been mapped.");
+                
+                var schema = configuration.GetSchemaNameOrDefault(childMap);
+                var tableName = childMap.TableName;
+            
+                var args = new CommandParameterValues { { "Id", parentId } };
+                var deleteChildrenCommand = new PreparedCommand($"DELETE FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap);
+                ExecuteNonQuery(deleteChildrenCommand);
+
+                // now re-insert
+                iterateAndInsertDefinition
+                    .MakeGenericMethod(decl.DocumentType, decl.ChildDocumentType, decl.ElementType)!
+                    .Invoke(this, new object[]
+                    {
+                        document,
+                        new BoundPropertyHandler(decl.PropertyHandler, document),
+                        new Func<object, object, object>(decl.ToChild)
+                    });
             }
         }
 
@@ -170,6 +210,8 @@ namespace Nevermore.Advanced
 
             var output = ExecuteSingleDataModification(command);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
+            
+            if (command.Mapping.ChildTables is { Count: > 0 }) UpdateChildTables(document, command.Mapping);
 
             configuration.Hooks.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -187,6 +229,8 @@ namespace Nevermore.Advanced
 
             var output = await ExecuteSingleDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
+            
+            if (command.Mapping.ChildTables is { Count: > 0 }) UpdateChildTables(document, command.Mapping);
 
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this).ConfigureAwait(false);
             await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
