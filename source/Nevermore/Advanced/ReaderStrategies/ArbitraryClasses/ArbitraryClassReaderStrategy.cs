@@ -31,10 +31,14 @@ namespace Nevermore.Advanced.ReaderStrategies.ArbitraryClasses
         
         public bool CanRead(Type type)
         {
-            return 
-                type.IsClass 
-                && type.GetConstructors().Any(c => c.IsPublic && c.GetParameters().Length == 0)
-                && !configuration.DocumentMaps.ResolveOptional(type, out _);
+            // must be a class
+            if (!type.IsClass) return false;
+
+            // must have a public parameterless constructor
+            if (!type.GetConstructors().Any(c => c.IsPublic && c.GetParameters().Length == 0)) return false;
+            
+            // must not have a DocumentMap, OR the DocumentMap must have a ForeignKeyColumn, implying we're a child table type
+            return !configuration.DocumentMaps.ResolveOptional(type, out var map) || map.ForeignKeyColumn != null;
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()

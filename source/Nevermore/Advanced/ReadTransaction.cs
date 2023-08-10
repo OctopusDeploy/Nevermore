@@ -124,7 +124,7 @@ namespace Nevermore.Advanced
             var document = StreamInternal<TDocument>(PrepareLoad<TDocument, TKey>(id, out var documentMap)).FirstOrDefault();
             if (document is null) return null;
 
-            return LoadChildTables(documentMap, document);
+            return LoadChildTables(document, documentMap);
         }
 
         [Pure]
@@ -152,7 +152,7 @@ namespace Nevermore.Advanced
 
             if (result is null) return null;
             // TODO OE: a LoadChildTablesAsync overload 
-            return LoadChildTables(documentMap, result);
+            return LoadChildTables(result, documentMap);
         }
 
         [Pure]
@@ -184,7 +184,7 @@ namespace Nevermore.Advanced
             var documents = StreamInternal<TDocument>(PrepareLoadMany<TDocument, TKey>(idList, out var documentMap)).ToList();
             foreach (var doc in documents)
             {
-                LoadChildTables(documentMap!, doc);
+                LoadChildTables(doc, documentMap!);
             }
 
             return documents;
@@ -504,8 +504,8 @@ namespace Nevermore.Advanced
             return StreamInternal<TRecord>(command);
         }
 
-        // LoadMany need to stream, but we know they will handle ChildTables correctly so bypass that check
-        IEnumerable<TRecord> StreamInternal<TRecord>(PreparedCommand command)
+        // LoadMany and our QueryProvider want to stream, but we know they will handle ChildTables correctly so bypass that check
+        internal IEnumerable<TRecord> StreamInternal<TRecord>(PreparedCommand command)
         {
             IEnumerable<TRecord> Execute()
             {
@@ -519,11 +519,14 @@ namespace Nevermore.Advanced
             return new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock);
         }
 
-        TDocument LoadChildTables<TDocument>(DocumentMap parentMapping, TDocument doc)
+        internal TDocument LoadChildTables<TDocument>(TDocument document, DocumentMap parentMapping)
         {
             var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
-            var parentId = parentIdColumn.PropertyHandler.Read(doc); // I Assume this works??
+            var parentId = parentIdColumn.PropertyHandler.Read(document); // I Assume this works??
 
+            var streamAndAddDefinition = typeof(ReadTransaction)
+                .GetMethod(nameof(StreamAndAdd), BindingFlags.Instance | BindingFlags.NonPublic)!;
+            
             foreach (var decl in parentMapping.ChildTables)
             {
                 var childMap = configuration.DocumentMaps.Resolve(decl.ChildDocumentType);
@@ -541,36 +544,57 @@ namespace Nevermore.Advanced
                 var args = new CommandParameterValues { { "Id", parentId } };
                 var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
 
-                // recursive call to Stream to load the child table. This should work as it also has its own DocumentMap
-                var childStream = typeof(ReadTransaction).GetMethod(
-                    nameof(StreamInternal),
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    null,
-                    new[] { typeof(PreparedCommand) },
-                    Array.Empty<ParameterModifier>())!.MakeGenericMethod(decl.ChildDocumentType);
-                
-                var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
-
-                // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
-                // then we can AddRange onto it. If it doesn't, then we have to build a new collection and overwrite it.
-                // The decl should have PropertyInfo which tells us whether the Collection property is settable or not.
-                //
-                // For this POC, we know that it's always ReferenceCollection so we just shortcut all of that. 
-                var targetCollectionType = decl.CollectionType;
-                var resolvedCollectionType = typeof(ICollection<>).MakeGenericType(decl.ElementType);
-                if (!resolvedCollectionType.IsAssignableFrom(targetCollectionType)) throw new InvalidOperationException("DependentCollection property type must be an ICollection");
-
-                var collection = decl.PropertyHandler.Read(doc);
-                var addMethod = resolvedCollectionType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public)!;
-
-                foreach (var childItem in streamOutput)
+                var streamAndAdd = streamAndAddDefinition.MakeGenericMethod(decl.ChildDocumentType, decl.ElementType, decl.CollectionType);
+                streamAndAdd.Invoke(this, new object[]
                 {
-                    var element = decl.FromChild(childItem);
-                    addMethod.Invoke(collection, new[] { element });
-                }
+                    loadChildCommand, 
+                    new BoundPropertyHandler(decl.PropertyHandler, document!),
+                    new Func<object, object>(decl.FromChild)
+                });
             }
 
-            return doc;
+            return document;
+        }
+
+        class BoundPropertyHandler
+        {
+            readonly IPropertyHandler handler;
+            readonly object target;
+
+            public BoundPropertyHandler(IPropertyHandler handler, object target)
+            {
+                this.handler = handler;
+                this.target = target;
+            }
+
+            public bool CanRead => handler.CanRead;
+            public bool CanWrite => handler.CanWrite;
+            
+            public object Read() => handler.Read(target);
+            public void Write(object value) => handler.Write(target, value);
+        }
+
+        void StreamAndAdd<TChildDocument, TElement, TCollection>(PreparedCommand loadChildCommand, BoundPropertyHandler propertyHandler, Func<object, object> fromChild)
+        {
+            // recursive call to Stream to load the child table. This should work as it also has its own DocumentMap
+            var streamOutput = StreamInternal<TChildDocument>(loadChildCommand);
+
+            if (propertyHandler.CanRead)
+            {
+                if (propertyHandler.Read() is ICollection<TElement> mutableCollection)
+                {
+                    foreach (var childItem in streamOutput)
+                    {
+                        mutableCollection.Add((TElement)fromChild(childItem!));
+                    }
+                }
+                // we could read the existing collection but it was not something we know how to mutate; Fall through to "Write" path.
+            }
+            else
+            {
+                // Not supported YET. Here we would create a new instance of TCollection, populated by streamOutput, and then propertyHandler.Write to assign it. 
+                throw new NotSupportedException();
+            }
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
@@ -579,7 +603,7 @@ namespace Nevermore.Advanced
             return StreamInternalAsync<TRecord>(command, cancellationToken);
         }
 
-        IAsyncEnumerable<TRecord> StreamInternalAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
+        internal IAsyncEnumerable<TRecord> StreamInternalAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
         {
             async IAsyncEnumerable<TRecord> Execute()
             {

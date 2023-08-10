@@ -24,7 +24,8 @@ namespace Nevermore.Advanced.ReaderStrategies.Documents
         
         public bool CanRead(Type type)
         {
-            return configuration.DocumentMaps.ResolveOptional(type, out _);
+            return configuration.DocumentMaps.ResolveOptional(type, out var map) 
+                && map.ForeignKeyColumn == null; // Possible hack? This causes child tables to go through ArbitraryClassReaderStrategy, which we want, but is this the best way to achieve it?
         }
         
         public Func<PreparedCommand, Func<DbDataReader, (TRecord, bool)>> CreateReader<TRecord>()
