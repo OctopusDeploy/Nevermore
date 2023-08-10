@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Diagnostics;
@@ -64,8 +65,47 @@ namespace Nevermore.Advanced
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
 
+            if (command.Mapping.ChildTables is { Count: > 0 }) InsertChildTables(document, command.Mapping);
+
             await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
             await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
+        }
+        
+        internal void InsertChildTables<TDocument>(TDocument document, DocumentMap parentMapping)
+        {
+            var iterateAndInsertDefinition = typeof(WriteTransaction)
+                .GetMethod(nameof(IterateCollectionAndInsertMany), BindingFlags.Instance | BindingFlags.NonPublic)!;
+            
+            foreach (var decl in parentMapping.ChildTables)
+            {
+                iterateAndInsertDefinition
+                    .MakeGenericMethod(decl.DocumentType, decl.ChildDocumentType, decl.ElementType)!
+                    .Invoke(this, new object[]
+                    {
+                        document,
+                        new BoundPropertyHandler(decl.PropertyHandler, document),
+                        new Func<object, object, object>(decl.ToChild)
+                    });
+            }
+        }
+
+        internal void IterateCollectionAndInsertMany<TParentDocument, TChildDocument, TElement>(
+            TParentDocument parentDocument,
+            BoundPropertyHandler propertyHandler,
+            Func<object, object, object> toChild) where TChildDocument : class
+        {
+            if (!propertyHandler.CanRead) throw new InvalidOperationException($"Can't read property required for {nameof(IterateCollectionAndInsertMany)}");
+
+            if (propertyHandler.Read() is IEnumerable<TElement> collection)
+            {
+                var children = new List<TChildDocument>();
+                foreach (var item in collection)
+                {
+                    children.Add((TChildDocument)toChild(parentDocument, item));
+                }
+                
+                InsertMany(children);
+            }
         }
 
         public void InsertMany<TDocument>(IReadOnlyCollection<TDocument> documents, InsertOptions options = null) where TDocument : class

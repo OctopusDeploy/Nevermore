@@ -40,7 +40,7 @@ namespace Nevermore.Mapping
 
             // Bit of a hack, we should make a ForeignKeyColumnMapping instead, but going with minimal effort for POC
             return new IdColumnMapping(ColumnName, Type, PropertyHandler, Property, false,
-                primaryKeyHandler, ColumnDirection.FromDatabase, null);
+                primaryKeyHandler, ColumnDirection.Both, null);
         }
     }
 

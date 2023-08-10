@@ -525,7 +525,7 @@ namespace Nevermore.Advanced
         internal TDocument LoadChildTables<TDocument>(TDocument document, DocumentMap parentMapping)
         {
             var parentIdColumn = parentMapping.IdColumn ?? throw new InvalidOperationException($"Cannot load {parentMapping.Type.Name} by as no Id column has been mapped.");
-            var parentId = parentIdColumn.PropertyHandler.Read(document); // I Assume this works??
+            var parentId = parentIdColumn.PropertyHandler.Read(document);
 
             var streamAndAddDefinition = typeof(ReadTransaction)
                 .GetMethod(nameof(StreamAndAdd), BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -557,24 +557,6 @@ namespace Nevermore.Advanced
             }
 
             return document;
-        }
-
-        class BoundPropertyHandler
-        {
-            readonly IPropertyHandler handler;
-            readonly object target;
-
-            public BoundPropertyHandler(IPropertyHandler handler, object target)
-            {
-                this.handler = handler;
-                this.target = target;
-            }
-
-            public bool CanRead => handler.CanRead;
-            public bool CanWrite => handler.CanWrite;
-            
-            public object Read() => handler.Read(target);
-            public void Write(object value) => handler.Write(target, value);
         }
 
         void StreamAndAdd<TChildDocument, TElement, TCollection>(PreparedCommand loadChildCommand, BoundPropertyHandler propertyHandler, Func<object, object> fromChild)
