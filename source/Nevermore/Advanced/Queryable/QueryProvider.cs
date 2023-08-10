@@ -83,6 +83,7 @@ namespace Nevermore.Advanced.Queryable
                     .Invoke(queryExecutor, new object[] { command, cancellationToken });
 
                 return (TResult)await CreateList(asyncStream, sequenceType).ConfigureAwait(false);
+                // TODO OE: after having created the list, call LoadChildTables on each element if the document map declares child tables
             }
 
             if (queryType == QueryType.SelectSingle)

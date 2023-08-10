@@ -121,10 +121,11 @@ namespace Nevermore.Advanced
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
-            var document = StreamInternal<TDocument>(PrepareLoad<TDocument, TKey>(id, out var documentMap)).FirstOrDefault();
+            var preparedCommand = PrepareLoad<TDocument, TKey>(id);
+            var document = StreamInternal<TDocument>(preparedCommand).FirstOrDefault();
             if (document is null) return null;
 
-            return LoadChildTables(document, documentMap);
+            return LoadChildTables(document, preparedCommand.Mapping);
         }
 
         [Pure]
@@ -143,7 +144,8 @@ namespace Nevermore.Advanced
         public async Task<TDocument?> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
             TDocument? result = null;
-            var results = StreamInternalAsync<TDocument>(PrepareLoad<TDocument, TKey>(id, out var documentMap), cancellationToken);
+            var preparedCommand = PrepareLoad<TDocument, TKey>(id);
+            var results = StreamInternalAsync<TDocument>(preparedCommand, cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 result = row;
@@ -152,7 +154,7 @@ namespace Nevermore.Advanced
 
             if (result is null) return null;
             // TODO OE: a LoadChildTablesAsync overload 
-            return LoadChildTables(result, documentMap);
+            return LoadChildTables(result, preparedCommand.Mapping);
         }
 
         [Pure]
@@ -181,10 +183,11 @@ namespace Nevermore.Advanced
             var idList = ids.Where(id => id != null).Distinct().ToList();
             if (idList.Count == 0) return new List<TDocument>();
 
-            var documents = StreamInternal<TDocument>(PrepareLoadMany<TDocument, TKey>(idList, out var documentMap)).ToList();
+            var preparedCommand = PrepareLoadMany<TDocument, TKey>(idList);
+            var documents = StreamInternal<TDocument>(preparedCommand).ToList();
             foreach (var doc in documents)
             {
-                LoadChildTables(doc, documentMap!);
+                LoadChildTables(doc, preparedCommand.Mapping);
             }
 
             return documents;
@@ -847,12 +850,10 @@ namespace Nevermore.Advanced
                     return BeginTransaction(isolationLevel, sqlServerTransactionName);
                 });
         }
-
-        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id) => PrepareLoad<TDocument, TKey>(id, out var _);
-
-        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id, out DocumentMap mapping)
+        
+        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
         {
-            mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn is null)
                 throw new InvalidOperationException($"Cannot load {mapping.Type.Name} by Id, as no Id column has been mapped.");
@@ -868,11 +869,9 @@ namespace Nevermore.Advanced
             return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
-        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList) => PrepareLoadMany<TDocument, TKey>(idList, out var _);
-
-        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList, out DocumentMap mapping)
+        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
         {
-            mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
