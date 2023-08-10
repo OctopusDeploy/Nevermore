@@ -121,7 +121,10 @@ namespace Nevermore.Advanced
         [Pure]
         public TDocument? Load<TDocument, TKey>(TKey id) where TDocument : class
         {
-            return Stream<TDocument>(PrepareLoad<TDocument, TKey>(id)).FirstOrDefault();
+            var document = StreamInternal<TDocument>(PrepareLoad<TDocument, TKey>(id, out var documentMap)).FirstOrDefault();
+            if (document is null) return null;
+
+            return LoadChildTables(documentMap, document);
         }
 
         [Pure]
@@ -139,10 +142,17 @@ namespace Nevermore.Advanced
         [Pure]
         public async Task<TDocument?> LoadAsync<TDocument, TKey>(TKey id, CancellationToken cancellationToken = default) where TDocument : class
         {
-            var results = StreamAsync<TDocument>(PrepareLoad<TDocument, TKey>(id), cancellationToken);
+            TDocument? result = null;
+            var results = StreamInternalAsync<TDocument>(PrepareLoad<TDocument, TKey>(id, out var documentMap), cancellationToken);
             await foreach (var row in results.WithCancellation(cancellationToken).ConfigureAwait(false))
-                return row;
-            return null;
+            {
+                result = row;
+                break;
+            }
+
+            if (result is null) return null;
+            // TODO OE: a LoadChildTablesAsync overload 
+            return LoadChildTables(documentMap, result);
         }
 
         [Pure]
@@ -163,49 +173,63 @@ namespace Nevermore.Advanced
 
         [Pure]
         public List<TDocument> LoadMany<TDocument, TKey>(params TKey[] ids) where TDocument : class
-            => LoadStream<TDocument, TKey>(ids).ToList();
+            => LoadMany<TDocument, TKey>((IEnumerable<TKey>)ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument, TKey>(IEnumerable<TKey> ids) where TDocument : class
-            => LoadStream<TDocument, TKey>(ids).ToList();
+        {
+            var idList = ids.Where(id => id != null).Distinct().ToList();
+            if (idList.Count == 0) return new List<TDocument>();
+
+            var documents = StreamInternal<TDocument>(PrepareLoadMany<TDocument, TKey>(idList, out var documentMap)).ToList();
+            foreach (var doc in documents)
+            {
+                LoadChildTables(documentMap!, doc);
+            }
+
+            return documents;
+        }
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params string[] ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, string>((IEnumerable<string>)ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params int[] ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, int>((IEnumerable<int>)ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params long[] ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, long>((IEnumerable<long>)ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(params Guid[] ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, Guid>((IEnumerable<Guid>)ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<string> ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, string>(ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<int> ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, int>(ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<long> ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, long>(ids);
 
         [Pure]
         public List<TDocument> LoadMany<TDocument>(IEnumerable<Guid> ids) where TDocument : class
-            => LoadStream<TDocument>(ids).ToList();
+            => LoadMany<TDocument, Guid>(ids);
 
         [Pure]
         public async Task<List<TDocument>> LoadManyAsync<TDocument, TKey>(IEnumerable<TKey> ids, CancellationToken cancellationToken = default) where TDocument : class
         {
+            var idList = ids.Where(id => id != null).Distinct().ToList();
+            if (idList.Count == 0) return new List<TDocument>();
+
             var results = new List<TDocument>();
-            await foreach (var item in LoadStreamAsync<TDocument, TKey>(ids, cancellationToken).ConfigureAwait(false))
+            await foreach (var item in StreamInternalAsync<TDocument>(PrepareLoadMany<TDocument, TKey>(idList), cancellationToken).ConfigureAwait(false))
             {
                 results.Add(item);
             }
@@ -476,24 +500,22 @@ namespace Nevermore.Advanced
 
         public IEnumerable<TRecord> Stream<TRecord>(PreparedCommand command)
         {
-            // Nevermore can Stream anything, e.g. String, so we can't just assume there's a DocumentMap for it
-            bool isDocumentType = configuration.DocumentMaps.ResolveOptional(typeof(TRecord), out var documentMap);
-            bool hasChildTables = isDocumentType && documentMap.ChildTables is { Count: > 0 };
-            
+            ThrowIfAttemptingToStreamTypeWithChildTables(typeof(TRecord));
+            return StreamInternal<TRecord>(command);
+        }
+
+        // LoadMany need to stream, but we know they will handle ChildTables correctly so bypass that check
+        IEnumerable<TRecord> StreamInternal<TRecord>(PreparedCommand command)
+        {
             IEnumerable<TRecord> Execute()
             {
                 using var reader = ExecuteReader(command);
                 foreach (var item in ProcessReader<TRecord>(reader, command))
                 {
-                    if(hasChildTables) LoadChildTables(documentMap, item);
                     yield return item;
                 }
             }
 
-            // TODO OE: Temp hack. DeadlockAwareLock is not re-entrant, so it deadlocks itself if we try to stream a child table 
-            // while we are enumerating a parent. Avoid it if we are a child table (using ForeignKeyColumn as a bad way to infer this)
-            if (isDocumentType && documentMap.ForeignKeyColumn is not null) return Execute();
-            
             return new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock);
         }
 
@@ -515,12 +537,12 @@ namespace Nevermore.Advanced
                 // Big N+1 query problem here, but this is just a proof of concept. We would either
                 // - change PrepareLoad to issue JOIN's to load any ChildTables in the same query - beware cartesian explosion and additional JOINs stapled on for permissio
                 // - batch things, so we'd load N documents, then select from ChildTables where ids in(...)
-                
+
                 var args = new CommandParameterValues { { "Id", parentId } };
                 var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
-                
+
                 // recursive call to Stream to load the child table. This should work as it also has its own DocumentMap
-                var childStream = GetType().GetMethod(nameof(Stream), new []{ typeof(PreparedCommand) })!.MakeGenericMethod(decl.ChildDocumentType);
+                var childStream = GetType().GetMethod(nameof(Stream), new[] { typeof(PreparedCommand) })!.MakeGenericMethod(decl.ChildDocumentType);
                 var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
 
                 // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
@@ -547,10 +569,12 @@ namespace Nevermore.Advanced
 
         public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
         {
-            // Nevermore can Stream anything, e.g. String, so we can't just assume there's a DocumentMap for it
-            bool isDocumentType = configuration.DocumentMaps.ResolveOptional(typeof(TRecord), out var parentMapping);
-            bool hasChildTables = isDocumentType && parentMapping.ChildTables is { Count: > 0 };
-            
+            ThrowIfAttemptingToStreamTypeWithChildTables(typeof(TRecord));
+            return StreamInternalAsync<TRecord>(command, cancellationToken);
+        }
+
+        IAsyncEnumerable<TRecord> StreamInternalAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
+        {
             async IAsyncEnumerable<TRecord> Execute()
             {
                 var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
@@ -558,13 +582,21 @@ namespace Nevermore.Advanced
                 {
                     await foreach (var result in ProcessReaderAsync<TRecord>(reader, command, cancellationToken).ConfigureAwait(false))
                     {
-                        if(hasChildTables) LoadChildTables(parentMapping, result); // TODO OE: LoadChildTablesAsync variant
                         yield return result;
                     }
                 }
             }
 
             return new ThreadSafeAsyncEnumerable<TRecord>(Execute, DeadlockAwareLock);
+        }
+
+        void ThrowIfAttemptingToStreamTypeWithChildTables(Type documentType)
+        {
+            // Nevermore can Stream anything, e.g. String, so we can't just assume there's a DocumentMap for it
+            bool isDocumentType = configuration.DocumentMaps.ResolveOptional(documentType, out var documentMap);
+            bool hasChildTables = isDocumentType && documentMap.ChildTables is { Count: > 0 };
+
+            if (hasChildTables) throw new ArgumentException($"Stream is not supported for {documentType} because it has child tables and we cannot load them until the stream has completed");
         }
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
@@ -786,9 +818,11 @@ namespace Nevermore.Advanced
                 });
         }
 
-        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id)
+        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id) => PrepareLoad<TDocument, TKey>(id, out var _);
+
+        PreparedCommand PrepareLoad<TDocument, TKey>(TKey id, out DocumentMap mapping)
         {
-            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+            mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn is null)
                 throw new InvalidOperationException($"Cannot load {mapping.Type.Name} by Id, as no Id column has been mapped.");
@@ -804,9 +838,11 @@ namespace Nevermore.Advanced
             return new PreparedCommand($"SELECT TOP 1 {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{mapping.IdColumn.ColumnName}] = @Id", args, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SingleRow | CommandBehavior.SequentialAccess);
         }
 
-        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList)
+        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList) => PrepareLoadMany<TDocument, TKey>(idList, out var _);
+
+        PreparedCommand PrepareLoadMany<TDocument, TKey>(IEnumerable<TKey> idList, out DocumentMap mapping)
         {
-            var mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
+            mapping = configuration.DocumentMaps.Resolve(typeof(TDocument));
 
             if (mapping.IdColumn?.Type != typeof(TKey))
                 throw new ArgumentException($"Provided Id of type '{typeof(TKey).FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
