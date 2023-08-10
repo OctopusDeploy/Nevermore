@@ -542,7 +542,13 @@ namespace Nevermore.Advanced
                 var loadChildCommand = new PreparedCommand($"SELECT {string.Join(',', columnNames)} FROM [{schema}].[{tableName}] WHERE [{foreignKeyColumn.ColumnName}] = @Id", args, RetriableOperation.Select, childMap, commandBehavior: CommandBehavior.SequentialAccess);
 
                 // recursive call to Stream to load the child table. This should work as it also has its own DocumentMap
-                var childStream = GetType().GetMethod(nameof(Stream), new[] { typeof(PreparedCommand) })!.MakeGenericMethod(decl.ChildDocumentType);
+                var childStream = typeof(ReadTransaction).GetMethod(
+                    nameof(StreamInternal),
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    new[] { typeof(PreparedCommand) },
+                    Array.Empty<ParameterModifier>())!.MakeGenericMethod(decl.ChildDocumentType);
+                
                 var streamOutput = (IEnumerable)childStream.Invoke(this, new object[] { loadChildCommand }); // handy that IEnumerable<T> implements the non-generic IEnumerable
 
                 // TODO: If the document already has a mutable instance of targetCollection (e.g. List or ReferenceCollection)
