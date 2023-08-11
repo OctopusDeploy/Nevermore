@@ -1,11 +1,13 @@
 #nullable enable
 using System;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Data.SqlClient.Server;
 
 namespace Nevermore.Mapping
 {
-    public sealed class StringPrimaryKeyHandler : PrimaryKeyHandler<string>
+    public sealed class StringPrimaryKeyHandler : AsyncPrimaryKeyHandler<string>
     {
         readonly Func<(string idPrefix, int key), string> format;
 
@@ -15,14 +17,19 @@ namespace Nevermore.Mapping
             this.format = format ?? (x => $"{x.idPrefix}-{x.key}");
         }
 
-        public override SqlMetaData GetSqlMetaData(string name)
-            =>  new SqlMetaData(name, SqlDbType.NVarChar, 300);
+        public override SqlMetaData GetSqlMetaData(string name) => new(name, SqlDbType.NVarChar, 300);
 
-        public string? IdPrefix { get; private set; }
+        public string? IdPrefix { get; }
 
         public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
             var nextKey = keyAllocator.NextId(tableName);
+            return format((IdPrefix ?? $"{tableName}s", nextKey));
+        }
+
+        public override async Task<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
+        {
+            var nextKey = await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
             return format((IdPrefix ?? $"{tableName}s", nextKey));
         }
     }
