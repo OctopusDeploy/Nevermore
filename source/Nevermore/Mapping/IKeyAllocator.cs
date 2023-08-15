@@ -7,6 +7,6 @@ namespace Nevermore.Mapping
     {
         void Reset();
         int NextId(string tableName);
-        Task<int> NextIdAsync(string tableName, CancellationToken cancellationToken);
+        ValueTask<int> NextIdAsync(string tableName, CancellationToken cancellationToken);
     }
 }

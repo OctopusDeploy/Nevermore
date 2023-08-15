@@ -27,7 +27,7 @@ namespace Nevermore.Mapping
             return format((IdPrefix ?? $"{tableName}s", nextKey));
         }
 
-        public override async Task<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
+        public override async ValueTask<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
         {
             var nextKey = await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
             return format((IdPrefix ?? $"{tableName}s", nextKey));

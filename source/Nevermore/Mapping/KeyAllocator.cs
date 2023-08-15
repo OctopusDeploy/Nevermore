@@ -31,7 +31,7 @@ namespace Nevermore.Mapping
             return allocation.Next();
         }
 
-        public async Task<int> NextIdAsync(string tableName, CancellationToken cancellationToken)
+        public async ValueTask<int> NextIdAsync(string tableName, CancellationToken cancellationToken)
         {
             var allocation = allocations.GetOrAdd(tableName, _ => new Allocation(store, tableName, blockSize));
             return await allocation.NextAsync(cancellationToken).ConfigureAwait(false);
@@ -54,7 +54,7 @@ namespace Nevermore.Mapping
                 this.blockSize = blockSize;
             }
 
-            public async Task<int> NextAsync(CancellationToken cancellationToken)
+            public async ValueTask<int> NextAsync(CancellationToken cancellationToken)
             {
                 using (await sync.LockAsync(cancellationToken))
                 {

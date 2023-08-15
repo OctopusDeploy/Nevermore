@@ -14,7 +14,7 @@ namespace Nevermore.Mapping
             return keyAllocator.NextId(tableName);
         }
 
-        public override async Task<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
+        public override async ValueTask<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
         {
             return await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
         }

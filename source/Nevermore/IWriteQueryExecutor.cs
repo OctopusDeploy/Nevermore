@@ -269,7 +269,7 @@ namespace Nevermore
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
-        Task<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken);
+        ValueTask<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Allocates an ID using the specified table name. Any mapping for that table is not used. The configuration's PrimaryKeyHandlerRegistry must contain
@@ -288,7 +288,7 @@ namespace Nevermore
         /// <param name="idPrefix"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken);
+        ValueTask<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken);
 
         /// <summary>
         /// Allocate an ID for the specified type. The type must be mapped.
@@ -309,6 +309,6 @@ namespace Nevermore
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
-        Task<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken);
+        ValueTask<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken);
     }
 }

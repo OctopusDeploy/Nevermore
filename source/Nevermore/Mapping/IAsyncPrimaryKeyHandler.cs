@@ -14,6 +14,6 @@ namespace Nevermore.Mapping
         /// <param name="tableName">The table name the key is required for.</param>
         /// <param name="cancellationToken">Token to use to cancel the command.</param>
         /// <returns>The next key, as the type that matches the model object's Id property type. ConvertToPrimitiveValue should be called with this value if it is to be used as a Sql parameter.</returns>
-        Task<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken);
+        ValueTask<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken);
     }
 }

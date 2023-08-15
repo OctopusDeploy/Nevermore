@@ -249,13 +249,13 @@ namespace Nevermore.Advanced
             return AllocateIdForMapping<TKey>(mapping);
         }
 
-        public async Task<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken)
+        public async ValueTask<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken)
         {
             var mapping = configuration.DocumentMaps.Resolve(documentType);
             return await AllocateIdForMapping<TKey>(mapping, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken)
+        public async ValueTask<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken)
         {
             var mapping = configuration.DocumentMaps.Resolve<TDocument>();
             return await AllocateIdForMapping<TKey>(mapping, cancellationToken).ConfigureAwait(false);
@@ -269,7 +269,7 @@ namespace Nevermore.Advanced
             return (TKey) AllocateIdUsingHandler(mapping);
         }
 
-        async Task<TKey> AllocateIdForMapping<TKey>(DocumentMap mapping, CancellationToken cancellationToken)
+        async ValueTask<TKey> AllocateIdForMapping<TKey>(DocumentMap mapping, CancellationToken cancellationToken)
         {
             if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException($"The document map for {mapping.Type} is configured to use an identity key handler.");
@@ -292,7 +292,7 @@ namespace Nevermore.Advanced
             return mapping.IdColumn.PrimaryKeyHandler.GetNextKey(keyAllocator, mapping.TableName);
         }
 
-        async Task<object> AllocateIdUsingHandler(DocumentMap mapping, CancellationToken cancellationToken)
+        async ValueTask<object> AllocateIdUsingHandler(DocumentMap mapping, CancellationToken cancellationToken)
         {
             if (mapping.IdColumn is null || mapping.IsIdentityId)
                 throw new InvalidOperationException($"Cannot allocate an id when an Id column has not been mapped.");
@@ -312,7 +312,7 @@ namespace Nevermore.Advanced
             return $"{idPrefix}-{key}";
         }
 
-        public async Task<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken)
+        public async ValueTask<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken)
         {
             var key = await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
             return $"{idPrefix}-{key}";
