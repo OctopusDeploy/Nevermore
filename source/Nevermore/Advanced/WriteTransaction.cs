@@ -18,7 +18,7 @@ namespace Nevermore.Advanced
     {
         // SQL throws exception when parameters exceeded this number.
         const int AllowedSqlParametersCount = 2100;
-        
+
         readonly IRelationalStoreConfiguration configuration;
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
@@ -72,7 +72,7 @@ namespace Nevermore.Advanced
         {
             IReadOnlyList<object> documentList = documents.ToArray();
             if (!documentList.Any()) return;
-            
+
             var batchBlockSize = BatchBlockSize(documentList, options);
             if (batchBlockSize == 0) throw new InvalidOperationException("Document has exceeded the supported value of 2100 parameters for a single row");
 
@@ -108,7 +108,7 @@ namespace Nevermore.Advanced
             {
                 var documentsToInsert = documentsBatch.ToArray();
                 var command = builder.PrepareInsert(documentsToInsert, options);
-                
+
                 foreach (var document in documentsToInsert)
                     await configuration.Hooks.BeforeInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
 
@@ -249,12 +249,32 @@ namespace Nevermore.Advanced
             return AllocateIdForMapping<TKey>(mapping);
         }
 
+        public async ValueTask<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken)
+        {
+            var mapping = configuration.DocumentMaps.Resolve(documentType);
+            return await AllocateIdForMapping<TKey>(mapping, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async ValueTask<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken)
+        {
+            var mapping = configuration.DocumentMaps.Resolve<TDocument>();
+            return await AllocateIdForMapping<TKey>(mapping, cancellationToken).ConfigureAwait(false);
+        }
+
         TKey AllocateIdForMapping<TKey>(DocumentMap mapping)
         {
             if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException($"The document map for {mapping.Type} is configured to use an identity key handler.");
 
             return (TKey) AllocateIdUsingHandler(mapping);
+        }
+
+        async ValueTask<TKey> AllocateIdForMapping<TKey>(DocumentMap mapping, CancellationToken cancellationToken)
+        {
+            if (mapping.IdColumn?.Direction == ColumnDirection.FromDatabase)
+                throw new InvalidOperationException($"The document map for {mapping.Type} is configured to use an identity key handler.");
+
+            return (TKey)await AllocateIdUsingHandler(mapping, cancellationToken).ConfigureAwait(false);
         }
 
         object AllocateId(DocumentMap mapping)
@@ -272,9 +292,29 @@ namespace Nevermore.Advanced
             return mapping.IdColumn.PrimaryKeyHandler.GetNextKey(keyAllocator, mapping.TableName);
         }
 
+        async ValueTask<object> AllocateIdUsingHandler(DocumentMap mapping, CancellationToken cancellationToken)
+        {
+            if (mapping.IdColumn is null || mapping.IsIdentityId)
+                throw new InvalidOperationException($"Cannot allocate an id when an Id column has not been mapped.");
+
+            // Try our best to be async, but fall back to sync if not implemented
+            if (mapping.IdColumn.PrimaryKeyHandler is IAsyncPrimaryKeyHandler asyncPrimaryKeyHandler)
+            {
+                return await asyncPrimaryKeyHandler.GetNextKeyAsync(keyAllocator, mapping.TableName, cancellationToken).ConfigureAwait(false);
+            }
+
+            return mapping.IdColumn.PrimaryKeyHandler.GetNextKey(keyAllocator, mapping.TableName);
+        }
+
         public string AllocateId(string tableName, string idPrefix)
         {
             var key = keyAllocator.NextId(tableName);
+            return $"{idPrefix}-{key}";
+        }
+
+        public async ValueTask<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken)
+        {
+            var key = await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
             return $"{idPrefix}-{key}";
         }
 
@@ -377,7 +417,7 @@ namespace Nevermore.Advanced
 
             mapping.IdColumn!.PropertyHandler.Write(document, output.Id);
         }
-        
+
         /// <summary>
         /// Calculating batching block size for a given collection of documents.
         /// </summary>

@@ -262,6 +262,16 @@ namespace Nevermore
         TKey AllocateId<TKey>(Type documentType);
 
         /// <summary>
+        /// Allocate an ID for the specified type. The type must be mapped.
+        /// If the mapping specifies a SingletonId, that is returned.
+        /// </summary>
+        /// <param name="documentType"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
+        ValueTask<TKey> AllocateIdAsync<TKey>(Type documentType, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Allocates an ID using the specified table name. Any mapping for that table is not used. The configuration's PrimaryKeyHandlerRegistry must contain
         /// an entry for the key type (primitives are handled out of the box).
         /// </summary>
@@ -269,6 +279,16 @@ namespace Nevermore
         /// <param name="idPrefix"></param>
         /// <returns></returns>
         string AllocateId(string tableName, string idPrefix);
+
+        /// <summary>
+        /// Allocates an ID using the specified table name. Any mapping for that table is not used. The configuration's PrimaryKeyHandlerRegistry must contain
+        /// an entry for the key type (primitives are handled out of the box).
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="idPrefix"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        ValueTask<string> AllocateIdAsync(string tableName, string idPrefix, CancellationToken cancellationToken);
 
         /// <summary>
         /// Allocate an ID for the specified type. The type must be mapped.
@@ -279,5 +299,16 @@ namespace Nevermore
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
         TKey AllocateId<TDocument, TKey>();
+
+        /// <summary>
+        /// Allocate an ID for the specified type. The type must be mapped.
+        /// If the mapping specifies a SingletonId, that is returned
+        /// </summary>
+        /// <typeparam name="TDocument">The type of document.</typeparam>
+        /// <typeparam name="TKey">The key type to allocate, e.g. int, string, MyCustomStringType.</typeparam>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Will be thrown if the requested key type does not match the mapped document's key type.</exception>
+        ValueTask<TKey> AllocateIdAsync<TDocument, TKey>(CancellationToken cancellationToken);
     }
 }

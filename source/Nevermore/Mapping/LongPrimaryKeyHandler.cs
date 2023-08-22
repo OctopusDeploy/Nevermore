@@ -1,16 +1,22 @@
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Data.SqlClient.Server;
 
 namespace Nevermore.Mapping
 {
-    public sealed class LongPrimaryKeyHandler : PrimaryKeyHandler<long>
+    public sealed class LongPrimaryKeyHandler : AsyncPrimaryKeyHandler<long>
     {
-        public override SqlMetaData GetSqlMetaData(string name)
-            =>  new SqlMetaData(name, SqlDbType.BigInt);
+        public override SqlMetaData GetSqlMetaData(string name) => new(name, SqlDbType.BigInt);
 
         public override object GetNextKey(IKeyAllocator keyAllocator, string tableName)
         {
             return keyAllocator.NextId(tableName);
+        }
+
+        public override async ValueTask<object> GetNextKeyAsync(IKeyAllocator keyAllocator, string tableName, CancellationToken cancellationToken)
+        {
+            return await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
         }
     }
 }
