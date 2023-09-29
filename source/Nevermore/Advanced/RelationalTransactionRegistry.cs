@@ -18,7 +18,8 @@ namespace Nevermore.Advanced
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
-        bool highNumberAlreadyLoggedAtError;
+        DateTime? LastHighNumberOfTransactionLogTime;
+        
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
         {
@@ -44,12 +45,14 @@ namespace Nevermore.Advanced
         {
             transactions.TryRemove(trn, out _);
         }
+        
+        bool ShouldLogHighNumberOfTransactionsMessage() => LastHighNumberOfTransactionLogTime == null || DateTime.Now - LastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
 
         void LogHighNumberOfTransactions(bool reachedMax)
         {
-            if (reachedMax && !highNumberAlreadyLoggedAtError)
+            if (reachedMax && ShouldLogHighNumberOfTransactionsMessage())
             {
-                highNumberAlreadyLoggedAtError = true;
+                LastHighNumberOfTransactionLogTime = DateTime.Now;
                 Log.Error(BuildHighNumberOfTransactionsMessage());
                 return;
             }
