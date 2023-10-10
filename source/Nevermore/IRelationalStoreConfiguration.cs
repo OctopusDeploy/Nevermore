@@ -52,6 +52,12 @@ namespace Nevermore
         ISqlCommandFactory CommandFactory { get; set; }
 
         /// <summary>
+        /// Sets a factory for creating a Key Allocator. Set this if you want to have control over how the numeric suffix
+        /// for keys are allocated.
+        /// </summary>
+        Func<IKeyAllocator> KeyAllocatorFactory { get; set; }
+
+        /// <summary>
         /// Gets or sets the key block size that will be used for the key allocator. A higher number enables less
         /// SQL queries to get new blocks, but increases fragmentation.
         /// </summary>

@@ -16,13 +16,13 @@ namespace Nevermore
     public class RelationalStore : IRelationalStore
     {
         readonly Lazy<RelationalTransactionRegistry> registry;
-        readonly Lazy<KeyAllocator> keyAllocator;
+        readonly Lazy<IKeyAllocator> keyAllocator;
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
             Configuration = configuration;
             registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
-            keyAllocator = new Lazy<KeyAllocator>(() => new KeyAllocator(this, configuration.KeyBlockSize));
+            keyAllocator = new Lazy<IKeyAllocator>(configuration.KeyAllocatorFactory is not null ? () => configuration.KeyAllocatorFactory() : () => new KeyAllocator(this, configuration.KeyBlockSize));
         }
 
         public void WriteCurrentTransactions(StringBuilder output) => registry.Value.WriteCurrentTransactions(output);
