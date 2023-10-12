@@ -108,6 +108,8 @@ namespace Nevermore
 
         public ISqlCommandFactory CommandFactory { get; set; }
 
+        public Func<IKeyAllocator> KeyAllocatorFactory { get; set; }
+
         string InitializeConnectionString(string sqlConnectionString)
         {
             var builder = new SqlConnectionStringBuilder(sqlConnectionString);
