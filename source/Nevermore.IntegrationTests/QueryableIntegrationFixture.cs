@@ -1607,5 +1607,31 @@ namespace Nevermore.IntegrationTests
                 return HashCode.Combine(FirstName, IsEmployee);
             }
         }
+
+        [Test]
+        public async Task ProjectRecord()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => new CustomerRecord(c.FirstName, c.IsEmployee)).ToListAsync();
+
+            customers.Should().Equal(
+                new CustomerRecord("Alice", true),
+                new CustomerRecord("Bob", false),
+                new CustomerRecord("Charlie", true)
+            );
+        }
+
+        record CustomerRecord(string FirstName, bool IsEmployee);
     }
 }
