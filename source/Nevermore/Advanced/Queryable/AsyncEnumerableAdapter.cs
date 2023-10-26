@@ -9,31 +9,20 @@ namespace Nevermore.Advanced.Queryable
 {
     internal static class AsyncEnumerableAdapter
     {
-        public static async Task<IEnumerable> ConvertToEnumerable(object asyncEnumerable, Type sequenceType, CancellationToken cancellationToken)
+        static readonly MethodInfo HelperMethod = typeof(AsyncEnumerableAdapter).GetMethod(nameof(Helper), BindingFlags.Static | BindingFlags.NonPublic);
+
+        public static Task<IEnumerable> ConvertToEnumerable(object asyncEnumerable, Type sequenceType, CancellationToken cancellationToken)
         {
-            var asyncEnumerableType = typeof(IAsyncEnumerable<>).MakeGenericType(sequenceType);
-            var asyncEnumeratorType = typeof(IAsyncEnumerator<>).MakeGenericType(sequenceType);
-
-            var getAsyncEnumeratorMethod = asyncEnumerableType.GetRuntimeMethod("GetAsyncEnumerator", new[] { typeof(CancellationToken) });
-            var moveNextAsyncMethod = asyncEnumeratorType.GetRuntimeMethod("MoveNextAsync", Array.Empty<Type>());
-            var currentProperty = asyncEnumeratorType.GetRuntimeProperty("Current");
-
-            var asyncEnumerator = getAsyncEnumeratorMethod.Invoke(asyncEnumerable, new object[] { cancellationToken });
-
-            var list = CreateList(sequenceType);
-            while (await ((ValueTask<bool>)moveNextAsyncMethod.Invoke(asyncEnumerator, Array.Empty<object>())).ConfigureAwait(false))
-            {
-                var item = currentProperty.GetValue(asyncEnumerator);
-                list.Add(item);
-            }
-
-            return list;
+            return (Task<IEnumerable>)HelperMethod.MakeGenericMethod(sequenceType).Invoke(null, new[] {asyncEnumerable, cancellationToken });
         }
 
-        static IList CreateList(Type elementType)
+        static async Task<IEnumerable> Helper<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
         {
-            var listType = typeof(List<>).MakeGenericType(elementType);
-            var list = (IList)Activator.CreateInstance(listType);
+            var list = new List<T>();
+            await foreach (var element in enumerable.WithCancellation(cancellationToken))
+            {
+                list.Add(element);
+            }
             return list;
         }
     }
