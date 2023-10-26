@@ -304,7 +304,7 @@ namespace Nevermore.Mapping
 
         public bool IsIdentityId => IdColumn?.Direction == ColumnDirection.FromDatabase;
 
-        public bool HasModificationOutputs =>IsRowVersioningEnabled || IsIdentityId;
+        public bool HasModificationOutputs => IsRowVersioningEnabled || IsIdentityId || Columns.Any(c => c.Direction == ColumnDirection.FromDatabase);
 
         public void Validate()
         {

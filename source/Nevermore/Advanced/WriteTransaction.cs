@@ -45,6 +45,7 @@ namespace Nevermore.Advanced
             var output = ExecuteSingleDataModification(command);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
+            ApplyOutputColumnsIfRequired(document, command.Mapping, output);
 
             configuration.Hooks.AfterInsert(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -63,6 +64,7 @@ namespace Nevermore.Advanced
             var output = await ExecuteSingleDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
             ApplyIdentityIdsIfRequired(document, command.Mapping, output);
+            ApplyOutputColumnsIfRequired(document, command.Mapping, output);
 
             await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
             await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
@@ -115,6 +117,7 @@ namespace Nevermore.Advanced
                 var outputs = await ExecuteDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
                 ApplyNewRowVersionsIfRequired(documentsToInsert, command.Mapping, outputs);
                 ApplyIdentityIdsIfRequired(documentsToInsert, command.Mapping, outputs);
+                ApplyOutputColumnsIfRequired(documentsToInsert, command.Mapping, outputs);
 
                 foreach (var document in documentsToInsert)
                     await configuration.Hooks.AfterInsertAsync(document, command.Mapping, this).ConfigureAwait(false);
@@ -130,6 +133,7 @@ namespace Nevermore.Advanced
 
             var output = ExecuteSingleDataModification(command);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
+            ApplyOutputColumnsIfRequired(document, command.Mapping, output);
 
             configuration.Hooks.AfterUpdate(document, command.Mapping, this);
             configuration.RelatedDocumentStore.PopulateRelatedDocuments(this, document);
@@ -147,6 +151,7 @@ namespace Nevermore.Advanced
 
             var output = await ExecuteSingleDataModificationAsync(command, cancellationToken).ConfigureAwait(false);
             ApplyNewRowVersionIfRequired(document, command.Mapping, output);
+            ApplyOutputColumnsIfRequired(document, command.Mapping, output);
 
             await configuration.Hooks.AfterUpdateAsync(document, command.Mapping, this).ConfigureAwait(false);
             await configuration.RelatedDocumentStore.PopulateRelatedDocumentsAsync(this, document, cancellationToken).ConfigureAwait(false);
@@ -418,6 +423,25 @@ namespace Nevermore.Advanced
             mapping.IdColumn!.PropertyHandler.Write(document, output.Id);
         }
 
+        void ApplyOutputColumnsIfRequired(IReadOnlyList<object> documentList, DocumentMap mapping, DataModificationOutput[] outputs)
+        {
+            if (!mapping.Columns.Any(c => c.Direction == ColumnDirection.FromDatabase)) return;
+
+            foreach (var (doc, output) in documentList.Zip(outputs, (a, b) => new ValueTuple<object, DataModificationOutput>(a, b)))
+            {
+                ApplyOutputColumnsIfRequired(doc, mapping, output);
+            }
+        }
+
+        void ApplyOutputColumnsIfRequired<TDocument>(TDocument document, DocumentMap mapping, DataModificationOutput output) where TDocument : class
+        {
+            foreach (var col in mapping.Columns.Where(c => c.Direction == ColumnDirection.FromDatabase))
+            {
+                var value = output.Columns[col];
+                col.PropertyHandler.Write(document, value);
+            }
+        }
+
         /// <summary>
         /// Calculating batching block size for a given collection of documents.
         /// </summary>
@@ -433,6 +457,7 @@ namespace Nevermore.Advanced
         {
             public byte[] RowVersion { get; private set; }
             public object Id { get; private set; }
+            public Dictionary<ColumnMapping, object> Columns { get; private set; }
 
             public static DataModificationOutput Read(DbDataReader reader, DocumentMap map, bool isInsert)
             {
@@ -458,6 +483,18 @@ namespace Nevermore.Advanced
 
                 if (map.IsIdentityId && isInsert)
                     output.Id = await reader.GetFieldValueAsync<object>(map.IdColumn!.ColumnName, cancellationToken).ConfigureAwait(false);
+
+                if (map.Columns.Any(c => c.Direction == ColumnDirection.FromDatabase))
+                {
+                    var columnValues = new Dictionary<ColumnMapping, object>();
+                    foreach (var column in map.Columns.Where(c => c.Direction == ColumnDirection.FromDatabase))
+                    {
+                        var value = await reader.GetFieldValueAsync<object>(column.ColumnName, cancellationToken).ConfigureAwait(false);
+                        columnValues[column] = value;
+                    }
+
+                    output.Columns = columnValues;
+                }
 
                 return output;
             }
