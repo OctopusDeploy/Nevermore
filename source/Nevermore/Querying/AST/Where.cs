@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nevermore.Util;
 
 namespace Nevermore.Querying.AST
 {
@@ -105,26 +106,7 @@ AND ", subClauses.Select(c => $"({c.GenerateSql()})"));
 
         public string GenerateSql()
         {
-            return $"@{parameterName} {GetQueryOperandSql()} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {GetDbType()} '$'))";
-        }
-
-        string GetDbType()
-        {
-            return Type.GetTypeCode(elementType) switch
-            {
-                TypeCode.String => "nvarchar(max)",
-                TypeCode.Int16 => "int",
-                TypeCode.Double => "double",
-                TypeCode.Boolean => "bit",
-                TypeCode.Char => "char(max)",
-                TypeCode.DateTime => "datetime2",
-                TypeCode.Decimal => "decimal(18,8)",
-                TypeCode.Int32 => "int",
-                TypeCode.Int64 => "bigint",
-                TypeCode.SByte => "tinyint",
-                TypeCode.Single => "float",
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            return $"@{parameterName} {GetQueryOperandSql()} (SELECT [Val] FROM OPENJSON([JSON], 'strict {jsonPath}') WITH ([Val] {elementType.GetDbType()} '$'))";
         }
 
         string GetQueryOperandSql()

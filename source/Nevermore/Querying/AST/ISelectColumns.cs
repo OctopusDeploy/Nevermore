@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nevermore.Util;
 
 namespace Nevermore.Querying.AST
 {
@@ -139,25 +140,6 @@ namespace Nevermore.Querying.AST
 
         public bool AggregatesRows => false;
 
-        public string GenerateSql() => $"CONVERT({GetDbType()}, JSON_VALUE([JSON], '{jsonPath}'))";
-
-        string GetDbType()
-        {
-            return Type.GetTypeCode(elementType) switch
-            {
-                TypeCode.String => "nvarchar(max)",
-                TypeCode.Int16 => "int",
-                TypeCode.Double => "double",
-                TypeCode.Boolean => "bit",
-                TypeCode.Char => "char(max)",
-                TypeCode.DateTime => "datetime2",
-                TypeCode.Decimal => "decimal(18,8)",
-                TypeCode.Int32 => "int",
-                TypeCode.Int64 => "bigint",
-                TypeCode.SByte => "tinyint",
-                TypeCode.Single => "float",
-                _ => throw new ArgumentOutOfRangeException()
-            };
-        }
+        public string GenerateSql() => $"CONVERT({elementType.GetDbType()}, JSON_VALUE([JSON], '{jsonPath}'))";
     }
 }
