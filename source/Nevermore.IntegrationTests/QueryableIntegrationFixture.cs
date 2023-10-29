@@ -1497,7 +1497,7 @@ namespace Nevermore.IntegrationTests
 
             var customers = t.Queryable<Customer>().Select(c => c.FirstName);
 
-            customers.Should().Equal("Alice", "Bob", "Charlie");
+            customers.Should().BeEquivalentTo("Alice", "Bob", "Charlie");
         }
 
         [Test]
@@ -1521,11 +1521,11 @@ namespace Nevermore.IntegrationTests
 
             var customers = t.Queryable<Customer>().Select(c => new { c.FirstName, c.IsEmployee });
 
-            customers.Should().Equal(
+            customers.Should().BeEquivalentTo(new[] {
                 new { FirstName = "Alice", IsEmployee = true },
                 new { FirstName = "Bob", IsEmployee = false },
                 new { FirstName = "Charlie", IsEmployee = true }
-            );
+            });
         }
 
         [Test]
@@ -1549,7 +1549,7 @@ namespace Nevermore.IntegrationTests
 
             var customers = await t.Queryable<Customer>().Select(c => c.IsEmployee).ToListAsync();
 
-            customers.Should().Equal(true, false, true);
+            customers.Should().BeEquivalentTo(new[] { true, false, true });
         }
 
         [Test]
@@ -1569,14 +1569,15 @@ namespace Nevermore.IntegrationTests
 
             var customers = await t.Queryable<Customer>().Select(c => new CustomerProjection(c.FirstName, c.IsEmployee)).ToListAsync();
 
-            customers.Should().Equal(
+            customers.Should().BeEquivalentTo(new[]
+            {
                 new CustomerProjection("Alice", true),
                 new CustomerProjection("Bob", false),
                 new CustomerProjection("Charlie", true)
-            );
+            });
         }
 
-        class CustomerProjection : IEquatable<CustomerProjection>
+        class CustomerProjection
         {
             public CustomerProjection(string firstName, bool isEmployee)
             {
@@ -1586,26 +1587,6 @@ namespace Nevermore.IntegrationTests
 
             public string FirstName { get; }
             public bool IsEmployee { get; }
-
-            public bool Equals(CustomerProjection other)
-            {
-                if (ReferenceEquals(null, other)) return false;
-                if (ReferenceEquals(this, other)) return true;
-                return FirstName == other.FirstName && IsEmployee == other.IsEmployee;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (ReferenceEquals(null, obj)) return false;
-                if (ReferenceEquals(this, obj)) return true;
-                if (obj.GetType() != GetType()) return false;
-                return Equals((CustomerProjection)obj);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(FirstName, IsEmployee);
-            }
         }
 
         [Test]
