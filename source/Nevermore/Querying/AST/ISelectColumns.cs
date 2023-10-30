@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Nevermore.Util;
 
 namespace Nevermore.Querying.AST
 {
@@ -109,5 +111,35 @@ namespace Nevermore.Querying.AST
 
         public string GenerateSql() => $"ROW_NUMBER() {over.GenerateSql()} AS {alias}";
         public override string ToString() => GenerateSql();
+    }
+
+    public class SelectColumn : ISelectColumns
+    {
+        readonly string columnName;
+
+        public SelectColumn(string columnName)
+        {
+            this.columnName = columnName;
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => $"[{columnName}]";
+    }
+
+    public class SelectJsonValue : ISelectColumns
+    {
+        readonly string jsonPath;
+        readonly Type elementType;
+
+        public SelectJsonValue(string jsonPath, Type elementType)
+        {
+            this.jsonPath = jsonPath;
+            this.elementType = elementType;
+        }
+
+        public bool AggregatesRows => false;
+
+        public string GenerateSql() => $"CONVERT({elementType.GetDbType()}, JSON_VALUE([JSON], '{jsonPath}'))";
     }
 }

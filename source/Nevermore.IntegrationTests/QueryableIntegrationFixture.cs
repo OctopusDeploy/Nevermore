@@ -1475,5 +1475,144 @@ namespace Nevermore.IntegrationTests
 
             customers.Select(c => c.LastName).Should().BeEquivalentTo("Apple", "Cherry");
         }
+
+        [Test]
+        public async Task ProjectColumnField()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", Roles = { "Admin" }},
+                new Customer { FirstName = "Bob", LastName = "Banana", Roles = { "Boss" } },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", Roles = { "Editor", "Bum" } }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = t.Queryable<Customer>().Select(c => c.FirstName);
+
+            customers.Should().BeEquivalentTo("Alice", "Bob", "Charlie");
+        }
+
+        [Test]
+        public async Task ProjectJsonField()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = t.Queryable<Customer>().Select(c => new { c.FirstName, c.IsEmployee });
+
+            customers.Should().BeEquivalentTo(new[] {
+                new { FirstName = "Alice", IsEmployee = true },
+                new { FirstName = "Bob", IsEmployee = false },
+                new { FirstName = "Charlie", IsEmployee = true }
+            });
+        }
+
+        [Test]
+        public async Task ProjectValueType()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            foreach (var c in testCustomers)
+            {
+                t.Insert(c);
+            }
+
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => c.IsEmployee).ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[] { true, false, true });
+        }
+
+        [Test]
+        public async Task ProjectTypeWithParameterizedConstructor()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => new CustomerProjection(c.FirstName, c.IsEmployee)).ToListAsync();
+
+            customers.Should().BeEquivalentTo(new[]
+            {
+                new CustomerProjection("Alice", true),
+                new CustomerProjection("Bob", false),
+                new CustomerProjection("Charlie", true)
+            });
+        }
+
+        class CustomerProjection
+        {
+            public CustomerProjection(string firstName, bool isEmployee)
+            {
+                FirstName = firstName;
+                IsEmployee = isEmployee;
+            }
+
+            public string FirstName { get; }
+            public bool IsEmployee { get; }
+        }
+
+        [Test]
+        public async Task ProjectRecord()
+        {
+            using var t = Store.BeginTransaction();
+
+            var testCustomers = new[]
+            {
+                new Customer { FirstName = "Alice", LastName = "Apple", IsEmployee = true },
+                new Customer { FirstName = "Bob", LastName = "Banana", IsEmployee = false },
+                new Customer { FirstName = "Charlie", LastName = "Cherry", IsEmployee = true }
+            };
+
+            await t.InsertManyAsync(testCustomers);
+            await t.CommitAsync();
+
+            var customers = await t.Queryable<Customer>().Select(c => new CustomerRecord(c.FirstName, c.IsEmployee)).ToListAsync();
+
+            customers.Should().Equal(
+                new CustomerRecord("Alice", true),
+                new CustomerRecord("Bob", false),
+                new CustomerRecord("Charlie", true)
+            );
+        }
+
+        record CustomerRecord(string FirstName, bool IsEmployee);
     }
 }

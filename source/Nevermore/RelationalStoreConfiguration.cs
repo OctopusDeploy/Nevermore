@@ -4,6 +4,7 @@ using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
+using Nevermore.Advanced.ReaderStrategies.AnonymousTypes;
 using Nevermore.Advanced.ReaderStrategies.ArbitraryClasses;
 using Nevermore.Advanced.ReaderStrategies.Documents;
 using Nevermore.Advanced.ReaderStrategies.Primitives;
@@ -37,8 +38,9 @@ namespace Nevermore
             ReaderStrategies = new ReaderStrategyRegistry();
             ReaderStrategies.Register(new DocumentReaderStrategy(this));
             ReaderStrategies.Register(new ValueTupleReaderStrategy(this));
-            ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
+            ReaderStrategies.Register(new AnonymousTypeReaderStrategy(this));
             ReaderStrategies.Register(new PrimitiveReaderStrategy(this));
+            ReaderStrategies.Register(new ArbitraryClassReaderStrategy(this));
 
             Hooks = new HookRegistry();
 

@@ -140,17 +140,6 @@ public class NevermoreQueryableAnalyzerFixture : NevermoreFixture
     }
 
     [Test]
-    public void ShouldFailSelect()
-    {
-        var code = @"
-			transaction.Queryable<Customer>().Select(c => c.FirstName);
-		";
-
-        var results = CodeCompiler.Compile<NevermoreQueryableAnalyzer>(code);
-        AssertError(results, "Nevermore Queryable does not support Select");
-    }
-
-    [Test]
     public void ShouldPassOnQueryableFromSomewhereElse()
     {
 	    var code = @"

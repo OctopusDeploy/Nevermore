@@ -17,7 +17,7 @@ namespace Nevermore.Advanced.Queryable
         static readonly MethodInfo GenericExecuteMethod = typeof(QueryProvider)
             .GetRuntimeMethods().Single(m => m.Name == nameof(Execute) && m.IsGenericMethod);
         static readonly MethodInfo GenericStreamMethod = typeof(IReadQueryExecutor)
-            .GetRuntimeMethod(nameof(IReadQueryExecutor.Stream), new[] { typeof(PreparedCommand) });
+            .GetRuntimeMethod(nameof(IReadQueryExecutor.Stream), new[] { typeof(PreparedCommand) } );
         static readonly MethodInfo GenericStreamAsyncMethod = typeof(IReadQueryExecutor)
             .GetRuntimeMethod(nameof(IReadQueryExecutor.StreamAsync), new[] { typeof(PreparedCommand), typeof(CancellationToken) });
         static readonly MethodInfo GenericExecuteScalarMethod = typeof(IReadQueryExecutor)
@@ -55,21 +55,16 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                return (TResult)GenericStreamMethod.MakeGenericMethod(sequenceType)
-                    .Invoke(queryExecutor, new object[] { command });
+                return (TResult)ExecuteStream(command, sequenceType);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var stream = (IEnumerable)GenericStreamMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command });
-                return (TResult)stream.Cast<object>().FirstOrDefault();
+                return (TResult)FirstOrDefault(ExecuteStream(command, expression.Type));
             }
 
-            return (TResult)GenericExecuteScalarMethod.MakeGenericMethod(expression.Type)
-                .Invoke(queryExecutor, new object[] { command });
+            return (TResult)ExecuteScalar(command, expression.Type);
         }
-
 
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
@@ -77,25 +72,12 @@ namespace Nevermore.Advanced.Queryable
             if (queryType == QueryType.SelectMany)
             {
                 var sequenceType = expression.Type.GetSequenceType();
-                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(sequenceType)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
-
-                return (TResult)await CreateList(asyncStream, sequenceType).ConfigureAwait(false);
+                return (TResult)await ExecuteStreamAsync(command, sequenceType, cancellationToken).ConfigureAwait(false);
             }
 
             if (queryType == QueryType.SelectSingle)
             {
-                var asyncStream = (IAsyncEnumerable<object>)GenericStreamAsyncMethod.MakeGenericMethod(expression.Type)
-                    .Invoke(queryExecutor, new object[] { command, cancellationToken });
-                var firstOrDefaultAsync = await FirstOrDefaultAsync(asyncStream, cancellationToken).ConfigureAwait(false);
-
-                if (firstOrDefaultAsync is not null) return (TResult) firstOrDefaultAsync;
-
-                // TODO: This NEEDS to go away when we turn nullable on in Nevermore
-                // This method needs to be able to return null for instances like `FirstOrDefaultAsync`
-                object GetNull() => null;
-                return (TResult) GetNull();
-
+                return (TResult)FirstOrDefault(await ExecuteStreamAsync(command, expression.Type, cancellationToken).ConfigureAwait(false));
             }
 
             return await ((Task<TResult>)GenericExecuteScalarAsyncMethod.MakeGenericMethod(expression.Type)
@@ -121,31 +103,37 @@ namespace Nevermore.Advanced.Queryable
             return new QueryTranslator(configuration).Translate(expression);
         }
 
-        static async Task<IList> CreateList(IAsyncEnumerable<object> items, Type elementType)
+        IEnumerable ExecuteStream(PreparedCommand command, Type elementType)
         {
-            var listType = typeof(List<>).MakeGenericType(elementType);
-            IList list = (IList)Activator.CreateInstance(listType);
-            await foreach (var item in items.ConfigureAwait(false))
-            {
-                list.Add(item);
-            }
-
-            return list;
+            return (IEnumerable)GenericStreamMethod.MakeGenericMethod(elementType)
+                .Invoke(queryExecutor, new object[] { command });
         }
 
-        static async ValueTask<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> enumerable, CancellationToken cancellationToken)
+        async Task<IEnumerable> ExecuteStreamAsync(PreparedCommand command, Type elementType, CancellationToken cancellationToken)
         {
-#pragma warning disable CA2007
-            // CA2007 doesn't understand ConfiguredCancelableAsyncEnumerable and incorrectly thinks we need another ConfigureAwait(false) here
-            await using var enumerator = enumerable.ConfigureAwait(false).WithCancellation(cancellationToken).GetAsyncEnumerator();
-#pragma warning restore CA2007
+            var stream = GenericStreamAsyncMethod.MakeGenericMethod(elementType)
+                .Invoke(queryExecutor, new object[] { command, cancellationToken });
 
-            if (await enumerator.MoveNextAsync())
+            return await AsyncEnumerableAdapter.ConvertToEnumerable(stream, elementType, cancellationToken).ConfigureAwait(false);
+        }
+
+        object ExecuteScalar(PreparedCommand command, Type resultType)
+        {
+            return GenericExecuteScalarMethod.MakeGenericMethod(resultType)
+                .Invoke(queryExecutor, new object[] { command });
+        }
+
+        static object FirstOrDefault(IEnumerable stream)
+        {
+            var enumerator = stream.GetEnumerator();
+            try
             {
-                return enumerator.Current;
+                return enumerator.MoveNext() ? enumerator.Current : default;
             }
-
-            return default;
+            finally
+            {
+                (enumerator as IDisposable)?.Dispose();
+            }
         }
     }
 }
