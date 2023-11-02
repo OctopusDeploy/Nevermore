@@ -739,7 +739,7 @@ namespace Nevermore.Advanced
             var schema = configuration.GetSchemaNameOrDefault(mapping);
             var columnNames = GetColumnNames(schema, mapping.TableName);
             var param = new CommandParameterValues();
-            param.AddTable("criteriaTable", idList.ToList(), configuration);
+            param.AddTable("criteriaTable", idList.ToList(), mapping.IdColumn.PrimaryKeyHandler);
             var statement = $"SELECT s.{string.Join(',', columnNames)} FROM [{schema}].[{mapping.TableName}] s INNER JOIN @criteriaTable t on t.[ParameterValue] = s.[{mapping.IdColumn.ColumnName}] order by s.[{mapping.IdColumn.ColumnName}]";
             return new PreparedCommand(statement, param, RetriableOperation.Select, mapping, commandBehavior: CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
         }

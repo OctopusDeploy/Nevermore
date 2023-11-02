@@ -56,12 +56,8 @@ namespace Nevermore
 
         public CommandType CommandType { get; set; }
 
-        public void AddTable<T>(string name, IReadOnlyCollection<T> ids, IRelationalStoreConfiguration configuration)
+        public void AddTable<T>(string name, IReadOnlyCollection<T> ids, IPrimaryKeyHandler primaryKeyHandler)
         {
-            var primaryKeyHandler = configuration.PrimaryKeyHandlers.Resolve(typeof(T));
-            if (primaryKeyHandler is null)
-                throw new InvalidOperationException($"Unable to locate primary key handler for type {typeof(T).Name}");
-
             var idColumnMetadata = primaryKeyHandler.GetSqlMetaData("ParameterValue");
 
             var dataRecords = ids.Where(v => v != null).Select(v =>
