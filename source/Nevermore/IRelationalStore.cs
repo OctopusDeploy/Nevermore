@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using System.Text;
 using System.Threading;
@@ -18,5 +19,19 @@ namespace Nevermore
         Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null, CancellationToken cancellationToken = default);
 
         IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null);
+
+        IReadTransaction CreateReadTransactionFromExistingConnectionAndTransaction(
+            IConnectionAndTransaction existingConnectionAndTransaction,
+            bool takeOwnershipOfExistingConnectionAndTransaction,
+            Action<string> customCommandTrace = null,
+            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            string name = null);
+
+        IWriteTransaction CreateWriteTransactionFromExistingConnectionAndTransaction(
+            IConnectionAndTransaction existingConnectionAndTransaction,
+            bool takeOwnershipOfExistingConnectionAndTransaction,
+            Action<string> customCommandTrace = null,
+            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            string name = null);
     }
 }
