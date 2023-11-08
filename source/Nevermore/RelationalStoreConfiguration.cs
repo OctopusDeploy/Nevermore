@@ -22,11 +22,12 @@ namespace Nevermore
     {
         readonly Lazy<string> connectionString;
 
-        public RelationalStoreConfiguration(string connectionString) : this(() => connectionString)
+#nullable enable
+        public RelationalStoreConfiguration(string connectionString, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null) : this(() => connectionString, customPrimaryKeyHandlerRegistry)
         {
         }
 
-        public RelationalStoreConfiguration(Func<string> connectionStringFunc)
+        public RelationalStoreConfiguration(Func<string> connectionStringFunc, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null)
         {
             CommandFactory = new SqlCommandFactory();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
@@ -48,7 +49,7 @@ namespace Nevermore
 
             TypeHandlers = new TypeHandlerRegistry();
 
-            PrimaryKeyHandlers = new PrimaryKeyHandlerRegistry();
+            PrimaryKeyHandlers = customPrimaryKeyHandlerRegistry ?? new PrimaryKeyHandlerRegistry();
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
 
@@ -65,6 +66,7 @@ namespace Nevermore
                 return InitializeConnectionString(result);
             });
         }
+#nullable disable
 
         public string ApplicationName { get; set; }
 
