@@ -37,7 +37,7 @@ namespace Nevermore
 
         public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
-            var txn = CreateReadTransaction(retriableOperation, null, null, null, name);
+            var txn = CreateReadTransaction(retriableOperation, name: name);
 
             try
             {
@@ -53,7 +53,7 @@ namespace Nevermore
 
         public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
-            var txn = CreateReadTransaction(retriableOperation, null, null, null, name);
+            var txn = CreateReadTransaction(retriableOperation, name: name);
             try
             {
                 await txn.OpenAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
@@ -68,7 +68,7 @@ namespace Nevermore
 
         public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
-            var txn = CreateWriteTransaction(retriableOperation, null, null, null, name);
+            var txn = CreateWriteTransaction(retriableOperation, name: name);
             try
             {
                 txn.Open(isolationLevel);
@@ -83,7 +83,7 @@ namespace Nevermore
 
         public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
-            var txn = CreateWriteTransaction(retriableOperation, null, null, null, name);
+            var txn = CreateWriteTransaction(retriableOperation, name: name);
             try
             {
                 await txn.OpenAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
@@ -104,31 +104,62 @@ namespace Nevermore
         public IReadTransaction CreateReadTransactionFromExistingConnectionAndTransaction(
             IConnectionAndTransaction existingConnectionAndTransaction,
             bool takeOwnershipOfExistingConnectionAndTransaction,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
             Action<string>? customCommandTrace = null,
             RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
             string? name = null)
         {
-            return CreateReadTransaction(retriableOperation, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
+            return CreateReadTransaction(retriableOperation, customRelationalTransactionRegistry, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
         }
 
         public IWriteTransaction CreateWriteTransactionFromExistingConnectionAndTransaction(
             IConnectionAndTransaction existingConnectionAndTransaction,
             bool takeOwnershipOfExistingConnectionAndTransaction,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
             Action<string>? customCommandTrace = null,
             RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
             string? name = null)
         {
-            return CreateWriteTransaction(retriableOperation, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
+            return CreateWriteTransaction(retriableOperation, customRelationalTransactionRegistry, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
         }
 
-        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, IConnectionAndTransaction? existingConnectionAndTransaction, bool? takeOwnershipOfExistingConnectionAndTransaction, Action<string>? customCommandTrace, string? name)
+        ReadTransaction CreateReadTransaction(
+            RetriableOperation retriableOperation,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
+            IConnectionAndTransaction? existingConnectionAndTransaction = null,
+            bool? takeOwnershipOfExistingConnectionAndTransaction = null,
+            Action<string>? customCommandTrace = null,
+            string? name = null)
         {
-            return new ReadTransaction(this, registry.Value, retriableOperation, Configuration, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
+            return new ReadTransaction(
+                this,
+                customRelationalTransactionRegistry ?? registry.Value,
+                retriableOperation,
+                Configuration,
+                existingConnectionAndTransaction,
+                takeOwnershipOfExistingConnectionAndTransaction,
+                customCommandTrace,
+                name);
         }
 
-        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, IConnectionAndTransaction? existingConnectionAndTransaction, bool? takeOwnershipOfExistingConnectionAndTransaction, Action<string>? customCommandTrace, string? name)
+        WriteTransaction CreateWriteTransaction(
+            RetriableOperation retriableOperation,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
+            IConnectionAndTransaction? existingConnectionAndTransaction = null,
+            bool? takeOwnershipOfExistingConnectionAndTransaction = null,
+            Action<string>? customCommandTrace = null,
+            string? name = null)
         {
-            return new WriteTransaction(this, registry.Value, retriableOperation, Configuration, keyAllocator.Value, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name);
+            return new WriteTransaction(
+                this,
+                customRelationalTransactionRegistry ?? registry.Value,
+                retriableOperation,
+                Configuration,
+                keyAllocator.Value,
+                existingConnectionAndTransaction,
+                takeOwnershipOfExistingConnectionAndTransaction,
+                customCommandTrace,
+                name);
         }
     }
 }
