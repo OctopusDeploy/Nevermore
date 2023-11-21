@@ -30,11 +30,26 @@ namespace Nevermore.Advanced
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
-            IConnectionAndTransaction? existingConnectionAndTransaction,
-            bool? takeOwnershipOfExistingConnectionAndTransaction,
             Action<string>? customCommandTrace = null,
             string? name = null
-        ) : base(store, registry, operationsToRetry, configuration, DefaultConnectionFactory, existingConnectionAndTransaction, takeOwnershipOfExistingConnectionAndTransaction, customCommandTrace, name)
+        ) : base(store, registry, operationsToRetry, configuration, DefaultConnectionFactory, customCommandTrace, name)
+        {
+            this.configuration = configuration;
+            this.keyAllocator = keyAllocator;
+            builder = new DataModificationQueryBuilder(configuration, AllocateId);
+        }
+
+        public WriteTransaction(
+            IRelationalStore store,
+            IRelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            IKeyAllocator keyAllocator,
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
+            Action<string>? customCommandTrace = null,
+            string? name = null
+        ) : base(store, registry, operationsToRetry, configuration, existingConnection, existingTransaction, customCommandTrace, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
@@ -328,23 +343,14 @@ namespace Nevermore.Advanced
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
 
-            if (ExternalConnectionAndTransaction is ExistingConnectionAndTransaction.ExternallyOwned)
+            if (!TransactionIsNevermoreOwned)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
             configuration.Hooks.BeforeCommit(this);
-
-            if (ExternalConnectionAndTransaction is ExistingConnectionAndTransaction.NevermoreOwned)
-            {
-                ExternalConnectionAndTransaction.Value.CommitTransaction();
-            }
-            else
-            {
-                Transaction.Commit();
-            }
-
+            Transaction.Commit();
             configuration.Hooks.AfterCommit(this);
         }
 
@@ -353,20 +359,11 @@ namespace Nevermore.Advanced
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
 
-            if (ExternalConnectionAndTransaction is ExistingConnectionAndTransaction.ExternallyOwned)
+            if (!TransactionIsNevermoreOwned)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
             await configuration.Hooks.BeforeCommitAsync(this).ConfigureAwait(false);
-
-            if (ExternalConnectionAndTransaction is ExistingConnectionAndTransaction.NevermoreOwned)
-            {
-                await ExternalConnectionAndTransaction.Value.CommitTransactionAsync(cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            }
-
+            await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             await configuration.Hooks.AfterCommitAsync(this).ConfigureAwait(false);
         }
 

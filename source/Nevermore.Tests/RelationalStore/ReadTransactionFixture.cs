@@ -36,7 +36,7 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public void OpenCanOpenConnection()
         {
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory, null, false);
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory);
 
             c.Open();
 
@@ -49,36 +49,36 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public async Task OpenAsyncCanOpenConnection()
         {
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory, null, false);
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory);
 
             await c.OpenAsync();
 
             createdConnections.Should().HaveCount(1);
             createdConnections[0].State.Should().Be(ConnectionState.Open);
         }
-
+        
         [Test]
         public void OpenWithIsolationCanOpenConnection()
         {
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory, null, false);
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory);
 
             c.Open(IsolationLevel.ReadCommitted);
 
             createdConnections.Should().HaveCount(1);
             createdConnections[0].State.Should().Be(ConnectionState.Open);
         }
-
+        
         [Test]
         public async Task OpenAsyncWithIsolationCanOpenConnection()
         {
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory, null, false);
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactory);
 
             await c.OpenAsync(IsolationLevel.ReadCommitted);
 
             createdConnections.Should().HaveCount(1);
             createdConnections[0].State.Should().Be(ConnectionState.Open);
         }
-
+        
         class FakeSqlConnectionWhichThrowsOnFirstOpen : FakeSqlConnection
         {
             public int OpenCount { get; set; }
@@ -101,8 +101,8 @@ namespace Nevermore.Tests.RelationalStore
                 createdConnections.Add(c);
                 return c;
             }
-
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure, null, false);
+            
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open();
 
@@ -111,7 +111,7 @@ namespace Nevermore.Tests.RelationalStore
 
             ((FakeSqlConnectionWhichThrowsOnFirstOpen)createdConnections[0]).OpenCount.Should().Be(2); // sanity check that our mock got hit. Not important for the test but just to ensure we wired it up properly
         }
-
+        
         [Test]
         public async Task OpenAsyncWillRetryATransientFailure()
         {
@@ -121,8 +121,8 @@ namespace Nevermore.Tests.RelationalStore
                 createdConnections.Add(c);
                 return c;
             }
-
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure, null, false);
+            
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             await c.OpenAsync();
 
@@ -131,7 +131,7 @@ namespace Nevermore.Tests.RelationalStore
 
             ((FakeSqlConnectionWhichThrowsOnFirstOpen)createdConnections[0]).OpenCount.Should().Be(2); // sanity check that our mock got hit. Not important for the test but just to ensure we wired it up properly
         }
-
+        
         // Open with an isolation level also creates a SqlTransaction with the given isolation level
         [Test]
         public void OpenWithIsolationWillRetryATransientFailure()
@@ -142,8 +142,8 @@ namespace Nevermore.Tests.RelationalStore
                 createdConnections.Add(c);
                 return c;
             }
-
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure, null, false);
+            
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open(IsolationLevel.ReadCommitted);
 
@@ -152,14 +152,14 @@ namespace Nevermore.Tests.RelationalStore
 
             ((FakeSqlConnectionWhichThrowsOnFirstOpen)createdConnections[0]).OpenCount.Should().Be(2); // sanity check that our mock got hit. Not important for the test but just to ensure we wired it up properly
         }
-
+        
         class FakeSqlConnectionWhichThrowsOnFirstTransaction : FakeSqlConnection
         {
             public int TransactionCount { get; set; }
 
             protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
             {
-                // NOTE: This mimics the behaviour of a real connection, where an error kills the whole transaction and
+                // NOTE: This mimics the behaviour of a real connection, where an error kills the whole transaction and 
                 // it needs to be re-opened to recover
                 if (TransactionCount++ == 0)
                 {
@@ -179,7 +179,7 @@ namespace Nevermore.Tests.RelationalStore
                 return base.BeginTransaction(iso, transactionName);
             }
         }
-
+        
         [Test]
         public void OpenWithIsolationWillRetryATransientFailureFromTransaction()
         {
@@ -189,8 +189,8 @@ namespace Nevermore.Tests.RelationalStore
                 createdConnections.Add(c);
                 return c;
             }
-
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure, null, false);
+            
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open(IsolationLevel.ReadCommitted);
 
@@ -199,7 +199,7 @@ namespace Nevermore.Tests.RelationalStore
 
             ((FakeSqlConnectionWhichThrowsOnFirstTransaction)createdConnections[0]).TransactionCount.Should().Be(2); // sanity check that our mock got hit. Not important for the test but just to ensure we wired it up properly
         }
-
+        
         [Test]
         public async Task OpenAsyncWithIsolationWillRetryATransientFailureFromTransaction()
         {
@@ -209,8 +209,8 @@ namespace Nevermore.Tests.RelationalStore
                 createdConnections.Add(c);
                 return c;
             }
-
-            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure, null, false);
+            
+            var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             await c.OpenAsync(IsolationLevel.ReadCommitted);
 
@@ -219,7 +219,7 @@ namespace Nevermore.Tests.RelationalStore
 
             ((FakeSqlConnectionWhichThrowsOnFirstTransaction)createdConnections[0]).TransactionCount.Should().Be(2); // sanity check that our mock got hit. Not important for the test but just to ensure we wired it up properly
         }
-
+        
         class FakeSqlTransaction : DbTransaction
         {
             public FakeSqlTransaction(FakeSqlConnection connection, IsolationLevel isolationLevel, string transactionName)
@@ -228,11 +228,11 @@ namespace Nevermore.Tests.RelationalStore
                 IsolationLevel = isolationLevel;
                 Name = transactionName;
             }
-
+            
             public override void Commit() => throw new NotImplementedException();
 
             public override void Rollback() => throw new NotImplementedException();
-
+            
             protected override DbConnection DbConnection { get; }
             public override IsolationLevel IsolationLevel { get; }
             public string Name { get; }

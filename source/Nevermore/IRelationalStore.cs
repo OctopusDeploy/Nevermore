@@ -2,6 +2,7 @@
 
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,16 +24,16 @@ namespace Nevermore
         IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null);
 
         IReadTransaction CreateReadTransactionFromExistingConnectionAndTransaction(
-            IConnectionAndTransaction existingConnectionAndTransaction,
-            bool takeOwnershipOfExistingConnectionAndTransaction,
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
             IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
             Action<string>? customCommandTrace = null,
             RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
             string? name = null);
 
         IWriteTransaction CreateWriteTransactionFromExistingConnectionAndTransaction(
-            IConnectionAndTransaction existingConnectionAndTransaction,
-            bool takeOwnershipOfExistingConnectionAndTransaction,
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
             IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
             Action<string>? customCommandTrace = null,
             RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,

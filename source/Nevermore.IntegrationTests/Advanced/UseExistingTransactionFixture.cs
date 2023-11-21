@@ -1,8 +1,9 @@
 using System;
 using System.Data;
-using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
 using Nevermore.IntegrationTests.SetUp;
@@ -22,146 +23,116 @@ public class UseExistingTransactionFixture : FixtureWithRelationalStore
         cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
     }
 
-    class TestConnectionAndTransaction : IConnectionAndTransaction
-    {
-        public TestConnectionAndTransaction(DbConnection connection, DbTransaction transaction)
-        {
-            Connection = connection;
-            Transaction = transaction;
-        }
-
-        public DbConnection Connection { get; }
-
-        public DbTransaction Transaction { get; }
-
-        public int CommitTransactionCalled { get; private set; }
-        public int DisposeCalled { get; private set; }
-
-        public void CommitTransaction()
-        {
-            ++CommitTransactionCalled;
-            Transaction.Commit();
-        }
-
-        public async Task CommitTransactionAsync(CancellationToken cancellationToken)
-        {
-            ++CommitTransactionCalled;
-            await Transaction.CommitAsync(cancellationToken);
-        }
-
-        public void Dispose()
-        {
-            ++DisposeCalled;
-            Transaction.Dispose();
-            Connection.Dispose();
-        }
-    }
-
     [Test]
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task OpeningReadTransaction_FromExistingTransaction_Throws(bool takeOwnershipOfExistingConnectionAndTransaction)
+    public async Task OpeningReadTransaction_FromExistingConnectionAndTransaction_Throws()
     {
         await using var sqlConnection = new SqlConnection(ConnectionString);
         await sqlConnection.OpenAsync(cancellationToken);
         await using var sqlTransaction = sqlConnection.BeginTransaction();
 
-        var readTransaction = (ReadTransaction) Store.CreateReadTransactionFromExistingConnectionAndTransaction(
-            new TestConnectionAndTransaction(sqlConnection, sqlTransaction),
-            takeOwnershipOfExistingConnectionAndTransaction);
+        var readTransaction = (ReadTransaction) Store.CreateReadTransactionFromExistingConnectionAndTransaction(sqlConnection, sqlTransaction);
 
-        Assert.Multiple(() =>
+        using (new AssertionScope())
         {
-            Assert.ThrowsAsync<InvalidOperationException>(async () => await readTransaction.OpenAsync(cancellationToken));
-            Assert.Throws<InvalidOperationException>(() => readTransaction.Open());
-        });
+            const string expectedMessage = "An existing connection and transaction were provided, they should have been opened externally";
+
+            await ((Func<Task>)(async () => await readTransaction.OpenAsync(cancellationToken)))
+                .Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            ((Action)(() => readTransaction.Open()))
+                .Should()
+                .ThrowExactly<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            await ((Func<Task>)(async () => await readTransaction.OpenAsync(IsolationLevel.ReadCommitted, cancellationToken)))
+                .Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            ((Action)(() => readTransaction.Open(IsolationLevel.ReadCommitted)))
+                .Should()
+                .ThrowExactly<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+        }
     }
 
     [Test]
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task OpeningWriteTransaction_FromExistingTransaction_Throws(bool takeOwnershipOfExistingConnectionAndTransaction)
+    public async Task OpeningWriteTransaction_FromExistingConnectionAndTransaction_Throws()
     {
         await using var sqlConnection = new SqlConnection(ConnectionString);
         await sqlConnection.OpenAsync(cancellationToken);
         await using var sqlTransaction = sqlConnection.BeginTransaction();
 
-        var writeTransaction = (WriteTransaction) Store.CreateWriteTransactionFromExistingConnectionAndTransaction(
-            new TestConnectionAndTransaction(sqlConnection, sqlTransaction),
-            takeOwnershipOfExistingConnectionAndTransaction);
+        var writeTransaction = (WriteTransaction) Store.CreateWriteTransactionFromExistingConnectionAndTransaction(sqlConnection, sqlTransaction);
 
-        Assert.Multiple(() =>
+        using (new AssertionScope())
         {
-            Assert.ThrowsAsync<InvalidOperationException>(async () => await writeTransaction.OpenAsync(cancellationToken));
-            Assert.Throws<InvalidOperationException>(() => writeTransaction.Open());
-        });
+            const string expectedMessage = "An existing connection and transaction were provided, they should have been opened externally";
+
+            await ((Func<Task>)(async () => await writeTransaction.OpenAsync(cancellationToken)))
+                .Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            ((Action)(() => writeTransaction.Open()))
+                .Should()
+                .ThrowExactly<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            await ((Func<Task>)(async () => await writeTransaction.OpenAsync(IsolationLevel.ReadCommitted, cancellationToken)))
+                .Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+
+            ((Action)(() => writeTransaction.Open(IsolationLevel.ReadCommitted)))
+                .Should()
+                .ThrowExactly<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+        }
     }
 
     [Test]
     public async Task CommittingNonOwnedTransaction_Throws()
     {
-        var sqlConnection = new SqlConnection(ConnectionString);
+        await using var sqlConnection = new SqlConnection(ConnectionString);
         await sqlConnection.OpenAsync(cancellationToken);
-        var sqlTransaction = sqlConnection.BeginTransaction();
-        using var connectionAndTransaction = new TestConnectionAndTransaction(sqlConnection, sqlTransaction);
+        await using var sqlTransaction = sqlConnection.BeginTransaction();
 
-        var nonOwnedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(
-            connectionAndTransaction, false);
+        var nonOwnedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(sqlConnection, sqlTransaction);
 
-        Assert.Multiple(() =>
+        using (new AssertionScope())
         {
-            Assert.ThrowsAsync<InvalidOperationException>(async () => await nonOwnedTransaction.CommitAsync(cancellationToken));
-            Assert.Throws<InvalidOperationException>(() => nonOwnedTransaction.Commit());
-        });
-    }
+            const string expectedMessage = $"{nameof(WriteTransaction)} cannot commit a transaction it does not own";
 
-    [Test]
-    public async Task CommittingOwnedTransaction_Succeeds()
-    {
-        var sqlConnection = new SqlConnection(ConnectionString);
-        await sqlConnection.OpenAsync(cancellationToken);
-        var sqlTransaction = sqlConnection.BeginTransaction();
-        var connectionAndTransaction = new TestConnectionAndTransaction(sqlConnection, sqlTransaction);
+            await ((Func<Task>)(async () => await nonOwnedTransaction.CommitAsync(cancellationToken)))
+                .Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(expectedMessage);
 
-        using var ownedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(
-            connectionAndTransaction, true);
-
-        await ownedTransaction.CommitAsync(cancellationToken);
-        Assert.AreEqual(1, connectionAndTransaction.CommitTransactionCalled);
+            ((Action)(() => nonOwnedTransaction.Commit()))
+                .Should()
+                .ThrowExactly<InvalidOperationException>()
+                .WithMessage(expectedMessage);
+        }
     }
 
     [Test]
     public async Task DisposingNonOwnedTransaction_DoesNotDisposeConnectionOrTransaction()
     {
-        var sqlConnection = new SqlConnection(ConnectionString);
+        await using var sqlConnection = new SqlConnection(ConnectionString);
         await sqlConnection.OpenAsync(cancellationToken);
-        var sqlTransaction = sqlConnection.BeginTransaction();
-        using var connectionAndTransaction = new TestConnectionAndTransaction(sqlConnection, sqlTransaction);
+        await using var sqlTransaction = sqlConnection.BeginTransaction();
 
-        var nonOwnedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(
-            connectionAndTransaction, false);
+        var nonOwnedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(sqlConnection, sqlTransaction);
         nonOwnedTransaction.Dispose();
 
-        Assert.Multiple(() =>
+        using (new AssertionScope())
         {
-            Assert.AreEqual(0, connectionAndTransaction.DisposeCalled);
-            Assert.DoesNotThrow(() => sqlTransaction.Commit());
-            Assert.AreEqual(ConnectionState.Open, sqlConnection.State);
-        });
-    }
-
-    [Test]
-    public async Task DisposingOwnedTransaction_CallsDisposeOnGivenConnectionOrTransaction()
-    {
-        var sqlConnection = new SqlConnection(ConnectionString);
-        await sqlConnection.OpenAsync(cancellationToken);
-        var sqlTransaction = sqlConnection.BeginTransaction();
-        var connectionAndTransaction = new TestConnectionAndTransaction(sqlConnection, sqlTransaction);
-
-        var nonOwnedTransaction = Store.CreateWriteTransactionFromExistingConnectionAndTransaction(
-            connectionAndTransaction, true);
-        nonOwnedTransaction.Dispose();
-
-        Assert.AreEqual(1, connectionAndTransaction.DisposeCalled);
+            // ReSharper disable once AccessToDisposedClosure
+            ((Action)(() => sqlTransaction.Commit())).Should().NotThrow();
+            sqlConnection.State.Should().Be(ConnectionState.Open);
+        }
     }
 }
