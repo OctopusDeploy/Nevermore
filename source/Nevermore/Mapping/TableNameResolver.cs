@@ -2,7 +2,7 @@
 
 namespace Nevermore.Mapping
 {
-    public class TableNameResolver : ITableNameResolver
+    internal class TableNameResolver : ITableNameResolver
     {
         readonly IDocumentMapRegistry mappings;
 

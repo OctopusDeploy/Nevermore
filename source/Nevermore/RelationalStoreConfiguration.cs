@@ -23,11 +23,11 @@ namespace Nevermore
         readonly Lazy<string> connectionString;
 
 #nullable enable
-        public RelationalStoreConfiguration(string connectionString, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null, ITableNameResolver? tableNameResolver = null) : this(() => connectionString, customPrimaryKeyHandlerRegistry, tableNameResolver)
+        public RelationalStoreConfiguration(string connectionString, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null) : this(() => connectionString, customPrimaryKeyHandlerRegistry)
         {
         }
 
-        public RelationalStoreConfiguration(Func<string> connectionStringFunc, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null, ITableNameResolver? tableNameResolver = null)
+        public RelationalStoreConfiguration(Func<string> connectionStringFunc, IPrimaryKeyHandlerRegistry? customPrimaryKeyHandlerRegistry = null)
         {
             CommandFactory = new SqlCommandFactory();
             KeyBlockSize = NevermoreDefaults.DefaultKeyBlockSize;
@@ -52,7 +52,7 @@ namespace Nevermore
             PrimaryKeyHandlers = customPrimaryKeyHandlerRegistry ?? new PrimaryKeyHandlerRegistry();
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
-            TableNameResolver = tableNameResolver ?? new TableNameResolver(DocumentMaps);
+            TableNameResolver = new TableNameResolver(DocumentMaps);
 
             TableColumnNameResolver = _ => new SelectAllColumnsTableResolver();
 
