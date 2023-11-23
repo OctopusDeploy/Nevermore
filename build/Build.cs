@@ -21,7 +21,7 @@ class BuildNevermore : NukeBuild
 
     AbsolutePath LocalPackagesDir => RootDirectory / ".." / "LocalPackages";
 
-    [OctoVersion(BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net6.0")]
+    [OctoVersion(BranchMember = nameof(BranchName), AutoDetectBranchMember = nameof(AutoDetectBranch), Framework = "net8.0")]
     public OctoVersionInfo OctoVersionInfo;
 
     [Solution(GenerateProjects = true)] public Solution Solution;
@@ -34,10 +34,10 @@ class BuildNevermore : NukeBuild
     Target Clean => _ => _
         .Executes(() =>
     {
-        EnsureCleanDirectory(ArtifactsDirectory);
-        SourceDirectory.GlobDirectories("**/bin").ForEach(EnsureCleanDirectory);
-        SourceDirectory.GlobDirectories("**/obj").ForEach(EnsureCleanDirectory);
-        SourceDirectory.GlobDirectories("**/TestResults").ForEach(EnsureCleanDirectory);
+        ArtifactsDirectory.CreateOrCleanDirectory();
+        SourceDirectory.GlobDirectories("**/bin").ForEach(x => x.CreateOrCleanDirectory());
+        SourceDirectory.GlobDirectories("**/obj").ForEach(x => x.CreateOrCleanDirectory());
+        SourceDirectory.GlobDirectories("**/TestResults").ForEach(x => x.CreateOrCleanDirectory());
     });
 
     Target Restore => _ => _
@@ -81,7 +81,7 @@ class BuildNevermore : NukeBuild
         .DependsOn(Pack)
         .Executes(() =>
     {
-        EnsureExistingDirectory(ArtifactsDirectory);
+        ArtifactsDirectory.CreateDirectory();
         SourceDirectory.GlobFiles("**/Nevermore*.nupkg")
             .ForEach(f => CopyFileToDirectory(f, ArtifactsDirectory, FileExistsPolicy.Overwrite));
         SourceDirectory.GlobFiles("**/Nevermore*.snupkg")
@@ -94,7 +94,7 @@ class BuildNevermore : NukeBuild
         .OnlyWhenStatic(() => IsLocalBuild)
         .Executes(() =>
     {
-        EnsureExistingDirectory(LocalPackagesDir);
+        LocalPackagesDir.CreateOrCleanDirectory();
         ArtifactsDirectory.GlobFiles("*.nupkg")
             .ForEach(f => CopyFileToDirectory(f, LocalPackagesDir, FileExistsPolicy.Overwrite));
         ArtifactsDirectory.GlobFiles("*.snupkg")
