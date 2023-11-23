@@ -23,19 +23,39 @@ namespace Nevermore.Advanced
         readonly IKeyAllocator keyAllocator;
         readonly DataModificationQueryBuilder builder;
 
+#nullable enable
         public WriteTransaction(
             IRelationalStore store,
-            RelationalTransactionRegistry registry,
+            IRelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
-            string name = null
-        ) : base(store, registry, operationsToRetry, configuration, name)
+            Action<string>? customCommandTrace = null,
+            string? name = null
+        ) : base(store, registry, operationsToRetry, configuration, DefaultConnectionFactory, customCommandTrace, name)
         {
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
         }
+
+        public WriteTransaction(
+            IRelationalStore store,
+            IRelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            IKeyAllocator keyAllocator,
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
+            Action<string>? customCommandTrace = null,
+            string? name = null
+        ) : base(store, registry, operationsToRetry, configuration, existingConnection, existingTransaction, customCommandTrace, name)
+        {
+            this.configuration = configuration;
+            this.keyAllocator = keyAllocator;
+            builder = new DataModificationQueryBuilder(configuration, AllocateId);
+        }
+#nullable disable
 
         public void Insert<TDocument>(TDocument document, InsertOptions options = null) where TDocument : class
         {
@@ -322,8 +342,13 @@ namespace Nevermore.Advanced
         {
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
+
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
+
             configuration.Hooks.BeforeCommit(this);
             Transaction.Commit();
             configuration.Hooks.AfterCommit(this);
@@ -333,6 +358,10 @@ namespace Nevermore.Advanced
         {
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
+
             await configuration.Hooks.BeforeCommitAsync(this).ConfigureAwait(false);
             await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             await configuration.Hooks.AfterCommitAsync(this).ConfigureAwait(false);

@@ -26,15 +26,18 @@ namespace Nevermore.Advanced
     public class ReadTransaction : IReadTransaction, ITransactionDiagnostic
     {
         static readonly ILog Log = LogProvider.For<ReadTransaction>();
-        static DbConnection DefaultConnectionFactory(string connectionString) => new SqlConnection(connectionString);
+        protected static DbConnection DefaultConnectionFactory(string connectionString) => new SqlConnection(connectionString);
 
-        readonly RelationalTransactionRegistry registry;
+        readonly IRelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
 
         readonly Func<string, DbConnection> connectionFactory;
+        readonly Action<string>? customCommandTrace;
         readonly string name;
+
+        protected bool OwnsSqlTransaction { get; } = true;
 
         DbConnection? connection;
 
@@ -49,17 +52,47 @@ namespace Nevermore.Advanced
 
         public IDictionary<string, object> State { get; }
 
-        public ReadTransaction(IRelationalStore store, RelationalTransactionRegistry registry, RetriableOperation operationsToRetry, IRelationalStoreConfiguration configuration, string? name = null)
-            : this(store, registry,  operationsToRetry, configuration, DefaultConnectionFactory, name)
+        public ReadTransaction(
+            IRelationalStore store,
+            IRelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            Action<string>? customCommandTrace = null,
+            string? name = null)
+            : this(
+                store,
+                registry,
+                operationsToRetry,
+                configuration,
+                DefaultConnectionFactory,
+                customCommandTrace,
+                name)
         {
+        }
+
+        public ReadTransaction(
+            IRelationalStore store,
+            IRelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
+            Action<string>? customCommandTrace = null,
+            string? name = null)
+            : this(store, registry, operationsToRetry, configuration, DefaultConnectionFactory, customCommandTrace, name)
+        {
+            connection = existingConnection;
+            Transaction = existingTransaction;
+            OwnsSqlTransaction = false;
         }
 
         internal ReadTransaction(
             IRelationalStore store,
-            RelationalTransactionRegistry registry,
+            IRelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             Func<string, DbConnection> connectionFactory,
+            Action<string>? customCommandTrace = null,
             string? name = null)
         {
             State = new Dictionary<string, object>();
@@ -67,6 +100,7 @@ namespace Nevermore.Advanced
             this.registry = registry;
             this.operationsToRetry = operationsToRetry;
             this.configuration = configuration;
+            this.customCommandTrace = customCommandTrace;
             commandTrace = new List<string>();
 
             var transactionName = name ?? Thread.CurrentThread.Name;
@@ -74,6 +108,7 @@ namespace Nevermore.Advanced
             // TODO: Transaction name should be mandatory.
             if (string.IsNullOrWhiteSpace(transactionName)) transactionName = "<unknown>";
             this.name = transactionName;
+
             registry.Add(this);
 
             columnNameResolver = configuration.TableColumnNameResolver(store);
@@ -88,7 +123,10 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
-            connection = connectionFactory(registry.ConnectionString);
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
+
+            connection = connectionFactory(configuration.ConnectionString);
             connection.OpenWithRetry();
 
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
@@ -96,7 +134,10 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync(CancellationToken cancellationToken = default)
         {
-            connection = connectionFactory(registry.ConnectionString);
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
+
+            connection = connectionFactory(configuration.ConnectionString);
             await connection.OpenWithRetryAsync(cancellationToken).ConfigureAwait(false);
 
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
@@ -586,6 +627,8 @@ namespace Nevermore.Advanced
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
             }
+
+            customCommandTrace?.Invoke(commandText);
         }
 
         public int ExecuteNonQuery(string query, CommandParameterValues? args = null, TimeSpan? commandTimeout = null)
@@ -684,6 +727,9 @@ namespace Nevermore.Advanced
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
+
             return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
                 async ct =>
                 {
@@ -702,6 +748,9 @@ namespace Nevermore.Advanced
         DbTransaction BeginTransactionWithRetry(IsolationLevel isolationLevel, string sqlServerTransactionName, RetryPolicy retryPolicy)
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
+
+            if (!OwnsSqlTransaction)
+                throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
 
             return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
             {
@@ -838,10 +887,19 @@ namespace Nevermore.Advanced
         public void Dispose()
         {
             // ReSharper disable ConstantConditionalAccessQualifier
-            Transaction?.Dispose();
+            if (OwnsSqlTransaction)
+            {
+                Transaction?.Dispose();
+            }
+
             TransactionTimer?.Dispose();
             DeadlockAwareLock?.Dispose();
-            connection?.Dispose();
+
+            if (OwnsSqlTransaction)
+            {
+                connection?.Dispose();
+            }
+
             // ReSharper restore ConstantConditionalAccessQualifier
             registry.Remove(this);
         }

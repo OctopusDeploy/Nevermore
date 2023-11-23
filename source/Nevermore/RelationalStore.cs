@@ -1,5 +1,7 @@
+#nullable enable
 using System;
 using System.Data;
+using System.Data.Common;
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
@@ -15,13 +17,13 @@ namespace Nevermore
 {
     public class RelationalStore : IRelationalStore
     {
-        readonly Lazy<RelationalTransactionRegistry> registry;
+        readonly Lazy<IRelationalTransactionRegistry> registry;
         readonly Lazy<IKeyAllocator> keyAllocator;
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
             Configuration = configuration;
-            registry = new Lazy<RelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
+            registry = new Lazy<IRelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
             keyAllocator = new Lazy<IKeyAllocator>(configuration.KeyAllocatorFactory is not null ? () => configuration.KeyAllocatorFactory() : () => new KeyAllocator(this, configuration.KeyBlockSize));
         }
 
@@ -34,7 +36,7 @@ namespace Nevermore
             keyAllocator.Value.Reset();
         }
 
-        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public IReadTransaction BeginReadTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
 
@@ -50,7 +52,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null, CancellationToken cancellationToken = default)
+        public async Task<IReadTransaction> BeginReadTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateReadTransaction(retriableOperation, name);
             try
@@ -65,7 +67,7 @@ namespace Nevermore
             }
         }
 
-        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public IWriteTransaction BeginWriteTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
@@ -80,7 +82,7 @@ namespace Nevermore
             }
         }
 
-        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null, CancellationToken cancellationToken = default)
+        public async Task<IWriteTransaction> BeginWriteTransactionAsync(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateWriteTransaction(retriableOperation, name);
             try
@@ -95,19 +97,58 @@ namespace Nevermore
             }
         }
 
-        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string name = null)
+        public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
             return (IRelationalTransaction) BeginWriteTransaction(isolationLevel, retriableOperation, name);
         }
 
-        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string name)
+        public IReadTransaction CreateReadTransactionFromExistingConnectionAndTransaction(
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
+            Action<string>? customCommandTrace = null,
+            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            string? name = null)
         {
-            return new ReadTransaction(this, registry.Value, retriableOperation, Configuration, name);
+            return new ReadTransaction(
+                this,
+                customRelationalTransactionRegistry ?? registry.Value,
+                retriableOperation,
+                Configuration,
+                existingConnection,
+                existingTransaction,
+                customCommandTrace,
+                name);
         }
 
-        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string name)
+        public IWriteTransaction CreateWriteTransactionFromExistingConnectionAndTransaction(
+            DbConnection existingConnection,
+            DbTransaction existingTransaction,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
+            Action<string>? customCommandTrace = null,
+            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            string? name = null)
         {
-            return new WriteTransaction(this, registry.Value, retriableOperation, Configuration, keyAllocator.Value, name);
+            return new WriteTransaction(
+                this,
+                customRelationalTransactionRegistry ?? registry.Value,
+                retriableOperation,
+                Configuration,
+                keyAllocator.Value,
+                existingConnection,
+                existingTransaction,
+                customCommandTrace,
+                name);
+        }
+
+        ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string? name = null)
+        {
+            return new ReadTransaction(this, registry.Value, retriableOperation, Configuration, name: name);
+        }
+
+        WriteTransaction CreateWriteTransaction(RetriableOperation retriableOperation, string? name = null)
+        {
+            return new WriteTransaction(this, registry.Value, retriableOperation, Configuration, keyAllocator.Value, name: name);
         }
     }
 }

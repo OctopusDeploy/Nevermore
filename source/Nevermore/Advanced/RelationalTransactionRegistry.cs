@@ -12,14 +12,21 @@ using System.Data.SqlClient;
 
 namespace Nevermore.Advanced
 {
-    public class RelationalTransactionRegistry
+    public interface IRelationalTransactionRegistry
+    {
+        void Add(ReadTransaction trn);
+        void Remove(ReadTransaction trn);
+        void WriteCurrentTransactions(StringBuilder sb);
+    }
+
+    public class RelationalTransactionRegistry : IRelationalTransactionRegistry
     {
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
         DateTime? LastHighNumberOfTransactionLogTime;
-        
+
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
         {
@@ -45,7 +52,7 @@ namespace Nevermore.Advanced
         {
             transactions.TryRemove(trn, out _);
         }
-        
+
         bool ShouldLogHighNumberOfTransactionsMessage() => LastHighNumberOfTransactionLogTime == null || DateTime.Now - LastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
 
         void LogHighNumberOfTransactions(bool reachedMax)
