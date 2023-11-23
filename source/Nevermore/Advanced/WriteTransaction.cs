@@ -343,7 +343,7 @@ namespace Nevermore.Advanced
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
 
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
             if (!configuration.AllowSynchronousOperations)
@@ -359,7 +359,7 @@ namespace Nevermore.Advanced
             if (Transaction is null)
                 throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
 
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
             await configuration.Hooks.BeforeCommitAsync(this).ConfigureAwait(false);

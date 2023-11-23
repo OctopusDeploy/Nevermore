@@ -37,7 +37,7 @@ namespace Nevermore.Advanced
         readonly Action<string>? customCommandTrace;
         readonly string name;
 
-        protected bool TransactionIsNevermoreOwned { get; } = true;
+        protected bool OwnsSqlTransaction { get; } = true;
 
         DbConnection? connection;
 
@@ -83,7 +83,7 @@ namespace Nevermore.Advanced
         {
             connection = existingConnection;
             Transaction = existingTransaction;
-            TransactionIsNevermoreOwned = false;
+            OwnsSqlTransaction = false;
         }
 
         internal ReadTransaction(
@@ -123,7 +123,7 @@ namespace Nevermore.Advanced
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
 
             connection = connectionFactory(configuration.ConnectionString);
@@ -134,7 +134,7 @@ namespace Nevermore.Advanced
 
         public async Task OpenAsync(CancellationToken cancellationToken = default)
         {
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
 
             connection = connectionFactory(configuration.ConnectionString);
@@ -727,7 +727,7 @@ namespace Nevermore.Advanced
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
 
             return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
@@ -749,7 +749,7 @@ namespace Nevermore.Advanced
         {
             if (connection == null) throw new InvalidOperationException("Must create a DbConnection before attempting to begin a transaction");
 
-            if (!TransactionIsNevermoreOwned)
+            if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
 
             return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
@@ -887,7 +887,7 @@ namespace Nevermore.Advanced
         public void Dispose()
         {
             // ReSharper disable ConstantConditionalAccessQualifier
-            if (TransactionIsNevermoreOwned)
+            if (OwnsSqlTransaction)
             {
                 Transaction?.Dispose();
             }
@@ -895,7 +895,7 @@ namespace Nevermore.Advanced
             TransactionTimer?.Dispose();
             DeadlockAwareLock?.Dispose();
 
-            if (TransactionIsNevermoreOwned)
+            if (OwnsSqlTransaction)
             {
                 connection?.Dispose();
             }
