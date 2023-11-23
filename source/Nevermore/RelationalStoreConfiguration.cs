@@ -52,6 +52,7 @@ namespace Nevermore
             PrimaryKeyHandlers = customPrimaryKeyHandlerRegistry ?? new PrimaryKeyHandlerRegistry();
 
             DocumentMaps = new DocumentMapRegistry(PrimaryKeyHandlers);
+            TableNameResolver = new TableNameResolver(DocumentMaps);
 
             TableColumnNameResolver = _ => new SelectAllColumnsTableResolver();
 
@@ -113,6 +114,8 @@ namespace Nevermore
         public ISqlCommandFactory CommandFactory { get; set; }
 
         public Func<IKeyAllocator> KeyAllocatorFactory { get; set; }
+        
+        public ITableNameResolver TableNameResolver { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {

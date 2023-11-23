@@ -81,5 +81,10 @@ namespace Nevermore
         /// This is a temporary feature switch, we will always be using table valued parameters once we're satisfied with the stability
         /// </summary>
         public bool SupportLargeNumberOfRelatedDocuments { get; set; }
+        
+        /// <summary>
+        /// Used to get the table name for a document type. By default, the table name is retrieved from the document map.
+        /// </summary>
+        ITableNameResolver TableNameResolver { get; set; }
     }
 }

@@ -27,6 +27,7 @@ namespace Nevermore.Util
         readonly IDocumentSerializer serializer;
         readonly IRelationalStoreConfiguration configuration;
         readonly Func<DocumentMap, object> keyAllocator;
+        readonly ITableNameResolver tableNameResolver;
 
         public DataModificationQueryBuilder(IRelationalStoreConfiguration configuration, Func<DocumentMap, object> keyAllocator)
         {
@@ -34,6 +35,7 @@ namespace Nevermore.Util
             this.serializer = configuration.DocumentSerializer;
             this.configuration = configuration;
             this.keyAllocator = keyAllocator;
+            tableNameResolver = configuration.TableNameResolver;
         }
 
         public CommandParameterValues GetParametersForDocuments(IReadOnlyList<object> documents, InsertOptions options = null)
@@ -569,7 +571,7 @@ namespace Nevermore.Util
                     from m in g
                     from i in documentAndIds
                     from relId in (m.Handler.Read(i.document) as IEnumerable<(string id, Type type)>) ?? new (string id, Type type)[0]
-                    let relatedTableName = mappings.Resolve(relId.type).TableName
+                    let relatedTableName = tableNameResolver.GetTableNameFor(relId.type)
                     select (parentIdVariable: i.idVariable, parentId: i.parentId, relatedDocumentId: relId.id, relatedTableName)
                 ).Distinct().ToArray()
                 select new RelatedDocumentTableData
