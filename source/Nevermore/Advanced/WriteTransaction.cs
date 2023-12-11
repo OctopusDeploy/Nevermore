@@ -55,6 +55,22 @@ namespace Nevermore.Advanced
             this.keyAllocator = keyAllocator;
             builder = new DataModificationQueryBuilder(configuration, AllocateId);
         }
+
+        public WriteTransaction(
+            IRelationalStore store,
+            IRelationalTransactionRegistry registry,
+            RetriableOperation operationsToRetry,
+            IRelationalStoreConfiguration configuration,
+            IKeyAllocator keyAllocator,
+            Func<string, DbConnection> connectionFactory,
+            Action<string>? customCommandTrace = null,
+            string? name = null
+        ) : base(store, registry, operationsToRetry, configuration, connectionFactory, customCommandTrace, name)
+        {
+            this.configuration = configuration;
+            this.keyAllocator = keyAllocator;
+            builder = new DataModificationQueryBuilder(configuration, AllocateId);
+        }
 #nullable disable
 
         public void Insert<TDocument>(TDocument document, InsertOptions options = null) where TDocument : class

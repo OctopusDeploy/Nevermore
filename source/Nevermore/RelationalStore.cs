@@ -140,6 +140,24 @@ namespace Nevermore
                 customCommandTrace,
                 name);
         }
+        
+        public IWriteTransaction CreateWriteTransactionFromExistingConnectionFactory(
+            Func<string, DbConnection> connectionFactory,
+            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
+            Action<string>? customCommandTrace = null,
+            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            string? name = null)
+        {
+            return new WriteTransaction(
+                this,
+                customRelationalTransactionRegistry ?? registry.Value,
+                retriableOperation,
+                Configuration,
+                keyAllocator.Value,
+                connectionFactory,
+                customCommandTrace,
+                name);
+        }
 
         ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string? name = null)
         {

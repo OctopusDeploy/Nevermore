@@ -86,7 +86,7 @@ namespace Nevermore.Advanced
             OwnsSqlTransaction = false;
         }
 
-        internal ReadTransaction(
+        public ReadTransaction(
             IRelationalStore store,
             IRelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
