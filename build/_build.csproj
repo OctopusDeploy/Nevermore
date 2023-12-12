@@ -2,20 +2,22 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace></RootNamespace>
     <NoWarn>CS0649;CS0169</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
+    <!-- NET8: Remove this when Nuke releases a new version which sets it for us -->
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="6.1.2" />
+    <PackageReference Include="Nuke.Common" Version="7.0.6" />
   </ItemGroup>
 
-	<ItemGroup>
-		<PackageDownload Include="OctoVersion.Tool" Version="[0.3.49]" />    
-	</ItemGroup>
+  <ItemGroup>
+    <PackageDownload Include="Octopus.OctoVersion.Tool" Version="[0.3.295]" />
+  </ItemGroup>
 
 </Project>
