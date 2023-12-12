@@ -21,7 +21,7 @@ class BuildNevermore : NukeBuild
 
     AbsolutePath LocalPackagesDir => RootDirectory / ".." / "LocalPackages";
 
-    [OctoVersion(BranchMember = nameof(BranchName), AutoDetectBranchMember = nameof(AutoDetectBranch), Framework = "net8.0")]
+    [OctoVersion(BranchMember = nameof(BranchName), AutoDetectBranchMember = nameof(AutoDetectBranch))]
     public OctoVersionInfo OctoVersionInfo;
 
     [Solution(GenerateProjects = true)] public Solution Solution;
