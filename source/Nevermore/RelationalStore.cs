@@ -96,6 +96,37 @@ namespace Nevermore
                 throw;
             }
         }
+        
+        public IWriteTransaction BeginWriteTransactionFromExistingConnectionFactory(Func<string, DbConnection> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
+        {
+            var txn = CreateWriteTransactionFromExistingConnectionFactory(connectionFactory, retriableOperation, name);
+            try
+            {
+                txn.Open(isolationLevel);
+                return txn;
+            }
+            catch
+            {
+                txn.Dispose();
+                throw;
+            }
+        }
+        
+        public async Task<IWriteTransaction> BeginWriteTransactionFromExistingConnectionFactoryAsync(Func<string, DbConnection> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
+        {
+            var txn = CreateWriteTransactionFromExistingConnectionFactory(connectionFactory, retriableOperation, name);
+            try
+            {
+                await txn.OpenAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
+                return txn;
+            }
+            catch
+            {
+                txn.Dispose();
+                throw;
+            }
+        }
+
 
         public IRelationalTransaction BeginTransaction(IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null)
         {
@@ -141,22 +172,19 @@ namespace Nevermore
                 name);
         }
         
-        public IWriteTransaction CreateWriteTransactionFromExistingConnectionFactory(
+        public WriteTransaction CreateWriteTransactionFromExistingConnectionFactory(
             Func<string, DbConnection> connectionFactory,
-            IRelationalTransactionRegistry? customRelationalTransactionRegistry = null,
-            Action<string>? customCommandTrace = null,
-            RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations,
+            RetriableOperation retriableOperation,
             string? name = null)
         {
             return new WriteTransaction(
                 this,
-                customRelationalTransactionRegistry ?? registry.Value,
+                registry.Value,
                 retriableOperation,
                 Configuration,
                 keyAllocator.Value,
                 connectionFactory,
-                customCommandTrace,
-                name);
+                name: name);
         }
 
         ReadTransaction CreateReadTransaction(RetriableOperation retriableOperation, string? name = null)
