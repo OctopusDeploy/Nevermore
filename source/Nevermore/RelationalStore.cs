@@ -97,7 +97,7 @@ namespace Nevermore
             }
         }
         
-        public IWriteTransaction BeginWriteTransactionFromExistingConnectionFactory(Func<string, DbConnection> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
+        public IWriteTransaction BeginWriteTransactionFromExistingConnectionFactory(Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateWriteTransactionFromExistingConnectionFactory(connectionFactory, retriableOperation, name);
             try
@@ -112,7 +112,7 @@ namespace Nevermore
             }
         }
         
-        public async Task<IWriteTransaction> BeginWriteTransactionFromExistingConnectionFactoryAsync(Func<string, DbConnection> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
+        public async Task<IWriteTransaction> BeginWriteTransactionFromExistingConnectionFactoryAsync(Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory, IsolationLevel isolationLevel = NevermoreDefaults.IsolationLevel, RetriableOperation retriableOperation = NevermoreDefaults.RetriableOperations, string? name = null, CancellationToken cancellationToken = default)
         {
             var txn = CreateWriteTransactionFromExistingConnectionFactory(connectionFactory, retriableOperation, name);
             try
@@ -173,7 +173,7 @@ namespace Nevermore
         }
         
         public WriteTransaction CreateWriteTransactionFromExistingConnectionFactory(
-            Func<string, DbConnection> connectionFactory,
+            Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory,
             RetriableOperation retriableOperation,
             string? name = null)
         {

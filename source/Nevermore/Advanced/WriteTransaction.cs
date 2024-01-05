@@ -62,7 +62,7 @@ namespace Nevermore.Advanced
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
             IKeyAllocator keyAllocator,
-            Func<string, DbConnection> connectionFactory,
+            Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory,
             Action<string>? customCommandTrace = null,
             string? name = null
         ) : base(store, registry, operationsToRetry, configuration, connectionFactory, customCommandTrace, name)
