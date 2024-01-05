@@ -23,15 +23,7 @@ namespace Nevermore.Tests.RelationalStore
         {
             var c = new FakeSqlConnection { ConnectionString = s };
             createdConnections.Add(c);
-            return (c, false);
-        }
-        
-        
-        (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
-        {
-            var c = new FakeSqlConnectionWhichThrowsOnFirstTransaction { ConnectionString = s };
-            createdConnections.Add(c);
-            return (c, false);
+            return (c, true);
         }
 
         [SetUp]
@@ -103,6 +95,13 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public void OpenWillRetryATransientFailure()
         {
+            (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
+            {
+                var c = new FakeSqlConnectionWhichThrowsOnFirstOpen { ConnectionString = s };
+                createdConnections.Add(c);
+                return (c, true);
+            }
+            
             var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open();
@@ -116,6 +115,13 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public async Task OpenAsyncWillRetryATransientFailure()
         {
+            (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
+            {
+                var c = new FakeSqlConnectionWhichThrowsOnFirstOpen { ConnectionString = s };
+                createdConnections.Add(c);
+                return (c, true);
+            }
+            
             var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             await c.OpenAsync();
@@ -130,6 +136,13 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public void OpenWithIsolationWillRetryATransientFailure()
         {
+            (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
+            {
+                var c = new FakeSqlConnectionWhichThrowsOnFirstOpen { ConnectionString = s };
+                createdConnections.Add(c);
+                return (c, true);
+            }
+            
             var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open(IsolationLevel.ReadCommitted);
@@ -170,6 +183,13 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public void OpenWithIsolationWillRetryATransientFailureFromTransaction()
         {
+            (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
+            {
+                var c = new FakeSqlConnectionWhichThrowsOnFirstTransaction { ConnectionString = s };
+                createdConnections.Add(c);
+                return (c, true);
+            }
+            
             var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
             c.Open(IsolationLevel.ReadCommitted);
@@ -183,6 +203,12 @@ namespace Nevermore.Tests.RelationalStore
         [Test]
         public async Task OpenAsyncWithIsolationWillRetryATransientFailureFromTransaction()
         {
+            (DbConnection connection, bool ownsConnection) ConnectionFactoryTransientFailure(string s)
+            {
+                var c = new FakeSqlConnectionWhichThrowsOnFirstTransaction { ConnectionString = s };
+                createdConnections.Add(c);
+                return (c, true);
+            }
             
             var c = new ReadTransaction(null!, registry, RetriableOperation.Select, new RelationalStoreConfiguration(FakeConnectionString), ConnectionFactoryTransientFailure);
 
