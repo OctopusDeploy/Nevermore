@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,9 +23,8 @@ namespace Nevermore.Advanced
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
-        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
-        DateTime? LastHighNumberOfTransactionLogTime;
-
+        readonly Dictionary<ReadTransaction, ReadTransaction> transactions = new ();
+        DateTime? lastHighNumberOfTransactionLogTime;
 
         public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
         {
@@ -39,27 +37,35 @@ namespace Nevermore.Advanced
 
         public void Add(ReadTransaction trn)
         {
+            int numberOfTransactions;
+            lock (transactions)
+            {
                 transactions.TryAdd(trn, trn);
-                var numberOfTransactions = transactions.Count;
-                if (numberOfTransactions > MaxPoolSize * 0.8)
-                    Log.Info($"{numberOfTransactions} transactions active");
+                numberOfTransactions = transactions.Count;
+            }
 
-                if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
-                    LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
+            if (numberOfTransactions > MaxPoolSize * 0.8)
+                Log.Info($"{numberOfTransactions} transactions active");
+
+            if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
+                LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
         }
 
         public void Remove(ReadTransaction trn)
         {
-            transactions.TryRemove(trn, out _);
+            lock (transactions)
+            {
+                transactions.Remove(trn, out _);
+            }
         }
 
-        bool ShouldLogHighNumberOfTransactionsMessage() => LastHighNumberOfTransactionLogTime == null || DateTime.Now - LastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
+        bool ShouldLogHighNumberOfTransactionsMessage() => lastHighNumberOfTransactionLogTime == null || DateTime.Now - lastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
 
         void LogHighNumberOfTransactions(bool reachedMax)
         {
             if (reachedMax && ShouldLogHighNumberOfTransactionsMessage())
             {
-                LastHighNumberOfTransactionLogTime = DateTime.Now;
+                lastHighNumberOfTransactionLogTime = DateTime.Now;
                 Log.Error(BuildHighNumberOfTransactionsMessage());
                 return;
             }
@@ -89,6 +95,5 @@ namespace Nevermore.Advanced
                 trn.WriteDebugInfoTo(sb);
             }
         }
-
     }
 }
