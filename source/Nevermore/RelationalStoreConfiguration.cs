@@ -89,6 +89,8 @@ namespace Nevermore
 
         public ITransactionLogger TransactionLogger { get; set; }
 
+        public IRelationalTransactionRegistry RelationalTransactionRegistry { get; set; }
+
         public IHookRegistry Hooks { get; }
         public int KeyBlockSize { get; set; }
 

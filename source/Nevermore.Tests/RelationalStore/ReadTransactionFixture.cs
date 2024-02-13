@@ -29,7 +29,7 @@ namespace Nevermore.Tests.RelationalStore
         [SetUp]
         public void SetUp() // NUnit doesn't create a new instance of the fixture for each test
         {
-            registry = new(new SqlConnectionStringBuilder(FakeConnectionString));
+            registry = new(new SqlConnectionStringBuilder(FakeConnectionString).MaxPoolSize);
             createdConnections.Clear();
         }
 

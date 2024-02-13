@@ -1,4 +1,5 @@
 using System;
+using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
@@ -39,6 +40,7 @@ namespace Nevermore
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         IQueryLogger QueryLogger { get; set; }
         ITransactionLogger TransactionLogger { get; set; }
+        IRelationalTransactionRegistry RelationalTransactionRegistry { get; set; }
 
         /// <summary>
         /// Hooks can be used to apply general logic when documents are inserted, updated or deleted.
