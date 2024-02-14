@@ -57,6 +57,7 @@ namespace Nevermore
             TableColumnNameResolver = _ => new SelectAllColumnsTableResolver();
 
             AllowSynchronousOperations = true;
+            SupportConcurrentExecution = true;
 
             QueryLogger = new DefaultQueryLogger();
             TransactionLogger = new DefaultTransactionLogger();
@@ -118,6 +119,8 @@ namespace Nevermore
         public Func<IKeyAllocator> KeyAllocatorFactory { get; set; }
         
         public ITableNameResolver TableNameResolver { get; set; }
+
+        public bool SupportConcurrentExecution { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {
