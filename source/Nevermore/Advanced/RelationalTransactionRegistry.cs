@@ -24,28 +24,25 @@ namespace Nevermore.Advanced
         // Getting a typed ILog causes JIT compilation - we should only do this once
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
-        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new ConcurrentDictionary<ReadTransaction, ReadTransaction>();
-        DateTime? LastHighNumberOfTransactionLogTime;
+        readonly int maxSqlConnectionPoolSize;
+        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new();
 
+        DateTime? lastHighNumberOfTransactionLogTime;
 
-        public RelationalTransactionRegistry(SqlConnectionStringBuilder connectionString)
+        public RelationalTransactionRegistry(int maxSqlConnectionPoolSize)
         {
-            ConnectionString = connectionString.ToString();
-            MaxPoolSize = connectionString.MaxPoolSize;
+            this.maxSqlConnectionPoolSize = maxSqlConnectionPoolSize;
         }
-
-        public string ConnectionString { get; }
-        public int MaxPoolSize { get; }
 
         public void Add(ReadTransaction trn)
         {
-                transactions.TryAdd(trn, trn);
-                var numberOfTransactions = transactions.Count;
-                if (numberOfTransactions > MaxPoolSize * 0.8)
-                    Log.Info($"{numberOfTransactions} transactions active");
+            transactions.TryAdd(trn, trn);
+            var numberOfTransactions = transactions.Count;
+            if (numberOfTransactions > maxSqlConnectionPoolSize * 0.8)
+                Log.Info($"{numberOfTransactions} transactions active");
 
-                if (numberOfTransactions >= MaxPoolSize || numberOfTransactions == (int)(MaxPoolSize * 0.9))
-                    LogHighNumberOfTransactions(numberOfTransactions >= MaxPoolSize);
+            if (numberOfTransactions >= maxSqlConnectionPoolSize || numberOfTransactions == (int)(maxSqlConnectionPoolSize * 0.9))
+                LogHighNumberOfTransactions(numberOfTransactions >= maxSqlConnectionPoolSize);
         }
 
         public void Remove(ReadTransaction trn)
@@ -53,13 +50,13 @@ namespace Nevermore.Advanced
             transactions.TryRemove(trn, out _);
         }
 
-        bool ShouldLogHighNumberOfTransactionsMessage() => LastHighNumberOfTransactionLogTime == null || DateTime.Now - LastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
+        bool ShouldLogHighNumberOfTransactionsMessage() => lastHighNumberOfTransactionLogTime == null || DateTime.Now - lastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
 
         void LogHighNumberOfTransactions(bool reachedMax)
         {
             if (reachedMax && ShouldLogHighNumberOfTransactionsMessage())
             {
-                LastHighNumberOfTransactionLogTime = DateTime.Now;
+                lastHighNumberOfTransactionLogTime = DateTime.Now;
                 Log.Error(BuildHighNumberOfTransactionsMessage());
                 return;
             }
@@ -77,7 +74,7 @@ namespace Nevermore.Advanced
             return sb.ToString();
         }
 
-        public void WriteCurrentTransactions(StringBuilder sb)
+        public virtual void WriteCurrentTransactions(StringBuilder sb)
         {
             ReadTransaction[] copy;
             lock (transactions)
@@ -89,6 +86,5 @@ namespace Nevermore.Advanced
                 trn.WriteDebugInfoTo(sb);
             }
         }
-
     }
 }

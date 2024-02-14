@@ -23,8 +23,14 @@ namespace Nevermore
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
             Configuration = configuration;
-            registry = new Lazy<IRelationalTransactionRegistry>(() => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString)));
-            keyAllocator = new Lazy<IKeyAllocator>(configuration.KeyAllocatorFactory is not null ? () => configuration.KeyAllocatorFactory() : () => new KeyAllocator(this, configuration.KeyBlockSize));
+            registry = new Lazy<IRelationalTransactionRegistry>(
+                configuration.RelationalTransactionRegistry is not null
+                    ? () => configuration.RelationalTransactionRegistry
+                    : () => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString).MaxPoolSize));
+            keyAllocator = new Lazy<IKeyAllocator>(
+                configuration.KeyAllocatorFactory is not null
+                    ? () => configuration.KeyAllocatorFactory()
+                    : () => new KeyAllocator(this, configuration.KeyBlockSize));
         }
 
         public void WriteCurrentTransactions(StringBuilder output) => registry.Value.WriteCurrentTransactions(output);
