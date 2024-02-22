@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Data.SqlClient;
-using Nevermore.Diagnositcs;
+using Microsoft.Extensions.Logging;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+
 #if NETFRAMEWORK
 using System.Data.SqlClient;
 #else
@@ -21,17 +21,16 @@ namespace Nevermore.Advanced
 
     public class RelationalTransactionRegistry : IRelationalTransactionRegistry
     {
-        // Getting a typed ILog causes JIT compilation - we should only do this once
-        static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
-
         readonly int maxSqlConnectionPoolSize;
+        readonly ILogger logger;
         readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new();
 
         DateTime? lastHighNumberOfTransactionLogTime;
 
-        public RelationalTransactionRegistry(int maxSqlConnectionPoolSize)
+        public RelationalTransactionRegistry(int maxSqlConnectionPoolSize, ILogger logger)
         {
             this.maxSqlConnectionPoolSize = maxSqlConnectionPoolSize;
+            this.logger = logger;
         }
 
         public void Add(ReadTransaction trn)
@@ -39,7 +38,7 @@ namespace Nevermore.Advanced
             transactions.TryAdd(trn, trn);
             var numberOfTransactions = transactions.Count;
             if (numberOfTransactions > maxSqlConnectionPoolSize * 0.8)
-                Log.Info($"{numberOfTransactions} transactions active");
+                logger.LogInformation("{NumberOfTransactions} transactions active", numberOfTransactions);
 
             if (numberOfTransactions >= maxSqlConnectionPoolSize || numberOfTransactions == (int)(maxSqlConnectionPoolSize * 0.9))
                 LogHighNumberOfTransactions(numberOfTransactions >= maxSqlConnectionPoolSize);
@@ -57,12 +56,12 @@ namespace Nevermore.Advanced
             if (reachedMax && ShouldLogHighNumberOfTransactionsMessage())
             {
                 lastHighNumberOfTransactionLogTime = DateTime.Now;
-                Log.Error(BuildHighNumberOfTransactionsMessage());
+                logger.LogError(BuildHighNumberOfTransactionsMessage());
                 return;
             }
 
-            if (Log.IsDebugEnabled())
-                Log.Debug(BuildHighNumberOfTransactionsMessage());
+            if (logger.IsEnabled(LogLevel.Debug))
+                logger.LogDebug(BuildHighNumberOfTransactionsMessage());
         }
 
         string BuildHighNumberOfTransactionsMessage()

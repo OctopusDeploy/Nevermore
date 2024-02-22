@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Nevermore.Transient;
 using Nito.AsyncEx;
 
@@ -43,6 +44,7 @@ namespace Nevermore.Mapping
             readonly string collectionName;
             readonly int blockSize;
             readonly SemaphoreSlim sync = new(1, 1);
+            readonly ILogger logger;
             int blockStart;
             int blockNext;
             int blockFinish;
@@ -52,6 +54,7 @@ namespace Nevermore.Mapping
                 this.store = store;
                 this.collectionName = collectionName;
                 this.blockSize = blockSize;
+                logger = store.Configuration.LoggerFactory.CreateLogger(nameof(Allocation));
             }
 
             public async ValueTask<int> NextAsync(CancellationToken cancellationToken)
@@ -132,7 +135,7 @@ namespace Nevermore.Mapping
             {
                 return new RetryPolicy(new SqlDatabaseTransientErrorDetectionStrategy(),
                         TransientFaultHandling.FastIncremental)
-                    .LoggingRetries("Extending key allocation");
+                    .LoggingRetries(logger, "Extending key allocation");
             }
 
             /// <remarks>

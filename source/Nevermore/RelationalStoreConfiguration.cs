@@ -1,5 +1,7 @@
 using System;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
@@ -58,7 +60,8 @@ namespace Nevermore
 
             AllowSynchronousOperations = true;
 
-            QueryLogger = new DefaultQueryLogger();
+            LoggerFactory = new NullLoggerFactory();
+            QueryLogger = new DefaultQueryLogger(LoggerFactory.CreateLogger(nameof(DefaultQueryLogger)));
             TransactionLogger = new DefaultTransactionLogger();
 
             connectionString = new Lazy<string>(() =>
@@ -84,6 +87,8 @@ namespace Nevermore
         public IDocumentSerializer DocumentSerializer { get; set; }
 
         public IRelatedDocumentStore RelatedDocumentStore { get; set; }
+
+        public ILoggerFactory LoggerFactory { get; set; }
 
         public IQueryLogger QueryLogger { get; set; }
 

@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nevermore.Advanced;
-using Nevermore.Transient;
 using NUnit.Framework;
 
 namespace Nevermore.Tests.RelationalStore
@@ -29,7 +28,7 @@ namespace Nevermore.Tests.RelationalStore
         [SetUp]
         public void SetUp() // NUnit doesn't create a new instance of the fixture for each test
         {
-            registry = new(new SqlConnectionStringBuilder(FakeConnectionString).MaxPoolSize);
+            registry = new(new SqlConnectionStringBuilder(FakeConnectionString).MaxPoolSize, NullLogger<RelationalTransactionRegistry>.Instance);
             createdConnections.Clear();
         }
 

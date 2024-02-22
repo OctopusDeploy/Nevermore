@@ -1,8 +1,7 @@
-using System;
-using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Nevermore.Transient
 {
@@ -14,9 +13,14 @@ namespace Nevermore.Transient
             OpenWithRetry(connection, RetryManager.Instance.GetDefaultSqlConnectionRetryPolicy());
         }
 
-        public static void OpenWithRetry(this DbConnection connection, RetryPolicy retryPolicy)
+        public static void OpenWithRetry(this DbConnection connection, RetryPolicy retryPolicy, ILogger logger = null)
         {
-            (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteAction(connection.Open);
+            var policy = retryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                policy = policy.LoggingRetries(logger, "Open Database Connection");
+            }
+            policy.ExecuteAction(connection.Open);
         }
 
         public static Task OpenWithRetryAsync(this DbConnection connection)
@@ -34,9 +38,14 @@ namespace Nevermore.Transient
             return OpenWithRetryAsync(connection, retryPolicy, CancellationToken.None);
         }
 
-        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken)
+        public static Task OpenWithRetryAsync(this DbConnection connection, RetryPolicy retryPolicy, CancellationToken cancellationToken, ILogger logger = null)
         {
-            return (retryPolicy ?? RetryPolicy.NoRetry).LoggingRetries("Open Database Connection").ExecuteActionAsync(connection.OpenAsync, cancellationToken);
+            var policy = retryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                policy = policy.LoggingRetries(logger, "Open Database Connection");
+            }
+            return policy.ExecuteActionAsync(connection.OpenAsync, cancellationToken);
         }
     }
 }

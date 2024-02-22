@@ -22,11 +22,12 @@ namespace Nevermore
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
+            var logger = configuration.LoggerFactory.CreateLogger(nameof(RelationalTransactionRegistry));
             Configuration = configuration;
             registry = new Lazy<IRelationalTransactionRegistry>(
                 configuration.RelationalTransactionRegistry is not null
                     ? () => configuration.RelationalTransactionRegistry
-                    : () => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString).MaxPoolSize));
+                    : () => new RelationalTransactionRegistry(new SqlConnectionStringBuilder(configuration.ConnectionString).MaxPoolSize, logger));
             keyAllocator = new Lazy<IKeyAllocator>(
                 configuration.KeyAllocatorFactory is not null
                     ? () => configuration.KeyAllocatorFactory()

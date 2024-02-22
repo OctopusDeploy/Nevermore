@@ -6,8 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using Nevermore.Advanced;
-using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Mapping;
 using Nevermore.Transient;
@@ -23,16 +23,15 @@ namespace Nevermore
     internal class CommandExecutor : IDisposable
     {
         // Getting a typed ILog causes JIT compilation - we should only do this once
-        static readonly ILog Log = LogProvider.For<ReadTransaction>();
-
         readonly DbCommand command;
         readonly PreparedCommand prepared;
         readonly RetryPolicy retryPolicy;
         readonly TimedSection timedSection;
         readonly ITransactionDiagnostic transaction;
         readonly bool allowSynchronousOperations;
+        readonly ILogger logger;
 
-        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations)
+        public CommandExecutor(DbCommand command, PreparedCommand prepared, RetryPolicy retryPolicy, TimedSection timedSection, ITransactionDiagnostic transaction, bool allowSynchronousOperations, ILogger logger)
         {
             this.command = command;
             this.prepared = prepared;
@@ -40,6 +39,7 @@ namespace Nevermore
             this.timedSection = timedSection;
             this.transaction = transaction;
             this.allowSynchronousOperations = allowSynchronousOperations;
+            this.logger = logger;
         }
 
         public int ExecuteNonQuery()
@@ -57,7 +57,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -75,7 +75,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -94,7 +94,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -112,7 +112,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -138,7 +138,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -157,7 +157,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -175,7 +175,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -202,7 +202,7 @@ namespace Nevermore
             }
             catch (Exception ex)
             {
-                Log.DebugException($"Exception in relational transaction '{transaction.Name}'", ex);
+                logger.LogDebug(ex, "Exception in relational transaction '{TransactionName}'", transaction.Name);
                 throw;
             }
         }
@@ -218,7 +218,7 @@ namespace Nevermore
                 throw new Exception(builder.ToString(), ex);
             }
 
-            Log.DebugException($"Error while executing SQL command in transaction '{transaction.Name}'", ex);
+            logger.LogDebug(ex, "Error while executing SQL command in transaction '{TransactionName}'", transaction.Name);
 
             return new Exception($"Error while executing SQL command in transaction '{transaction.Name}': {ex.Message}{Environment.NewLine}The command being executed was:{Environment.NewLine}{command.CommandText}", ex);
         }

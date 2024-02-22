@@ -1,16 +1,15 @@
-using Nevermore.Advanced;
-using Nevermore.Diagnositcs;
+using Microsoft.Extensions.Logging;
 
 namespace Nevermore.Diagnostics
 {
     public class DefaultQueryLogger : IQueryLogger
     {
-        static readonly ILog Log = LogProvider.For<DefaultQueryLogger>();
-
+        readonly ILogger logger;
         readonly long infoThreshold;
 
-        public DefaultQueryLogger(long infoThreshold = 300)
+        public DefaultQueryLogger(ILogger logger, long infoThreshold = 300)
         {
+            this.logger = logger;
             this.infoThreshold = infoThreshold;
         }
 
@@ -37,8 +36,8 @@ namespace Nevermore.Diagnostics
 
         void Write(long duration, string message)
         {
-            var level = duration >= infoThreshold ? LogLevel.Info : LogLevel.Debug;
-            Log.Log(level, () => message);
+            var level = duration >= infoThreshold ? LogLevel.Information : LogLevel.Debug;
+            logger.Log(level, message);
         }
     }
 }

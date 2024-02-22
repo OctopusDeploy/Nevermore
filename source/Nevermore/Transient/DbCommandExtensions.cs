@@ -3,15 +3,20 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Nevermore.Transient
 {
     internal static class DbCommandExtensions
     {
-        public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery")
+        public static int ExecuteNonQueryWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQuery", ILogger logger = null)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
@@ -27,10 +32,14 @@ namespace Nevermore.Transient
             });
         }
 
-        public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", CancellationToken cancellationToken = default)
+        public static Task<int> ExecuteNonQueryWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteNonQueryAsync", ILogger logger = null, CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return effectiveCommandRetryPolicy.ExecuteActionAsync(
                 async ct =>
                 {
@@ -48,10 +57,14 @@ namespace Nevermore.Transient
                 cancellationToken);
         }
 
-        public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
+        public static DbDataReader ExecuteReaderWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior behavior = CommandBehavior.Default, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader", ILogger logger = null)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
@@ -69,11 +82,14 @@ namespace Nevermore.Transient
             });
         }
 
-        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, CancellationToken cancellationToken, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader")
+        public static async Task<DbDataReader> ExecuteReaderWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, CommandBehavior commandBehavior, CancellationToken cancellationToken, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteReader", ILogger logger = null)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy =
-                (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(
                 async ct =>
                 {
@@ -92,10 +108,14 @@ namespace Nevermore.Transient
                 cancellationToken).ConfigureAwait(false);
         }
 
-        public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar")
+        public static object ExecuteScalarWithRetry(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", ILogger logger = null)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryPolicy.NoRetry).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryPolicy.NoRetry;
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return effectiveCommandRetryPolicy.ExecuteAction(() =>
             {
                 var weOwnTheConnectionLifetime = EnsureValidConnection(command, connectionRetryPolicy);
@@ -111,10 +131,14 @@ namespace Nevermore.Transient
             });
         }
 
-        public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", CancellationToken cancellationToken = default)
+        public static async Task<object> ExecuteScalarWithRetryAsync(this DbCommand command, RetryPolicy commandRetryPolicy, RetryPolicy connectionRetryPolicy = null, string operationName = "ExecuteScalar", ILogger logger = null, CancellationToken cancellationToken = default)
         {
             GuardConnectionIsNotNull(command);
-            var effectiveCommandRetryPolicy = (commandRetryPolicy ?? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy()).LoggingRetries(operationName);
+            var effectiveCommandRetryPolicy = commandRetryPolicy ?? RetryManager.Instance.GetDefaultSqlCommandRetryPolicy();
+            if (logger is not null)
+            {
+                effectiveCommandRetryPolicy = effectiveCommandRetryPolicy.LoggingRetries(logger, operationName);
+            }
             return await effectiveCommandRetryPolicy.ExecuteActionAsync(
                 async ct =>
                 {

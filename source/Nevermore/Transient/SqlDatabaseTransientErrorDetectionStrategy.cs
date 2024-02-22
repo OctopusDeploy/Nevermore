@@ -5,16 +5,12 @@ using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 #endif
 using System.Linq;
-using Nevermore.Diagnositcs;
 using Nevermore.Transient.Throttling;
 
 namespace Nevermore.Transient
 {
     sealed class SqlDatabaseTransientErrorDetectionStrategy : ITransientErrorDetectionStrategy
     {
-        // Getting a typed ILog causes JIT compilation - we should only do this once
-        static readonly ILog Log = LogProvider.For<SqlDatabaseTransientErrorDetectionStrategy>();
-
         static readonly int[] SimpleTransientErrorCodes = {
             // Details https://docs.microsoft.com/en-us/azure/sql-database/sql-database-develop-error-messages#database-connection-errors-transient-errors-and-other-temporary-errors
             // Copied from https://github.com/aspnet/EntityFrameworkCore/blob/10e553acc2/src/EFCore.SqlServer/Storage/Internal/SqlServerTransientExceptionDetector.cs
@@ -220,12 +216,6 @@ namespace Nevermore.Transient
             {
                 AugmentSqlExceptionWithThrottlingDetails(firstThrottlingError, exception);
                 return true;
-            }
-
-            var sqlConnectionErrors = sqlErrors.Where(e => e.Message.Contains("requires an open and available Connection") || e.Message.Contains("broken and recovery is not possible")).ToList();
-            if (sqlConnectionErrors.Any())
-            {
-                Log.Info($"Connection error detected. SQL Error code(s) {string.Join(", ", sqlConnectionErrors.Select(e => e.Number))}");
             }
 
             // Otherwise it could be another simple transient error

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
@@ -40,6 +41,7 @@ namespace Nevermore
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         IQueryLogger QueryLogger { get; set; }
         ITransactionLogger TransactionLogger { get; set; }
+        ILoggerFactory LoggerFactory { get; set; }
         IRelationalTransactionRegistry RelationalTransactionRegistry { get; set; }
 
         /// <summary>

@@ -11,9 +11,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
-using Nevermore.Diagnositcs;
 using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
@@ -25,7 +25,6 @@ namespace Nevermore.Advanced
     [DebuggerDisplay("{" + nameof(ToString) + "()}")]
     public class ReadTransaction : IReadTransaction, ITransactionDiagnostic
     {
-        static readonly ILog Log = LogProvider.For<ReadTransaction>();
         protected static DbConnection DefaultConnectionFactory(string connectionString) => new SqlConnection(connectionString);
 
         readonly IRelationalTransactionRegistry registry;
@@ -36,6 +35,7 @@ namespace Nevermore.Advanced
         readonly Func<string, DbConnection> connectionFactory;
         readonly Action<string>? customCommandTrace;
         readonly string name;
+        readonly ILogger logger;
 
         protected bool OwnsSqlTransaction { get; } = true;
 
@@ -112,6 +112,7 @@ namespace Nevermore.Advanced
             registry.Add(this);
 
             columnNameResolver = configuration.TableColumnNameResolver(store);
+            logger = configuration.LoggerFactory.CreateLogger(nameof(ReadTransaction));
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -541,7 +542,7 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var correlationId = Guid.NewGuid().ToString();
-            Log.DebugFormat("[{0}] Txn {1} Cmd {2}", correlationId, name, command.Statement);
+            logger.LogDebug("[{CorrelationId}] Txn {TransactionName} Cmd {SqlCommand}", correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             var rowCounter = 0;
 
@@ -555,7 +556,7 @@ namespace Nevermore.Advanced
                 }
                 else
                 {
-                    Log.DebugFormat("[{0}] Row {1} failed to be read and will be discarded", correlationId, rowCounter);
+                    logger.LogDebug("[{CorrelationId}] Row {RowIndex} failed to be read and will be discarded", correlationId, rowCounter);
                 }
             }
         }
@@ -564,7 +565,7 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var correlationId = Guid.NewGuid().ToString();
-            Log.DebugFormat("[{0}] Txn {1} Cmd {2}", correlationId, name, command.Statement);
+            logger.LogDebug("[{CorrelationId}] Txn {TransactionName} Cmd {SqlCommand}", correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             var rowCounter = 0;
 
@@ -578,7 +579,7 @@ namespace Nevermore.Advanced
                 }
                 else
                 {
-                    Log.DebugFormat("[{0}] Row {1} failed to be read and will be discarded", correlationId, rowCounter);
+                    logger.LogDebug("[{CorrelationId}] Row {RowIndex} failed to be read and will be discarded", correlationId, rowCounter);
                 }
             }
         }
@@ -622,7 +623,7 @@ namespace Nevermore.Advanced
             lock (commandTrace)
             {
                 if (commandTrace.Count == 100)
-                    Log.DebugFormat("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {0:s}\r\nStack: {1}\r\n\r\n{2}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
+                    logger.LogDebug("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {StartedAt:s}\r\nStack: {Stack}\r\n\r\n{CommandTrace}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
 
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);
@@ -730,7 +731,7 @@ namespace Nevermore.Advanced
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
 
-            return await retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteActionAsync(
+            return await retryPolicy.LoggingRetries(logger, "Beginning Database Transaction").ExecuteActionAsync(
                 async ct =>
                 {
                     // A connection can exist, but be in a broken state.
@@ -752,7 +753,7 @@ namespace Nevermore.Advanced
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing transaction was provided, it should be opened externally");
 
-            return retryPolicy.LoggingRetries("Beginning Database Transaction").ExecuteAction(() =>
+            return retryPolicy.LoggingRetries(logger, "Beginning Database Transaction").ExecuteAction(() =>
             {
                 if (connection.State != ConnectionState.Open) connection.Open();
 
@@ -814,7 +815,8 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations);
+            var logger = configuration.LoggerFactory.CreateLogger(nameof(ReadTransaction));
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, logger);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)
