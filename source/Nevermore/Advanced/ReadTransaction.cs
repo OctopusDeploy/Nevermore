@@ -542,7 +542,7 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var correlationId = Guid.NewGuid().ToString();
-            logger.LogDebug("[{CorrelationId}] Txn {TransactionName} Cmd {SqlCommand}", correlationId, name, command.Statement);
+            logger.ProcessReaderStarted(correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             var rowCounter = 0;
 
@@ -556,7 +556,7 @@ namespace Nevermore.Advanced
                 }
                 else
                 {
-                    logger.LogDebug("[{CorrelationId}] Row {RowIndex} failed to be read and will be discarded", correlationId, rowCounter);
+                    logger.ProcessReaderRowFailed(correlationId, rowCounter);
                 }
             }
         }
@@ -565,7 +565,7 @@ namespace Nevermore.Advanced
         {
             using var timed = new TimedSection(ms => configuration.QueryLogger.ProcessReader(ms, name, command.Statement));
             var correlationId = Guid.NewGuid().ToString();
-            logger.LogDebug("[{CorrelationId}] Txn {TransactionName} Cmd {SqlCommand}", correlationId, name, command.Statement);
+            logger.ProcessReaderStarted(correlationId, name, command.Statement);
             var strategy = configuration.ReaderStrategies.Resolve<TRecord>(command);
             var rowCounter = 0;
 
@@ -579,7 +579,7 @@ namespace Nevermore.Advanced
                 }
                 else
                 {
-                    logger.LogDebug("[{CorrelationId}] Row {RowIndex} failed to be read and will be discarded", correlationId, rowCounter);
+                    logger.ProcessReaderRowFailed(correlationId, rowCounter);
                 }
             }
         }
@@ -623,7 +623,7 @@ namespace Nevermore.Advanced
             lock (commandTrace)
             {
                 if (commandTrace.Count == 100)
-                    logger.LogDebug("A possible N+1 or long running transaction detected, this is a diagnostic message only does not require end-user action.\r\nStarted: {StartedAt:s}\r\nStack: {Stack}\r\n\r\n{CommandTrace}", CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
+                    logger.PossibleLongTransactionDetected(CreatedTime, Environment.StackTrace, string.Join("\r\n", commandTrace));
 
                 if (commandTrace.Count <= 200)
                     commandTrace.Add(DateTime.Now.ToString("s") + " " + commandText);

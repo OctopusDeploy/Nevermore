@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Nevermore.Diagnostics;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 #if NETFRAMEWORK
@@ -38,7 +39,7 @@ namespace Nevermore.Advanced
             transactions.TryAdd(trn, trn);
             var numberOfTransactions = transactions.Count;
             if (numberOfTransactions > maxSqlConnectionPoolSize * 0.8)
-                logger.LogInformation("{NumberOfTransactions} transactions active", numberOfTransactions);
+                logger.ActiveTransactions(numberOfTransactions);
 
             if (numberOfTransactions >= maxSqlConnectionPoolSize || numberOfTransactions == (int)(maxSqlConnectionPoolSize * 0.9))
                 LogHighNumberOfTransactions(numberOfTransactions >= maxSqlConnectionPoolSize);

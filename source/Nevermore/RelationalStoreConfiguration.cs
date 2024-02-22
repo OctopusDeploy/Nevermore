@@ -60,7 +60,7 @@ namespace Nevermore
 
             AllowSynchronousOperations = true;
 
-            LoggerFactory = new NullLoggerFactory();
+            LoggerFactory = NullLoggerFactory.Instance;
             QueryLogger = new DefaultQueryLogger(LoggerFactory.CreateLogger(nameof(DefaultQueryLogger)));
             TransactionLogger = new DefaultTransactionLogger();
 

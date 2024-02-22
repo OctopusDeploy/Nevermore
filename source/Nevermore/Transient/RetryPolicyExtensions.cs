@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nevermore.Diagnostics;
 using Nevermore.Util;
 
 namespace Nevermore.Transient
@@ -12,7 +13,7 @@ namespace Nevermore.Transient
             policy.Retrying += (sender, args) =>
             {
                 // Change context to the System so we don't become reentrant into ServerTask logging
-                logger.LogWarning("{Operation} attempt #{AttemptNumber} faulted, retrying in {RetryDelay}: {FailureReason} ", operation, args.CurrentRetryCount, args.Delay, args.LastException.GetErrorSummary());
+                logger.RetryingOperation(operation, args.CurrentRetryCount, args.Delay, args.LastException.GetErrorSummary());
             };
 
             return policy;
