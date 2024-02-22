@@ -41,7 +41,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
             transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSONBlob]) values ('Persons-1', COMPRESS(N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}'))");
-            transaction.Commit();
+            transaction.TryCommit();
         }
         
         [Test]

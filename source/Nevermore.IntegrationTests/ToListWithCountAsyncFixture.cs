@@ -28,7 +28,7 @@ namespace Nevermore.IntegrationTests
                              new Customer {FirstName = "Eric", LastName = "Evans", Nickname = "Bob"}
                          })
                     t.Insert(c);
-                await t.CommitAsync(CancellationToken.None);
+                await t.TryCommitAsync(CancellationToken.None);
 
                 FeatureFlags.UseCteBasedListWithCount = useCteOperation;
                 var (items, count) = await t.Query<Customer>()
@@ -56,7 +56,7 @@ namespace Nevermore.IntegrationTests
                              new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"},
                          })
                     t.Insert(c);
-                await t.CommitAsync(CancellationToken.None);
+                await t.TryCommitAsync(CancellationToken.None);
 
                 FeatureFlags.UseCteBasedListWithCount = true;
                 var (items, count) = await t.Query<Customer>()

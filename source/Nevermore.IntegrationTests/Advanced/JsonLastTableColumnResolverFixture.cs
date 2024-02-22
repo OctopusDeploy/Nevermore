@@ -34,7 +34,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 var id = writeTransaction.AllocateId<CustomerId>(typeof(Customer));
                 writeTransaction.Insert(new Customer {Id = id});
-                writeTransaction.Commit();
+                writeTransaction.TryCommit();
             }
 
             using var readTransaction = Store.BeginReadTransaction();

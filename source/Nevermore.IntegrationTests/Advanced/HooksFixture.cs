@@ -31,7 +31,7 @@ namespace Nevermore.IntegrationTests.Advanced
             transaction.Delete(customer);
             AssertLogged(log, "BeforeDelete", "AfterDelete");
 
-            transaction.Commit();
+            transaction.TryCommit();
             AssertLogged(log, "BeforeCommit", "AfterCommit");
         }
 

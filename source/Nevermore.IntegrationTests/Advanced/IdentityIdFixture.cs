@@ -95,7 +95,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             using var transaction = Store.BeginTransaction(name: name);
             var result = func(transaction);
-            transaction.Commit();
+            transaction.TryCommit();
 
             return result;
         }
@@ -113,7 +113,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             using var transaction = Store.BeginTransaction(name: name);
             var result = await func(transaction);
-            await transaction.CommitAsync();
+            await transaction.TryCommitAsync();
         }
 
         async Task RunInTransactionAsync(Func<IRelationalTransaction, Task> action, string name)

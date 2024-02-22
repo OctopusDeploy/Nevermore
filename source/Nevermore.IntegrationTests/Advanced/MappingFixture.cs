@@ -110,7 +110,7 @@ namespace Nevermore.IntegrationTests.Advanced
 
             transaction.Insert(user);
             transaction.Update(user);
-            transaction.Commit();
+            transaction.TryCommit();
         }
 
         [Test, Order(4)]
@@ -136,7 +136,7 @@ namespace Nevermore.IntegrationTests.Advanced
             transaction.Delete<User>("users-123");
             var user = transaction.Load<User>("users-123");
             user.Should().BeNull();
-            transaction.Commit();
+            transaction.TryCommit();
         }
     }
 }

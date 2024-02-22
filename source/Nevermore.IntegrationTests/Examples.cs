@@ -81,7 +81,7 @@ namespace Nevermore.IntegrationTests
 
             using var transaction = store.BeginTransaction();
             transaction.Insert(person);
-            transaction.Commit();
+            transaction.TryCommit();
 
             // ID's are assigned automatically when the Insert call completes.
             person.Id.Should().Be("Persons-1");
@@ -108,7 +108,7 @@ namespace Nevermore.IntegrationTests
                     new Person {FirstName = "Buggs", LastName = "Bunny", Email = "buggs.bunny@wb.com", Tags = {"rabbit", "wb"}},
                     new Person {FirstName = "Prince", LastName = null, Email = "prince", Tags = {"singer"}},
                 });
-            transaction.Commit();
+            transaction.TryCommit();
         }
 
         [Test, Order(4)]

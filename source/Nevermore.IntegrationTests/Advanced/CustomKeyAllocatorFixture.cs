@@ -90,7 +90,7 @@ public class CustomKeyAllocatorFixture : FixtureWithDatabase
         using var transaction = store.BeginTransaction();
 
         transaction.Insert(document);
-        transaction.Commit();
+        transaction.TryCommit();
 
         document.Id.Should().Be("Simples-100");
     }

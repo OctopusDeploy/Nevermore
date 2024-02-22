@@ -35,7 +35,7 @@ namespace Nevermore.Benchmarks
             var historyEntries = Enumerable.Range(1, DocumentSize / 256).Select(n => new BigObjectHistoryEntry
                 {Id = Guid.NewGuid(), Comment = randomString(), LuckyNumbers = Enumerable.Range(0, rand.Next(130, 330)).ToArray(), Date = DateTime.Today.AddDays(n)});
             writer.Insert(new BigObject {Id = "BigObject-1", History = historyEntries.OfType<object>().ToList()});
-            writer.Commit();
+            writer.TryCommit();
         }
 
         [Params(JsonStorageFormat.TextOnly, JsonStorageFormat.CompressedOnly)]
@@ -61,7 +61,7 @@ namespace Nevermore.Benchmarks
             var item = transaction.Load<BigObject>("BigObject-1");
             item.Name = Guid.NewGuid().ToString();
             transaction.Update(item);
-            transaction.Commit();
+            transaction.TryCommit();
         }
     }
 }

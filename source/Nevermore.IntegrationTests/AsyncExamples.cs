@@ -23,7 +23,7 @@ namespace Nevermore.IntegrationTests
                 await transaction.InsertAsync(
                     new Product { Name = "First product", Price = 100.00M, Type = ProductType.Dodgy}, 
                     new InsertOptions { CustomAssignedId = "Product-First"});
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             using (var reader = await Store.BeginReadTransactionAsync())
@@ -46,7 +46,7 @@ namespace Nevermore.IntegrationTests
                 await transaction.InsertAsync(
                     new Product { Name = "Second product", Price = 200.00M, Type = ProductType.Dodgy}, 
                     new InsertOptions { CustomAssignedId = "Product-Second"});
-                await transaction.CommitAsync();
+                await transaction.TryCommitAsync();
             }
 
             using (var reader = await Store.BeginReadTransactionAsync())

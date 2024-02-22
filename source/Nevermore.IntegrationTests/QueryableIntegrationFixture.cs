@@ -30,7 +30,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.FirstName == "Alice")
@@ -53,7 +53,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Id == alice.Id)
@@ -79,7 +79,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var brands = t.Queryable<Brand>()
                 .Where(b => b.Type == "BrandB")
@@ -105,7 +105,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var documents = t.Queryable<DocumentWithRowVersion>()
                 .Where(d => d.RowVersion == testDoc3.RowVersion)
@@ -130,7 +130,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(p);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             // query by base type
             var dodgyProduct = t.Queryable<Product>()
@@ -163,7 +163,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Machine>()
                 .Where(m => m.Endpoint.Name == "Tentacle A")
@@ -190,7 +190,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Machine>()
                 .Where(m => m.LastModified == testLastModified)
@@ -216,7 +216,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Machine>()
                 .Where(m => m.Endpoint.Name == null || m.Endpoint.Name == "Tentacle A")
@@ -242,7 +242,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Machine>()
                 .Where(m => m.Endpoint == null || m.Endpoint.Name == "Tentacle A")
@@ -268,7 +268,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.FirstName != "Alice")
@@ -294,7 +294,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance > 100)
@@ -320,7 +320,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance < 100)
@@ -346,7 +346,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance >= 301.4m)
@@ -372,7 +372,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance <= 56.3m)
@@ -398,7 +398,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.IsVip)
@@ -424,7 +424,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => !c.IsVip)
@@ -450,7 +450,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.IsEmployee)
@@ -476,7 +476,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => !c.IsEmployee)
@@ -502,7 +502,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance >= 50m && c.IsEmployee && c.FirstName.StartsWith("B"))
@@ -528,7 +528,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Balance < 40m || c.IsEmployee || c.LastName.Contains("n"))
@@ -554,7 +554,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var names = new[] { "Apple", "Orange", "Peach" };
             var customers = t.Queryable<Customer>()
@@ -581,7 +581,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var names = Array.Empty<string>();
             var customers = t.Queryable<Customer>()
@@ -608,7 +608,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Roles.Contains("RoleC"))
@@ -634,7 +634,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.LuckyNumbers.Contains(4))
@@ -660,7 +660,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var names = new[] { "Apple", "Orange", "Peach" };
             var customers = t.Queryable<Customer>()
@@ -687,7 +687,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var names = Array.Empty<string>();
             var customers = t.Queryable<Customer>()
@@ -714,7 +714,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Nickname.Contains("hi"))
@@ -740,7 +740,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => !c.Nickname.Contains("hi"))
@@ -766,7 +766,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Where(c => c.Nickname.Contains("["))
@@ -794,7 +794,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customer = t.Queryable<Customer>()
                 .First();
@@ -819,7 +819,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customer = t.Queryable<Customer>()
                 .First(c => c.FirstName == "Alice");
@@ -844,7 +844,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customer = t.Queryable<Customer>()
                 .FirstOrDefault();
@@ -869,7 +869,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customer = await t.Queryable<Customer>()
                 .FirstOrDefaultAsync();
@@ -894,7 +894,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customer = t.Queryable<Customer>()
                 .FirstOrDefault(c => c.FirstName.EndsWith("y"));
@@ -919,7 +919,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customer = await t.Queryable<Customer>()
                 .FirstOrDefaultAsync(c => c.FirstName.EndsWith("y"));
@@ -944,7 +944,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Skip(2)
@@ -970,7 +970,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Take(2)
@@ -998,7 +998,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .Skip(2)
@@ -1025,7 +1025,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var count = t.Queryable<Customer>().Count();
 
@@ -1049,7 +1049,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var count = await t.Queryable<Customer>().CountAsync();
 
@@ -1073,7 +1073,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(b);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var count = await t.Queryable<BrandB>().CountAsync();
 
@@ -1097,7 +1097,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var a = t.Queryable<Customer>().Where(x => x.FirstName == "Alice").Hint("WITH (ROWLOCK, UPDLOCK, NOWAIT)").RawDebugView();
             a.Should().Be($"SELECT Id,FirstName,LastName,Nickname,Roles,Balance,IsVip,JSON{Environment.NewLine}" +
@@ -1122,7 +1122,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var count = t.Queryable<Customer>().Count(c => c.Nickname.StartsWith("C"));
 
@@ -1146,7 +1146,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var count = await t.Queryable<Customer>().CountAsync(c => c.Nickname.StartsWith("C"));
 
@@ -1170,7 +1170,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(b);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var count = await t.Queryable<BrandA>().CountAsync(b => b.Name.StartsWith("Brand"));
 
@@ -1194,7 +1194,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var count = t.Queryable<Customer>().OrderBy(c => c.LastName).Count(c => c.Nickname.StartsWith("C"));
 
@@ -1218,7 +1218,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>().OrderBy(c => c.Nickname).ToList();
 
@@ -1242,7 +1242,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>().OrderByDescending(c => c.Nickname).ToList();
 
@@ -1266,7 +1266,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .OrderBy(c => c.LastName)
@@ -1293,7 +1293,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>()
                 .OrderBy(c => c.LastName)
@@ -1320,7 +1320,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var anyCustomers = t.Queryable<Customer>().Any();
 
@@ -1344,7 +1344,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var anyCustomers = await t.Queryable<Customer>().AnyAsync();
 
@@ -1368,7 +1368,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var anyCustomers = t.Queryable<Customer>().Any(c => c.Nickname == "Warlock");
 
@@ -1392,7 +1392,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var anyCustomers = await t.Queryable<Customer>().AnyAsync(c => c.Nickname == "Warlock");
 
@@ -1416,7 +1416,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            t.Commit();
+            t.TryCommit();
 
             var customers = t.Queryable<Customer>().WhereCustom("[Roles] LIKE '%|B%'").ToList();
 
@@ -1440,7 +1440,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = await t.Queryable<Customer>().Where(c => c.FirstName == "Alice").ToListAsync();
 
@@ -1493,7 +1493,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = t.Queryable<Customer>().Select(c => c.FirstName);
 
@@ -1517,7 +1517,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = t.Queryable<Customer>().Select(c => new { c.FirstName, c.IsEmployee });
 
@@ -1545,7 +1545,7 @@ namespace Nevermore.IntegrationTests
                 t.Insert(c);
             }
 
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = await t.Queryable<Customer>().Select(c => c.IsEmployee).ToListAsync();
 
@@ -1565,7 +1565,7 @@ namespace Nevermore.IntegrationTests
             };
 
             await t.InsertManyAsync(testCustomers);
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = await t.Queryable<Customer>().Select(c => new CustomerProjection(c.FirstName, c.IsEmployee)).ToListAsync();
 
@@ -1602,7 +1602,7 @@ namespace Nevermore.IntegrationTests
             };
 
             await t.InsertManyAsync(testCustomers);
-            await t.CommitAsync();
+            await t.TryCommitAsync();
 
             var customers = await t.Queryable<Customer>().Select(c => new CustomerRecord(c.FirstName, c.IsEmployee)).ToListAsync();
 

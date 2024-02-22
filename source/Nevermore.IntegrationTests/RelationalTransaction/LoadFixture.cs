@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                 Type = ProductType.Normal
             };
             trn.Insert(product2);
-            trn.Commit();
+            trn.TryCommit();
 
             var ids = new[] {product1.Id, product2.Id};
 
@@ -194,7 +194,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             trn.Insert<Brand>(brandA);
             trn.Insert<Brand>(brandB);
-            trn.Commit();
+            trn.TryCommit();
 
             var allBrands = trn.Stream<(string Name, string JSON)>("select Name, [JSON] from TestSchema.Brand").ToList();
 
@@ -212,7 +212,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             trn.Insert<Brand>(brandA);
             trn.Insert<Brand>(brandB);
-            trn.Commit();
+            trn.TryCommit();
 
             var allBrands = trn.Query<Brand>().ToList();
 
@@ -229,7 +229,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
 
             trn.Insert(machineA);
             trn.Insert(machineB);
-            trn.Commit();
+            trn.TryCommit();
 
             var allMachines = trn.Query<Machine>().ToList();
 
@@ -245,7 +245,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             InsertProductAndLineItems("Unicorn Poop", 3m, trn, 2, 3);      // subtotal: $15 of Unicorn Poop
             InsertProductAndLineItems("Unicorn Dust", 1m, trn, 2, 1, 7);   // subtotal: $10 of Unicorn Dust
             InsertProductAndLineItems("Fairy Bread", 10m, trn, 4);         // subtotal: $40 of Fairy Bread
-            trn.Commit();
+            trn.TryCommit();
 
             var productSubtotalQuery =    @"SELECT
                                                     Id,
@@ -307,7 +307,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             var messageA = new MessageWithGuidId { Id = Guid.NewGuid(), Sender = "Sender A", Body = "Body of Message A" };
 
             trn.Insert(messageA);
-            trn.Commit();
+            trn.TryCommit();
 
             var loadedMessageA = trn.Load<MessageWithGuidId>(messageA.Id);
 
@@ -341,7 +341,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 trn.Insert(message);
             }
-            trn.Commit();
+            trn.TryCommit();
 
             var loadedMessages = trn.LoadMany<MessageWithStringId>(messages.Select(m => m.Id));loadedMessages.Should().BeEquivalentTo(messages);
         }
@@ -360,7 +360,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 trn.Insert(message);
             }
-            trn.Commit();
+            trn.TryCommit();
 
             var loadedMessages = trn.LoadMany<MessageWithIntId>(messages.Select(m => m.Id));
 
@@ -381,7 +381,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 trn.Insert(message);
             }
-            trn.Commit();
+            trn.TryCommit();
 
             var loadedMessages = trn.LoadMany<MessageWithLongId>(messages.Select(m => m.Id));
 
@@ -402,7 +402,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 trn.Insert(message);
             }
-            trn.Commit();
+            trn.TryCommit();
 
             var loadedMessages = trn.LoadMany<MessageWithGuidId>(messages.Select(m => m.Id));
 

@@ -17,7 +17,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             {
                 var product = trn.Load<Product>(id);
                 trn.Delete(product);
-                trn.Commit();
+                trn.TryCommit();
             }
 
             using (var trn = Store.BeginTransaction())
@@ -32,7 +32,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
             using (var trn = Store.BeginTransaction())
             {
                 trn.Delete<Product>(id);
-                trn.Commit();
+                trn.TryCommit();
             }
 
             using (var trn = Store.BeginTransaction())
@@ -59,7 +59,7 @@ namespace Nevermore.IntegrationTests.RelationalTransaction
                     Name = "foo"
                 };
                 trn.Insert(product);
-                trn.Commit();
+                trn.TryCommit();
                 return product.Id;
             }
         }

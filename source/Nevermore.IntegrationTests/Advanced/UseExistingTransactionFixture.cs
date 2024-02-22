@@ -148,12 +148,12 @@ public class UseExistingTransactionFixture : FixtureWithRelationalStore
         {
             const string expectedMessage = $"{nameof(WriteTransaction)} cannot commit a transaction it does not own";
 
-            await new Func<Task>(async () => await nonOwnedTransaction.CommitAsync(cancellationToken))
+            await new Func<Task>(async () => await nonOwnedTransaction.TryCommitAsync(cancellationToken))
                 .Should()
                 .ThrowExactlyAsync<InvalidOperationException>()
                 .WithMessage(expectedMessage);
 
-            new Action(() => nonOwnedTransaction.Commit())
+            new Action(() => nonOwnedTransaction.TryCommit())
                 .Should()
                 .ThrowExactly<InvalidOperationException>()
                 .WithMessage(expectedMessage);

@@ -29,7 +29,7 @@ namespace Nevermore.IntegrationTests
                 customer2.Id.Value.Should().StartWith("Customers-");
                 customer3.Id.Value.Should().Be("Customers-Chazza");
 
-                transaction.Commit();
+                transaction.TryCommit();
             }
         }
 
@@ -44,7 +44,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3);
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
@@ -71,7 +71,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(product2);
                 transaction.Insert(product3);
                 transaction.Insert(product4);
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             using (var transaction = Store.BeginTransaction())
@@ -90,7 +90,7 @@ namespace Nevermore.IntegrationTests
             {
                 transaction.Insert(product1);
                 transaction.Insert(product2);
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             using (var transaction = Store.BeginTransaction())
@@ -116,7 +116,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3);
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             // ReferenceCollection columns that are indexed are always stored in pipe-separated format with pipes at the front and end: |foo|bar|baz|
@@ -137,7 +137,7 @@ namespace Nevermore.IntegrationTests
             {
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple"};
                 transaction.Insert(customer);
-                transaction.Commit();
+                transaction.TryCommit();
                 customerId = customer.Id;
             }
 
@@ -163,7 +163,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(customer1);
                 transaction.Insert(customer2);
                 transaction.Insert(customer3);
-                transaction.Commit();
+                transaction.TryCommit();
                 ids.Add(customer1.Id);
                 ids.Add(customer3.Id);
                 ids.Add(customer2.Id);
@@ -190,7 +190,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = 10});
                 transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20});
 
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             using (var transaction = Store.BeginTransaction())
@@ -221,7 +221,7 @@ namespace Nevermore.IntegrationTests
                 transaction.Insert(new LineItem {ProductId = "product-1", Name = "Line 2", Quantity = 10});
                 transaction.Insert(new LineItem {PurchaseDate = DateTime.MaxValue, ProductId = "product-2", Name = "Line 3", Quantity = 20});
 
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             using (var transaction = Store.BeginTransaction())
@@ -247,7 +247,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 transaction.InsertMany(new[] { product });
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             product.Id.Should().Be("Products-1");
@@ -262,7 +262,7 @@ namespace Nevermore.IntegrationTests
             using (var transaction = Store.BeginTransaction())
             {
                 transaction.InsertMany(new[] {product1, product2});
-                transaction.Commit();
+                transaction.TryCommit();
             }
 
             product1.Id.Should().Be("Products-1");
@@ -316,7 +316,7 @@ namespace Nevermore.IntegrationTests
                 var customer = new Customer {FirstName = "Alice", LastName = "Apple", LuckyNumbers = new[] {12, 13}, Nickname = "Ally", Roles = {"web-server", "app-server"}};
                 transaction.Insert(customer);
                 customerId = customer.Id;
-                transaction.Commit();
+                transaction.TryCommit();
             }
             using (var transaction = Store.BeginTransaction())
             {
