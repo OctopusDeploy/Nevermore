@@ -338,7 +338,7 @@ namespace Nevermore.Advanced
             return $"{idPrefix}-{key}";
         }
         
-        public void Commit(CancellationToken cancellationToken = default)
+        public void Commit()
         {
             if (!OwnsSqlTransaction) return;
             
