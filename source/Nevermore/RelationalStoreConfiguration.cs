@@ -61,7 +61,7 @@ namespace Nevermore
             AllowSynchronousOperations = true;
 
             LoggerFactory = NullLoggerFactory.Instance;
-            QueryLogger = new DefaultQueryLogger(LoggerFactory.CreateLogger(nameof(DefaultQueryLogger)));
+            QueryLogger = new DefaultQueryLogger(new Logger<DefaultQueryLogger>(LoggerFactory));
             TransactionLogger = new DefaultTransactionLogger();
 
             connectionString = new Lazy<string>(() =>

@@ -54,7 +54,7 @@ namespace Nevermore.Mapping
                 this.store = store;
                 this.collectionName = collectionName;
                 this.blockSize = blockSize;
-                logger = store.Configuration.LoggerFactory.CreateLogger(nameof(Allocation));
+                logger = new Logger<KeyAllocator>(store.Configuration.LoggerFactory);
             }
 
             public async ValueTask<int> NextAsync(CancellationToken cancellationToken)

@@ -112,7 +112,7 @@ namespace Nevermore.Advanced
             registry.Add(this);
 
             columnNameResolver = configuration.TableColumnNameResolver(store);
-            logger = configuration.LoggerFactory.CreateLogger(nameof(ReadTransaction));
+            logger = new Logger<ReadTransaction>(configuration.LoggerFactory);
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -815,8 +815,8 @@ namespace Nevermore.Advanced
                 QueryPlanThrashingDetector.Detect(command.Statement);
             }
 
-            var logger = configuration.LoggerFactory.CreateLogger(nameof(ReadTransaction));
-            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, logger);
+            var executorLogger = new Logger<CommandExecutor>(configuration.LoggerFactory);
+            return new CommandExecutor(sqlCommand, command, GetRetryPolicy(command.Operation), timedSection, this, configuration.AllowSynchronousOperations, executorLogger);
         }
 
         RetryPolicy GetRetryPolicy(RetriableOperation operation)

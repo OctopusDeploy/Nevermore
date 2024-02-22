@@ -10,6 +10,7 @@ using Microsoft.Data.SqlClient;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Nevermore.Advanced;
 using Nevermore.Mapping;
 
@@ -22,7 +23,7 @@ namespace Nevermore
 
         public RelationalStore(IRelationalStoreConfiguration configuration)
         {
-            var logger = configuration.LoggerFactory.CreateLogger(nameof(RelationalTransactionRegistry));
+            var logger = new Logger<RelationalStore>(configuration.LoggerFactory);
             Configuration = configuration;
             registry = new Lazy<IRelationalTransactionRegistry>(
                 configuration.RelationalTransactionRegistry is not null
