@@ -19,6 +19,7 @@ using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
 using Nito.AsyncEx;
+using Nito.Disposables;
 
 namespace Nevermore.Advanced
 {
@@ -519,7 +520,9 @@ namespace Nevermore.Advanced
                     yield return item;
             }
 
-            return new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock);
+            return configuration.SupportConcurrentExecution
+                ? new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock)
+                : Execute();
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
@@ -534,7 +537,9 @@ namespace Nevermore.Advanced
                 }
             }
 
-            return new ThreadSafeAsyncEnumerable<TRecord>(Execute, DeadlockAwareLock);
+            return configuration.SupportConcurrentExecution
+                ? new ThreadSafeAsyncEnumerable<TRecord>(Execute, DeadlockAwareLock)
+                : Execute();
         }
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
@@ -614,7 +619,9 @@ namespace Nevermore.Advanced
                 }
             }
 
-            return new ThreadSafeAsyncEnumerable<TResult>(Execute, DeadlockAwareLock);
+            return configuration.SupportConcurrentExecution
+                ? new ThreadSafeAsyncEnumerable<TResult>(Execute, DeadlockAwareLock)
+                : Execute();
         }
 
         void AddCommandTrace(string commandText)
@@ -643,14 +650,18 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            using var mutex = configuration.SupportConcurrentExecution 
+                ? DeadlockAwareLock.Lock()
+                : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteNonQuery();
         }
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
+            using var mutex = configuration.SupportConcurrentExecution
+                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+                : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -667,7 +678,9 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            using var mutex = configuration.SupportConcurrentExecution 
+                ? DeadlockAwareLock.Lock()
+                : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
             if (result == DBNull.Value)
@@ -677,7 +690,9 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
+            using var mutex = configuration.SupportConcurrentExecution
+                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+                : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
             if (result == DBNull.Value)
@@ -709,7 +724,9 @@ namespace Nevermore.Advanced
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
         {
-            using var mutex = DeadlockAwareLock.Lock();
+            using var mutex = configuration.SupportConcurrentExecution
+                ? DeadlockAwareLock.Lock()
+                : NoopDisposable.Instance;
 
             using var command = CreateCommand(preparedCommand);
             return command.ReadResults(mapper);
@@ -717,7 +734,9 @@ namespace Nevermore.Advanced
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
-            using var mutex = await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
+            using var mutex = configuration.SupportConcurrentExecution
+                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+                : NoopDisposable.Instance;
 
             using var command = CreateCommand(preparedCommand);
             return await command.ReadResultsAsync(mapper, cancellationToken).ConfigureAwait(false);
