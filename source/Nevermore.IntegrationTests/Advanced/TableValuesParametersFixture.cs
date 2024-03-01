@@ -45,7 +45,7 @@ namespace Nevermore.IntegrationTests.Advanced
             var count = writer.ExecuteScalar<int>("select count(*) from TestSchema.SomeTable");
             count.Should().Be(100000);
             
-            writer.TryCommit();
+            writer.Commit();
         }
     }
 }

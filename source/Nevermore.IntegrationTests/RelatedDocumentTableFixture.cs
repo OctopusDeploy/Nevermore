@@ -52,7 +52,7 @@ namespace Nevermore.IntegrationTests
                 foreach (var item in StartingRecords)
                     trn.ExecuteNonQuery($"INSERT INTO TestSchema.[{DocumentMap.RelatedDocumentTableName}] VALUES ('{item.Id}', '{item.Table}', '{item.RelatedDocumentId}', '{item.RelatedDocumentType}')");
 
-                trn.TryCommit();
+                trn.Commit();
             }
         }
 
@@ -65,7 +65,7 @@ namespace Nevermore.IntegrationTests
                 foreach (var reference in referenceIds)
                     trn.ExecuteNonQuery($"INSERT INTO TestSchema.[{DocumentMap.RelatedDocumentTableName}] VALUES ('{orderId}', 'Order', '{reference}', 'Product')");
 
-                trn.TryCommit();
+                trn.Commit();
             }
 
             // Check that went well
@@ -88,7 +88,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 trn.Insert(order);
-                trn.TryCommit();
+                trn.Commit();
             }
 
             Console.WriteLine("New Order ID: " + order.Id);
@@ -106,7 +106,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 trn.Update(order);
-                trn.TryCommit();
+                trn.Commit();
             }
         }
 
@@ -116,7 +116,7 @@ namespace Nevermore.IntegrationTests
             using (var trn = Store.BeginTransaction())
             {
                 trn.Delete(order);
-                trn.TryCommit();
+                trn.Commit();
             }
         }
 
@@ -128,7 +128,7 @@ namespace Nevermore.IntegrationTests
                 trn.DeleteQuery<Order>()
                     .Where(nameof(order.Id), UnarySqlOperand.Equal, orderId)
                     .Delete();
-                trn.TryCommit();
+                trn.Commit();
             }
         }
 

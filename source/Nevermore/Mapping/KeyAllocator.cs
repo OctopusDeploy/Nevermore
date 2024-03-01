@@ -69,7 +69,7 @@ namespace Nevermore.Mapping
                         parameters.CommandType = CommandType.StoredProcedure;
 
                         var result = await transaction.ExecuteScalarAsync<int>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
-                        await transaction.TryCommitAsync(ct).ConfigureAwait(false);
+                        await transaction.CommitAsync(ct).ConfigureAwait(false);
                         return result;
                     }
 
@@ -106,7 +106,7 @@ namespace Nevermore.Mapping
                         parameters.CommandType = CommandType.StoredProcedure;
 
                         var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
-                        transaction.TryCommit();
+                        transaction.Commit();
                         return result;
                     }
 

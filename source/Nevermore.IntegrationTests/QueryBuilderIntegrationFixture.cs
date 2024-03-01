@@ -48,7 +48,7 @@ namespace Nevermore.IntegrationTests
                     new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
                 })
                 t.Insert(c);
-                t.TryCommit();
+                t.Commit();
                 
                 var customersNull = t.Query<Customer>()
                     .Where(c => c.Nickname == null)
@@ -78,7 +78,7 @@ namespace Nevermore.IntegrationTests
                     new Customer {FirstName = "Bob", LastName = "Barker", Nickname = "Bazza"},
                     new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
                 });
-                t.TryCommit();
+                t.Commit();
                 
                 var customersNull = t.Query<Customer>()
                     .Where(n => n.Nickname != null)
@@ -110,7 +110,7 @@ namespace Nevermore.IntegrationTests
             };
 
             await t.InsertManyAsync(testBrands);
-            await t.TryCommitAsync();
+            await t.CommitAsync();
 
             var count = await t.Query<BrandB>().Where(b => b.Name.Contains("Brand")).CountAsync();
 
@@ -133,7 +133,7 @@ namespace Nevermore.IntegrationTests
                 new Customer {FirstName = "Charlie", LastName = "Cherry", Nickname = "Chazza"}
             });
 
-            await t.TryCommitAsync();
+            await t.CommitAsync();
 
             var productQuery = t.Query<Customer>()
                 .InnerJoin(t.Query<DodgyProduct>())

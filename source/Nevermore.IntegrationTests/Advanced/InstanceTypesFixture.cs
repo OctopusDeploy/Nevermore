@@ -109,7 +109,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using var transaction = Store.BeginTransaction();
             transaction.Insert(new AwsAccount { Name = "My AWS account", SecretKey = "keys9812"});
             transaction.Insert(new AzureAccount { Name = "My Azure account", AzureSubscriptionId = "sub128721"});
-            transaction.TryCommit();
+            transaction.Commit();
         }
         
         [Test, Order(2)]

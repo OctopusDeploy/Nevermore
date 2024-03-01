@@ -150,7 +150,7 @@ namespace Nevermore.IntegrationTests
                         {
                             var id = transaction.AllocateId<Customer, CustomerId>();
                             customerIds.Add(id);
-                            transaction.TryCommit();
+                            transaction.Commit();
                         }
                         else if (sequence == 1)
                         {
@@ -164,7 +164,7 @@ namespace Nevermore.IntegrationTests
                         {
                             var id = transaction.AllocateId<Order, string>();
                             deploymentIds.Add(id);
-                            transaction.TryCommit();
+                            transaction.Commit();
                         }
                     }
                 })).ToArray();
@@ -210,7 +210,7 @@ namespace Nevermore.IntegrationTests
                         {
                             var id = await transaction.AllocateIdAsync<Customer, CustomerId>(CancellationToken.None);
                             customerIds.Add(id);
-                            await transaction.TryCommitAsync();
+                            await transaction.CommitAsync();
                         }
                         else if (sequence == 1)
                         {
@@ -224,7 +224,7 @@ namespace Nevermore.IntegrationTests
                         {
                             var id = await transaction.AllocateIdAsync<Order, string>(CancellationToken.None);
                             deploymentIds.Add(id);
-                            await transaction.TryCommitAsync();
+                            await transaction.CommitAsync();
                         }
                     }
                 })).ToArray();

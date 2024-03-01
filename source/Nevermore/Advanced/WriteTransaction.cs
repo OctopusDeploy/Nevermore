@@ -338,7 +338,7 @@ namespace Nevermore.Advanced
             return $"{idPrefix}-{key}";
         }
         
-        public void Commit()
+        public void CommitIfOwned()
         {
             if (!OwnsSqlTransaction) return;
             
@@ -348,7 +348,7 @@ namespace Nevermore.Advanced
             CommitTransactionAndRunHooks();
         }
 
-        public void TryCommit()
+        public void Commit()
         {
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
@@ -369,14 +369,14 @@ namespace Nevermore.Advanced
             configuration.Hooks.AfterCommit(this);
         }
 
-        public async Task CommitAsync(CancellationToken cancellationToken = default)
+        public async Task CommitIfOwnedAsync(CancellationToken cancellationToken = default)
         {
             if (!OwnsSqlTransaction) return;
 
             await CommitTransactionAndRunHooksAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task TryCommitAsync(CancellationToken cancellationToken = default)
+        public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");

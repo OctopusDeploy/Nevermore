@@ -132,7 +132,7 @@ namespace Nevermore.Benchmarks
                 }
 
                 writer.Update(document);
-                writer.TryCommit();
+                writer.Commit();
             }
         }
 
@@ -154,7 +154,7 @@ namespace Nevermore.Benchmarks
                 writer.Insert(order);
             }
 
-            writer.TryCommit();
+            writer.Commit();
         }
     }
 }

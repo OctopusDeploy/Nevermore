@@ -57,7 +57,7 @@ namespace Nevermore.Benchmarks
                 Console.WriteLine($"{item.Bucket} bytes: {item.Count} documents");
             }
 
-            writer.TryCommit();
+            writer.Commit();
         }
 
         static List<object> GenerateHistory()

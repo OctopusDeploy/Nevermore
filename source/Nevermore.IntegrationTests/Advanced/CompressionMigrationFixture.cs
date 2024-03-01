@@ -44,7 +44,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-1', N'{\"Name\":\"Tom\",\"Text\":\"BBB\"}')");
                 transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-2', N'{\"Name\":\"Ben\",\"Text\":\"BBB\"}')");
                 transaction.ExecuteNonQuery("insert into TestSchema.Person (Id, [JSON]) values ('Persons-3', N'{\"Name\":\"Bob\",\"Text\":\"BBB\"}')");
-                transaction.TryCommit();
+                transaction.Commit();
             }
             
             AssertText("Persons-1");
@@ -58,7 +58,7 @@ namespace Nevermore.IntegrationTests.Advanced
             using (var transaction = Store.BeginTransaction())
             {
                 transaction.Insert(new Person { Id = "Persons-4", Name = "Bill", Text = "AAA" });
-                transaction.TryCommit();
+                transaction.Commit();
             }
             AssertCompressed("Persons-4");
         }
@@ -83,7 +83,7 @@ namespace Nevermore.IntegrationTests.Advanced
                 var person = transaction.Load<Person>("Persons-2");
                 person.Text = "ZZZ";
                 transaction.Update(person);
-                transaction.TryCommit();
+                transaction.Commit();
             }
             
             AssertCompressed("Persons-2");
@@ -108,7 +108,7 @@ namespace Nevermore.IntegrationTests.Advanced
             {
                 transaction.ExecuteNonQuery("update TestSchema.Person set JSONBlob = COMPRESS([JSON]) where Id = 'Persons-3'");
                 transaction.ExecuteNonQuery("update TestSchema.Person set [JSON] = null where Id = 'Persons-3'");
-                transaction.TryCommit();
+                transaction.Commit();
             }
             
             AssertCompressed("Persons-3");

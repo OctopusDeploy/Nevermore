@@ -37,7 +37,7 @@ namespace Nevermore.IntegrationTests.Advanced
                         return 0;
                     })
                     .ToArray();
-                transaction.TryCommit();
+                transaction.Commit();
             }
 
             // Now hit it really hard and see if we can provoke a failure.
@@ -118,7 +118,7 @@ namespace Nevermore.IntegrationTests.Advanced
                     // ReSharper disable once AccessToDisposedClosure
                     .Select(document => transaction.InsertAsync(document))
                     .WhenAll();
-                await transaction.TryCommitAsync();
+                await transaction.CommitAsync();
             }
 
             // Now hit it really hard and see if we can provoke a failure.

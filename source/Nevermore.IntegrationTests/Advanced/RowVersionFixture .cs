@@ -150,7 +150,7 @@ namespace Nevermore.IntegrationTests.Advanced
         {
             using var transaction = Store.BeginTransaction();
             var result =  func(transaction);
-            transaction.TryCommit();
+            transaction.Commit();
 
             return result;
         }
