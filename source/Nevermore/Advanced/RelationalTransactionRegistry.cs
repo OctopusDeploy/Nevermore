@@ -24,7 +24,7 @@ namespace Nevermore.Advanced
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly int maxSqlConnectionPoolSize;
-        readonly Dictionary<ReadTransaction, ReadTransaction> transactions = new ();
+        readonly List<ReadTransaction> transactions = new(); // lock transactions before accessing
 
         DateTime? lastHighNumberOfTransactionLogTime;
         public RelationalTransactionRegistry(int maxSqlConnectionPoolSize)
@@ -37,7 +37,7 @@ namespace Nevermore.Advanced
             int numberOfTransactions;
             lock (transactions)
             {
-                transactions.TryAdd(trn, trn);
+                transactions.Add(trn);
                 numberOfTransactions = transactions.Count;
             }
 
@@ -52,7 +52,7 @@ namespace Nevermore.Advanced
         {
             lock (transactions)
             {
-                transactions.Remove(trn, out _);
+                transactions.Remove(trn);
             }
         }
 
@@ -84,7 +84,9 @@ namespace Nevermore.Advanced
         {
             ReadTransaction[] copy;
             lock (transactions)
-                copy = transactions.Keys.ToArray();
+            {
+                copy = transactions.ToArray();
+            }
 
             foreach (var trn in copy.OrderBy(t => t.CreatedTime))
             {
