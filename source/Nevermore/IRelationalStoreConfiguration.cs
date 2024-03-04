@@ -1,4 +1,5 @@
 using System;
+using Nevermore.Advanced;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
@@ -39,6 +40,7 @@ namespace Nevermore
         IRelatedDocumentStore RelatedDocumentStore { get; set; }
         IQueryLogger QueryLogger { get; set; }
         ITransactionLogger TransactionLogger { get; set; }
+        IRelationalTransactionRegistry RelationalTransactionRegistry { get; set; }
 
         /// <summary>
         /// Hooks can be used to apply general logic when documents are inserted, updated or deleted.
@@ -86,5 +88,13 @@ namespace Nevermore
         /// Used to get the table name for a document type. By default, the table name is retrieved from the document map.
         /// </summary>
         ITableNameResolver TableNameResolver { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether concurrent execution of queries is handled by Nevermore. When <value>true</value>, Nevermore will attempt
+        /// to sequence queries issued concurrently.
+        /// 
+        /// The default is <value>true</value>.
+        /// </summary>
+        bool SupportConcurrentExecution { get; set; }
     }
 }
