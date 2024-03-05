@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 
 namespace Nevermore.Mapping
@@ -19,19 +20,25 @@ namespace Nevermore.Mapping
         public bool IsIdentity { get; }
 
         public IPrimaryKeyHandler PrimaryKeyHandler { get; }
+        
+        static readonly HashSet<SqlDbType> ValidIdentityTypes = new ()
+        {
+            SqlDbType.SmallInt,
+            SqlDbType.Int,
+            SqlDbType.BigInt
+        };
+
+        void ValidateForIdentityUse()
+        {
+            if (!IsIdentity)
+                return;
+            if (!ValidIdentityTypes.Contains(PrimaryKeyHandler.GetSqlMetaData(ColumnName).SqlDbType))
+                throw new InvalidOperationException($"The type {Type.Name} is not supported for Identity columns. Identity columns must be one of 'short', 'int' or 'long'.");
+        }
     }
 
     public class IdColumnMappingBuilder : ColumnMapping, IIdColumnMappingBuilder
     {
-        static readonly HashSet<Type> ValidIdentityTypes = new HashSet<Type>
-        {
-            typeof(short),
-            typeof(int),
-            typeof(long)
-        };
-
-        bool hasCustomPropertyHandler;
-
         internal IdColumnMappingBuilder(string columnName, Type type, IPropertyHandler handler, PropertyInfo property) : base(columnName, type, handler, property)
         {
         }
@@ -43,8 +50,6 @@ namespace Nevermore.Mapping
         /// <inheritdoc cref="IIdColumnMappingBuilder"/>
         public IIdColumnMappingBuilder Identity()
         {
-            ValidateForIdentityUse();
-
             IsIdentity = true;
             Direction = ColumnDirection.FromDatabase;
 
@@ -57,21 +62,11 @@ namespace Nevermore.Mapping
             return this;
         }
 
-        void ValidateForIdentityUse()
-        {
-            if (!ValidIdentityTypes.Contains(Type))
-                throw new InvalidOperationException($"The type {Type.Name} is not supported for Identity columns. Identity columns must be one of 'short', 'int' or 'long'.");
-
-            if (hasCustomPropertyHandler)
-                throw new InvalidOperationException("Unable to configure an Identity Id column with a custom PropertyHandler");
-        }
-
         protected override void SetCustomPropertyHandler(IPropertyHandler propertyHandler)
         {
             if (Direction == ColumnDirection.FromDatabase)
                 throw new InvalidOperationException("Unable to configure an Identity Id column with a custom PropertyHandler");
 
-            hasCustomPropertyHandler = true;
             base.SetCustomPropertyHandler(propertyHandler);
         }
 
