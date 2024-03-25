@@ -24,7 +24,7 @@ namespace Nevermore.Advanced
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly int maxSqlConnectionPoolSize;
-        readonly List<ReadTransaction> transactions = new(); // lock transactions before accessing
+        readonly HashSet<ReadTransaction> transactions = new(); // lock transactions before accessing
 
         DateTime? lastHighNumberOfTransactionLogTime;
         public RelationalTransactionRegistry(int maxSqlConnectionPoolSize)
