@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,10 +24,9 @@ namespace Nevermore.Advanced
         static readonly ILog Log = LogProvider.For<RelationalTransactionRegistry>();
 
         readonly int maxSqlConnectionPoolSize;
-        readonly ConcurrentDictionary<ReadTransaction, ReadTransaction> transactions = new();
+        readonly HashSet<ReadTransaction> transactions = new(); // lock transactions before accessing
 
         DateTime? lastHighNumberOfTransactionLogTime;
-
         public RelationalTransactionRegistry(int maxSqlConnectionPoolSize)
         {
             this.maxSqlConnectionPoolSize = maxSqlConnectionPoolSize;
@@ -36,8 +34,13 @@ namespace Nevermore.Advanced
 
         public void Add(ReadTransaction trn)
         {
-            transactions.TryAdd(trn, trn);
-            var numberOfTransactions = transactions.Count;
+            int numberOfTransactions;
+            lock (transactions)
+            {
+                transactions.Add(trn);
+                numberOfTransactions = transactions.Count;
+            }
+
             if (numberOfTransactions > maxSqlConnectionPoolSize * 0.8)
                 Log.Info($"{numberOfTransactions} transactions active");
 
@@ -47,7 +50,10 @@ namespace Nevermore.Advanced
 
         public void Remove(ReadTransaction trn)
         {
-            transactions.TryRemove(trn, out _);
+            lock (transactions)
+            {
+                transactions.Remove(trn);
+            }
         }
 
         bool ShouldLogHighNumberOfTransactionsMessage() => lastHighNumberOfTransactionLogTime == null || DateTime.Now - lastHighNumberOfTransactionLogTime > TimeSpan.FromMinutes(1);
@@ -78,7 +84,9 @@ namespace Nevermore.Advanced
         {
             ReadTransaction[] copy;
             lock (transactions)
-                copy = transactions.Keys.ToArray();
+            {
+                copy = transactions.ToArray();
+            }
 
             foreach (var trn in copy.OrderBy(t => t.CreatedTime))
             {
