@@ -2,7 +2,7 @@
 	CREATE TABLE dbo.KeyAllocation
 	(
 		CollectionName nvarchar(50) constraint PK_KeyAllocation_CollectionName primary key,
-		Allocated int not null
+		Allocated bigint not null
 	)
 GO
 
@@ -18,7 +18,7 @@ CREATE PROCEDURE dbo.GetNextKeyBlock
 AS
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @result int
+	DECLARE @result bigint
 
 	UPDATE KeyAllocation
 		SET @result = Allocated = (Allocated + @blockSize)
@@ -27,7 +27,7 @@ BEGIN
 	if (@@ROWCOUNT = 0)
 	begin
 		INSERT INTO KeyAllocation (CollectionName, Allocated) values (@collectionName, @blockSize)
-		SELECT @blockSize
+		SELECT CAST(@blockSize as bigint) -- type must be the same as @result
 	end
 
 	SELECT @result

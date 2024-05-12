@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ namespace Nevermore.Mapping
     {
         readonly IRelationalStore store;
         readonly int blockSize;
-        readonly ConcurrentDictionary<string, Allocation> allocations = new(StringComparer.OrdinalIgnoreCase);
+        readonly Dictionary<string, Allocation> allocations = new(StringComparer.OrdinalIgnoreCase);
 
         public KeyAllocator(IRelationalStore store, int blockSize)
         {
@@ -22,20 +22,25 @@ namespace Nevermore.Mapping
 
         public void Reset()
         {
-            allocations.Clear();
+            lock(allocations) allocations.Clear();
         }
 
-        public int NextId(string tableName)
+        Allocation GetAllocation(string tableName)
         {
-            var allocation = allocations.GetOrAdd(tableName, _ => new Allocation(store, tableName, blockSize));
-            return allocation.Next();
+            lock (allocations)
+            {
+                if (allocations.TryGetValue(tableName, out var allocation)) return allocation;
+                allocation = new Allocation(store, tableName, blockSize);
+                allocations.Add(tableName, allocation);
+                return allocation;
+            }
         }
 
-        public async ValueTask<int> NextIdAsync(string tableName, CancellationToken cancellationToken)
-        {
-            var allocation = allocations.GetOrAdd(tableName, _ => new Allocation(store, tableName, blockSize));
-            return await allocation.NextAsync(cancellationToken).ConfigureAwait(false);
-        }
+        public long NextId(string tableName)
+            => GetAllocation(tableName).Next();
+
+        public ValueTask<long> NextIdAsync(string tableName, CancellationToken cancellationToken)
+            => GetAllocation(tableName).NextAsync(cancellationToken);
 
         class Allocation
         {
@@ -43,9 +48,9 @@ namespace Nevermore.Mapping
             readonly string collectionName;
             readonly int blockSize;
             readonly SemaphoreSlim sync = new(1, 1);
-            int blockStart;
-            int blockNext;
-            int blockFinish;
+            long blockStart;
+            long blockNext;
+            long blockFinish;
 
             public Allocation(IRelationalStore store, string collectionName, int blockSize)
             {
@@ -54,11 +59,11 @@ namespace Nevermore.Mapping
                 this.blockSize = blockSize;
             }
 
-            public async ValueTask<int> NextAsync(CancellationToken cancellationToken)
+            public async ValueTask<long> NextAsync(CancellationToken cancellationToken)
             {
                 using (await sync.LockAsync(cancellationToken))
                 {
-                    async Task<int> GetNextMaxValue(CancellationToken ct)
+                    async Task<long> GetNextMaxValue(CancellationToken ct)
                     {
                         using var transaction = await store.BeginWriteTransactionAsync(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}", cancellationToken: ct).ConfigureAwait(false);
                         var parameters = new CommandParameterValues
@@ -68,7 +73,7 @@ namespace Nevermore.Mapping
                         };
                         parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = await transaction.ExecuteScalarAsync<int>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
+                        var result = await transaction.ExecuteScalarAsync<long>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
                         await transaction.CommitAsync(ct).ConfigureAwait(false);
                         return result;
                     }
@@ -91,11 +96,11 @@ namespace Nevermore.Mapping
                 }
             }
 
-            public int Next()
+            public long Next()
             {
                 using (sync.Lock())
                 {
-                    int GetNextMaxValue()
+                    long GetNextMaxValue()
                     {
                         using var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}");
                         var parameters = new CommandParameterValues
@@ -105,7 +110,7 @@ namespace Nevermore.Mapping
                         };
                         parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = transaction.ExecuteScalar<int>("GetNextKeyBlock", parameters);
+                        var result = transaction.ExecuteScalar<long>("GetNextKeyBlock", parameters);
                         transaction.Commit();
                         return result;
                     }
@@ -138,7 +143,7 @@ namespace Nevermore.Mapping
             /// <remarks>
             /// Must only ever be executed while protected by the <see cref="sync"/> mutex!
             /// </remarks>
-            void SetRange(int max)
+            void SetRange(long max)
             {
                 var first = (max - blockSize) + 1;
                 blockStart = first;

@@ -254,7 +254,7 @@ namespace Nevermore.IntegrationTests
             allocator.NextId(collection).Should().Be(expected);
         }
 
-        static async Task AssertNextAsync(KeyAllocator allocator, string collection, int expected)
+        static async Task AssertNextAsync(KeyAllocator allocator, string collection, long expected)
         {
             (await allocator.NextIdAsync(collection, CancellationToken.None)).Should().Be(expected);
         }

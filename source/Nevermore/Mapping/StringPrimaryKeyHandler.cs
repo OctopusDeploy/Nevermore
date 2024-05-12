@@ -9,9 +9,9 @@ namespace Nevermore.Mapping
 {
     public sealed class StringPrimaryKeyHandler : AsyncPrimaryKeyHandler<string>
     {
-        readonly Func<(string idPrefix, int key), string> format;
+        readonly Func<(string idPrefix, long key), string> format;
 
-        public StringPrimaryKeyHandler(string? idPrefix = null, Func<(string idPrefix, int key), string>? format = null)
+        public StringPrimaryKeyHandler(string? idPrefix = null, Func<(string idPrefix, long key), string>? format = null)
         {
             IdPrefix = idPrefix;
             this.format = format ?? (x => $"{x.idPrefix}-{x.key}");
