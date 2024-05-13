@@ -73,9 +73,11 @@ namespace Nevermore.Mapping
                         };
                         parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = await transaction.ExecuteScalarAsync<long>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
+                        var result = await transaction.ExecuteScalarAsync<object>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
                         await transaction.CommitAsync(ct).ConfigureAwait(false);
-                        return result;
+                        // Older versions of the GetNextKeyBlock stored proc and KeyAllocation table might be using 32-bit ID's
+                        // The type-check here lets us remain compatible with that while supporting 64-bit ID's as well
+                        return result is int i ? i : (long)result;
                     }
 
                     async Task ExtendAllocation(CancellationToken ct)
@@ -110,9 +112,9 @@ namespace Nevermore.Mapping
                         };
                         parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = transaction.ExecuteScalar<long>("GetNextKeyBlock", parameters);
+                        var result = transaction.ExecuteScalar<object>("GetNextKeyBlock", parameters);
                         transaction.Commit();
-                        return result;
+                        return result is int i ? i : (long)result; // 32/64-bit compatibility, see NextAsync() for explanation
                     }
 
                     void ExtendAllocation()
