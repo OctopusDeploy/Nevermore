@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ namespace Nevermore.Mapping
     {
         readonly IRelationalStore store;
         readonly int blockSize;
-        readonly Dictionary<string, Allocation> allocations = new(StringComparer.OrdinalIgnoreCase);
+        readonly ConcurrentDictionary<string, Allocation> allocations = new(StringComparer.OrdinalIgnoreCase);
 
         public KeyAllocator(IRelationalStore store, int blockSize)
         {
@@ -21,20 +21,10 @@ namespace Nevermore.Mapping
         }
 
         public void Reset()
-        {
-            lock(allocations) allocations.Clear();
-        }
+            => allocations.Clear();
 
         Allocation GetAllocation(string tableName)
-        {
-            lock (allocations)
-            {
-                if (allocations.TryGetValue(tableName, out var allocation)) return allocation;
-                allocation = new Allocation(store, tableName, blockSize);
-                allocations.Add(tableName, allocation);
-                return allocation;
-            }
-        }
+            => allocations.GetOrAdd(tableName, t => new Allocation(store, t, blockSize));
 
         public long NextId(string tableName)
             => GetAllocation(tableName).Next();
@@ -61,78 +51,66 @@ namespace Nevermore.Mapping
 
             public async ValueTask<long> NextAsync(CancellationToken cancellationToken)
             {
-                using (await sync.LockAsync(cancellationToken))
+                using var releaseLock = await sync.LockAsync(cancellationToken);
+
+                async Task<long> GetNextMaxValue(CancellationToken ct)
                 {
-                    async Task<long> GetNextMaxValue(CancellationToken ct)
+                    using var transaction = await store.BeginWriteTransactionAsync(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}", cancellationToken: ct).ConfigureAwait(false);
+                    var parameters = new CommandParameterValues
                     {
-                        using var transaction = await store.BeginWriteTransactionAsync(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}", cancellationToken: ct).ConfigureAwait(false);
-                        var parameters = new CommandParameterValues
-                        {
-                            { "collectionName", collectionName },
-                            { "blockSize", blockSize }
-                        };
-                        parameters.CommandType = CommandType.StoredProcedure;
+                        { "collectionName", collectionName },
+                        { "blockSize", blockSize }
+                    };
+                    parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = await transaction.ExecuteScalarAsync<object>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
-                        await transaction.CommitAsync(ct).ConfigureAwait(false);
-                        // Older versions of the GetNextKeyBlock stored proc and KeyAllocation table might be using 32-bit ID's
-                        // The type-check here lets us remain compatible with that while supporting 64-bit ID's as well
-                        return result is int i ? i : (long)result;
-                    }
+                    var result = await transaction.ExecuteScalarAsync<object>("GetNextKeyBlock", parameters, cancellationToken: ct).ConfigureAwait(false);
+                    await transaction.CommitAsync(ct).ConfigureAwait(false);
+                    // Older versions of the GetNextKeyBlock stored proc and KeyAllocation table might be using 32-bit ID's
+                    // The type-check here lets us remain compatible with that while supporting 64-bit ID's as well
+                    return result is int i ? i : (long)result;
+                }
 
-                    async Task ExtendAllocation(CancellationToken ct)
+                if (blockNext == blockFinish)
+                {
+                    await GetRetryPolicy().ExecuteActionAsync(async ct =>
                     {
                         var max = await GetNextMaxValue(ct).ConfigureAwait(false);
                         SetRange(max);
-                    }
-
-                    if (blockNext == blockFinish)
-                    {
-                        await GetRetryPolicy().ExecuteActionAsync(ExtendAllocation, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    var result = blockNext;
-                    blockNext++;
-
-                    return result;
+                    }, cancellationToken).ConfigureAwait(false);
                 }
+
+                return blockNext++;
             }
 
             public long Next()
             {
-                using (sync.Lock())
+                using var releaseLock = sync.Lock();
+
+                long GetNextMaxValue()
                 {
-                    long GetNextMaxValue()
+                    using var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}");
+                    var parameters = new CommandParameterValues
                     {
-                        using var transaction = store.BeginWriteTransaction(IsolationLevel.Serializable, name: $"{nameof(KeyAllocator)}.{nameof(Allocation)}.{nameof(GetNextMaxValue)}");
-                        var parameters = new CommandParameterValues
-                        {
-                            {"collectionName", collectionName},
-                            {"blockSize", blockSize}
-                        };
-                        parameters.CommandType = CommandType.StoredProcedure;
+                        { "collectionName", collectionName },
+                        { "blockSize", blockSize }
+                    };
+                    parameters.CommandType = CommandType.StoredProcedure;
 
-                        var result = transaction.ExecuteScalar<object>("GetNextKeyBlock", parameters);
-                        transaction.Commit();
-                        return result is int i ? i : (long)result; // 32/64-bit compatibility, see NextAsync() for explanation
-                    }
+                    var result = transaction.ExecuteScalar<object>("GetNextKeyBlock", parameters);
+                    transaction.Commit();
+                    return result is int i ? i : (long)result; // 32/64-bit compatibility, see NextAsync() for explanation
+                }
 
-                    void ExtendAllocation()
+                if (blockNext == blockFinish)
+                {
+                    GetRetryPolicy().ExecuteAction(() =>
                     {
                         var max = GetNextMaxValue();
                         SetRange(max);
-                    }
-
-                    if (blockNext == blockFinish)
-                    {
-                        GetRetryPolicy().ExecuteAction(ExtendAllocation);
-                    }
-
-                    var result = blockNext;
-                    blockNext++;
-
-                    return result;
+                    });
                 }
+
+                return blockNext++;
             }
 
             RetryPolicy GetRetryPolicy()
@@ -153,10 +131,7 @@ namespace Nevermore.Mapping
                 blockFinish = max + 1;
             }
 
-            public override string ToString()
-            {
-                return $"{blockStart} to {blockNext} (next: {blockFinish})";
-            }
+            public override string ToString() => $"{blockStart} to {blockNext} (next: {blockFinish})";
         }
     }
 }
