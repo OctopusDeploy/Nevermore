@@ -6,7 +6,7 @@ namespace Nevermore.Mapping
     public interface IKeyAllocator
     {
         void Reset();
-        int NextId(string tableName);
-        ValueTask<int> NextIdAsync(string tableName, CancellationToken cancellationToken);
+        long NextId(string tableName);
+        ValueTask<long> NextIdAsync(string tableName, CancellationToken cancellationToken);
     }
 }

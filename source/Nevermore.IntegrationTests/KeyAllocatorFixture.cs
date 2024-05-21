@@ -112,7 +112,7 @@ namespace Nevermore.IntegrationTests
             AssertNext(allocator, "Todos", 4);
             AssertNext(allocator, "Todos", 5);
         }
-
+        
         [Test]
         public async Task NextIdAsync_ShouldAllocateForDifferentCollections()
         {
@@ -128,6 +128,57 @@ namespace Nevermore.IntegrationTests
             await AssertNextAsync(allocator, "Todos", 4);
             await AssertNextAsync(allocator, "Todos", 5);
         }
+        
+        [Test]
+        public void CanAllocateLongKeys()
+        {
+            var allocator = new KeyAllocator(Store, 10);
+
+            var collectionName = Guid.NewGuid().ToString("N"); // collection name doesn't matter, use a GUID to avoid colliding with other tests
+            
+            using (var tx = Store.BeginWriteTransaction())
+            {
+                tx.ExecuteNonQuery("INSERT INTO [KeyAllocation] ([CollectionName], [Allocated]) VALUES (@collectionName, @allocated)", 
+                    new CommandParameterValues
+                    {
+                        { "collectionName", collectionName },
+                        { "allocated", int.MaxValue - 1 }
+                    });
+                tx.Commit();
+            }
+
+            // the allocator will try and allocate the next block of 10, from int.max-1 to int.max+9.
+            // the fact that it doesn't throw an exception is proof enough, but let's check the return values
+            // to be sure
+            AssertNext(allocator, collectionName, (long)int.MaxValue);
+            AssertNext(allocator, collectionName, (long)int.MaxValue + 1);
+        }
+        
+        [Test]
+        public async Task NextIdAsync_CanAllocateLongKeys()
+        {
+            var allocator = new KeyAllocator(Store, 10);
+
+            var collectionName = Guid.NewGuid().ToString("N"); // collection name doesn't matter, use a GUID to avoid colliding with other tests
+            
+            using (var tx = await Store.BeginWriteTransactionAsync())
+            {
+                await tx.ExecuteNonQueryAsync("INSERT INTO [KeyAllocation] ([CollectionName], [Allocated]) VALUES (@collectionName, @allocated)", 
+                    new CommandParameterValues
+                    {
+                        { "collectionName", collectionName },
+                        { "allocated", int.MaxValue - 1 }
+                    });
+                await tx.CommitAsync();
+            }
+
+            // the allocator will try and allocate the next block of 10, from int.max-1 to int.max+9.
+            // the fact that it doesn't throw an exception is proof enough, but let's check the return values
+            // to be sure
+            await AssertNextAsync(allocator, collectionName, (long)int.MaxValue);
+            await AssertNextAsync(allocator, collectionName, (long)int.MaxValue + 1);
+        }
+        
 
         [Test]
         public void ShouldAllocateInParallel()
@@ -249,12 +300,12 @@ namespace Nevermore.IntegrationTests
             customerIdsAfter.Should().BeEquivalentTo(expectedProjectIds);
         }
 
-        static void AssertNext(KeyAllocator allocator, string collection, int expected)
+        static void AssertNext(KeyAllocator allocator, string collection, long expected)
         {
             allocator.NextId(collection).Should().Be(expected);
         }
 
-        static async Task AssertNextAsync(KeyAllocator allocator, string collection, int expected)
+        static async Task AssertNextAsync(KeyAllocator allocator, string collection, long expected)
         {
             (await allocator.NextIdAsync(collection, CancellationToken.None)).Should().Be(expected);
         }

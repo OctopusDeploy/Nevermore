@@ -105,12 +105,12 @@ public class CustomKeyAllocatorFixture : FixtureWithDatabase
             allocations.Clear();
         }
 
-        public int NextId(string tableName)
+        public long NextId(string tableName)
         {
             return allocations.AddOrUpdate(tableName, (_) => 100, (_, prev) => prev + 100);
         }
 
-        public ValueTask<int> NextIdAsync(string tableName, CancellationToken cancellationToken)
+        public ValueTask<long> NextIdAsync(string tableName, CancellationToken cancellationToken)
         {
             return ValueTask.FromResult(NextId(tableName));
         }
