@@ -918,13 +918,13 @@ namespace Nevermore.Advanced
             }
             finally
             {
+                // ReSharper restore ConstantConditionalAccessQualifier
+                registry.Remove(this);
+
                 if (OwnsSqlTransaction)
                 {
                     connection?.Dispose();
                 }
-
-                // ReSharper restore ConstantConditionalAccessQualifier
-                registry.Remove(this);
             }
         }
     }
