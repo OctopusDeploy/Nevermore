@@ -905,22 +905,27 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            // ReSharper disable ConstantConditionalAccessQualifier
-            if (OwnsSqlTransaction)
+            try
             {
-                Transaction?.Dispose();
+                // ReSharper disable ConstantConditionalAccessQualifier
+                if (OwnsSqlTransaction)
+                {
+                    Transaction?.Dispose();
+                }
+
+                TransactionTimer?.Dispose();
+                DeadlockAwareLock?.Dispose();
             }
-
-            TransactionTimer?.Dispose();
-            DeadlockAwareLock?.Dispose();
-
-            if (OwnsSqlTransaction)
+            finally
             {
-                connection?.Dispose();
-            }
+                if (OwnsSqlTransaction)
+                {
+                    connection?.Dispose();
+                }
 
-            // ReSharper restore ConstantConditionalAccessQualifier
-            registry.Remove(this);
+                // ReSharper restore ConstantConditionalAccessQualifier
+                registry.Remove(this);
+            }
         }
     }
 }
