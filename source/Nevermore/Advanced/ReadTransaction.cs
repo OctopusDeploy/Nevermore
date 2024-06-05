@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -905,22 +906,38 @@ namespace Nevermore.Advanced
 
         public void Dispose()
         {
-            // ReSharper disable ConstantConditionalAccessQualifier
-            if (OwnsSqlTransaction)
-            {
-                Transaction?.Dispose();
-            }
-
-            TransactionTimer?.Dispose();
-            DeadlockAwareLock?.Dispose();
+            var exceptions = new List<ExceptionDispatchInfo>();
 
             if (OwnsSqlTransaction)
             {
-                connection?.Dispose();
+                TryDispose(Transaction);
+            }
+            
+            TryDispose(TransactionTimer);
+            TryDispose(DeadlockAwareLock);
+
+            if (OwnsSqlTransaction)
+            {
+                TryDispose(connection);
             }
 
-            // ReSharper restore ConstantConditionalAccessQualifier
             registry.Remove(this);
+
+            if (exceptions.Count == 0) return;
+            if (exceptions.Count == 1) exceptions.Single().Throw();
+            throw new AggregateException(exceptions.Select(x => x.SourceException));
+
+            void TryDispose(IDisposable? disposable)
+            {
+                try
+                {
+                    disposable?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ExceptionDispatchInfo.Capture(ex));
+                }
+            }
         }
     }
 }
