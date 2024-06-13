@@ -223,10 +223,34 @@ namespace Nevermore
         {
             foreach (var item in other)
             {
-                if (ContainsKey(item.Key))
-                    throw new Exception($"The parameter {item.Key} already exists");
+                CheckForDuplicate(item);
                 this[item.Key] = item.Value;
             }
+        }
+
+        void CheckForDuplicate(KeyValuePair<string, object> item)
+        {
+            if (!ContainsKey(item.Key))
+            {
+                return;
+            }
+            var existingValue = this[item.Key];
+            var newValue = item.Value;
+            if (existingValue.Equals(newValue))
+            {
+                return;
+            }
+            if (existingValue is IEnumerable existingValueEnumerable && newValue is IEnumerable newValueEnumerable)
+            {
+                var existingValueSet = existingValueEnumerable.Cast<object>().ToHashSet();
+                var newValueSet = newValueEnumerable.Cast<object>().ToHashSet();
+                if (existingValueSet.SetEquals(newValueSet))
+                {
+                    return;
+                }
+            }
+
+            throw new Exception($"The parameter {item.Key} already exists and has a different value");
         }
     }
 }
