@@ -461,7 +461,6 @@ namespace Nevermore.Advanced
                 subQueryBuilder.AddDefaultColumnSelection();
                 subQueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.GreaterThanOrEqual, minRowParameter));
                 subQueryBuilder.AddWhere(new UnaryWhereParameter(rowNumberColumnName, UnarySqlOperand.LessThanOrEqual, maxRowParameter));
-                subQueryBuilder.AddOptions(optionClauses);
                 var subQuery = subQueryBuilder.GenerateSelectWithoutDefaultOrderBy();
                 return new SubquerySource(subQuery, tableAliasGenerator.GenerateTableAlias());
             }
@@ -481,6 +480,7 @@ namespace Nevermore.Advanced
                 combinedQueryWithCount.AddDefaultColumnSelection();
                 combinedQueryWithCount.AddColumnSelection(new TableColumn(new Column(totalCountColumnName), innerCountSubQuery.Alias));
                 combinedQueryWithCount.AddOrder(rowNumberColumnName, false);
+                combinedQueryWithCount.AddOptions(optionClauses);
                 return combinedQueryWithCount;
             }
 

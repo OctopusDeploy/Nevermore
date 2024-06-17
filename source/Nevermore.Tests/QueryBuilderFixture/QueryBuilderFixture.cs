@@ -1783,6 +1783,7 @@ ORDER BY [RowNum]");
             await CreateQueryBuilder<object>("Orders")
                 .OrderByDescending("LastModified")
                 .Where("Id", UnarySqlOperand.Equal, "1")
+                .Option("RECOMPILE")
                 .ToListWithCountAsync(10, 20);
 
                 query.Should().BeEquivalentTo(@"With ALIAS_GENERATED_1 as (
@@ -1806,7 +1807,8 @@ CROSS JOIN (
     SELECT COUNT(*) AS [CrossJoinCount]
     FROM [ALIAS_GENERATED_1]
 ) ALIAS_GENERATED_4
-ORDER BY ALIAS_GENERATED_3.[RowNum]");
+ORDER BY ALIAS_GENERATED_3.[RowNum]
+OPTION (RECOMPILE)");
 
             parameterValues.Should().HaveCount(3);
             parameterValues["id"].Should().BeEquivalentTo("1");
