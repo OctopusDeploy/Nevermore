@@ -121,6 +121,8 @@ namespace Nevermore
         public ITableNameResolver TableNameResolver { get; set; }
 
         public bool SupportConcurrentExecution { get; set; }
+        
+        public bool LogOnConcurrentExecution { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {

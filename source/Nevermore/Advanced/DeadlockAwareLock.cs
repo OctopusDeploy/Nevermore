@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Diagnositcs;
 
 namespace Nevermore.Advanced
 {
@@ -15,14 +16,29 @@ namespace Nevermore.Advanced
     /// </summary>
     public class DeadlockAwareLock : IDisposable
     {
+        static readonly ILog Log = LogProvider.For<DeadlockAwareLock>();
+        
         readonly SemaphoreSlim semaphore = new(1, 1);
         
         int? taskWhichHasAcquiredLock;
         int? threadWhichHasAcquiredLock;
 
+        readonly bool logOnConcurrentExecution;
+
+        public DeadlockAwareLock(bool logOnConcurrentExecution)
+        {
+            this.logOnConcurrentExecution = logOnConcurrentExecution;
+        }
+
         public void Wait()
         {
             AssertNoDeadlock();
+
+            if (logOnConcurrentExecution && semaphore.CurrentCount == 0)
+            {
+                Log.Warn("Concurrent query execution detected while waiting for lock");
+            }
+                
             semaphore.Wait();
             RecordLockAcquisition();
         }
@@ -30,6 +46,12 @@ namespace Nevermore.Advanced
         public async Task WaitAsync(CancellationToken cancellationToken)
         {
             AssertNoDeadlock();
+            
+            if (logOnConcurrentExecution && semaphore.CurrentCount == 0)
+            {
+                Log.Warn("Concurrent query execution detected while waiting for lock");
+            }
+            
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             RecordLockAcquisition();
         }

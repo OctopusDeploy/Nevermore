@@ -19,7 +19,6 @@ using Nevermore.Diagnostics;
 using Nevermore.Querying.AST;
 using Nevermore.TableColumnNameResolvers;
 using Nevermore.Transient;
-using Nito.AsyncEx;
 using Nito.Disposables;
 
 namespace Nevermore.Advanced
@@ -44,7 +43,7 @@ namespace Nevermore.Advanced
         DbConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
-        protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
+        protected DeadlockAwareLock DeadlockAwareLock { get; }
 
         // To help track deadlocks
         readonly List<string> commandTrace;
@@ -104,6 +103,8 @@ namespace Nevermore.Advanced
             this.configuration = configuration;
             this.customCommandTrace = customCommandTrace;
             commandTrace = new List<string>();
+
+            DeadlockAwareLock = new DeadlockAwareLock(configuration.LogOnConcurrentExecution);
 
             var transactionName = name ?? Thread.CurrentThread.Name;
 
