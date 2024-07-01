@@ -34,6 +34,7 @@ namespace Nevermore.Advanced
         {
             AssertNoDeadlock();
 
+            // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (logConcurrentExecution && semaphore.CurrentCount == 0)
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
@@ -47,6 +48,7 @@ namespace Nevermore.Advanced
         {
             AssertNoDeadlock();
             
+            // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (logConcurrentExecution && semaphore.CurrentCount == 0)
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
