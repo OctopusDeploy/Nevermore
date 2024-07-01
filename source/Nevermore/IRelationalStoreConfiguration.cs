@@ -90,11 +90,19 @@ namespace Nevermore
         ITableNameResolver TableNameResolver { get; set; }
 
         /// <summary>
-        /// Gets or sets whether concurrent execution of queries is handled by Nevermore. When <value>true</value>, Nevermore will attempt
+        /// Gets or sets whether concurrent execution of queries is handled by Nevermore. When <c>true</c>, Nevermore will attempt
         /// to sequence queries issued concurrently.
         /// 
-        /// The default is <value>true</value>.
+        /// The default is <c>true</c>.
         /// </summary>
         bool SupportConcurrentExecution { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether a warning log should be emitted when concurrent execution is detected. Does not function unless
+        /// <see cref="SupportConcurrentExecution"/> is set to <c>true</c>
+        ///
+        /// The default is <c>false</c>.
+        /// </summary>
+        public bool LogConcurrentExecution { get; set; }
     }
 }

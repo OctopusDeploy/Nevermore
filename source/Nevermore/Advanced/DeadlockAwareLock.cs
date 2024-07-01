@@ -1,6 +1,8 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Diagnositcs;
 
 namespace Nevermore.Advanced
 {
@@ -12,34 +14,55 @@ namespace Nevermore.Advanced
     ///     going to be a deadlock. In other words: very few false positives; probably some false negatives; better than
     ///     nothing.
     /// </summary>
-    public class DeadlockAwareLock : SemaphoreSlim
+    public class DeadlockAwareLock : IDisposable
     {
+        static readonly ILog Log = LogProvider.For<DeadlockAwareLock>();
+        
+        readonly SemaphoreSlim semaphore = new(1, 1);
+        
         int? taskWhichHasAcquiredLock;
         int? threadWhichHasAcquiredLock;
 
-        public DeadlockAwareLock() : base(1, 1)
+        readonly bool logConcurrentExecution;
+
+        public DeadlockAwareLock(bool logConcurrentExecution)
         {
+            this.logConcurrentExecution = logConcurrentExecution;
         }
 
-        public new void Wait()
+        public void Wait()
         {
             AssertNoDeadlock();
-            base.Wait();
+
+            // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
+            if (logConcurrentExecution && semaphore.CurrentCount == 0)
+            {
+                Log.Warn("Concurrent query execution detected while waiting for lock");
+            }
+                
+            semaphore.Wait();
             RecordLockAcquisition();
         }
 
-        public new async Task WaitAsync(CancellationToken cancellationToken)
+        public async Task WaitAsync(CancellationToken cancellationToken)
         {
             AssertNoDeadlock();
-            await base.WaitAsync(cancellationToken).ConfigureAwait(false);
-            RecordLockAcquisition();
+            
+            // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
+            if (logConcurrentExecution && semaphore.CurrentCount == 0)
+            {
+                Log.Warn("Concurrent query execution detected while waiting for lock");
+            }
+            
+            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await RecordLockAcquisitionAsync().ConfigureAwait(false);
         }
 
-        public new void Release()
+        public void Release()
         {
             threadWhichHasAcquiredLock = null;
             taskWhichHasAcquiredLock = null;
-            base.Release();
+            semaphore.Release();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -70,6 +93,19 @@ namespace Nevermore.Advanced
         {
             threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
             taskWhichHasAcquiredLock = Task.CurrentId;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        async Task RecordLockAcquisitionAsync()
+        {
+            await Task.Yield();
+            threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
+            taskWhichHasAcquiredLock = Task.CurrentId;
+        }
+
+        public void Dispose()
+        {
+            semaphore.Dispose();
         }
     }
 }
