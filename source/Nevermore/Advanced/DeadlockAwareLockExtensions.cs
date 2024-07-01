@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
-using Nito.Disposables;
 
 namespace Nevermore.Advanced
 {
@@ -14,19 +12,27 @@ namespace Nevermore.Advanced
             return new Disposable(deadlockAwareLock.Release);
         }
         
-        static async Task<IDisposable> DoLockAsync(
+        public static async Task<IDisposable> LockAsync(
             this DeadlockAwareLock deadlockAwareLock,
             CancellationToken cancellationToken)
         {
             await deadlockAwareLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            return Disposable.Create(deadlockAwareLock.Release);
+            return new Disposable(deadlockAwareLock.Release);
         }
         
-        public static AwaitableDisposable<IDisposable> LockAsync(
-            this DeadlockAwareLock deadlockAwareLock,
-            CancellationToken cancellationToken)
+        class Disposable : IDisposable
         {
-            return new AwaitableDisposable<IDisposable>(DoLockAsync(deadlockAwareLock, cancellationToken));
+            readonly Action callback;
+        
+            public Disposable(Action callback)
+            {
+                this.callback = callback;
+            }
+        
+            public void Dispose()
+            {
+                callback();
+            }
         }
     }
 }
