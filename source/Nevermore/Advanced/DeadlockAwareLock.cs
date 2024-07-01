@@ -55,7 +55,7 @@ namespace Nevermore.Advanced
             }
             
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            RecordLockAcquisition();
+            await RecordLockAcquisitionAsync().ConfigureAwait(false);
         }
 
         public void Release()
@@ -91,6 +91,14 @@ namespace Nevermore.Advanced
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void RecordLockAcquisition()
         {
+            threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
+            taskWhichHasAcquiredLock = Task.CurrentId;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        async Task RecordLockAcquisitionAsync()
+        {
+            await Task.Yield();
             threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
             taskWhichHasAcquiredLock = Task.CurrentId;
         }
