@@ -28,14 +28,14 @@ namespace Nevermore.Advanced
     public class ReadTransaction : IReadTransaction, ITransactionDiagnostic
     {
         static readonly ILog Log = LogProvider.For<ReadTransaction>();
-        protected static DbConnection DefaultConnectionFactory(string connectionString) => new SqlConnection(connectionString);
+        protected static (DbConnection connection, bool ownsConnection) DefaultConnectionFactory(string connectionString) => (new SqlConnection(connectionString), true);
 
         readonly IRelationalTransactionRegistry registry;
         readonly RetriableOperation operationsToRetry;
         readonly IRelationalStoreConfiguration configuration;
         readonly ITableAliasGenerator tableAliasGenerator = new TableAliasGenerator();
 
-        readonly Func<string, DbConnection> connectionFactory;
+        readonly Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory;
         readonly Action<string>? customCommandTrace;
         readonly string name;
 
@@ -88,12 +88,12 @@ namespace Nevermore.Advanced
             OwnsSqlTransaction = false;
         }
 
-        internal ReadTransaction(
+        public ReadTransaction(
             IRelationalStore store,
             IRelationalTransactionRegistry registry,
             RetriableOperation operationsToRetry,
             IRelationalStoreConfiguration configuration,
-            Func<string, DbConnection> connectionFactory,
+            Func<string, (DbConnection connection, bool ownsConnection)> connectionFactory,
             Action<string>? customCommandTrace = null,
             string? name = null)
         {
@@ -128,8 +128,13 @@ namespace Nevermore.Advanced
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
 
-            connection = connectionFactory(configuration.ConnectionString);
-            connection.OpenWithRetry();
+            var (connectionFactoryConnection, ownsConnection) = connectionFactory(configuration.ConnectionString);
+            connection = connectionFactoryConnection;
+
+            if (ownsConnection)
+            {
+                connection.OpenWithRetry();
+            }
 
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
@@ -139,8 +144,13 @@ namespace Nevermore.Advanced
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException("An existing connection and transaction were provided, they should have been opened externally");
 
-            connection = connectionFactory(configuration.ConnectionString);
-            await connection.OpenWithRetryAsync(cancellationToken).ConfigureAwait(false);
+            var (connectionFactoryConnection, ownsConnection) = connectionFactory(configuration.ConnectionString);
+            connection = connectionFactoryConnection;
+
+            if (ownsConnection)
+            {
+                await connection.OpenWithRetryAsync(cancellationToken).ConfigureAwait(false);
+            }
 
             TransactionTimer = new TimedSection(ms => configuration.TransactionLogger.Write(ms, name));
         }
