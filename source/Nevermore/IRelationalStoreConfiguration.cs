@@ -103,6 +103,6 @@ namespace Nevermore
         ///
         /// The default is <c>false</c>.
         /// </summary>
-        public bool LogOnConcurrentExecution { get; set; }
+        public bool LogConcurrentExecution { get; set; }
     }
 }

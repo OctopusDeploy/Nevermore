@@ -122,7 +122,7 @@ namespace Nevermore
 
         public bool SupportConcurrentExecution { get; set; }
         
-        public bool LogOnConcurrentExecution { get; set; }
+        public bool LogConcurrentExecution { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {

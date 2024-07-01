@@ -104,7 +104,7 @@ namespace Nevermore.Advanced
             this.customCommandTrace = customCommandTrace;
             commandTrace = new List<string>();
 
-            DeadlockAwareLock = new DeadlockAwareLock(configuration.LogOnConcurrentExecution);
+            DeadlockAwareLock = new DeadlockAwareLock(configuration.LogConcurrentExecution);
 
             var transactionName = name ?? Thread.CurrentThread.Name;
 

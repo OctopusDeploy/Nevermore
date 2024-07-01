@@ -23,18 +23,18 @@ namespace Nevermore.Advanced
         int? taskWhichHasAcquiredLock;
         int? threadWhichHasAcquiredLock;
 
-        readonly bool logOnConcurrentExecution;
+        readonly bool logConcurrentExecution;
 
-        public DeadlockAwareLock(bool logOnConcurrentExecution)
+        public DeadlockAwareLock(bool logConcurrentExecution)
         {
-            this.logOnConcurrentExecution = logOnConcurrentExecution;
+            this.logConcurrentExecution = logConcurrentExecution;
         }
 
         public void Wait()
         {
             AssertNoDeadlock();
 
-            if (logOnConcurrentExecution && semaphore.CurrentCount == 0)
+            if (logConcurrentExecution && semaphore.CurrentCount == 0)
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
             }
@@ -47,7 +47,7 @@ namespace Nevermore.Advanced
         {
             AssertNoDeadlock();
             
-            if (logOnConcurrentExecution && semaphore.CurrentCount == 0)
+            if (logConcurrentExecution && semaphore.CurrentCount == 0)
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
             }
