@@ -16,10 +16,12 @@ namespace Nevermore.IntegrationTests.Advanced
         const int NumberOfDocuments = 256;
         const int DegreeOfParallelism = NumberOfDocuments;
 
-        [Test]
-        public void ConcurrentAccessDoesNotGoBoom()
+        [TestCase(ConcurrencyMode.LockOnly)]
+        [TestCase(ConcurrencyMode.LockWithLogging)]
+        public void ConcurrentAccessDoesNotGoBoom(ConcurrencyMode concurrencyMode)
         {
             NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
 
             var namePrefix = $"{Guid.NewGuid()}-";
 
@@ -103,10 +105,12 @@ namespace Nevermore.IntegrationTests.Advanced
             }
         }
 
-        [Test]
-        public async Task AsyncConcurrentAccessDoesNotGoBoom()
+        [TestCase(ConcurrencyMode.LockOnly)]
+        [TestCase(ConcurrencyMode.LockWithLogging)]
+        public async Task AsyncConcurrentAccessDoesNotGoBoom(ConcurrencyMode concurrencyMode)
         {
             NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode; 
 
             var namePrefix = $"{Guid.NewGuid()}-";
 
@@ -160,6 +164,67 @@ namespace Nevermore.IntegrationTests.Advanced
                         // ReSharper restore AccessToDisposedClosure
                     })
                     .WhenAll();
+            }
+        }
+
+        [TestCase(ConcurrencyMode.NoLock)]
+        [TestCase(ConcurrencyMode.LogOnly)]
+        public void ConcurrentAccessGoesBoomWhenLockingIsDisabled(ConcurrencyMode concurrencyMode)
+        {
+            NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
+
+            var namePrefix = $"{Guid.NewGuid()}-";
+
+            // Create a bunch of documents so that we can query for them.
+            using (var transaction = Store.BeginTransaction())
+            {
+                FluentActions.Invoking(
+                    () =>
+                    {
+                        // Only using 10 here because using NumberOfDocuments (256) is too slow
+                        Enumerable.Range(0, 10)
+                            .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                            .AsParallel()
+                            .WithDegreeOfParallelism(DegreeOfParallelism)
+                            .Select(document =>
+                            {
+                                // ReSharper disable once AccessToDisposedClosure
+                                transaction.Insert(document);
+                                return 0;
+                            })
+                            .ToArray();
+                    })
+                    .Should()
+                    .Throw<Exception>();
+            }
+        }
+
+        [TestCase(ConcurrencyMode.NoLock)]
+        [TestCase(ConcurrencyMode.LogOnly)]
+        public async Task AsyncConcurrentAccessGoesBoomWhenLockingIsDisabled(ConcurrencyMode concurrencyMode)
+        {
+            NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode; 
+
+            var namePrefix = $"{Guid.NewGuid()}-";
+
+            // Create a bunch of documents so that we can query for them.
+            using (var transaction = await Store.BeginWriteTransactionAsync())
+            {
+                await FluentActions.Awaiting(
+                    async () =>
+                    {
+                        await Enumerable.Range(0, NumberOfDocuments)
+                            .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                            // ReSharper disable once AccessToDisposedClosure
+                            .Select(document => transaction.InsertAsync(document))
+                            .WhenAll();
+                        await transaction.CommitAsync();
+                    })
+                    .Should()
+                    .ThrowExactlyAsync<InvalidOperationException>()
+                    .WithMessage("The connection does not support MultipleActiveResultSets.");
             }
         }
     }

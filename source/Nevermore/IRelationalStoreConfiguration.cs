@@ -88,13 +88,11 @@ namespace Nevermore
         /// Used to get the table name for a document type. By default, the table name is retrieved from the document map.
         /// </summary>
         ITableNameResolver TableNameResolver { get; set; }
-
+        
         /// <summary>
-        /// Gets or sets whether concurrent execution of queries is handled by Nevermore. When <value>true</value>, Nevermore will attempt
-        /// to sequence queries issued concurrently.
-        /// 
-        /// The default is <value>true</value>.
+        /// Gets or sets how concurrent execution of queries is handled by Nevermore. When <value>true</value>.
+        /// The default is <see cref="ConcurrencyMode.LockOnly"/>.
         /// </summary>
-        bool SupportConcurrentExecution { get; set; }
+        public ConcurrencyMode ConcurrencyMode { get; set; }
     }
 }
