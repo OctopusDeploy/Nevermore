@@ -89,7 +89,10 @@ namespace Nevermore
         /// </summary>
         ITableNameResolver TableNameResolver { get; set; }
         
-        // TODO: Doc
+        /// <summary>
+        /// Gets or sets how concurrent execution of queries is handled by Nevermore. When <value>true</value>.
+        /// The default is <see cref="ConcurrencyMode.LockOnly"/>.
+        /// </summary>
         public ConcurrencyMode ConcurrencyMode { get; set; }
     }
 }
