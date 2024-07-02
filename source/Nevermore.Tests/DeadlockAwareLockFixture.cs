@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Nevermore.Advanced;
+using Nito.AsyncEx;
 using NUnit.Framework;
 
 namespace Nevermore.Tests
@@ -27,7 +28,7 @@ namespace Nevermore.Tests
         [Test]
         public void MultipleCallsToWait_ShouldThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             deadlockAwareLock.Wait();
 
@@ -41,7 +42,7 @@ namespace Nevermore.Tests
             Task.Run(() =>
                 {
                     // ReSharper disable AccessToDisposedClosure
-                    using var deadlockAwareLock = new DeadlockAwareLock(false);
+                    using var deadlockAwareLock = new DeadlockAwareLock();
 
                     deadlockAwareLock.Wait();
 
@@ -56,7 +57,7 @@ namespace Nevermore.Tests
         [Test]
         public void AcquiringThenReleasingThenAcquiring_ShouldNotThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             deadlockAwareLock.Wait();
             deadlockAwareLock.Release();
@@ -69,7 +70,7 @@ namespace Nevermore.Tests
             Task.Run(() =>
                 {
                     // ReSharper disable AccessToDisposedClosure
-                    using var deadlockAwareLock = new DeadlockAwareLock(false);
+                    using var deadlockAwareLock = new DeadlockAwareLock();
 
                     deadlockAwareLock.Wait();
                     deadlockAwareLock.Release();
@@ -83,7 +84,7 @@ namespace Nevermore.Tests
         [Test]
         public async Task MultipleCallsToWaitAsync_ShouldThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             await deadlockAwareLock.WaitAsync(cancellationToken);
 
@@ -94,7 +95,7 @@ namespace Nevermore.Tests
         [Test]
         public async Task AcquiringAsyncThenReleasingThenAcquiringAsync_ShouldNotThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             await deadlockAwareLock.WaitAsync(cancellationToken);
             deadlockAwareLock.Release();
@@ -105,7 +106,7 @@ namespace Nevermore.Tests
         public async Task MultipleTasksContending_ShouldNotThrow()
         {
             // ReSharper disable AccessToDisposedClosure
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             // Loop so that we increase the probability that two different tasks are scheduled onto
             // the same worker thread. This helps us guarantee that we're not accidentally relying
@@ -135,7 +136,7 @@ namespace Nevermore.Tests
         [Test]
         public void UsingSyncExtensionMethods_AndReleasingLocksCorrectly_ShouldNotThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             using (var _ = deadlockAwareLock.Lock())
             {
@@ -149,7 +150,7 @@ namespace Nevermore.Tests
         [Test]
         public async Task UsingAsyncExtensionMethods_AndReleasingLocksCorrectly_ShouldNotThrow()
         {
-            using var deadlockAwareLock = new DeadlockAwareLock(false);
+            using var deadlockAwareLock = new DeadlockAwareLock();
 
             using (var _ = await deadlockAwareLock.LockAsync(cancellationToken))
             {
