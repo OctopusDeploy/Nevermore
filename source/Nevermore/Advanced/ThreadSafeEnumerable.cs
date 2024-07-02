@@ -8,23 +8,23 @@ namespace Nevermore.Advanced
     internal class ThreadSafeEnumerable<T> : IEnumerable<T>
     {
         readonly Func<IEnumerable<T>> innerFunc;
-        readonly DeadlockAwareLock deadlockAwareLock;
+        readonly LockWithLoggingConcurrencyHandler _lockWithLoggingConcurrencyHandler;
 
-        public ThreadSafeEnumerable(IEnumerable<T> inner, DeadlockAwareLock deadlockAwareLock) : this(() => inner, deadlockAwareLock)
+        public ThreadSafeEnumerable(IEnumerable<T> inner, LockWithLoggingConcurrencyHandler lockWithLoggingConcurrencyHandler) : this(() => inner, lockWithLoggingConcurrencyHandler)
         {
         }
 
-        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, DeadlockAwareLock deadlockAwareLock)
+        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, LockWithLoggingConcurrencyHandler lockWithLoggingConcurrencyHandler)
         {
             this.innerFunc = innerFunc;
-            this.deadlockAwareLock = deadlockAwareLock;
+            this._lockWithLoggingConcurrencyHandler = lockWithLoggingConcurrencyHandler;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            deadlockAwareLock.Wait();
+            _lockWithLoggingConcurrencyHandler.Wait();
             var inner = innerFunc();
-            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => deadlockAwareLock.Release());
+            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => _lockWithLoggingConcurrencyHandler.Release());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
