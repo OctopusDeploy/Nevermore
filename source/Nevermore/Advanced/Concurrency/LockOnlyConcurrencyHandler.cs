@@ -5,7 +5,7 @@ using Nito.AsyncEx;
 
 namespace Nevermore.Advanced.Concurrency
 {
-    public class LockOnlyConcurrencyHandler : ITransactionConcurrencyHandler
+    class LockOnlyConcurrencyHandler : ITransactionConcurrencyHandler
     {
         readonly SemaphoreSlim semaphore = new(1, 1);
 

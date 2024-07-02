@@ -5,7 +5,7 @@ using Nito.Disposables;
 
 namespace Nevermore.Advanced.Concurrency
 {
-    public class NoOpConcurrencyHandler : ITransactionConcurrencyHandler
+    class NoOpConcurrencyHandler : ITransactionConcurrencyHandler
     {
         public IDisposable Lock()
         {

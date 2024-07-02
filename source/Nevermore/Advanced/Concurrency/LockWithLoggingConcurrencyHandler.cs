@@ -6,7 +6,7 @@ using Nito.AsyncEx;
 
 namespace Nevermore.Advanced.Concurrency
 {
-    public class LockWithLoggingConcurrencyHandler : ITransactionConcurrencyHandler
+    class LockWithLoggingConcurrencyHandler : ITransactionConcurrencyHandler
     {
         static readonly ILog Log = LogProvider.For<LockWithLoggingConcurrencyHandler>();
         

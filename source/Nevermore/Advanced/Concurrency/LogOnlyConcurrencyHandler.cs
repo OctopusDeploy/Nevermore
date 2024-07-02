@@ -6,7 +6,7 @@ using Nito.Disposables;
 
 namespace Nevermore.Advanced.Concurrency
 {
-    public class LogOnlyConcurrencyHandler : ITransactionConcurrencyHandler
+    class LogOnlyConcurrencyHandler : ITransactionConcurrencyHandler
     {
         static readonly ILog Log = LogProvider.For<LogOnlyConcurrencyHandler>();
         
