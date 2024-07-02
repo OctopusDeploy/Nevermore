@@ -6,14 +6,6 @@ using Nito.AsyncEx;
 
 namespace Nevermore.Advanced.Concurrency
 {
-    /// <summary>
-    ///     This class provides a best-effort deadlock detection mechanism. It will identify re-entrant calls from the same
-    ///     task (if there is a task) or the same thread (if there is no task). While it does not _guarantee_ deadlock
-    ///     detection,
-    ///     it does provide a pretty good guarantee that _if_ a DeadlockException is thrown then there was almost certainly
-    ///     going to be a deadlock. In other words: very few false positives; probably some false negatives; better than
-    ///     nothing.
-    /// </summary>
     public class LockWithLoggingConcurrencyHandler : ITransactionConcurrencyHandler
     {
         static readonly ILog Log = LogProvider.For<LockWithLoggingConcurrencyHandler>();
@@ -40,11 +32,6 @@ namespace Nevermore.Advanced.Concurrency
             }
             
             return await semaphore.LockAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        public void Release()
-        {
-            semaphore.Release();
         }
 
         public void Dispose()
