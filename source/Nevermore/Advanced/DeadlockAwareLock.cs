@@ -19,9 +19,6 @@ namespace Nevermore.Advanced
         static readonly ILog Log = LogProvider.For<DeadlockAwareLock>();
         
         readonly SemaphoreSlim semaphore = new(1, 1);
-        
-        int? taskWhichHasAcquiredLock;
-        int? threadWhichHasAcquiredLock;
 
         readonly bool logConcurrentExecution;
 
@@ -39,7 +36,6 @@ namespace Nevermore.Advanced
             }
                 
             semaphore.Wait();
-            RecordLockAcquisition();
         }
 
         public async Task WaitAsync(CancellationToken cancellationToken)
@@ -51,29 +47,11 @@ namespace Nevermore.Advanced
             }
             
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            await RecordLockAcquisitionAsync().ConfigureAwait(false);
         }
 
         public void Release()
         {
-            threadWhichHasAcquiredLock = null;
-            taskWhichHasAcquiredLock = null;
             semaphore.Release();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void RecordLockAcquisition()
-        {
-            threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
-            taskWhichHasAcquiredLock = Task.CurrentId;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        async Task RecordLockAcquisitionAsync()
-        {
-            await Task.Yield();
-            threadWhichHasAcquiredLock = Thread.CurrentThread.ManagedThreadId;
-            taskWhichHasAcquiredLock = Task.CurrentId;
         }
 
         public void Dispose()
