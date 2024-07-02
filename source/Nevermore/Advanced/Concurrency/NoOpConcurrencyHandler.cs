@@ -12,10 +12,9 @@ namespace Nevermore.Advanced.Concurrency
             return NoopDisposable.Instance;
         }
 
-        public async Task<IDisposable> LockAsync(CancellationToken cancellationToken)
+        public Task<IDisposable> LockAsync(CancellationToken cancellationToken)
         {
-            await Task.Yield();
-            return NoopDisposable.Instance;
+            return Task.FromResult<IDisposable>(NoopDisposable.Instance);
         }
 
         public void Dispose()
