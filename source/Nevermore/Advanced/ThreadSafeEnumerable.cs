@@ -1,30 +1,30 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Nevermore.Advanced
 {
     internal class ThreadSafeEnumerable<T> : IEnumerable<T>
     {
         readonly Func<IEnumerable<T>> innerFunc;
-        readonly LockWithLoggingConcurrencyHandler _lockWithLoggingConcurrencyHandler;
+        readonly ITransactionConcurrencyHandler transactionConcurrencyHandler;
 
-        public ThreadSafeEnumerable(IEnumerable<T> inner, LockWithLoggingConcurrencyHandler lockWithLoggingConcurrencyHandler) : this(() => inner, lockWithLoggingConcurrencyHandler)
+        public ThreadSafeEnumerable(IEnumerable<T> inner, ITransactionConcurrencyHandler transactionConcurrencyHandler)
+            : this(() => inner, transactionConcurrencyHandler)
         {
         }
 
-        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, LockWithLoggingConcurrencyHandler lockWithLoggingConcurrencyHandler)
+        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, ITransactionConcurrencyHandler transactionConcurrencyHandler)
         {
             this.innerFunc = innerFunc;
-            this._lockWithLoggingConcurrencyHandler = lockWithLoggingConcurrencyHandler;
+            this.transactionConcurrencyHandler = transactionConcurrencyHandler;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            _lockWithLoggingConcurrencyHandler.Wait();
+            var disposable = transactionConcurrencyHandler.Lock();
             var inner = innerFunc();
-            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => _lockWithLoggingConcurrencyHandler.Release());
+            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => disposable.Dispose());
         }
 
         IEnumerator IEnumerable.GetEnumerator()

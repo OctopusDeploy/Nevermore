@@ -9,9 +9,9 @@ namespace Nevermore.Advanced
 {
     public interface ITransactionConcurrencyHandler : IDisposable
     {
-        IDisposable Wait();
+        IDisposable Lock();
         
-        Task<IDisposable> WaitAsync(CancellationToken cancellationToken);
+        Task<IDisposable> LockAsync(CancellationToken cancellationToken);
     }
 
     /// <summary>
@@ -28,7 +28,7 @@ namespace Nevermore.Advanced
         
         readonly SemaphoreSlim semaphore = new(1, 1);
 
-        public IDisposable Wait()
+        public IDisposable Lock()
         {
             // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (semaphore.CurrentCount == 0)
@@ -39,7 +39,7 @@ namespace Nevermore.Advanced
             return semaphore.Lock();
         }
 
-        public async Task<IDisposable> WaitAsync(CancellationToken cancellationToken)
+        public async Task<IDisposable> LockAsync(CancellationToken cancellationToken)
         {
             // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (semaphore.CurrentCount == 0)
@@ -65,12 +65,12 @@ namespace Nevermore.Advanced
     {
         readonly SemaphoreSlim semaphore = new(1, 1);
 
-        public IDisposable Wait()
+        public IDisposable Lock()
         {
             return semaphore.Lock();
         }
 
-        public async Task<IDisposable> WaitAsync(CancellationToken cancellationToken)
+        public async Task<IDisposable> LockAsync(CancellationToken cancellationToken)
         {
             return await semaphore.LockAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -87,24 +87,22 @@ namespace Nevermore.Advanced
         
         readonly SemaphoreSlim semaphore = new(1, 1);
 
-        public IDisposable Wait()
+        public IDisposable Lock()
         {
             if (!semaphore.Wait(TimeSpan.Zero))
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
-
                 return NoopDisposable.Instance;
             }
             
             return new ConcurrencyDisposable(() => semaphore.Release());
         }
 
-        public async Task<IDisposable> WaitAsync(CancellationToken cancellationToken)
+        public async Task<IDisposable> LockAsync(CancellationToken cancellationToken)
         {
             if (!await semaphore.WaitAsync(TimeSpan.Zero, cancellationToken).ConfigureAwait(false))
             {
                 Log.Warn("Concurrent query execution detected while waiting for lock");
-                
                 return NoopDisposable.Instance;
             }
             
@@ -114,6 +112,24 @@ namespace Nevermore.Advanced
         public void Dispose()
         {
             semaphore.Dispose();
+        }
+    }
+
+    public class NoOpConcurrencyHandler : ITransactionConcurrencyHandler
+    {
+        public IDisposable Lock()
+        {
+            return NoopDisposable.Instance;
+        }
+
+        public async Task<IDisposable> LockAsync(CancellationToken cancellationToken)
+        {
+            await Task.Yield();
+            return NoopDisposable.Instance;
+        }
+
+        public void Dispose()
+        {
         }
     }
 
