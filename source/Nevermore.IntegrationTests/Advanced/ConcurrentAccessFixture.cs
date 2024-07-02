@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Nevermore.Advanced.Concurrency;
 using Nevermore.Advanced.Queryable;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
@@ -16,10 +17,15 @@ namespace Nevermore.IntegrationTests.Advanced
         const int NumberOfDocuments = 256;
         const int DegreeOfParallelism = NumberOfDocuments;
 
-        [Test]
-        public void ConcurrentAccessDoesNotGoBoom()
+        [TestCase(ConcurrencyMode.LockOnly)]
+        [TestCase(ConcurrencyMode.LockAndWarn)]
+        public void ConcurrentAccessDoesNotGoBoom(ConcurrencyMode concurrencyMode)
         {
             NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
+
+            var callbackCalled = false;
+            Configuration.LogConcurrencyWarning = () => callbackCalled = true;
 
             var namePrefix = $"{Guid.NewGuid()}-";
 
@@ -101,12 +107,22 @@ namespace Nevermore.IntegrationTests.Advanced
                     foreach (var thread in threads) thread.Join();
                 }
             }
+
+            if (concurrencyMode == ConcurrencyMode.LockAndWarn)
+            {
+                callbackCalled.Should().BeTrue();
+            }
         }
 
-        [Test]
-        public async Task AsyncConcurrentAccessDoesNotGoBoom()
+        [TestCase(ConcurrencyMode.LockOnly)]
+        [TestCase(ConcurrencyMode.LockAndWarn)]
+        public async Task AsyncConcurrentAccessDoesNotGoBoom(ConcurrencyMode concurrencyMode)
         {
             NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
+
+            var callbackCalled = false;
+            Configuration.LogConcurrencyWarning = () => callbackCalled = true;
 
             var namePrefix = $"{Guid.NewGuid()}-";
 
@@ -160,6 +176,88 @@ namespace Nevermore.IntegrationTests.Advanced
                         // ReSharper restore AccessToDisposedClosure
                     })
                     .WhenAll();
+            }
+
+            if (concurrencyMode == ConcurrencyMode.LockAndWarn)
+            {
+                callbackCalled.Should().BeTrue();
+            }
+        }
+        
+        [TestCase(ConcurrencyMode.NoLocking)]
+        [TestCase(ConcurrencyMode.WarnOnly)]
+        public void ConcurrentAccessGoesBoomWhenLockingIsDisabled(ConcurrencyMode concurrencyMode)
+        {
+            NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
+
+            var callbackCalled = false;
+            Configuration.LogConcurrencyWarning = () => callbackCalled = true;
+
+            var namePrefix = $"{Guid.NewGuid()}-";
+
+            // Create a bunch of documents so that we can query for them.
+            using (var transaction = Store.BeginTransaction())
+            {
+                FluentActions.Invoking(
+                    () =>
+                    {
+                        // Only using 10 here because using NumberOfDocuments (256) is too slow
+                        Enumerable.Range(0, 10)
+                            .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                            .AsParallel()
+                            .WithDegreeOfParallelism(DegreeOfParallelism)
+                            .Select(document =>
+                            {
+                                // ReSharper disable once AccessToDisposedClosure
+                                transaction.Insert(document);
+                                return 0;
+                            })
+                            .ToArray();
+                    })
+                    .Should()
+                    .Throw<Exception>();
+            }
+
+            if (concurrencyMode == ConcurrencyMode.WarnOnly)
+            {
+                callbackCalled.Should().BeTrue();
+            }
+        }
+
+        [TestCase(ConcurrencyMode.NoLocking)]
+        [TestCase(ConcurrencyMode.WarnOnly)]
+        public async Task AsyncConcurrentAccessGoesBoomWhenLockingIsDisabled(ConcurrencyMode concurrencyMode)
+        {
+            NoMonkeyBusiness();
+            Configuration.ConcurrencyMode = concurrencyMode;
+
+            var callbackCalled = false;
+            Configuration.LogConcurrencyWarning = () => callbackCalled = true;
+
+            var namePrefix = $"{Guid.NewGuid()}-";
+
+            // Create a bunch of documents so that we can query for them.
+            using (var transaction = await Store.BeginWriteTransactionAsync())
+            {
+                await FluentActions.Awaiting(
+                    async () =>
+                    {
+                        await Enumerable.Range(0, NumberOfDocuments)
+                            .Select(i => new DocumentWithIdentityId { Name = $"{namePrefix}{i}" })
+                            // ReSharper disable once AccessToDisposedClosure
+                            .Select(document => transaction.InsertAsync(document))
+                            .WhenAll();
+                        await transaction.CommitAsync();
+                    })
+                    .Should()
+                    .ThrowExactlyAsync<InvalidOperationException>()
+                    .WithMessage("The connection does not support MultipleActiveResultSets.");
+            }
+
+            if (concurrencyMode == ConcurrencyMode.WarnOnly)
+            {
+                callbackCalled.Should().BeTrue();
             }
         }
     }

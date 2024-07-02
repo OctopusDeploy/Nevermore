@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Data.SqlClient;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Concurrency;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
@@ -57,7 +58,8 @@ namespace Nevermore
             TableColumnNameResolver = _ => new SelectAllColumnsTableResolver();
 
             AllowSynchronousOperations = true;
-            SupportConcurrentExecution = true;
+            ConcurrencyMode = ConcurrencyMode.LockOnly;
+            LogConcurrencyWarning = () => { };
 
             QueryLogger = new DefaultQueryLogger();
             TransactionLogger = new DefaultTransactionLogger();
@@ -120,7 +122,9 @@ namespace Nevermore
         
         public ITableNameResolver TableNameResolver { get; set; }
 
-        public bool SupportConcurrentExecution { get; set; }
+        public ConcurrencyMode ConcurrencyMode { get; set; }
+        
+        public Action LogConcurrencyWarning { get; set; }
 
         string InitializeConnectionString(string sqlConnectionString)
         {

@@ -1,5 +1,6 @@
 using System;
 using Nevermore.Advanced;
+using Nevermore.Advanced.Concurrency;
 using Nevermore.Advanced.Hooks;
 using Nevermore.Advanced.InstanceTypeResolvers;
 using Nevermore.Advanced.ReaderStrategies;
@@ -89,12 +90,8 @@ namespace Nevermore
         /// </summary>
         ITableNameResolver TableNameResolver { get; set; }
 
-        /// <summary>
-        /// Gets or sets whether concurrent execution of queries is handled by Nevermore. When <value>true</value>, Nevermore will attempt
-        /// to sequence queries issued concurrently.
-        /// 
-        /// The default is <value>true</value>.
-        /// </summary>
-        bool SupportConcurrentExecution { get; set; }
+        ConcurrencyMode ConcurrencyMode { get; set; }
+        
+        Action LogConcurrencyWarning { get; set; }
     }
 }

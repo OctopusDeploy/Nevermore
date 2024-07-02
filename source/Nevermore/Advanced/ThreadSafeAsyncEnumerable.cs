@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Nevermore.Advanced.Concurrency;
 using Nito.AsyncEx;
 
 namespace Nevermore.Advanced
@@ -9,21 +10,21 @@ namespace Nevermore.Advanced
     public class ThreadSafeAsyncEnumerable<T> : IAsyncEnumerable<T>
     {
         readonly Func<IAsyncEnumerable<T>> innerFunc;
-        readonly DeadlockAwareLock deadlockAwareLock;
+        readonly TransactionMutex transactionMutex;
 
-        public ThreadSafeAsyncEnumerable(IAsyncEnumerable<T> inner, DeadlockAwareLock deadlockAwareLock) : this(() => inner, deadlockAwareLock)
+        public ThreadSafeAsyncEnumerable(IAsyncEnumerable<T> inner, TransactionMutex transactionMutex) : this(() => inner, transactionMutex)
         {
         }
 
-        public ThreadSafeAsyncEnumerable(Func<IAsyncEnumerable<T>> innerFunc, DeadlockAwareLock deadlockAwareLock)
+        public ThreadSafeAsyncEnumerable(Func<IAsyncEnumerable<T>> innerFunc, TransactionMutex transactionMutex)
         {
             this.innerFunc = innerFunc;
-            this.deadlockAwareLock = deadlockAwareLock;
+            this.transactionMutex = transactionMutex;
         }
 
         public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
         {
-            using var mutex = await deadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false);
+            using var mutex = await transactionMutex.LockAsync(cancellationToken).ConfigureAwait(false);
             var inner = innerFunc();
             await foreach (var item in inner.WithCancellation(cancellationToken).ConfigureAwait(false)) yield return item;
         }

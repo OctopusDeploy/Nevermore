@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Nevermore.Advanced.Concurrency;
 using Nevermore.Advanced.Queryable;
 using Nevermore.Advanced.QueryBuilders;
 using Nevermore.Diagnositcs;
@@ -44,7 +45,7 @@ namespace Nevermore.Advanced
         DbConnection? connection;
 
         protected IUniqueParameterNameGenerator ParameterNameGenerator { get; } = new UniqueParameterNameGenerator();
-        protected DeadlockAwareLock DeadlockAwareLock { get; } = new();
+        protected TransactionMutex TransactionMutex { get; }
 
         // To help track deadlocks
         readonly List<string> commandTrace;
@@ -114,6 +115,7 @@ namespace Nevermore.Advanced
             registry.Add(this);
 
             columnNameResolver = configuration.TableColumnNameResolver(store);
+            TransactionMutex = new TransactionMutex(configuration.ConcurrencyMode, configuration.LogConcurrencyWarning);
         }
 
         protected DbTransaction? Transaction { get; private set; }
@@ -521,8 +523,9 @@ namespace Nevermore.Advanced
                     yield return item;
             }
 
-            return configuration.SupportConcurrentExecution
-                ? new ThreadSafeEnumerable<TRecord>(Execute, DeadlockAwareLock)
+            // No point in using the ThreadSafeEnumerable if we're not going to lock.
+            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? new ThreadSafeEnumerable<TRecord>(Execute, TransactionMutex)
                 : Execute();
         }
 
@@ -538,8 +541,9 @@ namespace Nevermore.Advanced
                 }
             }
 
-            return configuration.SupportConcurrentExecution
-                ? new ThreadSafeAsyncEnumerable<TRecord>(Execute, DeadlockAwareLock)
+            // No point in using the ThreadSafeEnumerable if we're not going to lock.
+            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? new ThreadSafeAsyncEnumerable<TRecord>(Execute, TransactionMutex)
                 : Execute();
         }
 
@@ -620,8 +624,9 @@ namespace Nevermore.Advanced
                 }
             }
 
-            return configuration.SupportConcurrentExecution
-                ? new ThreadSafeAsyncEnumerable<TResult>(Execute, DeadlockAwareLock)
+            // No point in using the ThreadSafeEnumerable if we're not going to lock.
+            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? new ThreadSafeAsyncEnumerable<TResult>(Execute, TransactionMutex)
                 : Execute();
         }
 
@@ -651,8 +656,8 @@ namespace Nevermore.Advanced
 
         public int ExecuteNonQuery(PreparedCommand preparedCommand)
         {
-            using var mutex = configuration.SupportConcurrentExecution 
-                ? DeadlockAwareLock.Lock()
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking 
+                ? TransactionMutex.Lock()
                 : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             return command.ExecuteNonQuery();
@@ -660,8 +665,8 @@ namespace Nevermore.Advanced
 
         public async Task<int> ExecuteNonQueryAsync(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = configuration.SupportConcurrentExecution
-                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? await TransactionMutex.LockAsync(cancellationToken).ConfigureAwait(false)
                 : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
@@ -679,8 +684,8 @@ namespace Nevermore.Advanced
 
         public TResult ExecuteScalar<TResult>(PreparedCommand preparedCommand)
         {
-            using var mutex = configuration.SupportConcurrentExecution 
-                ? DeadlockAwareLock.Lock()
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking 
+                ? TransactionMutex.Lock()
                 : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             var result = command.ExecuteScalar();
@@ -691,8 +696,8 @@ namespace Nevermore.Advanced
 
         public async Task<TResult> ExecuteScalarAsync<TResult>(PreparedCommand preparedCommand, CancellationToken cancellationToken = default)
         {
-            using var mutex = configuration.SupportConcurrentExecution
-                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? await TransactionMutex.LockAsync(cancellationToken).ConfigureAwait(false)
                 : NoopDisposable.Instance;
             using var command = CreateCommand(preparedCommand);
             var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
@@ -725,8 +730,8 @@ namespace Nevermore.Advanced
 
         protected TResult[] ReadResults<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, TResult> mapper)
         {
-            using var mutex = configuration.SupportConcurrentExecution
-                ? DeadlockAwareLock.Lock()
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? TransactionMutex.Lock()
                 : NoopDisposable.Instance;
 
             using var command = CreateCommand(preparedCommand);
@@ -735,8 +740,8 @@ namespace Nevermore.Advanced
 
         protected async Task<TResult[]> ReadResultsAsync<TResult>(PreparedCommand preparedCommand, Func<DbDataReader, Task<TResult>> mapper, CancellationToken cancellationToken)
         {
-            using var mutex = configuration.SupportConcurrentExecution
-                ? await DeadlockAwareLock.LockAsync(cancellationToken).ConfigureAwait(false)
+            using var mutex = configuration.ConcurrencyMode is not ConcurrencyMode.NoLocking
+                ? await TransactionMutex.LockAsync(cancellationToken).ConfigureAwait(false)
                 : NoopDisposable.Instance;
 
             using var command = CreateCommand(preparedCommand);
@@ -914,7 +919,7 @@ namespace Nevermore.Advanced
             }
             
             TryDispose(TransactionTimer);
-            TryDispose(DeadlockAwareLock);
+            TryDispose(TransactionMutex);
 
             if (OwnsSqlTransaction)
             {
