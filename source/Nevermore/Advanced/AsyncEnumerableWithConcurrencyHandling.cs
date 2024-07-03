@@ -6,17 +6,17 @@ using Nevermore.Advanced.Concurrency;
 
 namespace Nevermore.Advanced
 {
-    public class ThreadSafeAsyncEnumerable<T> : IAsyncEnumerable<T>
+    internal class AsyncEnumerableWithConcurrencyHandling<T> : IAsyncEnumerable<T>
     {
         readonly Func<IAsyncEnumerable<T>> innerFunc;
         readonly ITransactionConcurrencyHandler transactionConcurrencyHandler;
 
-        public ThreadSafeAsyncEnumerable(IAsyncEnumerable<T> inner, ITransactionConcurrencyHandler transactionConcurrencyHandler)
+        public AsyncEnumerableWithConcurrencyHandling(IAsyncEnumerable<T> inner, ITransactionConcurrencyHandler transactionConcurrencyHandler)
             : this(() => inner, transactionConcurrencyHandler)
         {
         }
 
-        public ThreadSafeAsyncEnumerable(Func<IAsyncEnumerable<T>> innerFunc, ITransactionConcurrencyHandler transactionConcurrencyHandler)
+        public AsyncEnumerableWithConcurrencyHandling(Func<IAsyncEnumerable<T>> innerFunc, ITransactionConcurrencyHandler transactionConcurrencyHandler)
         {
             this.innerFunc = innerFunc;
             this.transactionConcurrencyHandler = transactionConcurrencyHandler;

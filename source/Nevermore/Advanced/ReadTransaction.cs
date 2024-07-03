@@ -531,10 +531,7 @@ namespace Nevermore.Advanced
                     yield return item;
             }
 
-            // Use the thread safe enumerable if we know the concurrency handler enables thread safety
-            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLock
-                ? new ThreadSafeEnumerable<TRecord>(Execute, TransactionConcurrencyHandler)
-                : Execute();
+            return new EnumerableWithConcurrencyHandling<TRecord>(Execute, TransactionConcurrencyHandler);
         }
 
         public IAsyncEnumerable<TRecord> StreamAsync<TRecord>(PreparedCommand command, CancellationToken cancellationToken = default)
@@ -549,10 +546,7 @@ namespace Nevermore.Advanced
                 }
             }
 
-            // Use the thread safe enumerable if we know the concurrency handler enables thread safety
-            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLock
-                ? new ThreadSafeAsyncEnumerable<TRecord>(Execute, TransactionConcurrencyHandler)
-                : Execute();
+            return new AsyncEnumerableWithConcurrencyHandling<TRecord>(Execute, TransactionConcurrencyHandler);
         }
 
         IEnumerable<TRecord> ProcessReader<TRecord>(DbDataReader reader, PreparedCommand command)
@@ -632,10 +626,7 @@ namespace Nevermore.Advanced
                 }
             }
 
-            // Use the thread safe enumerable if we know the concurrency handler enables thread safety
-            return configuration.ConcurrencyMode is not ConcurrencyMode.NoLock
-                ? new ThreadSafeAsyncEnumerable<TResult>(Execute, TransactionConcurrencyHandler)
-                : Execute();
+            return new AsyncEnumerableWithConcurrencyHandling<TResult>(Execute, TransactionConcurrencyHandler);
         }
 
         void AddCommandTrace(string commandText)

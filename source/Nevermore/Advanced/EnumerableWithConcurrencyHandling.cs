@@ -5,17 +5,17 @@ using Nevermore.Advanced.Concurrency;
 
 namespace Nevermore.Advanced
 {
-    internal class ThreadSafeEnumerable<T> : IEnumerable<T>
+    internal class EnumerableWithConcurrencyHandling<T> : IEnumerable<T>
     {
         readonly Func<IEnumerable<T>> innerFunc;
         readonly ITransactionConcurrencyHandler transactionConcurrencyHandler;
 
-        public ThreadSafeEnumerable(IEnumerable<T> inner, ITransactionConcurrencyHandler transactionConcurrencyHandler)
+        public EnumerableWithConcurrencyHandling(IEnumerable<T> inner, ITransactionConcurrencyHandler transactionConcurrencyHandler)
             : this(() => inner, transactionConcurrencyHandler)
         {
         }
 
-        public ThreadSafeEnumerable(Func<IEnumerable<T>> innerFunc, ITransactionConcurrencyHandler transactionConcurrencyHandler)
+        public EnumerableWithConcurrencyHandling(Func<IEnumerable<T>> innerFunc, ITransactionConcurrencyHandler transactionConcurrencyHandler)
         {
             this.innerFunc = innerFunc;
             this.transactionConcurrencyHandler = transactionConcurrencyHandler;
@@ -25,7 +25,7 @@ namespace Nevermore.Advanced
         {
             var disposable = transactionConcurrencyHandler.Lock();
             var inner = innerFunc();
-            return new ThreadSafeEnumerator(inner.GetEnumerator(), () => disposable.Dispose());
+            return new EnumeratorWithConcurrencyHandling(inner.GetEnumerator(), () => disposable.Dispose());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -33,12 +33,12 @@ namespace Nevermore.Advanced
             return GetEnumerator();
         }
 
-        internal class ThreadSafeEnumerator : IEnumerator<T>
+        internal class EnumeratorWithConcurrencyHandling : IEnumerator<T>
         {
             readonly IEnumerator<T> inner;
             readonly Action onDisposed;
 
-            public ThreadSafeEnumerator(IEnumerator<T> inner, Action onDisposed)
+            public EnumeratorWithConcurrencyHandling(IEnumerator<T> inner, Action onDisposed)
             {
                 this.inner = inner;
                 this.onDisposed = onDisposed;
