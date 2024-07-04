@@ -17,7 +17,7 @@ namespace Nevermore.Advanced.Concurrency
             // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (semaphore.CurrentCount == 0)
             {
-                Log.Warn("Concurrent query execution detected while waiting for lock");
+                Log.WarnFormat("Concurrent query execution detected. Stacktrace: {0}", Environment.StackTrace);
             }
             
             return semaphore.Lock();
@@ -28,7 +28,7 @@ namespace Nevermore.Advanced.Concurrency
             // `SemaphoreSlim` counts down, so if it's 0 then there's a concurrent execution happening.
             if (semaphore.CurrentCount == 0)
             {
-                Log.Warn("Concurrent query execution detected while waiting for lock");
+                Log.WarnFormat("Concurrent query execution detected. Stacktrace: {0}", Environment.StackTrace);
             }
             
             return await semaphore.LockAsync(cancellationToken).ConfigureAwait(false);

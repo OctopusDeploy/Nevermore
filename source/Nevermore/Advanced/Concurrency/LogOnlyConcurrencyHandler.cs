@@ -16,7 +16,7 @@ namespace Nevermore.Advanced.Concurrency
         {
             if (!semaphore.Wait(TimeSpan.Zero))
             {
-                Log.Warn("Concurrent query execution detected while waiting for lock");
+                Log.WarnFormat("Concurrent query execution detected. Stacktrace: {0}", Environment.StackTrace);
                 return NoopDisposable.Instance;
             }
             
@@ -27,7 +27,7 @@ namespace Nevermore.Advanced.Concurrency
         {
             if (!await semaphore.WaitAsync(TimeSpan.Zero, cancellationToken).ConfigureAwait(false))
             {
-                Log.Warn("Concurrent query execution detected while waiting for lock");
+                Log.WarnFormat("Concurrent query execution detected. Stacktrace: {0}", Environment.StackTrace);
                 return NoopDisposable.Instance;
             }
             
