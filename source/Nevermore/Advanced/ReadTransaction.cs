@@ -777,8 +777,8 @@ namespace Nevermore.Advanced
             if (mapping.IdColumn is null)
                 throw new InvalidOperationException($"Cannot load {mapping.Type.Name} by Id, as no Id column has been mapped.");
 
-            if (mapping.IdColumn.Type != typeof(TKey))
-                throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
+            // if (mapping.IdColumn.Type != typeof(TKey))
+            //     throw new ArgumentException($"Provided Id of type '{id?.GetType().FullName}' does not match configured type of '{mapping.IdColumn?.Type.FullName}'.");
 
             var schema = configuration.GetSchemaNameOrDefault(mapping);
             var columnNames = GetColumnNames(schema, mapping.TableName);
