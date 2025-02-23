@@ -1,3 +1,11 @@
+# ⚠️ Sunset Notice
+
+Octopus Deploy will eventually stop supporting Nevermore. We will archive this git repository and retire the CI/CD infrastructure that supports it.
+
+If you are currently using Nevermore, we recommend you start planning to migrate away from it as soon as reasonably possible.
+
+Please see https://github.com/OctopusDeploy/Nevermore/issues/291 for more information.
+
 # Nevermore
 
 <img src="https://raw.githubusercontent.com/OctopusDeploy/Nevermore/7170eeeca9649b08a56a778e1211f30915bea932/assets/logo%402x.png" width="128" alt="Nevermore logo" />
@@ -6,7 +14,7 @@ Nevermore is a micro-ORM that treats SQL Server as a document store.
 
 > "It's like Dapper, but with JSON"
 
-Nevermore has been used in production inside of Octopus Deploy since version 2014. 
+Nevermore was used in production inside of Octopus Deploy since version 2014, up until version 2024.4.3. 
 
 The Wiki is the best place to get familiar with Nevermore. 
 
