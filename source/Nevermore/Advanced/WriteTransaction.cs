@@ -337,31 +337,57 @@ namespace Nevermore.Advanced
             var key = await keyAllocator.NextIdAsync(tableName, cancellationToken).ConfigureAwait(false);
             return $"{idPrefix}-{key}";
         }
+        
+        public void CommitIfOwned()
+        {
+            if (!OwnsSqlTransaction) return;
+            
+            if (!configuration.AllowSynchronousOperations)
+                throw new SynchronousOperationsDisabledException();
+
+            CommitTransactionAndRunHooks();
+        }
 
         public void Commit()
         {
-            if (Transaction is null)
-                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
-
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
             if (!configuration.AllowSynchronousOperations)
                 throw new SynchronousOperationsDisabledException();
 
+            CommitTransactionAndRunHooks();
+        }
+
+        void CommitTransactionAndRunHooks()
+        {
+            if (Transaction is null)
+                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+
             configuration.Hooks.BeforeCommit(this);
             Transaction.Commit();
             configuration.Hooks.AfterCommit(this);
         }
 
+        public async Task CommitIfOwnedAsync(CancellationToken cancellationToken = default)
+        {
+            if (!OwnsSqlTransaction) return;
+
+            await CommitTransactionAndRunHooksAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task CommitAsync(CancellationToken cancellationToken = default)
         {
-            if (Transaction is null)
-                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
-
             if (!OwnsSqlTransaction)
                 throw new InvalidOperationException($"{nameof(WriteTransaction)} cannot commit a transaction it does not own");
 
+            await CommitTransactionAndRunHooksAsync(cancellationToken).ConfigureAwait(false);
+        }
+        async Task CommitTransactionAndRunHooksAsync(CancellationToken cancellationToken)
+        {
+            if (Transaction is null)
+                throw new InvalidOperationException("There is no current transaction, call Open/OpenAsync to start a transaction");
+            
             await configuration.Hooks.BeforeCommitAsync(this).ConfigureAwait(false);
             await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             await configuration.Hooks.AfterCommitAsync(this).ConfigureAwait(false);
