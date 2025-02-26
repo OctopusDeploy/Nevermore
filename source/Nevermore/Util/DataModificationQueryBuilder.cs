@@ -246,7 +246,7 @@ namespace Nevermore.Util
                     outputColumns.Add(mapping.RowVersionColumn.ColumnName, "binary(8)");
 
                 if (mapping.IsIdentityId)
-                    outputColumns.Add(mapping.IdColumn.ColumnName, mapping.IdColumn.Type.GetIdentityIdTypeName());
+                    outputColumns.Add(mapping.IdColumn.ColumnName, mapping.IdColumn.PrimaryKeyHandler.GetSqlMetaData(mapping.IdColumn.ColumnName).SqlDbType.ToString());
 
                 outputStatement = $"OUTPUT {string.Join(",", outputColumns.Select(kvp => $"inserted.[{kvp.Key}]"))} INTO @InsertedRows";
                 outputVariable = $"DECLARE @InsertedRows TABLE ({string.Join(", ", outputColumns.Select(kvp => $"[{kvp.Key}] {kvp.Value}"))})";

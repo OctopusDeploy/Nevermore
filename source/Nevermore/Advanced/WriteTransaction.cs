@@ -378,7 +378,7 @@ namespace Nevermore.Advanced
             //The results need to be read eagerly so errors are raised while code is still executing within CommandExecutor error handling logic
             return ReadResults(command,
                 reader => DataModificationOutput.Read(reader, command.Mapping,
-                    command.Operation == RetriableOperation.Insert));
+                    command.Operation == RetriableOperation.Insert, configuration));
         }
 
         DataModificationOutput ExecuteSingleDataModification(PreparedCommand command)
@@ -463,7 +463,7 @@ namespace Nevermore.Advanced
             public byte[] RowVersion { get; private set; }
             public object Id { get; private set; }
 
-            public static DataModificationOutput Read(DbDataReader reader, DocumentMap map, bool isInsert)
+            public static DataModificationOutput Read(DbDataReader reader, DocumentMap map, bool isInsert, IRelationalStoreConfiguration configuration)
             {
                 var output = new DataModificationOutput();
 
@@ -472,7 +472,12 @@ namespace Nevermore.Advanced
                         reader.GetFieldValue<byte[]>(map.RowVersionColumn!.ColumnName);
 
                 if (map.IsIdentityId && isInsert)
-                    output.Id = reader.GetFieldValue<object>(map.IdColumn!.ColumnName);
+                {
+                    var typeHandler = configuration.TypeHandlers.Resolve(map.IdColumn.Type);
+                    output.Id = typeHandler == null
+                    ? reader.GetFieldValue<object>(map.IdColumn!.ColumnName)
+                    : typeHandler.ReadDatabase(reader, 0);
+                }
 
                 return output;
             }
