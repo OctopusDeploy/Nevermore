@@ -6,6 +6,7 @@ using Nevermore.Advanced;
 using Nevermore.IntegrationTests.Model;
 using Nevermore.IntegrationTests.SetUp;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Nevermore.IntegrationTests
 {
