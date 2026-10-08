@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
@@ -234,6 +235,84 @@ ORDER BY [Id]");
             var (builder, (parameters, paramValues)) = NewQueryBuilder();
 
             var input = new[] {"a", "b"};
+
+            var result = builder.Where(f => input.Contains(f.String));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
+FROM [dbo].[Foo]
+WHERE ([String] IN (@string1, @string2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("string1", "a");
+            paramValues.Should().Contain("string2", "b");
+        }
+
+        [Test]
+        public void WithIntArrayContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new[] {1, 2};
+
+            var result = builder.Where(f => input.Contains(f.Int));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
+FROM [dbo].[Foo]
+WHERE ([Int] IN (@int1, @int2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("int1", 1);
+            paramValues.Should().Contain("int2", 2);
+        }
+
+        [Test]
+        public void WithInlineArrayContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var result = builder.Where(f => new[] {"a", "b"}.Contains(f.String));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
+FROM [dbo].[Foo]
+WHERE ([String] IN (@string1, @string2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("string1", "a");
+            paramValues.Should().Contain("string2", "b");
+        }
+
+        [Test]
+        public void WithListContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new List<string> {"a", "b"};
+
+            var result = builder.Where(f => input.Contains(f.String));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
+FROM [dbo].[Foo]
+WHERE ([String] IN (@string1, @string2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("string1", "a");
+            paramValues.Should().Contain("string2", "b");
+        }
+
+        [Test]
+        public void WithEnumerableContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            IEnumerable<string> input = new[] {"a", "b"};
 
             var result = builder.Where(f => input.Contains(f.String));
 
