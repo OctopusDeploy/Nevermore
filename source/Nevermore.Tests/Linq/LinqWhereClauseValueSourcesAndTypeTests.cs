@@ -227,7 +227,27 @@ ORDER BY [Id]");
             paramValues.Should().Contain("enum1", Bar.A);
             paramValues.Should().Contain("enum2", Bar.B);
         }
-        
+
+        [Test]
+        public void WithStringArrayContainsIn()
+        {
+            var (builder, (parameters, paramValues)) = NewQueryBuilder();
+
+            var input = new[] {"a", "b"};
+
+            var result = builder.Where(f => input.Contains(f.String));
+
+            result.DebugViewRawQuery()
+                .Should()
+                .Be(@"SELECT Int,String,Enum,DateTime,Bool
+FROM [dbo].[Foo]
+WHERE ([String] IN (@string1, @string2))
+ORDER BY [Id]");
+
+            paramValues.Should().Contain("string1", "a");
+            paramValues.Should().Contain("string2", "b");
+        }
+
         [Test]
         public void WithEnumIn()
         {

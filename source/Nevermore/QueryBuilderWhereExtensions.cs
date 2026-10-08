@@ -102,7 +102,8 @@ namespace Nevermore
         static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
         {
             var property = GetProperty(call.Arguments.Count == 1 ? call.Arguments[0] : call.Arguments[1]);
-            var value = (IEnumerable) GetValueFromExpression(call.Arguments.Count == 1 ? call.Object : call.Arguments[0], property.PropertyType);
+            var collection = UnwrapImplicitSpanConversion(call.Arguments.Count == 1 ? call.Object : call.Arguments[0]);
+            var value = (IEnumerable) GetValueFromExpression(collection, property.PropertyType);
 
             return queryBuilder.Where(property.Name, ArraySqlOperand.In, value);
         }
@@ -110,10 +111,24 @@ namespace Nevermore
         static IQueryBuilder<TRecord> AddInExpression<TRecord>(ArraySqlOperand operand, IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
         {
             var property = GetProperty(call.Arguments[0]);
-            var value = (IEnumerable) GetValueFromExpression(call.Arguments[1], property.PropertyType);
-            
+            var value = (IEnumerable) GetValueFromExpression(UnwrapImplicitSpanConversion(call.Arguments[1]), property.PropertyType);
+
             return queryBuilder.Where(property.Name, operand, value);
         }
+
+        // C# 14 binds array.Contains(x) to MemoryExtensions.Contains(ReadOnlySpan<T>, T),
+        // wrapping the collection in an implicit conversion to a span. Unwrap it so we can evaluate the underlying collection.
+        static Expression UnwrapImplicitSpanConversion(Expression expression)
+        {
+            if (expression is MethodCallExpression { Method: { Name: "op_Implicit" } } call && call.Arguments.Count == 1 && IsSpanType(call.Type))
+                return call.Arguments[0];
+            if (expression is UnaryExpression { NodeType: ExpressionType.Convert } unary && IsSpanType(unary.Type))
+                return unary.Operand;
+            return expression;
+        }
+
+        static bool IsSpanType(Type type)
+            => type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(ReadOnlySpan<>) || type.GetGenericTypeDefinition() == typeof(Span<>));
 
         static IQueryBuilder<TRecord> AddStringMethodFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression methExpr) where TRecord : class
         {
