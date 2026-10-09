@@ -265,7 +265,7 @@ namespace Nevermore.Advanced.Queryable
 
             if (expression.Method.Name == "Contains")
             {
-                var left = expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0];
+                var left = (expression.Arguments.Count == 1 ? expression.Object : expression.Arguments[0]).UnwrapImplicitSpanConversion();
                 var right = expression.Arguments.Count == 1 ? expression.Arguments[0] : expression.Arguments[1];
 
                 if (left is MemberExpression { Member: PropertyInfo propertyInfo } memberExpressionL && memberExpressionL.IsBasedOff<ParameterExpression>())

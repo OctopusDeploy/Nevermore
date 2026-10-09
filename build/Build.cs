@@ -5,7 +5,6 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.OctoVersion;
 using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-using static Nuke.Common.IO.FileSystemTasks;
 
 class BuildNevermore : NukeBuild
 {
@@ -83,9 +82,9 @@ class BuildNevermore : NukeBuild
     {
         ArtifactsDirectory.CreateDirectory();
         SourceDirectory.GlobFiles("**/Nevermore*.nupkg")
-            .ForEach(f => CopyFileToDirectory(f, ArtifactsDirectory, FileExistsPolicy.Overwrite));
+            .ForEach(f => f.CopyToDirectory(ArtifactsDirectory, ExistsPolicy.FileOverwrite));
         SourceDirectory.GlobFiles("**/Nevermore*.snupkg")
-            .ForEach(f => CopyFileToDirectory(f, ArtifactsDirectory, FileExistsPolicy.Overwrite));
+            .ForEach(f => f.CopyToDirectory(ArtifactsDirectory, ExistsPolicy.FileOverwrite));
     });
 
     Target CopyToLocalPackages => _ => _
@@ -96,9 +95,9 @@ class BuildNevermore : NukeBuild
     {
         LocalPackagesDir.CreateOrCleanDirectory();
         ArtifactsDirectory.GlobFiles("*.nupkg")
-            .ForEach(f => CopyFileToDirectory(f, LocalPackagesDir, FileExistsPolicy.Overwrite));
+            .ForEach(f => f.CopyToDirectory(LocalPackagesDir, ExistsPolicy.FileOverwrite));
         ArtifactsDirectory.GlobFiles("*.snupkg")
-            .ForEach(f => CopyFileToDirectory(f, LocalPackagesDir, FileExistsPolicy.Overwrite));
+            .ForEach(f => f.CopyToDirectory(LocalPackagesDir, ExistsPolicy.FileOverwrite));
     });
 
     Target Pack => _ => _

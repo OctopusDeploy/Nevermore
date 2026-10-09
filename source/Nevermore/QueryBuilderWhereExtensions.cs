@@ -102,7 +102,8 @@ namespace Nevermore
         static IQueryBuilder<TRecord> AddContainsFromExpression<TRecord>(IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
         {
             var property = GetProperty(call.Arguments.Count == 1 ? call.Arguments[0] : call.Arguments[1]);
-            var value = (IEnumerable) GetValueFromExpression(call.Arguments.Count == 1 ? call.Object : call.Arguments[0], property.PropertyType);
+            var collection = (call.Arguments.Count == 1 ? call.Object : call.Arguments[0]).UnwrapImplicitSpanConversion();
+            var value = (IEnumerable) GetValueFromExpression(collection, property.PropertyType);
 
             return queryBuilder.Where(property.Name, ArraySqlOperand.In, value);
         }
@@ -110,8 +111,8 @@ namespace Nevermore
         static IQueryBuilder<TRecord> AddInExpression<TRecord>(ArraySqlOperand operand, IQueryBuilder<TRecord> queryBuilder, MethodCallExpression call) where TRecord : class
         {
             var property = GetProperty(call.Arguments[0]);
-            var value = (IEnumerable) GetValueFromExpression(call.Arguments[1], property.PropertyType);
-            
+            var value = (IEnumerable) GetValueFromExpression(call.Arguments[1].UnwrapImplicitSpanConversion(), property.PropertyType);
+
             return queryBuilder.Where(property.Name, operand, value);
         }
 
